@@ -1164,8 +1164,8 @@ QUERY_PARAMS.subscribe(() => {
 
 // Constants for WIND_VARIATIONS
 const DEBUG_SPEEDS = [1];
-const DEBUG_GUSTS = [6];
-const DEBUG_DIRECTIONS = [270, 270, 270, 270, 200, 200];
+const DEBUG_GUSTS = [9];
+const DEBUG_DIRECTIONS = [40, 0, 40, 0];
 
 const THIRTY_MINUTES_IN_MS = 30 * 60 * 1000;
 const MAX_EXTRA_WIDTH = 30;
@@ -1193,7 +1193,7 @@ const GUST_THRESHOLDS = {
     VERY_HIGH: 11,
 };
 
-const GUST_DIFF_THRESHOLDS = {
+export const GUST_DIFF_THRESHOLDS = {
     MEDIUM: 4,
     HIGH: 5.5,
     VERY_HIGH: 7,
