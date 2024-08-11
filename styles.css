@@ -590,3 +590,7 @@ h2 .date {
     grid-template-columns: 1fr 1fr 1fr;
     gap: 2px;
 }
+
+ul {
+    margin-bottom: 0;
+}
