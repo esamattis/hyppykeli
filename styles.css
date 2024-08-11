@@ -39,6 +39,11 @@ button {
     justify-content: center;
 }
 
+.desktop #compass {
+    align-items: center;
+    justify-content: space-around;
+}
+
 .compass {
     display: flex;
     justify-content: center;
@@ -48,8 +53,16 @@ button {
     height: 270px;
 }
 
+.thin.desktop .compass svg {
+    height: 200px;
+}
+
 .icon-parachute {
     height: 50px;
+}
+
+.desktop .icon-parachute {
+    height: 150px;
 }
 
 .hover-compass {
@@ -128,6 +141,10 @@ button {
     max-width: 20ch;
 }
 
+.desktop .latest-wind-cell {
+    display: inline;
+}
+
 .grid {
     display: grid;
     margin: 10px;
@@ -151,41 +168,17 @@ button {
         "high-winds-tomorrow high-winds-tomorrow";
 }
 
-:root {
-    --device: mobile;
-}
-
-@media (min-width: 900px) {
-    :root {
-        --device: desktop;
-    }
-
-    .icon-parachute {
-        height: 150px;
-    }
-
-    #compass {
-        align-items: center;
-        justify-content: space-around;
-    }
-
-    .latest-wind-cell {
-        display: inline;
-    }
-
-    /** BIG SCREEN **/
-    .grid {
-        grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr);
-        grid-template-areas:
-            "errors errors"
-            "title compass"
-            "title compass"
-            "clouds winds"
-            "observations-graph forecasts-graph"
-            "observations-table forecasts-table"
-            "high-winds-today high-winds-tomorrow"
-            "high-winds-details high-winds-details";
-    }
+.desktop .grid {
+    grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr);
+    grid-template-areas:
+        "errors errors"
+        "title compass"
+        "title compass"
+        "clouds winds"
+        "observations-graph forecasts-graph"
+        "observations-table forecasts-table"
+        "high-winds-today high-winds-tomorrow"
+        "high-winds-details high-winds-details";
 }
 
 .vertical-center {
@@ -290,7 +283,7 @@ a:visited {
 
 .chart {
     position: relative;
-    height: clamp(350px, 70vh, 600px);
+    height: clamp(250px, 450px, 80vh);
     border: 1px solid black;
 }
 
