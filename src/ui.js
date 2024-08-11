@@ -1,6 +1,6 @@
 // @ts-check
 import { effect, signal } from "@preact/signals";
-import { useMemo, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 import { h, html } from "htm/preact";
 import { clearOMCache, OpenMeteoTool, OpenMeteoRaw } from "./om.js";
 import {
@@ -335,8 +335,7 @@ function DataTable(props) {
 }
 
 function WindSummary() {
-    const history = !!HOVERED_OBSERVATION.value;
-    const obs = HOVERED_OBSERVATION.value || LATEST_OBSERVATION.value;
+    const obs = LATEST_OBSERVATION.value;
 
     if (!obs) {
         return null;
@@ -349,8 +348,7 @@ function WindSummary() {
     }
 
     return html`
-        <p class=${history ? "historic" : ""}>
-
+        <p>
             <div class="latest-wind-cell">
             Puuska
                 <span
@@ -1189,12 +1187,8 @@ function Info() {
 }
 
 function Title() {
-    const historic = !!HOVERED_OBSERVATION.value;
-    const time =
-        HOVERED_OBSERVATION.value?.time ?? LATEST_OBSERVATION.value?.time;
-    const temperature =
-        HOVERED_OBSERVATION.value?.temperature ??
-        LATEST_OBSERVATION.value?.temperature;
+    const time = LATEST_OBSERVATION.value?.time;
+    const temperature = LATEST_OBSERVATION.value?.temperature;
 
     const temps = isNullish(temperature)
         ? null
@@ -1210,10 +1204,7 @@ function Title() {
             <span class="title-name">${NAME}</span>
             ${temps
                 ? html`
-                      <span
-                          class="title-temp"
-                          style=${{ opacity: historic ? 0.5 : 1 }}
-                      >
+                      <span class="title-temp">
                           <span class="nowrap">
                               ${temperature?.toFixed(1)}°C maassa,
                           </span>
@@ -1253,23 +1244,16 @@ function Title() {
     `;
 }
 
-function MobileHoverCompass() {
-    const hasValue = !!HOVERED_OBSERVATION.value;
-
-    const show = useMemo(
-        () =>
-            hasValue &&
-            getComputedStyle(document.documentElement)
-                .getPropertyValue("--device")
-                .trim() === "mobile",
-        [hasValue],
-    );
-
-    if (!show) {
+function HoverCompass() {
+    if (!HOVERED_OBSERVATION.value) {
         return null;
     }
 
-    return h(Compass, { className: "sticky-compass" });
+    return h(Compass, {
+        className: "hover-compass",
+        showHovered: true,
+        history: false,
+    });
 }
 
 export function Root() {
@@ -1310,7 +1294,7 @@ export function Root() {
             </div>
 
             <div id="compass">
-                ${h(Compass, {})}
+                ${h(Compass, { history: true, showHovered: false })}
                 <${Parachute} />
             </div>
 
@@ -1365,7 +1349,7 @@ export function Root() {
         <${SideMenu} />
         <${StickyFooter} />
 
-        ${h(MobileHoverCompass, {})}
+        ${h(HoverCompass, {})}
 
         <${RenderInjectedCSS} />
     `;

@@ -52,7 +52,7 @@ button {
     height: 50px;
 }
 
-.sticky-compass {
+.hover-compass {
     display: flex;
     width: 130px;
     height: 130px;
@@ -68,7 +68,7 @@ button {
     flex-direction: column;
 }
 
-.sticky-compass .help {
+.hover-compass .help {
     display: none;
 }
 #observations-graph {
@@ -310,14 +310,6 @@ a[href^="http"]:not([href*="hyppykeli.fi"]):visited {
 
 .errors p {
     color: red;
-}
-
-.historic {
-    opacity: 0.5;
-}
-
-svg .historic {
-    opacity: 0.3;
 }
 
 dialog {
