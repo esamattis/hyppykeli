@@ -574,10 +574,9 @@ h2 .date {
 }
 
 .dynamic-parachute {
-  fill: var(--parachute-color);
+    fill: var(--parachute-color);
 }
 
 .parachute-color {
     fill: var(--parachute-color);
-  }
-  
+}

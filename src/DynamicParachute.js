@@ -11,7 +11,12 @@ import { LATEST_OBSERVATION, WIND_VARIATIONS } from "./data.js";
  * @param {number} windRef - The wind reference value.
  * @returns {{ angle: number, duration: number }} The calculated animation parameters.
  */
-const calculateAnimationParams = (baseAngle, baseDuration, variationFactor, windRef) => {
+const calculateAnimationParams = (
+    baseAngle,
+    baseDuration,
+    variationFactor,
+    windRef,
+) => {
     const windRefFactor = Math.min((windRef ?? 0) / 10, 1);
     const angle = baseAngle * (1 + windRefFactor);
     const duration = baseDuration / (1 + windRefFactor);
@@ -49,8 +54,13 @@ const rotationAnimation = computed(() => {
 
     // Adjust duration based on windRef and variationRange
     const baseDuration = Math.max(5 - variationRange * 0.05, 2);
-    
-    const { angle: calculatedAngle, duration } = calculateAnimationParams(angle, baseDuration, variationRange, windRef);
+
+    const { angle: calculatedAngle, duration } = calculateAnimationParams(
+        angle,
+        baseDuration,
+        variationRange,
+        windRef,
+    );
 
     console.log(
         `Rotation animation calculated: duration=${duration}, angle=${calculatedAngle}, variationRange=${variationRange}, windRef=${windRef}`,
@@ -76,7 +86,12 @@ const swingAnimation = computed(() => {
     const baseAngle = Math.min(gustDiff * 1.5, 20);
     const baseDuration = Math.max(3 - gustDiff * 0.15, 1);
 
-    const { angle, duration } = calculateAnimationParams(baseAngle, baseDuration, gustDiff, windRef);
+    const { angle, duration } = calculateAnimationParams(
+        baseAngle,
+        baseDuration,
+        gustDiff,
+        windRef,
+    );
 
     console.log(
         `Swing animation calculated: angle=${angle}, duration=${duration}, gustDiff=${gustDiff}, windRef=${windRef}`,
