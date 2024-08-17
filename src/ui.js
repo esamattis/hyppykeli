@@ -1053,26 +1053,7 @@ function Anvil() {
     `;
 }
 
-function Parachute() {
-    const latestGust = LATEST_OBSERVATION.value?.gust ?? 0;
-    const level = getWarningLevel(latestGust);
-
-    let animation = "";
-    if (level === "warning") {
-        animation = "swing";
-    } else if (level === "danger") {
-        animation = "rotate";
-    }
-
-    return html`
-        <span class="scale">
-            <img
-                src="/assets/parachute.svg"
-                class="icon-parachute ${animation}"
-            />
-        </span>
-    `;
-}
+import { DynamicParachute } from "./DynamicParachute.js";
 
 function ForecastLocationInfo() {
     return html`
@@ -1285,7 +1266,7 @@ export function Root() {
                 <h2 class="h2-with-icon">
                     Tuulet
                     <div style="width: 1ch"></div>
-                    <${Parachute} />
+                    <${DynamicParachute} />
                 </h2>
                 <${WindSummary} />
             </div>
