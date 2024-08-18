@@ -1,4 +1,5 @@
 type Signal<T> = import("@preact/signals").Signal<T>;
+type ReadonlySignal<T> = import("@preact/signals").ReadonlySignal<T>;
 
 interface OpenMeteoWeatherData {
     latitude: number;
