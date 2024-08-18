@@ -1,7 +1,10 @@
+// @ts-check
+
 import { html } from "htm/preact";
 import { useEffect, useRef } from "preact/hooks";
 import { computed } from "@preact/signals";
 import { LATEST_OBSERVATION, WIND_VARIATIONS } from "./data.js";
+import { debug } from "./utils.js";
 
 /**
  * Calculates common animation parameters based on input factors.
@@ -62,7 +65,7 @@ const rotationAnimation = computed(() => {
         windRef,
     );
 
-    console.log(
+    debug(
         `Rotation animation calculated: duration=${duration}, angle=${calculatedAngle}, variationRange=${variationRange}, windRef=${windRef}`,
     );
     return { angle: calculatedAngle, duration };
@@ -93,7 +96,7 @@ const swingAnimation = computed(() => {
         windRef,
     );
 
-    console.log(
+    debug(
         `Swing animation calculated: angle=${angle}, duration=${duration}, gustDiff=${gustDiff}, windRef=${windRef}`,
     );
     return { angle, duration };
@@ -127,7 +130,7 @@ export function DynamicParachute() {
                     "--swing-animation",
                     `swing ${duration}s ease-in-out infinite alternate`,
                 );
-                console.log(
+                debug(
                     `Swing animation applied: ${swingContainer.style.getPropertyValue("--swing-animation")}`,
                 );
             }
@@ -143,7 +146,7 @@ export function DynamicParachute() {
                         "--rotate-animation",
                         `rotate ${duration}s linear infinite alternate`,
                     );
-                    console.log(
+                    debug(
                         `Rotate animation applied: ${rotateContainer.style.getPropertyValue("--rotate-animation")}`,
                     );
                 } else {
