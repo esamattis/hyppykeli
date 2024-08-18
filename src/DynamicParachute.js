@@ -29,7 +29,7 @@ const calculateAnimationParams = (
 /**
  * Computed signal that determines the color of the parachute based on wind variations.
  * Defaults to "#90EE90" if no color is provided in the wind variations data.
- * @type {import('@preact/signals').Computed<string>}
+ * @type {Signal<string>}
  */
 const parachuteColor = computed(() => {
     return WIND_VARIATIONS.value?.color ?? "#90EE90";
@@ -37,7 +37,7 @@ const parachuteColor = computed(() => {
 
 /**
  * Computed signal that calculates the rotation animation for the parachute based on wind variations.
- * @type {import('@preact/signals').Computed<{ angle: number, duration: number }>}
+ * @type {ReadonlySignal<{ angle: number, duration: number }>}
  */
 const rotationAnimation = computed(() => {
     const windVariations = WIND_VARIATIONS.value;
@@ -73,7 +73,7 @@ const rotationAnimation = computed(() => {
 
 /**
  * Computed signal that calculates the swing animation for the parachute based on wind variations.
- * @type {import('@preact/signals').Computed<{ angle: number, duration: number }>}
+ * @type {ReadonlySignal<{ angle: number, duration: number }>}
  */
 const swingAnimation = computed(() => {
     const windVariations = WIND_VARIATIONS.value;
@@ -107,20 +107,21 @@ const swingAnimation = computed(() => {
  * The parachute's color, rotation, and swing are controlled by wind variations.
  */
 export function DynamicParachute() {
+    /** @type {import("preact/compat").MutableRefObject<SVGElement|null>} */
     const svgRef = useRef(null);
 
     /**
      * Applies the parachute color and animations to the SVG element.
      */
     useEffect(() => {
-        if (svgRef.current) {
+        if (svgRef.current instanceof SVGElement) {
             const svg = svgRef.current;
             const swingContainer = svg.closest(".swing-container");
             const rotateContainer = svg.closest(".rotate-container");
 
             svg.style.setProperty("--parachute-color", parachuteColor.value);
 
-            if (swingContainer) {
+            if (swingContainer instanceof HTMLElement) {
                 const { angle, duration } = swingAnimation.value;
                 swingContainer.style.setProperty(
                     "--swing-angle",
@@ -135,7 +136,7 @@ export function DynamicParachute() {
                 );
             }
 
-            if (rotateContainer) {
+            if (rotateContainer instanceof HTMLElement) {
                 const { angle, duration } = rotationAnimation.value;
                 if (angle > 0 && duration > 0) {
                     rotateContainer.style.setProperty(
