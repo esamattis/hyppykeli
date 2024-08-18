@@ -46,6 +46,7 @@ const rotationAnimation = computed(() => {
         return { angle: 0, duration: 0 };
     }
 
+    // XXX windRef is not in windVariation
     const { variationRange, windRef } = windVariations;
 
     // Calculate rotation angle based on variationRange
@@ -82,6 +83,7 @@ const swingAnimation = computed(() => {
         return { angle: 0, duration: 0 };
     }
 
+    // XXX How this can work? windVarions does not return these values
     const { averageSpeed, maxGust, windRef } = windVariations;
     const gustDiff = maxGust - averageSpeed;
 
