@@ -1237,17 +1237,19 @@ function Title() {
 export function Root() {
     return html`
         <div class="content grid">
-            ${ERRORS.value.length > 0
-                ? html`
-                      <div id="errors" class="errors">
-                          ${ERRORS.value.map((error) => {
-                              return html`
-                                  <p>${error}</p>
-                              `;
-                          })}
-                      </div>
-                  `
-                : null}
+            ${
+                ERRORS.value.length > 0
+                    ? html`
+                          <div id="errors" class="errors">
+                              ${ERRORS.value.map((error) => {
+                                  return html`
+                                      <p>${error}</p>
+                                  `;
+                              })}
+                          </div>
+                      `
+                    : null
+            }
 
             <${Title} />
 
