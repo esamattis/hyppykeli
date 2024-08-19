@@ -1190,7 +1190,7 @@ const GUST_THRESHOLDS = {
     LOW: 3,
     MEDIUM: 4,
     HIGH: 7,
-    VERY_HIGH: 11,
+    VERY_HIGH: 9.5,
 };
 
 export const GUST_DIFF_THRESHOLDS = {
@@ -1444,8 +1444,11 @@ export const WIND_VARIATIONS = computed(() => {
     const result = {
         variationRange,
         averageDirection,
-        color: COLOR_MAPPINGS[windRef] || "green",
+        windRef,
+        color: COLOR_MAPPINGS[windRef] ?? "green",
         extraWidth: calculateExtraWidth(maxGust, averageSpeed),
+        averageSpeed,
+        maxGust,
     };
 
     debug("WIND_VARIATIONS: result = ", result);
