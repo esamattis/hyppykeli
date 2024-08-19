@@ -572,3 +572,11 @@ h2 .date {
     grid-template-columns: 1fr 1fr 1fr;
     gap: 2px;
 }
+
+.dynamic-parachute {
+    fill: var(--parachute-color);
+}
+
+.parachute-color {
+    fill: var(--parachute-color);
+}

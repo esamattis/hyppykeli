@@ -1053,26 +1053,7 @@ function Anvil() {
     `;
 }
 
-function Parachute() {
-    const latestGust = LATEST_OBSERVATION.value?.gust ?? 0;
-    const level = getWarningLevel(latestGust);
-
-    let animation = "";
-    if (level === "warning") {
-        animation = "swing";
-    } else if (level === "danger") {
-        animation = "rotate";
-    }
-
-    return html`
-        <span class="scale">
-            <img
-                src="/assets/parachute.svg"
-                class="icon-parachute ${animation}"
-            />
-        </span>
-    `;
-}
+import { DynamicParachute } from "./DynamicParachute.js";
 
 function ForecastLocationInfo() {
     return html`
@@ -1256,17 +1237,19 @@ function Title() {
 export function Root() {
     return html`
         <div class="content grid">
-            ${ERRORS.value.length > 0
-                ? html`
-                      <div id="errors" class="errors">
-                          ${ERRORS.value.map((error) => {
-                              return html`
-                                  <p>${error}</p>
-                              `;
-                          })}
-                      </div>
-                  `
-                : null}
+            ${
+                ERRORS.value.length > 0
+                    ? html`
+                          <div id="errors" class="errors">
+                              ${ERRORS.value.map((error) => {
+                                  return html`
+                                      <p>${error}</p>
+                                  `;
+                              })}
+                          </div>
+                      `
+                    : null
+            }
 
             <${Title} />
 
@@ -1285,7 +1268,9 @@ export function Root() {
                 <h2 class="h2-with-icon">
                     Tuulet
                     <div style="width: 1ch"></div>
-                    <${Parachute} />
+                    <${ErrorBoundary}>
+                        <${DynamicParachute} />
+                    </${ErrorBoundary}>
                 </h2>
                 <${WindSummary} />
             </div>
