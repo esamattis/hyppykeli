@@ -1268,7 +1268,9 @@ export function Root() {
                 <h2 class="h2-with-icon">
                     Tuulet
                     <div style="width: 1ch"></div>
-                    <${DynamicParachute} />
+                    <${ErrorBoundary}>
+                        <${DynamicParachute} />
+                    </${ErrorBoundary}>
                 </h2>
                 <${WindSummary} />
             </div>

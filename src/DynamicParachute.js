@@ -1,7 +1,10 @@
+// @ts-check
+
 import { html } from "htm/preact";
 import { useEffect, useRef } from "preact/hooks";
 import { computed } from "@preact/signals";
 import { LATEST_OBSERVATION, WIND_VARIATIONS } from "./data.js";
+import { debug } from "./utils.js";
 
 /**
  * Calculates common animation parameters based on input factors.
@@ -26,7 +29,7 @@ const calculateAnimationParams = (
 /**
  * Computed signal that determines the color of the parachute based on wind variations.
  * Defaults to "#90EE90" if no color is provided in the wind variations data.
- * @type {import('@preact/signals').Computed<string>}
+ * @type {Signal<string>}
  */
 const parachuteColor = computed(() => {
     return WIND_VARIATIONS.value?.color ?? "#90EE90";
@@ -34,7 +37,7 @@ const parachuteColor = computed(() => {
 
 /**
  * Computed signal that calculates the rotation animation for the parachute based on wind variations.
- * @type {import('@preact/signals').Computed<{ angle: number, duration: number }>}
+ * @type {ReadonlySignal<{ angle: number, duration: number }>}
  */
 const rotationAnimation = computed(() => {
     const windVariations = WIND_VARIATIONS.value;
@@ -43,6 +46,7 @@ const rotationAnimation = computed(() => {
         return { angle: 0, duration: 0 };
     }
 
+    // XXX windRef is not in windVariation
     const { variationRange, windRef } = windVariations;
 
     // Calculate rotation angle based on variationRange
@@ -62,7 +66,7 @@ const rotationAnimation = computed(() => {
         windRef,
     );
 
-    console.log(
+    debug(
         `Rotation animation calculated: duration=${duration}, angle=${calculatedAngle}, variationRange=${variationRange}, windRef=${windRef}`,
     );
     return { angle: calculatedAngle, duration };
@@ -70,7 +74,7 @@ const rotationAnimation = computed(() => {
 
 /**
  * Computed signal that calculates the swing animation for the parachute based on wind variations.
- * @type {import('@preact/signals').Computed<{ angle: number, duration: number }>}
+ * @type {ReadonlySignal<{ angle: number, duration: number }>}
  */
 const swingAnimation = computed(() => {
     const windVariations = WIND_VARIATIONS.value;
@@ -79,6 +83,7 @@ const swingAnimation = computed(() => {
         return { angle: 0, duration: 0 };
     }
 
+    // XXX How this can work? windVarions does not return these values
     const { averageSpeed, maxGust, windRef } = windVariations;
     const gustDiff = maxGust - averageSpeed;
 
@@ -93,7 +98,7 @@ const swingAnimation = computed(() => {
         windRef,
     );
 
-    console.log(
+    debug(
         `Swing animation calculated: angle=${angle}, duration=${duration}, gustDiff=${gustDiff}, windRef=${windRef}`,
     );
     return { angle, duration };
@@ -104,20 +109,21 @@ const swingAnimation = computed(() => {
  * The parachute's color, rotation, and swing are controlled by wind variations.
  */
 export function DynamicParachute() {
+    /** @type {import("preact/compat").MutableRefObject<SVGElement|null>} */
     const svgRef = useRef(null);
 
     /**
      * Applies the parachute color and animations to the SVG element.
      */
     useEffect(() => {
-        if (svgRef.current) {
+        if (svgRef.current instanceof SVGElement) {
             const svg = svgRef.current;
             const swingContainer = svg.closest(".swing-container");
             const rotateContainer = svg.closest(".rotate-container");
 
             svg.style.setProperty("--parachute-color", parachuteColor.value);
 
-            if (swingContainer) {
+            if (swingContainer instanceof HTMLElement) {
                 const { angle, duration } = swingAnimation.value;
                 swingContainer.style.setProperty(
                     "--swing-angle",
@@ -127,12 +133,12 @@ export function DynamicParachute() {
                     "--swing-animation",
                     `swing ${duration}s ease-in-out infinite alternate`,
                 );
-                console.log(
+                debug(
                     `Swing animation applied: ${swingContainer.style.getPropertyValue("--swing-animation")}`,
                 );
             }
 
-            if (rotateContainer) {
+            if (rotateContainer instanceof HTMLElement) {
                 const { angle, duration } = rotationAnimation.value;
                 if (angle > 0 && duration > 0) {
                     rotateContainer.style.setProperty(
@@ -143,7 +149,7 @@ export function DynamicParachute() {
                         "--rotate-animation",
                         `rotate ${duration}s linear infinite alternate`,
                     );
-                    console.log(
+                    debug(
                         `Rotate animation applied: ${rotateContainer.style.getPropertyValue("--rotate-animation")}`,
                     );
                 } else {
