@@ -1432,7 +1432,7 @@ export const WIND_VARIATIONS = computed(() => {
         maxGust,
         variationRange,
     );
-    const windRef = ["0", "1", "2", "3", "4"][windRefValue];
+    const windRef = [0, 1, 2, 3, 4][windRefValue];
 
     if (windRef === undefined) {
         console.error(
