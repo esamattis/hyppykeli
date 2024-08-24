@@ -2,7 +2,6 @@
 // docs https://opendata.fmi.fi/wfs?service=WFS&version=2.0.0&request=describeStoredQueries&
 import { computed, effect, signal } from "@preact/signals";
 import {
-    calculateDirectionDifference,
     debug,
     filterNullish,
     isNullish,
@@ -164,38 +163,6 @@ export const SINGLE_FORECAST = computed(() => {
         return fore.time.getTime() > inTwoHours;
     });
 });
-
-/**
- * @param {WeatherData | undefined} original
- * @returns {WeatherData|undefined}
- */
-function mockLatestObservation(original) {
-    const url = new URL(location.href);
-    // Allow testing only on dev sites
-    if (url.hostname.endsWith("hyppykeli.fi")) {
-        return;
-    }
-
-    const customGust = url.searchParams.get("gust");
-    const customSpeed = url.searchParams.get("speed");
-    const customDirection = url.searchParams.get("direction");
-
-    let mock = original;
-
-    mock = {
-        source: "fmi",
-        lowCloudCover: undefined,
-        middleCloudCover: undefined,
-        time: new Date(),
-        ...mock,
-        gust: Number(customGust) || mock?.gust || 0,
-        speed: Number(customSpeed) || mock?.speed || 0,
-        direction: Number(customDirection) || mock?.direction || 0,
-        temperature: mock?.temperature || 0,
-    };
-
-    return mock;
-}
 
 /**
  * @type {Signal<number>}
@@ -886,12 +853,64 @@ export async function fetchFmiObservations(fmisid) {
         };
     });
 
-    const mock = mockLatestObservation(combined[0]);
-    if (mock) {
-        combined[0] = mock;
-    }
+    mockAllEntries(combined);
 
     OBSERVATIONS.value = combined;
+}
+
+/**
+ * @param {WeatherData[]} target
+ */
+function mockAllEntries(target) {
+    mockEntries({
+        target: target,
+        targetKey: "direction",
+        queryKey: "__directions",
+    });
+
+    mockEntries({
+        target: target,
+        targetKey: "gust",
+        queryKey: "__gusts",
+    });
+
+    mockEntries({
+        target: target,
+        targetKey: "speed",
+        queryKey: "__speeds",
+    });
+}
+
+/**
+ * @template {keyof WeatherData} TKeys
+ * @template {keyof QueryParams} QKeys
+ *
+ * @param {Object} params
+ * @param {QKeys} params.queryKey
+ * @param {TKeys} params.targetKey
+ * @param {WeatherData[]} params.target
+ */
+function mockEntries(params) {
+    // do not allow mocking on the production site
+    if (location.hostname === "hyppykeli.fi") {
+        return;
+    }
+
+    const mock =
+        QUERY_PARAMS.value[params.queryKey]
+            ?.split(",")
+            .map((num) => Number(num))
+            .reverse() ?? [];
+
+    let index = 0;
+    for (const value of mock) {
+        const entry = params.target[index];
+        if (entry) {
+            // @ts-ignore
+            entry[params.targetKey] = value;
+        }
+        index++;
+    }
 }
 
 /**
@@ -1029,7 +1048,11 @@ async function fetchRoadObservations(roadsid) {
 
     combined.reverse();
 
-    OBSERVATIONS.value = [obs, ...combined];
+    const full = [obs, ...combined];
+
+    mockAllEntries(full);
+
+    OBSERVATIONS.value = full;
 }
 
 async function fetchObservations() {
