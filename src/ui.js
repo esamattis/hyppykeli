@@ -335,8 +335,7 @@ function DataTable(props) {
 }
 
 function WindSummary() {
-    const history = !!HOVERED_OBSERVATION.value;
-    const obs = HOVERED_OBSERVATION.value || LATEST_OBSERVATION.value;
+    const obs = LATEST_OBSERVATION.value;
 
     if (!obs) {
         return null;
@@ -349,8 +348,7 @@ function WindSummary() {
     }
 
     return html`
-        <p class=${history ? "historic" : ""}>
-
+        <p>
             <div class="latest-wind-cell">
             Puuska
                 <span
@@ -1121,7 +1119,7 @@ function Info() {
     const metar = METARS.value?.[0];
 
     return html`
-        <div id="info">
+        <div class="info">
             ${STATION_NAME.value
                 ? html`
                       Havaintotiedot haettu havaintoasemalta${" "}
@@ -1170,12 +1168,8 @@ function Info() {
 }
 
 function Title() {
-    const historic = !!HOVERED_OBSERVATION.value;
-    const time =
-        HOVERED_OBSERVATION.value?.time ?? LATEST_OBSERVATION.value?.time;
-    const temperature =
-        HOVERED_OBSERVATION.value?.temperature ??
-        LATEST_OBSERVATION.value?.temperature;
+    const time = LATEST_OBSERVATION.value?.time;
+    const temperature = LATEST_OBSERVATION.value?.temperature;
 
     const temps = isNullish(temperature)
         ? null
@@ -1187,14 +1181,11 @@ function Title() {
           };
 
     return html`
-        <h1 id="title">
+        <h1>
             <span class="title-name">${NAME}</span>
             ${temps
                 ? html`
-                      <span
-                          class="title-temp"
-                          style=${{ opacity: historic ? 0.5 : 1 }}
-                      >
+                      <span class="title-temp">
                           <span class="nowrap">
                               ${temperature?.toFixed(1)}°C maassa,
                           </span>
@@ -1234,6 +1225,18 @@ function Title() {
     `;
 }
 
+function HoverCompass() {
+    if (!HOVERED_OBSERVATION.value) {
+        return null;
+    }
+
+    return h(Compass, {
+        className: "hover-compass",
+        showHovered: true,
+        history: false,
+    });
+}
+
 export function Root() {
     return html`
         <div class="content grid">
@@ -1251,9 +1254,10 @@ export function Root() {
                     : null
             }
 
-            <${Title} />
-
-            <${Info} />
+            <div id="title">
+                <${Title} />
+                <${Info} />
+            </div>
 
             <div class="clouds" id="clouds">
                 <h2 class="h2-with-icon">
@@ -1268,14 +1272,16 @@ export function Root() {
                 <h2 class="h2-with-icon">
                     Tuulet
                     <div style="width: 1ch"></div>
-                    <${ErrorBoundary}>
-                        <${DynamicParachute} />
-                    </${ErrorBoundary}>
                 </h2>
                 <${WindSummary} />
             </div>
 
-            <${Compass} />
+            <div id="compass">
+                ${h(Compass, { history: true, showHovered: false })}
+                <${ErrorBoundary}>
+                    <${DynamicParachute} />
+                </${ErrorBoundary}>
+            </div>
 
             <${Graph} />
 
@@ -1327,6 +1333,8 @@ export function Root() {
         </div>
         <${SideMenu} />
         <${StickyFooter} />
+
+        ${h(HoverCompass, {})}
 
         <${RenderInjectedCSS} />
     `;
