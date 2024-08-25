@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Hyppykeli tests</title>
+        <style>
+            a {
+                display: block;
+                margin-bottom: 1ch;
+            }
+        </style>
+    </head>
+    <body>
+        <a
+            href="http://localhost:8000/dz/?fmisid=137208&icaocode=EFJY&__directions=10,90,180,270,260,300,270,270,270,90,90,90,90,90,0&__gusts=1,2,3,4,5,6,7,8,9.4,12.2"
+        >
+            Can mock fmi observations
+        </a>
+        <a
+            href="http://localhost:8000/dz/?roadsid=10035&lat=62.5551416&lon=23.571403&name=EFAL&__directions=10,90,180,270,260,300,270,270,270,90,90,90,90,90,0&__gusts=1,2,3,4,5,6,7,8,9.4,12.2"
+        >
+            Can mock road station observations
+        </a>
+
+        <a
+            href="http://localhost:8000/dz/?fmisid=104796&icaocode=EFLA&lat=61.146406&lon=25.693366&flyk_metar=1&__directions=10,90,180,270,260,300,270,270,270,90,90,90,90,90,0&__gusts=1,2,3,4,5,6,7,8,9.4,12.2&__speeds=1,2,4"
+        >
+            Can mock metar based observations
+        </a>
+    </body>
+</html>

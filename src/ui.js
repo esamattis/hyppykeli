@@ -1051,26 +1051,7 @@ function Anvil() {
     `;
 }
 
-function Parachute() {
-    const latestGust = LATEST_OBSERVATION.value?.gust ?? 0;
-    const level = getWarningLevel(latestGust);
-
-    let animation = "";
-    if (level === "warning") {
-        animation = "swing";
-    } else if (level === "danger") {
-        animation = "rotate";
-    }
-
-    return html`
-        <span class="scale">
-            <img
-                src="/assets/parachute.svg"
-                class="icon-parachute ${animation}"
-            />
-        </span>
-    `;
-}
+import { DynamicParachute } from "./DynamicParachute.js";
 
 function ForecastLocationInfo() {
     return html`
@@ -1259,17 +1240,19 @@ function HoverCompass() {
 export function Root() {
     return html`
         <div class="content grid">
-            ${ERRORS.value.length > 0
-                ? html`
-                      <div id="errors" class="errors">
-                          ${ERRORS.value.map((error) => {
-                              return html`
-                                  <p>${error}</p>
-                              `;
-                          })}
-                      </div>
-                  `
-                : null}
+            ${
+                ERRORS.value.length > 0
+                    ? html`
+                          <div id="errors" class="errors">
+                              ${ERRORS.value.map((error) => {
+                                  return html`
+                                      <p>${error}</p>
+                                  `;
+                              })}
+                          </div>
+                      `
+                    : null
+            }
 
             <div id="title">
                 <${Title} />
@@ -1295,7 +1278,9 @@ export function Root() {
 
             <div id="compass">
                 ${h(Compass, { history: true, showHovered: false })}
-                <${Parachute} />
+                <${ErrorBoundary}>
+                    <${DynamicParachute} />
+                </${ErrorBoundary}>
             </div>
 
             <${Graph} />

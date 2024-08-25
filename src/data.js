@@ -2,7 +2,6 @@
 // docs https://opendata.fmi.fi/wfs?service=WFS&version=2.0.0&request=describeStoredQueries&
 import { computed, effect, signal } from "@preact/signals";
 import {
-    calculateDirectionDifference,
     debug,
     filterNullish,
     isNullish,
@@ -164,38 +163,6 @@ export const SINGLE_FORECAST = computed(() => {
         return fore.time.getTime() > inTwoHours;
     });
 });
-
-/**
- * @param {WeatherData | undefined} original
- * @returns {WeatherData|undefined}
- */
-function mockLatestObservation(original) {
-    const url = new URL(location.href);
-    // Allow testing only on dev sites
-    if (url.hostname.endsWith("hyppykeli.fi")) {
-        return;
-    }
-
-    const customGust = url.searchParams.get("gust");
-    const customSpeed = url.searchParams.get("speed");
-    const customDirection = url.searchParams.get("direction");
-
-    let mock = original;
-
-    mock = {
-        source: "fmi",
-        lowCloudCover: undefined,
-        middleCloudCover: undefined,
-        time: new Date(),
-        ...mock,
-        gust: Number(customGust) || mock?.gust || 0,
-        speed: Number(customSpeed) || mock?.speed || 0,
-        direction: Number(customDirection) || mock?.direction || 0,
-        temperature: mock?.temperature || 0,
-    };
-
-    return mock;
-}
 
 /**
  * @type {Signal<number>}
@@ -886,12 +853,64 @@ export async function fetchFmiObservations(fmisid) {
         };
     });
 
-    const mock = mockLatestObservation(combined[0]);
-    if (mock) {
-        combined[0] = mock;
-    }
+    mockAllEntries(combined);
 
     OBSERVATIONS.value = combined;
+}
+
+/**
+ * @param {WeatherData[]} target
+ */
+function mockAllEntries(target) {
+    mockEntries({
+        target: target,
+        targetKey: "direction",
+        queryKey: "__directions",
+    });
+
+    mockEntries({
+        target: target,
+        targetKey: "gust",
+        queryKey: "__gusts",
+    });
+
+    mockEntries({
+        target: target,
+        targetKey: "speed",
+        queryKey: "__speeds",
+    });
+}
+
+/**
+ * @template {keyof WeatherData} TKeys
+ * @template {keyof QueryParams} QKeys
+ *
+ * @param {Object} params
+ * @param {QKeys} params.queryKey
+ * @param {TKeys} params.targetKey
+ * @param {WeatherData[]} params.target
+ */
+function mockEntries(params) {
+    // do not allow mocking on the production site
+    if (location.hostname === "hyppykeli.fi") {
+        return;
+    }
+
+    const mock =
+        QUERY_PARAMS.value[params.queryKey]
+            ?.split(",")
+            .map((num) => Number(num))
+            .reverse() ?? [];
+
+    let index = 0;
+    for (const value of mock) {
+        const entry = params.target[index];
+        if (entry) {
+            // @ts-ignore
+            entry[params.targetKey] = value;
+        }
+        index++;
+    }
 }
 
 /**
@@ -1029,7 +1048,11 @@ async function fetchRoadObservations(roadsid) {
 
     combined.reverse();
 
-    OBSERVATIONS.value = [obs, ...combined];
+    const full = [obs, ...combined];
+
+    mockAllEntries(full);
+
+    OBSERVATIONS.value = full;
 }
 
 async function fetchObservations() {
@@ -1164,8 +1187,8 @@ QUERY_PARAMS.subscribe(() => {
 
 // Constants for WIND_VARIATIONS
 const DEBUG_SPEEDS = [1];
-const DEBUG_GUSTS = [6];
-const DEBUG_DIRECTIONS = [270, 270, 270, 270, 200, 200];
+const DEBUG_GUSTS = [9];
+const DEBUG_DIRECTIONS = [40, 0, 40, 0];
 
 const THIRTY_MINUTES_IN_MS = 30 * 60 * 1000;
 const MAX_EXTRA_WIDTH = 30;
@@ -1190,10 +1213,10 @@ const GUST_THRESHOLDS = {
     LOW: 3,
     MEDIUM: 4,
     HIGH: 7,
-    VERY_HIGH: 11,
+    VERY_HIGH: 9.5,
 };
 
-const GUST_DIFF_THRESHOLDS = {
+export const GUST_DIFF_THRESHOLDS = {
     MEDIUM: 4,
     HIGH: 5.5,
     VERY_HIGH: 7,
@@ -1432,7 +1455,7 @@ export const WIND_VARIATIONS = computed(() => {
         maxGust,
         variationRange,
     );
-    const windRef = ["0", "1", "2", "3", "4"][windRefValue];
+    const windRef = [0, 1, 2, 3, 4][windRefValue];
 
     if (windRef === undefined) {
         console.error(
@@ -1444,8 +1467,11 @@ export const WIND_VARIATIONS = computed(() => {
     const result = {
         variationRange,
         averageDirection,
-        color: COLOR_MAPPINGS[windRef] || "green",
+        windRef,
+        color: COLOR_MAPPINGS[windRef] ?? "green",
         extraWidth: calculateExtraWidth(maxGust, averageSpeed),
+        averageSpeed,
+        maxGust,
     };
 
     debug("WIND_VARIATIONS: result = ", result);

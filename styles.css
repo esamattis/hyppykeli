@@ -579,3 +579,7 @@ h2 .date {
 ul {
     margin-bottom: 0;
 }
+
+.dynamic-parachute {
+    fill: var(--parachute-color);
+}

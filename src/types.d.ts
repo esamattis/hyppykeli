@@ -1,4 +1,5 @@
 type Signal<T> = import("@preact/signals").Signal<T>;
+type ReadonlySignal<T> = import("@preact/signals").ReadonlySignal<T>;
 
 interface OpenMeteoWeatherData {
     latitude: number;
@@ -115,6 +116,9 @@ interface MetarData {
  * Interface representing query parameters.
  */
 interface QueryParams {
+    __gusts?: string;
+    __speeds?: string;
+    __directions?: string;
     debug?: string;
     mock?: string;
     rc?: string;
@@ -127,8 +131,6 @@ interface QueryParams {
     observation_range?: string;
     forecast_day?: string;
     forecast_range?: string;
-    direction?: string;
-    gust?: string;
     css?: string;
     high_winds_details?: string;
     flyk_metar?: string;
