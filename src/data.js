@@ -1205,37 +1205,30 @@ const COLOR_MAPPINGS = {
 
 const SPEED_THRESHOLDS = {
     LOW: 2,
-    MEDIUM: 6,
-    HIGH: 8,
+    MEDIUM: 4,
+    HIGH: 6,
+    VERY_HIGH: 8,
 };
 
 const GUST_THRESHOLDS = {
     LOW: 3,
-    MEDIUM: 4,
+    MEDIUM: 5,
     HIGH: 7,
     VERY_HIGH: 9.5,
 };
 
 export const GUST_DIFF_THRESHOLDS = {
-    MEDIUM: 4,
-    HIGH: 5.5,
-    VERY_HIGH: 7,
+    LOW: 2,
+    MEDIUM: 3,
+    HIGH: 4.5,
+    VERY_HIGH: 6,
 };
 
 const WIND_REF_BASE_TABLE = [
-    { gustSpeed: GUST_THRESHOLDS.VERY_HIGH, avgSpeed: 0, windRef: 4 },
-    {
-        gustSpeed: GUST_THRESHOLDS.HIGH,
-        avgSpeed: SPEED_THRESHOLDS.HIGH,
-        windRef: 3,
-    },
-    {
-        gustSpeed: GUST_THRESHOLDS.MEDIUM,
-        avgSpeed: SPEED_THRESHOLDS.MEDIUM,
-        windRef: 2,
-    },
-    { gustSpeed: GUST_THRESHOLDS.MEDIUM, avgSpeed: 0, windRef: 2 },
-    { gustSpeed: GUST_THRESHOLDS.LOW, avgSpeed: 0, windRef: 1 },
+    { gustSpeed: GUST_THRESHOLDS.VERY_HIGH, avgSpeed: SPEED_THRESHOLDS.VERY_HIGH, windRef: 4 },
+    { gustSpeed: GUST_THRESHOLDS.HIGH, avgSpeed: SPEED_THRESHOLDS.HIGH, windRef: 3 },
+    { gustSpeed: GUST_THRESHOLDS.MEDIUM, avgSpeed: SPEED_THRESHOLDS.MEDIUM, windRef: 2 },
+    { gustSpeed: GUST_THRESHOLDS.LOW, avgSpeed: SPEED_THRESHOLDS.LOW, windRef: 1 },
     { gustSpeed: 0, avgSpeed: 0, windRef: 0 },
 ];
 
@@ -1302,6 +1295,11 @@ function findBaseWindRef(avgSpeed, gustSpeed) {
             debug("BASE WINDREF: " + entry.windRef);
             return entry.windRef;
         }
+    }
+    // Lisätään erityistapaus alhaisille tuulille
+    if (avgSpeed <= SPEED_THRESHOLDS.MEDIUM && gustSpeed <= GUST_THRESHOLDS.MEDIUM) {
+        debug("BASE WINDREF: 1 (Low wind condition)");
+        return 1;
     }
     return 0;
 }
