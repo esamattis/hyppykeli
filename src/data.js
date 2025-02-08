@@ -715,8 +715,8 @@ function setMETARSfromMetarMessage(metars) {
                 m.clouds?.map((cloud) => {
                     return {
                         amount: cloud.abbreviation,
-                        base: cloud.altitude / 100,
-                        unit: "hft",
+                        base: cloud.altitude,
+                        unit: "ft",
                     };
                 }) ?? [],
         };
