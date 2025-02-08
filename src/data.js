@@ -948,11 +948,13 @@ async function fetchRoadObservations(roadsid) {
     const obsStartTime = getObservationStartTime();
 
     // load in background as not so important
-    /** @type {Promise<RoadStationHistoryValue[]|undefined>} */
+    /** @type {Promise<RoadStationHistory|undefined>} */
     const historyPromise = fetchJSON(
-        `https://tie.digitraffic.fi/api/beta/weather-history-data/${roadsid}?` +
+        // `https://tie.digitraffic.fi/api/beta/weather-history-data/${roadsid}?` +
+        `https://tie.digitraffic.fi/api/weather/v1/stations/${roadsid}/data/history?` +
             new URLSearchParams({
                 from: obsStartTime.toISOString(),
+                to: new Date().toISOString(),
             }),
         {
             headers: {
@@ -1005,7 +1007,7 @@ async function fetchRoadObservations(roadsid) {
         return;
     }
 
-    const gusts = history.filter((v) => v.sensorId === gust.id);
+    const gusts = history.values.filter((v) => v.sensorId === gust.id);
 
     /** @type {WeatherData[]} */
     const combined = gusts.flatMap((roadObservation) => {
@@ -1014,7 +1016,7 @@ async function fetchRoadObservations(roadsid) {
             return [];
         }
 
-        const otherObservations = history.filter(
+        const otherObservations = history.values.filter(
             (h) => h.measuredTime === roadObservation.measuredTime,
         );
 
