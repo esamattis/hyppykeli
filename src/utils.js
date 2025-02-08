@@ -269,11 +269,26 @@ export function getLiftedCondensationLevel(temp, dewPoint) {
 }
 
 /**
- * @param {number} value
- * @returns {number}
+ * @param {number} base
+ * @param {string} unit
+ * @returns {string}
  */
-export function feetToMeters(value) {
-    return value * 30.48;
+export function formatCloudBase(base, unit) {
+    if (unit === "ft") {
+        const meters = Math.round(base / 3.28084);
+        return `${meters}M`;
+    }
+
+    if (unit === "hft") {
+        const meters = Math.round(base * 100 * 0.3048);
+        return `${meters}M`;
+    }
+
+    if (unit === "m") {
+        return `${base}M`;
+    }
+
+    return `${base}${unit}`;
 }
 
 /**

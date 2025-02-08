@@ -473,7 +473,7 @@ function parseCloudsXml(xml) {
             return {
                 amount: cloudAmounts[amount] ?? amount,
                 base: Number(base?.innerHTML),
-                unit: base?.getAttribute("uom") ?? "?",
+                unit: base?.getAttribute("uom") ?? "[no unit]",
                 href: amountHref,
             };
         });

@@ -45,7 +45,7 @@ import {
     hasValidWindData,
     removeNullish,
     saveTextToFile,
-    feetToMeters,
+    formatCloudBase,
     whenAll,
     coordinateDistance,
 } from "./utils.js";
@@ -433,6 +433,30 @@ const CLOUD_TYPES = {
     OVC: "Täysi pilvikatto",
 };
 
+/**
+ * @param {Object} props
+ * @param {CloudLayer} props.cloud
+ **/
+function CloudLayer({ cloud }) {
+    return html`
+        <a href=${cloud.href}>${CLOUD_TYPES[cloud.amount] ?? cloud.amount}</a>
+        ${" "}
+        <b>${formatCloudBase(cloud.base, cloud.unit)}</b>
+        ${h(
+            Help,
+            { label: "?" },
+            html`
+                <p class="metar" style="font-size: 120%">
+                    METAR${" "}
+                    ${cloud.amount}${cloud.base
+                        .toString()
+                        .padStart(3, "0")}${cloud.unit}
+                </p>
+            `,
+        )}
+    `;
+}
+
 function CloudSummary() {
     const metar = METARS.value?.at(-1);
     const latest = LATEST_OBSERVATION.value;
@@ -450,30 +474,7 @@ function CloudSummary() {
             <li>
                 ${msg
                     ? msg
-                    : metar?.clouds.map(
-                          (cloud) => html`
-                              <a href=${cloud.href}>
-                                  ${CLOUD_TYPES[cloud.amount] ?? cloud.amount}
-                              </a>
-                              ${" "}
-                              <b>
-                                  ${Math.round(feetToMeters(cloud.base) / 10) *
-                                  10}M
-                              </b>
-                              ${h(
-                                  Help,
-                                  { label: "?" },
-                                  html`
-                                      <p class="metar" style="font-size: 120%">
-                                          METAR${" "}
-                                          ${cloud.amount}${cloud.base
-                                              .toString()
-                                              .padStart(3, "0")}
-                                      </p>
-                                  `,
-                              )}
-                          `,
-                      )}
+                    : metar?.clouds.map((cloud) => h(CloudLayer, { cloud }))}
                 ${metar?.cb ? "Ukkospilviä ⚡️" : null}
             </li>
 
