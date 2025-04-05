@@ -1007,12 +1007,12 @@ async function fetchRoadObservations(roadsid) {
         return;
     }
 
-    const gusts = history.values.filter((v) => v.sensorId === gust.id);
+    const gusts = history.values.filter((v) => v.id === gust.id);
 
     /** @type {WeatherData[]} */
     const combined = gusts.flatMap((roadObservation) => {
         // just pick gusts to get an single array of observations
-        if (roadObservation.sensorId !== gust.id) {
+        if (roadObservation.id !== gust.id) {
             return [];
         }
 
@@ -1022,25 +1022,25 @@ async function fetchRoadObservations(roadsid) {
 
         // find matching history for other values than the gust
         const windHistory = otherObservations.find(
-            (ob) => ob.sensorId === wind?.id,
-        )?.sensorValue;
+            (ob) => ob.id === wind?.id,
+        )?.value;
 
         const directionHistory = otherObservations.find(
-            (ob) => ob.sensorId === windDirection?.id,
-        )?.sensorValue;
+            (ob) => ob.id === windDirection?.id,
+        )?.value;
 
         const temperatureHistory = otherObservations.find(
-            (ob) => ob.sensorId === temperature?.id,
-        )?.sensorValue;
+            (ob) => ob.id === temperature?.id,
+        )?.value;
 
         const dewPointHistory = otherObservations.find(
-            (ob) => ob.sensorId === dewPoint?.id,
-        )?.sensorValue;
+            (ob) => ob.id === dewPoint?.id,
+        )?.value;
 
         return {
             source: "roads",
             time: new Date(roadObservation.measuredTime),
-            gust: roadObservation.sensorValue,
+            gust: roadObservation.value,
             speed: windHistory,
             direction: directionHistory,
             temperature: temperatureHistory,

@@ -248,10 +248,10 @@ interface RoadStationHistory {
 }
 
 interface RoadStationHistoryValue {
-    roadStationId: number;
-    sensorId: number;
-    sensorValue: number;
+    id: number;
+    stationId: number;
     measuredTime: string;
+    value: number;
 }
 
 interface RoadStations {
