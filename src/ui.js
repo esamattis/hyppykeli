@@ -1151,14 +1151,6 @@ function Info() {
                     return `Etäisyys havaintoasemalle ${km}km.`;
                 },
             )}
-            ${QUERY_PARAMS.value.flyk_metar
-                ? html`
-                      METAR-sanomat tarjoaa ${" "}
-                      <a href="https://flyk.com">flyk.com</a>
-                      ${" "}
-                  `
-                : null}
-
             <div class="disclaimer">
                 ${" "}Tietojen käyttö omalla vastuulla. Ei takeita että tiedot
                 ovat oikein.

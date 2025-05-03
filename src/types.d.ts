@@ -133,7 +133,6 @@ interface QueryParams {
     forecast_range?: string;
     css?: string;
     high_winds_details?: string;
-    flyk_metar?: string;
     save?: string;
 }
 
