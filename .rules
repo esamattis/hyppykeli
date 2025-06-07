@@ -2,8 +2,8 @@
 Coding rules for the project for AI agents and humans alike.
 
 The project uses TypeScript via JSDoc commments in *.js files with TypeScript
-strict mode enabled. Always check the diagnostics for typescript error. The
-error can be also checked by running `npm run tsc` command in the terminal.
+strict mode enabled. Always check the diagnostics for typescript errors. The
+errors can be also checked by running `npm run tsc` command in the terminal.
 
 When you need a helper type or interface, define it in the `types.ts` file.
 Those can be referenced globally in the project.
