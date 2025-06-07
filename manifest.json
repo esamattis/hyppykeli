@@ -3,8 +3,8 @@
     "start_url": "/?pwa=true",
     "short_name": "Hyppykeli",
     "display": "standalone",
-    "background_color": "skyblue",
-    "theme_color": "skyblue",
+    "background_color": "white",
+    "theme_color": "white",
     "icons": [
         {
             "src": "/assets/pwa-192x192.png",
