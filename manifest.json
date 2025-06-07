@@ -1,0 +1,20 @@
+{
+    "name": "Hyppykeli",
+    "start_url": "/?pwa=true",
+    "short_name": "Hyppykeli",
+    "display": "standalone",
+    "background_color": "skyblue",
+    "theme_color": "skyblue",
+    "icons": [
+        {
+            "src": "/assets/pwa-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/assets/pwa-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
