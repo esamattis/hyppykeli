@@ -1,0 +1,36 @@
+
+Coding rules for the project for AI agents and humans alike.
+
+The project uses TypeScript via JSDoc commments in *.js files with TypeScript
+strict mode enabled. Always check the diagnostics for typescript error. The
+error can be also checked by running `npm run tsc` command in the terminal.
+
+When you need a helper type or interface, define it in the `types.ts` file.
+Those can be referenced globally in the project.
+
+This is a "bundlerless" project. All 3rd deps are in the `vendor` directry and
+refeneced via a importmap in the dz/index.html file.
+
+The project uses Preact.js for rendering the UI components. The Components are
+written using the `htm` tagged template literal helper to avoid requiring JSX
+compilation step.
+
+When referencing a local custom component that takes in props in a `htm` template, use the
+use the `h` function from "htm/preact" to render the component. For example:
+
+import { h, html } from "htm/preact";
+
+html`
+    ${h(
+        Help,
+        { label: "?" },
+        html`
+            <p class="metar" style="font-size: 120%">
+                ${cloud.amount}${" "}${cloud.base}${cloud.unit}
+            </p>
+        `,
+    )}
+`;
+
+
+This is to ensure that props are typechecked correctly.
