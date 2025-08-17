@@ -397,105 +397,6 @@ function parseTimeSeries(doc, id, fallback) {
 }
 
 /**
- * @param {Document} xml
- * @returns {MetarData[]}
- */
-function parseCloudsXml(xml) {
-    const members = Array.from(xml.querySelectorAll("member"));
-
-    return members.flatMap((member) => {
-        const time = new Date(
-            member.querySelector("timePosition")?.innerHTML ?? new Date(),
-        );
-
-        const elevation = Number(
-            member.querySelector("fieldElevation")?.innerHTML ?? -1,
-        );
-
-        const windSpeed = Number(
-            member.querySelector("meanWindSpeed")?.innerHTML ?? -1,
-        );
-
-        const temperature =
-            safeParseNumber(member.querySelector("airTemperature")?.innerHTML)
-                .value ?? -200;
-
-        const windGust =
-            safeParseNumber(
-                //  TODO: XXX not correct!
-                member.querySelector("windGust")?.innerHTML,
-            ).value ?? -1;
-
-        const windDirection = Number(
-            member.querySelector("meanWindDirection")?.innerHTML ?? -1,
-        );
-
-        const metar = member.querySelector("source input")?.innerHTML;
-
-        if (!metar) {
-            return [];
-        }
-
-        const cloudNodes = member
-            .querySelector("MeteorologicalAerodromeObservationRecord cloud")
-            ?.querySelectorAll("CloudLayer");
-
-        const clouds = Array.from(cloudNodes ?? []).flatMap((xml) => {
-            const base = xml.querySelector("base");
-            if (!base) {
-                return [];
-            }
-
-            const amountHref = xml
-                .querySelector("amount")
-                ?.getAttribute("xlink:href");
-
-            if (!amountHref) {
-                return [];
-            }
-
-            // https://codes.wmo.int/bufr4/codeflag/0-20-008/1
-            const amount = new URL(amountHref).pathname.split("/").pop();
-
-            /** @type {Record<string, string>} */
-            const cloudAmounts = {
-                1: "FEW", // Few, FEW
-                2: "SCT", // Scattered, SCT
-                3: "BKN", // Broken, BKN
-                4: "OVC", // Overcast, OVC
-                // TODO: There are more types of clouds. Where to get the full list?
-            };
-
-            if (!amount) {
-                return [];
-            }
-
-            return {
-                amount: cloudAmounts[amount] ?? amount,
-                base: Number(base?.innerHTML),
-                unit: base?.getAttribute("uom") ?? "?",
-                href: amountHref,
-            };
-        });
-
-        return {
-            wind: {
-                gust: windGust,
-                speed: windSpeed,
-                direction: windDirection,
-                unit: "kt",
-            },
-            cb: /[^ ]CB /.test(metar),
-            temperature,
-            time,
-            elevation,
-            clouds,
-            metar,
-        };
-    });
-}
-
-/**
  * @param {string} msg
  */
 export function addError(msg) {
@@ -648,36 +549,6 @@ async function fetchFmiForecasts(coordinates) {
 }
 
 /**
- * @param {string} icaocode
- * @param {Date} startTime
- * @param {number} cacheBust
- */
-async function fetchFmiMetar(icaocode, startTime, cacheBust) {
-    const xml = await fmiRequest(
-        "fmi::avi::observations::iwxxm",
-        {
-            cch: cacheBust,
-            starttime: startTime.toISOString(),
-            icaocode,
-        },
-        "/example_data/metar.xml",
-    );
-
-    if (xml === "error") {
-        addError(`Virhe METAR-sanomaa hakiessa kentälle ${icaocode}.`);
-        return;
-    }
-
-    if (!xml || !xml.querySelector("member")) {
-        addError(`Tuntematon lentokentän tunnus ${icaocode}.`);
-        return;
-    }
-
-    const clouds = parseCloudsXml(xml);
-    METARS.value = clouds;
-}
-
-/**
  * Fetches METAR data from the Flyk API for a given ICAO code.
  *
  * @param {string} icaocode - The ICAO code of the airport.
@@ -715,8 +586,8 @@ function setMETARSfromMetarMessage(metars) {
                 m.clouds?.map((cloud) => {
                     return {
                         amount: cloud.abbreviation,
-                        base: cloud.altitude / 100,
-                        unit: "hft",
+                        base: cloud.altitude,
+                        unit: "ft",
                     };
                 }) ?? [],
         };
@@ -752,17 +623,13 @@ export async function fetchFmiObservations(fmisid) {
 
     if (icaocode) {
         // intentionally not awaiting, it can be updated on the background
-        if (QUERY_PARAMS.value.flyk_metar) {
-            fetchFlykMetar(icaocode).then((metar) => {
-                if (metar) {
-                    setMETARSfromMetarMessage([metar]);
-                } else {
-                    addError(`Ei METAR-sanomaa kentälle ${icaocode}.`);
-                }
-            });
-        } else {
-            fetchFmiMetar(icaocode, obsStartTime, cacheBust);
-        }
+        fetchFlykMetar(icaocode).then((metar) => {
+            if (metar) {
+                setMETARSfromMetarMessage([metar]);
+            } else {
+                addError(`Ei METAR-sanomaa kentälle ${icaocode}.`);
+            }
+        });
     } else {
         addError("Ei METAR tietoja.");
     }
@@ -948,11 +815,13 @@ async function fetchRoadObservations(roadsid) {
     const obsStartTime = getObservationStartTime();
 
     // load in background as not so important
-    /** @type {Promise<RoadStationHistoryValue[]|undefined>} */
+    /** @type {Promise<RoadStationHistory|undefined>} */
     const historyPromise = fetchJSON(
-        `https://tie.digitraffic.fi/api/beta/weather-history-data/${roadsid}?` +
+        // `https://tie.digitraffic.fi/api/beta/weather-history-data/${roadsid}?` +
+        `https://tie.digitraffic.fi/api/weather/v1/stations/${roadsid}/data/history?` +
             new URLSearchParams({
                 from: obsStartTime.toISOString(),
+                to: new Date().toISOString(),
             }),
         {
             headers: {
@@ -1005,40 +874,40 @@ async function fetchRoadObservations(roadsid) {
         return;
     }
 
-    const gusts = history.filter((v) => v.sensorId === gust.id);
+    const gusts = history.values.filter((v) => v.id === gust.id);
 
     /** @type {WeatherData[]} */
     const combined = gusts.flatMap((roadObservation) => {
         // just pick gusts to get an single array of observations
-        if (roadObservation.sensorId !== gust.id) {
+        if (roadObservation.id !== gust.id) {
             return [];
         }
 
-        const otherObservations = history.filter(
+        const otherObservations = history.values.filter(
             (h) => h.measuredTime === roadObservation.measuredTime,
         );
 
         // find matching history for other values than the gust
         const windHistory = otherObservations.find(
-            (ob) => ob.sensorId === wind?.id,
-        )?.sensorValue;
+            (ob) => ob.id === wind?.id,
+        )?.value;
 
         const directionHistory = otherObservations.find(
-            (ob) => ob.sensorId === windDirection?.id,
-        )?.sensorValue;
+            (ob) => ob.id === windDirection?.id,
+        )?.value;
 
         const temperatureHistory = otherObservations.find(
-            (ob) => ob.sensorId === temperature?.id,
-        )?.sensorValue;
+            (ob) => ob.id === temperature?.id,
+        )?.value;
 
         const dewPointHistory = otherObservations.find(
-            (ob) => ob.sensorId === dewPoint?.id,
-        )?.sensorValue;
+            (ob) => ob.id === dewPoint?.id,
+        )?.value;
 
         return {
             source: "roads",
             time: new Date(roadObservation.measuredTime),
-            gust: roadObservation.sensorValue,
+            gust: roadObservation.value,
             speed: windHistory,
             direction: directionHistory,
             temperature: temperatureHistory,

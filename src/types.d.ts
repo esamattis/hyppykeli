@@ -133,7 +133,6 @@ interface QueryParams {
     forecast_range?: string;
     css?: string;
     high_winds_details?: string;
-    flyk_metar?: string;
     save?: string;
 }
 
@@ -241,11 +240,17 @@ interface RoadStationObservations {
     sensorValues: RoadSensorValue[];
 }
 
+interface RoadStationHistory {
+    id: string;
+    dataUpdatedTime: string;
+    values: RoadStationHistoryValue[];
+}
+
 interface RoadStationHistoryValue {
-    roadStationId: number;
-    sensorId: number;
-    sensorValue: number;
+    id: number;
+    stationId: number;
     measuredTime: string;
+    value: number;
 }
 
 interface RoadStations {
