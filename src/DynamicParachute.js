@@ -1,5 +1,3 @@
-// KORVAA KOKO TIEDOSTON src/DynamicParachute.js SISÄLTÖ TÄLLÄ
-
 // @ts-check
 import { html } from "htm/preact";
 import { useEffect, useRef } from "preact/hooks";
@@ -24,7 +22,7 @@ const calculateAnimationParams = (baseAngle, baseDuration, windRef) => {
 };
 
 /**
- * Varjoliitimen väri määräytyy suoraan lasketun tuuliriskin (windRef) perusteella.
+ * Laskuvarjon väri määräytyy suoraan lasketun tuuliriskin (windRef) perusteella.
  * @src/types.d.ts {Signal<string>}
  */
 const parachuteColor = computed(() => {
@@ -32,7 +30,7 @@ const parachuteColor = computed(() => {
 });
 
 /**
- * Laskee varjoliitimen "pyörähdys"-animaation parametrit.
+ * Laskee laskuvarjon "pyörähdys"-animaation parametrit.
  * Animaatio perustuu tuulen suunnan vaihteluun (variationRange).
  * @src/types.d.ts {ReadonlySignal<{ angle: number, duration: number }>}
  */
@@ -57,7 +55,7 @@ const rotationAnimation = computed(() => {
 });
 
 /**
- * Laskee varjoliitimen "heiluri"-animaation parametrit.
+ * Laskee laskuvarjon "heiluri"-animaation parametrit.
  * Animaatio perustuu puuskaisuuteen (maxGust - averageSpeed).
  * @src/types.d.ts {ReadonlySignal<{ angle: number, duration: number }>}
  */
