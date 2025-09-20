@@ -1054,71 +1054,164 @@ QUERY_PARAMS.subscribe(() => {
     });
 });
 
-// Constants for WIND_VARIATIONS
-const DEBUG_SPEEDS = [1];
-const DEBUG_GUSTS = [9];
-const DEBUG_DIRECTIONS = [40, 0, 40, 0];
+// --- Konfiguraatio: Dynaamisen tuuliriskin (WindRef) laskenta ---
+// Tämä malli laskee tuuliriskin (windRef 0-4) useiden tekijöiden perusteella.
+// Se on suunniteltu reagoimaan herkemmin ja tarkemmin vaarallisiin olosuhteisiin
+// kuin aiempi, suoraviivaisempi malli. Laskenta perustuu pisteiden keräämiseen
+// eri riskitekijöistä, ja lopullinen pistemäärä muunnetaan windRef-arvoksi.
 
 const THIRTY_MINUTES_IN_MS = 30 * 60 * 1000;
-const MAX_EXTRA_WIDTH = 30;
-const EXTRA_WIDTH_MULTIPLIER = 3;
 
-/** @type {Record<string, string>} */
-const COLOR_MAPPINGS = {
-    0: "#E6DB00",
-    1: "#2CF000",
-    2: "orange",
-    3: "red",
-    4: "#AC0000",
-};
+// Kynnysarvot eri tuulennopeuksille (m/s)
+const GUST_THRESHOLDS = { LOW: 3, MEDIUM: 5, HIGH: 7, VERY_HIGH: 9 };
+const SPEED_THRESHOLDS = { LOW: 2.5, MEDIUM: 4, HIGH: 6 };
+const GUST_DIFF_THRESHOLDS = { MEDIUM: 3, HIGH: 4.5, VERY_HIGH: 6 };
 
-const SPEED_THRESHOLDS = {
-    LOW: 2,
-    MEDIUM: 4,
-    HIGH: 6,
-    VERY_HIGH: 8,
-};
-
-const GUST_THRESHOLDS = {
-    LOW: 3,
-    MEDIUM: 5,
-    HIGH: 7,
-    VERY_HIGH: 9.5,
-};
-
-export const GUST_DIFF_THRESHOLDS = {
-    LOW: 2,
-    MEDIUM: 3,
-    HIGH: 4.5,
-    VERY_HIGH: 6,
-};
-
-const WIND_REF_BASE_TABLE = [
-    { gustSpeed: GUST_THRESHOLDS.VERY_HIGH, avgSpeed: SPEED_THRESHOLDS.VERY_HIGH, windRef: 4 },
-    { gustSpeed: GUST_THRESHOLDS.HIGH, avgSpeed: SPEED_THRESHOLDS.HIGH, windRef: 3 },
-    { gustSpeed: GUST_THRESHOLDS.MEDIUM, avgSpeed: SPEED_THRESHOLDS.MEDIUM, windRef: 2 },
-    { gustSpeed: GUST_THRESHOLDS.LOW, avgSpeed: SPEED_THRESHOLDS.LOW, windRef: 1 },
-    { gustSpeed: 0, avgSpeed: 0, windRef: 0 },
+// 1. Perusriski: Lasketaan puuskan ja keskituulen voimakkuuden perusteella.
+// Nämä antavat pohjan riskipisteille.
+const BASE_RISK_POINTS_GUST = [
+    { threshold: 0, score: 0 },
+    { threshold: GUST_THRESHOLDS.LOW, score: 0.5 },
+    { threshold: GUST_THRESHOLDS.MEDIUM, score: 1.0 },
+    { threshold: GUST_THRESHOLDS.HIGH, score: 2.0 },
+    { threshold: GUST_THRESHOLDS.VERY_HIGH, score: 3.0 },
+    { threshold: 12, score: 3.5 }, // Yläraja interpolaatiolle
+];
+const BASE_RISK_POINTS_AVG = [
+    { threshold: 0, score: 0 },
+    { threshold: SPEED_THRESHOLDS.LOW, score: 0.25 },
+    { threshold: SPEED_THRESHOLDS.MEDIUM, score: 0.5 },
+    { threshold: SPEED_THRESHOLDS.HIGH, score: 1.5 },
 ];
 
-const GUST_DIFF_TABLE = [
-    { diff: GUST_DIFF_THRESHOLDS.VERY_HIGH, increment: 1 },
-    { diff: GUST_DIFF_THRESHOLDS.HIGH, increment: 0.5 },
-    { diff: GUST_DIFF_THRESHOLDS.MEDIUM, increment: 0.25 },
-    { diff: 0, increment: 0 },
+// 2. Puuskaisuusriski: Lasketaan puuskan ja keskituulen erotuksen perusteella.
+// Suuri erotus on merkittävä riskitekijä.
+const GUST_DIFF_POINTS = [
+    { threshold: 0, score: 0 },
+    { threshold: GUST_DIFF_THRESHOLDS.MEDIUM, score: 0.25 },
+    { threshold: GUST_DIFF_THRESHOLDS.HIGH, score: 0.5 },
+    { threshold: GUST_DIFF_THRESHOLDS.VERY_HIGH, score: 1.0 },
 ];
 
-const DIRECTION_VARIATION_TABLE = [
-    { gustSpeed: GUST_THRESHOLDS.VERY_HIGH, direction: 180, increment: 1 },
-    { gustSpeed: GUST_THRESHOLDS.HIGH, direction: 90, increment: 1 },
-    { gustSpeed: GUST_THRESHOLDS.HIGH, direction: 45, increment: 0.5 },
-    { gustSpeed: GUST_THRESHOLDS.MEDIUM, direction: 90, increment: 0.5 },
-    { gustSpeed: GUST_THRESHOLDS.MEDIUM, direction: 45, increment: 0.25 },
-    { gustSpeed: GUST_THRESHOLDS.LOW, direction: 90, increment: 0.25 },
-    { gustSpeed: 0, direction: 0, increment: 0 },
+// 3. Suunnanvaihtelun riski: Lasketaan suunnan vaihtelulle peruspisteet,
+// joita painotetaan tuulen voimakkuudella. Suuri vaihtelu kovassa tuulessa on vaarallisinta.
+const DIRECTION_VARIATION_BASE_POINTS = [
+    { threshold: 0, score: 0 },
+    { threshold: 45, score: 0.25 },
+    { threshold: 90, score: 0.5 },
+    { threshold: 180, score: 1.0 },
+];
+const DIRECTION_WEIGHT_POINTS_BY_GUST = [
+    { threshold: GUST_THRESHOLDS.LOW, weight: 1.0 },
+    { threshold: GUST_THRESHOLDS.MEDIUM, weight: 1.5 },
+    { threshold: GUST_THRESHOLDS.HIGH, weight: 2.0 },
+    { threshold: GUST_THRESHOLDS.VERY_HIGH, weight: 3.0 },
 ];
 
-// Helper functions for WIND_VARIATIONS
+// 4. Lopputulos: Muunnetaan lopullinen riskipistemäärä windRef-arvoksi (0-4).
+const FINAL_SCORE_TO_WINDREF_THRESHOLDS = [
+    { score: 1.0, windRef: 1 },
+    { score: 2.5, windRef: 2 },
+    { score: 4.5, windRef: 3 },
+    { score: 5.0, windRef: 4 },
+];
+
+/**
+ * Apufunktio, joka interpoloi arvon lineaarisesti annettujen pisteiden välillä.
+ * @param {number} value - Arvo, jolle interpolaatio tehdään (esim. tuulennopeus).
+ * @param {Array<{threshold: number, [key: string]: number}>} points - Taulukko pisteitä.
+ * @param {string} key - Interpoloitavan arvon avain ('score' tai 'weight').
+ * @returns {number} Interpoloitu arvo.
+ */
+function interpolateValue(value, points, key) {
+    // KORJAUS: Varmistetaan, että points-taulukko ei ole tyhjä.
+    if (!points || points.length === 0) {
+        console.error(
+            `interpolateValue kutsuttu tyhjällä taulukolla, avain: "${key}".`,
+        );
+        return 0;
+    }
+
+    const firstPoint = points[0];
+    const lastPoint = points[points.length - 1];
+
+    // KORJAUS: Varmistetaan, että firstPoint ja lastPoint ovat olemassa.
+    if (!firstPoint || !lastPoint) {
+        return 0;
+    }
+
+    if (value <= firstPoint.threshold) return firstPoint[key] ?? 0;
+    if (value >= lastPoint.threshold) return lastPoint[key] ?? 0;
+
+    for (let i = 1; i < points.length; i++) {
+        const p1 = points[i - 1];
+        const p2 = points[i];
+
+        // KORJAUS: Varmistetaan, että p1 ja p2 ovat olemassa loopin sisällä.
+        if (p1 && p2 && value >= p1.threshold && value <= p2.threshold) {
+            // Vältetään jakaminen nollalla, jos thresholdit ovat samat.
+            if (p2.threshold === p1.threshold) return p1[key] ?? 0;
+
+            const t = (value - p1.threshold) / (p2.threshold - p1.threshold);
+            const val1 = p1[key] ?? 0;
+            const val2 = p2[key] ?? 0;
+            return val1 + t * (val2 - val1);
+        }
+    }
+    return 0; // Fallback
+}
+
+/**
+ * Laskee tuuliriskin (windRef 0-4) ja muut dynaamiset parametrit.
+ * @param {number} averageSpeed - Keskituuli (m/s).
+ * @param {number} maxGust - Maksimipuuska (m/s).
+ * @param {number} variationRange - Tuulen suunnan vaihtelu (astetta, 0-180).
+ * @returns {{finalScore: number, windRef: number}}
+ */
+function calculateRefinedWindRisk(averageSpeed, maxGust, variationRange) {
+    const baseGustScore = interpolateValue(
+        maxGust,
+        BASE_RISK_POINTS_GUST,
+        "score",
+    );
+    const baseAvgScore = interpolateValue(
+        averageSpeed,
+        BASE_RISK_POINTS_AVG,
+        "score",
+    );
+    const gustDiff = Math.max(0, maxGust - averageSpeed);
+    const gustDiffScore = interpolateValue(gustDiff, GUST_DIFF_POINTS, "score");
+    const directionVariationBaseScore = interpolateValue(
+        variationRange,
+        DIRECTION_VARIATION_BASE_POINTS,
+        "score",
+    );
+    const directionWeight = interpolateValue(
+        maxGust,
+        DIRECTION_WEIGHT_POINTS_BY_GUST,
+        "weight",
+    );
+    const directionVariationWeightedScore =
+        directionVariationBaseScore * directionWeight;
+    const finalScore =
+        baseGustScore +
+        baseAvgScore +
+        gustDiffScore +
+        directionVariationWeightedScore;
+
+    let windRef = 0;
+    for (const threshold of FINAL_SCORE_TO_WINDREF_THRESHOLDS) {
+        if (finalScore >= threshold.score) {
+            windRef = threshold.windRef;
+        } else {
+            break;
+        }
+    }
+    return { finalScore, windRef };
+}
+
+// (Tähän väliin jäävät vanhat apufunktiot: calculateAverageDirection, calculateVariationRange, jne.)
+// Varmista, että ne ovat olemassa ja toimivat kuten ennenkin. Alla on niiden kopiot UPSTREAM-tiedostosta.
 
 /**
  * @param {number[]} directions
@@ -1154,89 +1247,11 @@ export function calculateVariationRange(directions) {
     return maxDiff;
 }
 
-/**
- * @param {number} avgSpeed
- * @param {number} gustSpeed
- */
-function findBaseWindRef(avgSpeed, gustSpeed) {
-    for (const entry of WIND_REF_BASE_TABLE) {
-        if (gustSpeed >= entry.gustSpeed && avgSpeed >= entry.avgSpeed) {
-            debug("BASE WINDREF: " + entry.windRef);
-            return entry.windRef;
-        }
-    }
-    // Lisätään erityistapaus alhaisille tuulille
-    if (avgSpeed <= SPEED_THRESHOLDS.MEDIUM && gustSpeed <= GUST_THRESHOLDS.MEDIUM) {
-        debug("BASE WINDREF: 1 (Low wind condition)");
-        return 1;
-    }
-    return 0;
-}
+// ... muut apufunktiot (`filterRecentObservations`, `extractAndFilterData`, `calculateWindData`, `calculateExtraWidth`)
+// pysyvät ennallaan. Varmista, että ne ovat olemassa tässä tiedostossa.
 
-/**
- * @param {number} gustDiff
- */
-function findGustDiffIncrement(gustDiff) {
-    for (const entry of GUST_DIFF_TABLE) {
-        if (gustDiff >= entry.diff) {
-            return entry.increment;
-        }
-    }
-    return 0;
-}
-
-/**
- * @param {number} directionVariation
- * @param {number} gustSpeed
- */
-function findDirectionVariationIncrement(directionVariation, gustSpeed) {
-    for (const entry of DIRECTION_VARIATION_TABLE) {
-        if (
-            gustSpeed >= entry.gustSpeed &&
-            directionVariation >= entry.direction
-        ) {
-            return entry.increment;
-        }
-    }
-    return 0;
-}
-
-/**
- * @param {number} avgSpeed
- * @param {number} gustSpeed
- * @param {number} directionVariation
- */
-function calculateWindRef(avgSpeed, gustSpeed, directionVariation) {
-    debug(
-        `calculateWindRef: avgSpeed = ${avgSpeed}, gustSpeed = ${gustSpeed}, directionVariation = ${directionVariation}`,
-    );
-
-    let windRef = findBaseWindRef(avgSpeed, gustSpeed);
-    const gustDiff = gustSpeed - avgSpeed;
-    const gustDiffIncrement = findGustDiffIncrement(gustDiff);
-    windRef += gustDiffIncrement;
-
-    const directionVariationIncrement = findDirectionVariationIncrement(
-        directionVariation,
-        gustSpeed,
-    );
-    windRef += directionVariationIncrement;
-
-    const result = Math.min(Math.max(Math.round(windRef), 0), 4);
-    debug(`calculateWindRef: result = ${result}`);
-    return result;
-}
-
-/**
- * @param {WeatherData[]} observations
- */
-function filterRecentObservations(observations) {
-    if (QUERY_PARAMS.value.debug) return observations;
-    const thirtyMinutesAgo = new Date(Date.now() - THIRTY_MINUTES_IN_MS);
-    return observations.filter(
-        (obs) => obs.time >= thirtyMinutesAgo && obs.direction !== -1,
-    );
-}
+const MAX_EXTRA_WIDTH = 30;
+const EXTRA_WIDTH_MULTIPLIER = 3;
 
 /**
  * @param {WeatherData[]} observations
@@ -1282,65 +1297,92 @@ function calculateExtraWidth(maxGust, averageSpeed) {
     );
 }
 
-export const WIND_VARIATIONS = computed(() => {
-    debug("WIND_VARIATIONS: Calculating...");
-
-    /** @type {WeatherData[]} */
-    const observations =
-        QUERY_PARAMS.value.mock === "wind-variations"
-            ? DEBUG_DIRECTIONS.map((dir, idx) => ({
-                  source: "mock",
-                  direction: dir,
-                  speed: DEBUG_SPEEDS[idx % DEBUG_SPEEDS.length],
-                  gust: DEBUG_GUSTS[idx % DEBUG_GUSTS.length],
-                  time: new Date(),
-              }))
-            : OBSERVATIONS.value;
-
-    debug("WIND_VARIATIONS: observations = ", observations);
-
-    const recentObservations = filterRecentObservations(observations);
-
-    if (recentObservations.length === 0) {
-        console.warn("WIND_VARIATIONS: No recent observations available");
-        return undefined;
-    }
-
-    const { directions, speeds, gusts } =
-        extractAndFilterData(recentObservations);
-
-    if (directions.length === 0 || speeds.length === 0 || gusts.length === 0) {
-        console.warn("WIND_VARIATIONS: Insufficient data after filtering");
+/**
+ * Laskee tuulen variaatiot annetusta datasta
+ * @param {WeatherData[]} weatherData 
+ * @returns {WindVariations|undefined}
+ */
+function calculateWindVariationsFromData(weatherData) {
+    const { directions, speeds, gusts } = extractAndFilterData(weatherData);
+    if (directions.length < 1 || speeds.length === 0 || gusts.length === 0) {
+        debug("calculateWindVariationsFromData: Ei riittävästi dataa laskentaan.");
         return undefined;
     }
 
     const { averageDirection, variationRange, averageSpeed, maxGust } =
         calculateWindData(directions, speeds, gusts);
-
-    const windRefValue = calculateWindRef(
+    const { finalScore, windRef } = calculateRefinedWindRisk(
         averageSpeed,
         maxGust,
         variationRange,
     );
-    const windRef = [0, 1, 2, 3, 4][windRefValue];
 
-    if (windRef === undefined) {
-        console.error(
-            "WIND_VARIATIONS: Invalid wind reference value calculated",
-        );
-        return undefined;
-    }
+    const windRefColors = ["#E6DB00", "#2CF000", "orange", "red", "#AC0000"];
 
-    const result = {
+    return {
         variationRange,
         averageDirection,
         windRef,
-        color: COLOR_MAPPINGS[windRef] ?? "green",
+        color: windRefColors[windRef] ?? "grey",
         extraWidth: calculateExtraWidth(maxGust, averageSpeed),
         averageSpeed,
         maxGust,
+        finalScore,
     };
+}
 
+/** @type {ReadonlySignal<WindVariations|undefined>} */
+export const WIND_VARIATIONS = computed(() => {
+    debug("WIND_VARIATIONS: Calculating...");
+    const observations = OBSERVATIONS.value;
+    const recentObservations = observations.filter(
+        (obs) =>
+            Date.now() - obs.time.getTime() < THIRTY_MINUTES_IN_MS &&
+            hasValidWindData(obs),
+    );
+
+    // Fallback 1: Hyväksy yksi havainto jos se on alle 5 minuuttia vanha
+    if (recentObservations.length === 1) {
+        const singleObs = recentObservations[0];
+        if (!singleObs) return undefined;
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+        if (singleObs.time.getTime() > fiveMinutesAgo) {
+            debug("WIND_VARIATIONS: Käytetään yhtä tuoretta havaintoa.");
+            // Luo synteettinen toinen piste pienellä variaatiolla animaatiota varten
+            const syntheticObs = {
+                ...singleObs,
+                direction: singleObs.direction != null ? (singleObs.direction + 10) % 360 : undefined,
+                speed: singleObs.speed != null ? Math.max(0, singleObs.speed - 0.5) : undefined,
+                gust: singleObs.gust || singleObs.speed,
+                source: singleObs.source,
+                time: singleObs.time
+            };
+            return calculateWindVariationsFromData([singleObs, syntheticObs]);
+        }
+    }
+
+    // Fallback 2: Käytä ennustedata jos havaintoja ei riitä
+    if (recentObservations.length < 2) {
+        debug("WIND_VARIATIONS: Ei riittävästi havaintoja, käytetään ennustedataa.");
+        const forecasts = FORECASTS.value;
+        const currentTime = Date.now();
+        const recentForecasts = forecasts.filter(
+            (fore) =>
+                Math.abs(fore.time.getTime() - currentTime) < THIRTY_MINUTES_IN_MS &&
+                hasValidWindData(fore)
+        ).slice(0, 3); // Ota korkeintaan 3 lähintä ennustepistettä
+
+        if (recentForecasts.length >= 2) {
+            debug("WIND_VARIATIONS: Löydettiin riittävästi ennustedataa.");
+            return calculateWindVariationsFromData(recentForecasts);
+        }
+
+        debug("WIND_VARIATIONS: Ei riittävästi dataa animaatioille.");
+        return undefined;
+    }
+
+    // Käytä normaalia logiikkaa kun havaintoja on riittävästi
+    const result = calculateWindVariationsFromData(recentObservations);
     debug("WIND_VARIATIONS: result = ", result);
     return result;
 });

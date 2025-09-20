@@ -61,76 +61,108 @@ const FREE_FALL_HEIGHTS = ["1500", "3000", "4200"];
  */
 const OM_DATA = signal(null);
 
-function getTimeRange() {
-    const now = new Date();
-    const start = now.toISOString();
-    const end = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() + 1,
-        23,
-        59,
-        59,
-    ).toISOString();
-    return { start, end };
-}
+
+
+// Korvaa nämä funktiot tiedostossa src/om.js
+
+const OM_API_BASE_URL = "https://api.open-meteo.com/v1/forecast";
+const OM_CACHE_KEY_DATA = "ECMWFWindAloft"; // Pidetään vanha nimi yhteensopivuuden vuoksi
+const OM_CACHE_KEY_TIME = "ECMWFWindAloftTime";
+const OM_CACHE_KEY_COORDS = "ECMWFWindAloftCoordinates";
+const OM_CACHE_EXPIRY_MS = 3600 * 1000; // 1 tunti
 
 /**
- * @param {string} coordinates
- * @returns {Promise<OpenMeteoWeatherData | null>}
+ * Hakee ylätuulidataa Open-Meteo API:sta annetuille koordinaateille.
+ * @param {string} coordinates - Koordinaatit merkkijonona "leveyspiiri,pituuspiiri".
+ * @returns {Promise<OpenMeteoWeatherData | null>} Palauttaa API-datan tai null virheen sattuessa.
  */
 async function fetchDataWithCoordinates(coordinates) {
-    const { start, end } = getTimeRange();
-    const [latitude, longitude] = coordinates.split(",").map(Number);
+    const hourlyParams = PRESSURE_LEVELS_RAW.map(
+        p => `${p.key},${p.directionKey}`
+    ).join(',');
 
-    const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=windspeed_1000hPa,windspeed_925hPa,windspeed_850hPa,windspeed_700hPa,windspeed_600hPa,winddirection_1000hPa,winddirection_925hPa,winddirection_850hPa,winddirection_700hPa,winddirection_600hPa&start=${start}&end=${end}`,
-    );
+    const now = new Date();
+    const start_date = now.toISOString().split('T')[0];
+    const end_date = new Date(new Date().setDate(now.getDate() + 1)).toISOString().split('T')[0];
 
-    console.log(`Alkupäivämäärä: ${start}`);
-    console.log(`Loppupäivämäärä: ${end}`);
-    console.log(`Leveysaste: ${latitude}, Pituusaste: ${longitude}`);
+    const coordinateNumbers = coordinates.split(",").map(Number);
+    const latitude = coordinateNumbers[0];
+    const longitude = coordinateNumbers[1];
+    
+    // KORJAUS: Varmistetaan, että koordinaatit ovat validia numeroita.
+    if (typeof latitude !== 'number' || typeof longitude !== 'number' || 
+        isNaN(latitude) || isNaN(longitude)) {
+        console.error("Virheelliset koordinaatit:", coordinates);
+        return null;
+    }
 
-    return await response.json();
+    const url = `${OM_API_BASE_URL}?latitude=${latitude.toFixed(4)}&longitude=${longitude.toFixed(4)}&hourly=${hourlyParams}&start_date=${start_date}&end_date=${end_date}`;
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            console.error(`Open-Meteo API-virhe: ${response.status}`, await response.text());
+            return null;
+        }
+        const data = await response.json();
+        if (!data || !data.hourly || !data.hourly.time || data.hourly.time.length === 0) {
+            console.error("Puutteellinen data Open-Meteo API:sta:", data);
+            return null;
+        }
+        return data;
+    } catch (error) {
+        console.error("Verkkovirhe haettaessa Open-Meteo dataa:", error);
+        return null;
+    }
 }
 
 export function clearOMCache() {
-    localStorage.removeItem("ECMWFWindAloft");
-    localStorage.removeItem("ECMWFWindAloftTime");
-    localStorage.removeItem("ECMWFWindAloftCoordinates");
+    localStorage.removeItem(OM_CACHE_KEY_DATA);
+    localStorage.removeItem(OM_CACHE_KEY_TIME);
+    localStorage.removeItem(OM_CACHE_KEY_COORDS);
+    console.log("Open-Meteo välimuisti tyhjennetty.");
 }
 
 /**
- * @param {string} coordinates
+ * Hakee ylätuuliennusteet, hyödyntäen välimuistia.
+ * Logiikka on päivitetty varmistamaan, että välimuisti invalidoidaan oikein
+ * koordinaattien muuttuessa ja datan vanhentuessa.
+ * @param {string} coordinates - Koordinaatit merkkijonona "leveyspiiri,pituuspiiri".
  */
 export async function fetchHighWinds(coordinates) {
-    const cachedData = localStorage.getItem("ECMWFWindAloft");
-    const cachedTime = localStorage.getItem("ECMWFWindAloftTime");
-    const cachedCoordinates = localStorage.getItem("ECMWFWindAloftCoordinates");
+    const cachedData = localStorage.getItem(OM_CACHE_KEY_DATA);
+    const cachedTime = localStorage.getItem(OM_CACHE_KEY_TIME);
+    const cachedCoordinates = localStorage.getItem(OM_CACHE_KEY_COORDS);
+    const now = Date.now();
 
-    const now = new Date();
-    const currentHour = now.getHours();
-
-    if (cachedData && cachedTime && cachedCoordinates) {
-        const cachedHour = new Date(Number(cachedTime)).getHours();
-
-        if (cachedCoordinates === coordinates && cachedHour === currentHour) {
-            console.log("Käytetään välimuistissa olevaa dataa");
-            OM_DATA.value = JSON.parse(cachedData);
-            return;
+    if (cachedData && cachedTime && cachedCoordinates === coordinates) {
+        const cacheAge = now - Number(cachedTime);
+        if (cacheAge < OM_CACHE_EXPIRY_MS) {
+            console.log("Käytetään välimuistissa olevaa Open-Meteo dataa.");
+            try {
+                const parsedData = JSON.parse(cachedData);
+                // Varmistetaan, että välimuistissa oleva data on validia
+                if (parsedData.hourly?.time) {
+                    OM_DATA.value = parsedData;
+                    return;
+                }
+            } catch (e) {
+                console.error("Virhe jäsennettäessä välimuistidataa, haetaan uusi.", e);
+                clearOMCache(); // Tyhjennetään korruptoitunut välimuisti
+            }
         }
     }
 
-    // Jos välimuistissa ei ole dataa tai se on vanhentunutta, haetaan uutta
+    // Jos välimuistissa ei ole dataa, se on vanhentunutta tai koordinaatit ovat muuttuneet, haetaan uusi.
     const newData = await fetchDataWithCoordinates(coordinates);
 
     if (newData) {
-        localStorage.setItem("ECMWFWindAloft", JSON.stringify(newData));
-        localStorage.setItem("ECMWFWindAloftTime", now.getTime().toString());
-        localStorage.setItem("ECMWFWindAloftCoordinates", coordinates);
+        localStorage.setItem(OM_CACHE_KEY_DATA, JSON.stringify(newData));
+        localStorage.setItem(OM_CACHE_KEY_TIME, now.toString());
+        localStorage.setItem(OM_CACHE_KEY_COORDS, coordinates);
+        OM_DATA.value = newData;
     }
-
-    OM_DATA.value = newData;
+    // Jos newData on null, virhe on jo logattu fetchDataWithCoordinates-funktiossa.
 }
 
 /**
@@ -197,8 +229,8 @@ function getAverageData(hourly, targetHour, dayOffset) {
             );
 
             result[level] = {
-                speed: hourly[speedKey]?.[currentIndex] ?? 0,
-                direction: hourly[directionKey]?.[currentIndex] ?? 0,
+                speed: hourly[speedKey]?.[currentIndex] ?? null,
+                direction: hourly[directionKey]?.[currentIndex] ?? null,
             };
         } else {
             const speeds = relevantIndices.map(
@@ -294,9 +326,11 @@ export function WindCell({ data, columnClass, height }) {
 
     const { speed, direction } = data;
     const speedInMS = isNullish(speed) ? null : Math.round(speed / 3.6);
+    
+    // KORJAUS: Varmistetaan, että direction on numero ennen pyöristystä.
     const roundedDirection = isNullish(direction)
         ? null
-        : roundToNearestFive(direction.toFixed(0));
+        : roundToNearestFive(direction);
 
     return html`
         <td
@@ -305,12 +339,12 @@ export function WindCell({ data, columnClass, height }) {
                 height,
             )}`}
         >
-            ${isNullish(speed)
+            ${isNullish(speedInMS)
                 ? null
                 : html`
                       <div class="wind-speed">${speedInMS} m/s</div>
                   `}
-            ${isNullish(speed)
+            ${isNullish(roundedDirection) // Tarkistetaan pyöristettyä arvoa
                 ? null
                 : html`
                       <div class="wind-direction">
