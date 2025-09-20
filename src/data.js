@@ -1299,13 +1299,15 @@ function calculateExtraWidth(maxGust, averageSpeed) {
 
 /**
  * Laskee tuulen variaatiot annetusta datasta
- * @param {WeatherData[]} weatherData 
+ * @param {WeatherData[]} weatherData
  * @returns {WindVariations|undefined}
  */
 function calculateWindVariationsFromData(weatherData) {
     const { directions, speeds, gusts } = extractAndFilterData(weatherData);
     if (directions.length < 1 || speeds.length === 0 || gusts.length === 0) {
-        debug("calculateWindVariationsFromData: Ei riittävästi dataa laskentaan.");
+        debug(
+            "calculateWindVariationsFromData: Ei riittävästi dataa laskentaan.",
+        );
         return undefined;
     }
 
@@ -1351,11 +1353,17 @@ export const WIND_VARIATIONS = computed(() => {
             // Luo synteettinen toinen piste pienellä variaatiolla animaatiota varten
             const syntheticObs = {
                 ...singleObs,
-                direction: singleObs.direction != null ? (singleObs.direction + 10) % 360 : undefined,
-                speed: singleObs.speed != null ? Math.max(0, singleObs.speed - 0.5) : undefined,
+                direction:
+                    singleObs.direction != null
+                        ? (singleObs.direction + 10) % 360
+                        : undefined,
+                speed:
+                    singleObs.speed != null
+                        ? Math.max(0, singleObs.speed - 0.5)
+                        : undefined,
                 gust: singleObs.gust || singleObs.speed,
                 source: singleObs.source,
-                time: singleObs.time
+                time: singleObs.time,
             };
             return calculateWindVariationsFromData([singleObs, syntheticObs]);
         }
@@ -1363,14 +1371,18 @@ export const WIND_VARIATIONS = computed(() => {
 
     // Fallback 2: Käytä ennustedata jos havaintoja ei riitä
     if (recentObservations.length < 2) {
-        debug("WIND_VARIATIONS: Ei riittävästi havaintoja, käytetään ennustedataa.");
+        debug(
+            "WIND_VARIATIONS: Ei riittävästi havaintoja, käytetään ennustedataa.",
+        );
         const forecasts = FORECASTS.value;
         const currentTime = Date.now();
-        const recentForecasts = forecasts.filter(
-            (fore) =>
-                Math.abs(fore.time.getTime() - currentTime) < THIRTY_MINUTES_IN_MS &&
-                hasValidWindData(fore)
-        ).slice(0, 3); // Ota korkeintaan 3 lähintä ennustepistettä
+        const recentForecasts = forecasts
+            .filter(
+                (fore) =>
+                    Math.abs(fore.time.getTime() - currentTime) <
+                        THIRTY_MINUTES_IN_MS && hasValidWindData(fore),
+            )
+            .slice(0, 3); // Ota korkeintaan 3 lähintä ennustepistettä
 
         if (recentForecasts.length >= 2) {
             debug("WIND_VARIATIONS: Löydettiin riittävästi ennustedataa.");

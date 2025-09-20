@@ -43,7 +43,7 @@ const rotationAnimation = computed(() => {
     }
 
     const { variationRange, windRef } = wind;
-    
+
     // Rajoitetaan kulma järkeviin rajoihin.
     const angle = Math.min(variationRange, 180);
 
@@ -66,7 +66,7 @@ const swingAnimation = computed(() => {
     if (!wind) {
         return { angle: 0, duration: 0 };
     }
-    
+
     // Tämä logiikka toimii nyt, koska WIND_VARIATIONS tuottaa nämä arvot.
     const { averageSpeed, maxGust, windRef } = wind;
     const gustDiff = maxGust - averageSpeed;
@@ -77,7 +77,6 @@ const swingAnimation = computed(() => {
 
     return calculateAnimationParams(baseAngle, baseDuration, windRef);
 });
-
 
 export function DynamicParachute() {
     /** @type {import("preact").RefObject<SVGElement>} */
@@ -95,14 +94,23 @@ export function DynamicParachute() {
         if (swingContainer instanceof HTMLElement) {
             const { angle, duration } = swingAnimation.value;
             swingContainer.style.setProperty("--swing-angle", `${angle}deg`);
-            swingContainer.style.setProperty("--swing-animation", `swing ${duration}s ease-in-out infinite alternate`);
+            swingContainer.style.setProperty(
+                "--swing-animation",
+                `swing ${duration}s ease-in-out infinite alternate`,
+            );
         }
 
         if (rotateContainer instanceof HTMLElement) {
             const { angle, duration } = rotationAnimation.value;
             if (angle > 0 && duration > 0) {
-                rotateContainer.style.setProperty("--rotate-angle", `${angle}deg`);
-                rotateContainer.style.setProperty("--rotate-animation", `rotate ${duration}s linear infinite alternate`);
+                rotateContainer.style.setProperty(
+                    "--rotate-angle",
+                    `${angle}deg`,
+                );
+                rotateContainer.style.setProperty(
+                    "--rotate-animation",
+                    `rotate ${duration}s linear infinite alternate`,
+                );
             } else {
                 rotateContainer.style.removeProperty("--rotate-animation");
             }
@@ -112,27 +120,46 @@ export function DynamicParachute() {
     return html`
         <style>
             @keyframes swing {
-                0% { transform: rotate(var(--swing-angle)); }
-                100% { transform: rotate(calc(-1 * var(--swing-angle))); }
+                0% {
+                    transform: rotate(var(--swing-angle));
+                }
+                100% {
+                    transform: rotate(calc(-1 * var(--swing-angle)));
+                }
             }
             @keyframes rotate {
-                0% { transform: rotateY(calc(-1 * var(--rotate-angle) / 2)); }
-                100% { transform: rotateY(calc(var(--rotate-angle) / 2)); }
+                0% {
+                    transform: rotateY(calc(-1 * var(--rotate-angle) / 2));
+                }
+                100% {
+                    transform: rotateY(calc(var(--rotate-angle) / 2));
+                }
             }
             .rotate-container {
-                width: 100px; height: 100px; display: inline-block;
+                width: 100px;
+                height: 100px;
+                display: inline-block;
                 animation: var(--rotate-animation, none);
             }
             .swing-container {
-                width: 100%; height: 100%; display: inline-block;
+                width: 100%;
+                height: 100%;
+                display: inline-block;
                 transform-origin: center top;
                 animation: var(--swing-animation);
             }
-            .dynamic-parachute { fill: var(--parachute-color); }
+            .dynamic-parachute {
+                fill: var(--parachute-color);
+            }
         </style>
         <div class="rotate-container">
             <div class="swing-container">
-                <svg ref=${svgRef} class="dynamic-parachute" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+                <svg
+                    ref=${svgRef}
+                    class="dynamic-parachute"
+                    viewBox="0 0 512 512"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
                     <use href="/assets/parachute.svg#g3069" />
                 </svg>
             </div>
