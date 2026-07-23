@@ -1155,6 +1155,9 @@ function Info() {
                 ${" "}Tietojen käyttö omalla vastuulla. Ei takeita että tiedot
                 ovat oikein.
             </div>
+            <small>
+                Psst, onko tarvetta hyppypäiväkirjalle? Tsekkaa <a href="https://loki.hyppykeli.fi/">Loki</a>. Koodi HYPPYKELI2026
+            </small>
         </div>
     `;
 }
