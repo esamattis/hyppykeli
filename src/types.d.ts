@@ -83,6 +83,17 @@ interface WeatherData {
     time: Date;
 }
 
+interface WindVariations {
+    variationRange: number;
+    averageDirection: number;
+    windRef: number;
+    color: string;
+    extraWidth: number;
+    averageSpeed: number;
+    maxGust: number;
+    finalScore: number;
+}
+
 /**
  * Interface representing a cloud layer.
  */
