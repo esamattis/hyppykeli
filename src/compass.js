@@ -74,7 +74,13 @@ function calculateNeedleLength(gust) {
     }
 }
 
-export function Compass() {
+/**
+ * @param {Object} props
+ * @param {string} [props.className]
+ * @param {boolean} props.showHovered
+ * @param {boolean} props.history
+ */
+export function Compass(props) {
     const rc = parseInt(QUERY_PARAMS.value.rc ?? "0", 10);
     const rotation = isNaN(rc) ? 0 : rc; // Default to 0 degrees if invalid
     const circle = INSTRUCTOR_LIMIT_LENGTH;
@@ -83,7 +89,7 @@ export function Compass() {
 
     // prettier-ignore
     return html`
-        <div id="compass" class="compass">
+        <div class="compass ${props.className ?? ""}">
             <svg
                 style="transform: rotate(${rotation}deg); transform-origin: center;"
                 viewBox="0 0 400 400"
@@ -98,8 +104,11 @@ export function Compass() {
               <text x="20" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">W</text>
               <text x="200" y="390" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">S</text>
               <text x="380" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">E</text>
-              <${HistoryNeedles} />
-              <${GustNeedle} />
+
+              ${props.history ? h(HistoryNeedles, {}) : null}
+
+              ${h(GustNeedle, { showHovered: props.showHovered })}
+
               <${WindVariations} />
               <text
                     x="200"
@@ -127,9 +136,11 @@ export function Compass() {
 
             </svg>
 
-            <p class="compass-time">
-                <${FromNow} date=${HOVERED_OBSERVATION.value?.time} />
-            </p>
+            ${props.showHovered ? html`
+                <p class="compass-time nowrap">
+                    <${FromNow} date=${HOVERED_OBSERVATION.value?.time} />
+                </p>
+            ` : null}
 
             <${Help}>
                 <p>
@@ -168,9 +179,16 @@ function NeedlePolygon(props) {
     `;
 }
 
-function GustNeedle() {
-    const history = !!HOVERED_OBSERVATION.value;
-    const obs = HOVERED_OBSERVATION.value ?? LATEST_OBSERVATION.value;
+/**
+ * @param {object} props
+ * @param {boolean} props.showHovered
+ */
+function GustNeedle(props) {
+    let obs = LATEST_OBSERVATION.value;
+
+    if (props.showHovered && HOVERED_OBSERVATION.value) {
+        obs = HOVERED_OBSERVATION.value;
+    }
 
     // When using metar based observations, gust might not be available.
     // Fall back to speed in that case.
@@ -187,7 +205,7 @@ function GustNeedle() {
     const needleColor = gust > MAX_WIND_SPEED ? "black" : "red";
 
     return html`
-        <g className="${history ? "historic" : ""}">
+        <g>
             ${h(NeedlePolygon, {
                 gust,
                 direction: obs.direction,

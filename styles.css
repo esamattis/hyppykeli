@@ -1,7 +1,3 @@
-:root {
-    --compass-width: 100px;
-}
-
 body {
     margin: 0;
     padding: 0;
@@ -13,7 +9,6 @@ button {
 
 #title {
     grid-area: title;
-    width: calc(100vw - 30px - var(--compass-width));
     word-break: break-word;
 }
 
@@ -21,10 +16,12 @@ button {
     white-space: nowrap;
 }
 
+.info {
+    line-height: 1.8;
+}
+
 #info {
     grid-area: info;
-    width: calc(100vw - 30px - var(--compass-width));
-    line-height: 1.8;
 }
 
 #clouds {
@@ -37,8 +34,56 @@ button {
 
 #compass {
     grid-area: compass;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
 }
 
+.desktop #compass {
+    align-items: center;
+    justify-content: space-around;
+}
+
+.compass {
+    display: flex;
+    justify-content: center;
+}
+
+.compass svg {
+    height: 270px;
+}
+
+.thin.desktop .compass svg {
+    height: 200px;
+}
+
+.icon-parachute {
+    height: 50px;
+}
+
+.desktop .icon-parachute {
+    height: 150px;
+}
+
+.hover-compass {
+    display: flex;
+    width: 130px;
+    height: 130px;
+    z-index: 100;
+    position: fixed;
+    padding: 2px;
+    /* border: 1px dashed black; */
+    box-shadow: 0 0 10px 5px gray;
+    border-radius: 5px;
+    background: white;
+    top: 5px;
+    right: 5px;
+    flex-direction: column;
+}
+
+.hover-compass .help {
+    display: none;
+}
 #observations-graph {
     grid-area: observations-graph;
 }
@@ -78,25 +123,6 @@ button {
     margin-bottom: 100px;
 }
 
-.compass svg {
-    width: 100%;
-}
-
-.compass {
-    display: flex;
-    width: var(--compass-width);
-    z-index: 100;
-    position: fixed;
-    padding: 2px;
-    /* border: 1px dashed black; */
-    box-shadow: 0 0 10px 5px gray;
-    border-radius: 5px;
-    background: white;
-    top: 5px;
-    right: 5px;
-    flex-direction: column;
-}
-
 .title-temp {
     font-size: 65%;
     color: #707070;
@@ -115,6 +141,10 @@ button {
     max-width: 20ch;
 }
 
+.desktop .latest-wind-cell {
+    display: inline;
+}
+
 .grid {
     display: grid;
     margin: 10px;
@@ -126,10 +156,9 @@ button {
     grid-template-areas:
         "errors errors"
         "title title"
-        "info info"
-        "clouds clouds"
-        "winds winds"
         "compass compass"
+        "winds winds"
+        "clouds clouds"
         "observations-graph observations-graph"
         "forecasts-graph forecasts-graph"
         "observations-table observations-table"
@@ -139,28 +168,17 @@ button {
         "high-winds-tomorrow high-winds-tomorrow";
 }
 
-@media (min-width: 900px) {
-    :root {
-        --compass-width: 200px;
-    }
-
-    .latest-wind-cell {
-        display: inline;
-    }
-
-    /** BIG SCREEN **/
-    .grid {
-        grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr);
-        grid-template-areas:
-            "errors errors"
-            "title title"
-            "info info"
-            "clouds winds"
-            "observations-graph forecasts-graph"
-            "observations-table forecasts-table"
-            "high-winds-today high-winds-tomorrow"
-            "high-winds-details high-winds-details";
-    }
+.desktop .grid {
+    grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr);
+    grid-template-areas:
+        "errors errors"
+        "title compass"
+        "title compass"
+        "clouds winds"
+        "observations-graph forecasts-graph"
+        "observations-table forecasts-table"
+        "high-winds-today high-winds-tomorrow"
+        "high-winds-details high-winds-details";
 }
 
 .vertical-center {
@@ -265,7 +283,7 @@ a:visited {
 
 .chart {
     position: relative;
-    height: clamp(350px, 70vh, 600px);
+    height: clamp(250px, 450px, 80vh);
     border: 1px solid black;
 }
 
@@ -285,14 +303,6 @@ a[href^="http"]:not([href*="hyppykeli.fi"]):visited {
 
 .errors p {
     color: red;
-}
-
-.historic {
-    opacity: 0.5;
-}
-
-svg .historic {
-    opacity: 0.3;
 }
 
 dialog {
@@ -404,6 +414,7 @@ h2 .date {
 .h2-with-icon {
     display: flex;
     align-items: center;
+    margin-top: 0;
 }
 
 .anvil {
@@ -426,14 +437,6 @@ h2 .date {
     width: 20px;
     height: 20px;
     transform: rotate(var(--direction));
-}
-
-.icon-parachute {
-    height: 20px;
-}
-
-.scale {
-    transform: scale(2);
 }
 
 .rotate {
@@ -573,10 +576,10 @@ h2 .date {
     gap: 2px;
 }
 
-.dynamic-parachute {
-    fill: var(--parachute-color);
+ul {
+    margin-bottom: 0;
 }
 
-.parachute-color {
+.dynamic-parachute {
     fill: var(--parachute-color);
 }

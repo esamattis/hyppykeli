@@ -184,8 +184,8 @@ export function DynamicParachute() {
                 }
             }
             .rotate-container {
-                width: 100px;
-                height: 100px;
+                width: 150px;
+                height: 150px;
                 display: inline-block;
                 animation: var(--rotate-animation, none);
             }
@@ -199,6 +199,7 @@ export function DynamicParachute() {
             .dynamic-parachute {
                 width: 100%;
                 height: 100%;
+                min-width: 100px;
                 fill: var(--parachute-color);
             }
             .parachute-color {
