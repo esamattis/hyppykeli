@@ -35,6 +35,20 @@ interface MapWindLevel {
     direction: number | null;
 }
 
+interface MapWindMotion {
+    x: number;
+    y: number;
+    pixelsPerSecond: number;
+    length: number;
+}
+
+interface MapWindParticle {
+    x: number;
+    y: number;
+    age: number;
+    lifetime: number;
+}
+
 interface OpenMeteoHourlyData {
     time: string[];
     windspeed_1000hPa: number[];

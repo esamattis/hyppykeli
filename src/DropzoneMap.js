@@ -13,6 +13,7 @@ import {
 import { OM_DATA } from "./om.js";
 import { formatClock } from "./utils.js";
 import { Help } from "./components.js";
+import { MapWindOverlay } from "./MapWindOverlay.js";
 
 /** @type {Array<{ level: OpenMeteoPressureLevel, height: number }>} */
 const LEVELS = [
@@ -30,6 +31,44 @@ const LEVELS = [
  */
 function forecastTime(time, offset) {
     return new Date(new Date(`${time}Z`).getTime() - offset * 1000);
+}
+
+/** @param {MapWindLevel[]} winds @returns {MapWindLevel} */
+function averageFreeFallWind(winds) {
+    const average = {
+        label: "4200-800 m",
+        speed: /** @type {number | null} */ (null),
+        direction: /** @type {number | null} */ (null),
+    };
+    if (
+        winds.length === 0 ||
+        winds.some(
+            ({ speed, direction }) =>
+                speed === null ||
+                !Number.isFinite(speed) ||
+                speed < 0 ||
+                direction === null ||
+                !Number.isFinite(direction),
+        )
+    ) {
+        return average;
+    }
+
+    let speedSum = 0;
+    let sinSum = 0;
+    let cosSum = 0;
+    for (const wind of winds) {
+        speedSum += wind.speed ?? 0;
+        const radians = ((wind.direction ?? 0) * Math.PI) / 180;
+        sinSum += Math.sin(radians);
+        cosSum += Math.cos(radians);
+    }
+    average.speed = speedSum / winds.length;
+    average.direction =
+        Math.hypot(sinSum, cosSum) > 1e-10
+            ? ((Math.atan2(sinSum, cosSum) * 180) / Math.PI + 360) % 360
+            : null;
+    return average;
 }
 
 /** @param {{ wind: MapWindLevel }} props */
@@ -51,7 +90,9 @@ function WindLevel({ wind }) {
         <li class="wind-level">
             <div>
                 <strong>${wind.label}</strong>
-                <div>${label}</div>
+                <div>
+                    ${label}${validSpeed && direction !== null ? ` ${Math.round(direction) % 360}°` : ""}
+                </div>
             </div>
             <svg
                 width="64"
@@ -120,13 +161,17 @@ export function DropzoneMap() {
             grid-template-columns: minmax(0, 1fr);
             gap: 16px;
         }
-        .dz-map {
-            min-height: 440px;
+        .map-frame {
+            position: relative;
             width: calc(100% + 2 * var(--map-card-padding));
             margin: 0 calc(-1 * var(--map-card-padding))
                 calc(-1 * var(--map-card-padding));
             isolation: isolate;
             border-radius: 0 0 var(--radius-panel) var(--radius-panel);
+            overflow: hidden;
+        }
+        .dz-map {
+            min-height: 440px;
             background: var(--color-surface-hover);
         }
         .wind-profile {
@@ -324,6 +369,13 @@ export function DropzoneMap() {
         ...wind,
         speed: wind.speed === null ? null : wind.speed / 3.6,
     }));
+    const averageWind = averageFreeFallWind(
+        winds.filter((_, i) => {
+            const height = LEVELS[i]?.height;
+            return height !== undefined && height >= 800 && height <= 4200;
+        }),
+    );
+    winds.unshift(averageWind);
     winds.push({
         label: "Maanpinta",
         speed: ground?.speed ?? null,
@@ -355,6 +407,18 @@ export function DropzoneMap() {
                             Korkeudet ovat arvioita merenpinnasta.
                         </p>
                         <p>
+                            4200-800 m: nopeuden ja suunnan keskiarvo
+                            korkeuksilta 800, 1500, 3000 ja 4200 m. Suunnan
+                            keskiarvo huomioi pohjoissuunnan ylityksen. Antaa
+                            karkean arvion ajautumisesta vapaapudotuksessa.
+                        </p>
+                        <p>
+                            Kartan liikkuvat viivat näyttävät 4200-800 m
+                            keskimääräisen tuulen virtaussuunnan. Voimakkaampi
+                            tuuli näkyy pidempinä ja nopeammin liikkuvina
+                            viivoina.
+                        </p>
+                        <p>
                             Maanpinta:
                             ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, klo ${formatClock(ground.time)}` : " — ei havaintoa"}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
                         </p>
@@ -367,14 +431,17 @@ export function DropzoneMap() {
                         ${winds.map((wind) => h(WindLevel, { key: wind.label, wind }))}
                     </ul>
                 </aside>
-                <div
-                    class=${`dz-map ${scope.end}`}
-                    ref=${mapRef}
-                    style="touch-action: pan-y"
-                    role="region"
-                    aria-label=${`${name} kartalla`}
-                >
-                    ${!coordinates ? "Odotetaan koordinaatteja…" : null}
+                <div class="map-frame">
+                    <div
+                        class=${`dz-map ${scope.end}`}
+                        ref=${mapRef}
+                        style="touch-action: pan-y"
+                        role="region"
+                        aria-label=${`${name} kartalla`}
+                    >
+                        ${!coordinates ? "Odotetaan koordinaatteja…" : null}
+                    </div>
+                    ${coordinates ? h(MapWindOverlay, { wind: averageWind }) : null}
                 </div>
             </div>
         </section>
