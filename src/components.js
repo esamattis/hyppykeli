@@ -1,10 +1,111 @@
 // @ts-check
 import { css, useScope } from "./useScope.js";
 
-import { Component, html } from "htm/preact";
+import { Component, h, html } from "htm/preact";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { formatClock } from "./utils.js";
+
+/**
+ * Native modal dialog with shared backdrop dismissal and page scroll locking.
+ * Scroll locking follows :modal in styles.css, including Escape and unmounts.
+ * @param {Object} props
+ * @param {import('preact').RefObject<HTMLDialogElement>} props.dialogRef
+ * @param {string} [props.id]
+ * @param {string} [props.labelledBy]
+ * @param {import('preact').ComponentChildren} [props.children]
+ */
+export function Dialog(props) {
+    const scope = useScope(css`
+        :scope > .dialog-controls {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+        :scope > .dialog-controls > .dialog-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            padding: 8px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+            color: var(--color-text);
+        }
+        :scope > .dialog-controls > .dialog-close:hover {
+            color: var(--color-primary-hover);
+        }
+    `);
+    const ref = props.dialogRef;
+
+    useEffect(() => {
+        const dialog = ref.current;
+        if (!dialog) return;
+
+        /** @param {MouseEvent} event */
+        const isBackdrop = (event) => {
+            if (event.target !== dialog) return false;
+            const { left, right, top, bottom } = dialog.getBoundingClientRect();
+            return (
+                event.clientX < left ||
+                event.clientX > right ||
+                event.clientY < top ||
+                event.clientY > bottom
+            );
+        };
+
+        let startedOnBackdrop = false;
+        /** @param {PointerEvent} event */
+        const onPointerDown = (event) => {
+            startedOnBackdrop = isBackdrop(event);
+        };
+        /** @param {MouseEvent} event */
+        const onClick = (event) => {
+            if (startedOnBackdrop && isBackdrop(event)) dialog.close();
+            startedOnBackdrop = false;
+        };
+
+        dialog.addEventListener("pointerdown", onPointerDown);
+        dialog.addEventListener("click", onClick);
+        return () => {
+            dialog.removeEventListener("pointerdown", onPointerDown);
+            dialog.removeEventListener("click", onClick);
+        };
+    }, [ref]);
+
+    return html`
+        <dialog ref=${ref} id=${props.id} aria-labelledby=${props.labelledBy}>
+            ${scope.style}
+            <div class="dialog-controls">
+                <button
+                    class="dialog-close"
+                    type="button"
+                    aria-label="Sulje"
+                    title="Sulje"
+                    onClick=${() => ref.current?.close()}
+                >
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        aria-hidden="true"
+                        focusable="false"
+                    >
+                        <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                </button>
+            </div>
+            ${props.children}
+        </dialog>
+    `;
+}
 
 /**
  * @param {Object} props
@@ -44,21 +145,20 @@ export function Help(props) {
         ref.current?.showModal();
     };
 
-    const close = () => {
-        ref.current?.close();
-    };
-
     return html`
         <button class="help" type="button" onClick=${open} id=${props.id}>
             ${scope.style} ${props.label ?? "Ohje"}
         </button>
-        <dialog ref=${ref}>
-            ${scope.style}
-            <div class=${`help-content ${scope.end}`}>${props.children}</div>
-            <div>
-                <button type="button" onClick=${close}>Sulje</button>
-            </div>
-        </dialog>
+        ${h(
+            Dialog,
+            { dialogRef: ref },
+            html`
+                ${scope.style}
+                <div class=${`help-content ${scope.end}`}>
+                    ${props.children}
+                </div>
+            `,
+        )}
     `;
 }
 

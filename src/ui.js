@@ -56,7 +56,7 @@ import {
     whenAll,
     coordinateDistance,
 } from "./utils.js";
-import { Help, FromNow, ErrorBoundary } from "./components.js";
+import { Help, FromNow, ErrorBoundary, Dialog } from "./components.js";
 
 effect(() => {
     document.title = NAME.value + " – Hyppykeli";
@@ -432,10 +432,6 @@ function TableDialog(props) {
             box-sizing: border-box;
         }
         .dialog-heading {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
             margin-bottom: 16px;
         }
         .dialog-heading h2 {
@@ -477,20 +473,21 @@ function TableDialog(props) {
                 <path d="M3 9h18M3 15h18M9 9v12" />
             </svg>
         </button>
-        <dialog
-            id=${props.id}
-            ref=${ref}
-            aria-labelledby=${`${props.id}-title`}
-        >
-            ${scope.style}
-            <div class="dialog-heading">
-                <h2 id=${`${props.id}-title`}>${props.title}</h2>
-                <button type="button" onClick=${() => ref.current?.close()}>
-                    Sulje
-                </button>
-            </div>
-            <div class=${scope.end}>${props.children}</div>
-        </dialog>
+        ${h(
+            Dialog,
+            {
+                dialogRef: ref,
+                id: props.id,
+                labelledBy: `${props.id}-title`,
+            },
+            html`
+                ${scope.style}
+                <div class="dialog-heading">
+                    <h2 id=${`${props.id}-title`}>${props.title}</h2>
+                </div>
+                <div class=${scope.end}>${props.children}</div>
+            `,
+        )}
     `;
 }
 

@@ -42,6 +42,11 @@
         scroll-padding-bottom: 80px;
     }
 
+    html:has(dialog:modal),
+    body:has(dialog:modal) {
+        overflow: hidden;
+    }
+
     body {
         margin: 0;
         padding: 0;
@@ -144,6 +149,7 @@
         padding: 0 8px;
     }
     dialog {
+        overscroll-behavior: contain;
         padding: 24px;
         max-width: calc(100vw - 24px);
         color: var(--color-text);
