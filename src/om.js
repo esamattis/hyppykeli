@@ -61,7 +61,7 @@ const FREE_FALL_HEIGHTS = ["1500", "3000", "4200"];
 /**
  * @type {import("@preact/signals").Signal<OpenMeteoWeatherData | null>}
  */
-const OM_DATA = signal(null);
+export const OM_DATA = signal(null);
 
 function getTimeRange() {
     const now = new Date();
@@ -116,7 +116,12 @@ export async function fetchHighWinds(coordinates) {
     if (cachedData && cachedTime && cachedCoordinates) {
         const cachedHour = new Date(Number(cachedTime)).getHours();
 
-        if (cachedCoordinates === coordinates && cachedHour === currentHour) {
+        if (
+            cachedCoordinates === coordinates &&
+            cachedHour === currentHour &&
+            now.getTime() - Number(cachedTime) >= 0 &&
+            now.getTime() - Number(cachedTime) < 60 * 60 * 1000
+        ) {
             console.log("Käytetään välimuistissa olevaa dataa");
             OM_DATA.value = JSON.parse(cachedData);
             return;

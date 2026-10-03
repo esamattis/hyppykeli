@@ -39,6 +39,7 @@ import {
 } from "./data.js";
 
 import { Graph } from "./graph.js";
+import { DropzoneMap } from "./DropzoneMap.js";
 import { Compass } from "./compass.js";
 import {
     getLiftedCondensationLevel,
@@ -1537,6 +1538,7 @@ export function Root() {
                 "compass compass"
                 "observations-graph observations-graph"
                 "forecasts-graph forecasts-graph"
+                "dropzone-map dropzone-map"
                 "observations-table observations-table"
                 "forecasts-table forecasts-table"
                 "high-winds-details high-winds-details"
@@ -1552,6 +1554,7 @@ export function Root() {
                     "info info"
                     "clouds winds"
                     "observations-graph forecasts-graph"
+                    "dropzone-map dropzone-map"
                     "observations-table forecasts-table"
                     "high-winds-today high-winds-tomorrow"
                     "high-winds-details high-winds-details";
@@ -1697,6 +1700,8 @@ export function Root() {
             <${Compass} />
 
             <${Graph} />
+
+            ${h(DropzoneMap, {})}
 
             <div id="observations-table" class="observations">
                 <h2 class="sticky">

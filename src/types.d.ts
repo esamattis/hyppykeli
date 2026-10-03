@@ -29,6 +29,12 @@ interface OpenMeteoHourlyUnits {
 
 type OpenMeteoPressureLevel = "1000" | "925" | "850" | "700" | "600";
 
+interface MapWindLevel {
+    label: string;
+    speed: number | null;
+    direction: number | null;
+}
+
 interface OpenMeteoHourlyData {
     time: string[];
     windspeed_1000hPa: number[];

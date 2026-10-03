@@ -19,10 +19,12 @@
         "chart.js": "^4.4.3",
         "esbuild": "^0.21.5",
         "htm": "^3.1.1",
+        "leaflet": "^1.9.4",
         "preact": "^10.22.0",
         "typescript": "^7.0.2"
     },
     "devDependencies": {
+        "@types/leaflet": "^1.9.22",
         "oxfmt": "^0.71.0"
     }
 }
