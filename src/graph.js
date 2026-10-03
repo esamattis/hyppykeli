@@ -1,6 +1,6 @@
 // @ts-check
 import { css, useScope } from "./useScope.js";
-import { dateHeadingStyles, freshnessStyles } from "./styles.js";
+import { dateHeadingStyles, freshnessStyles, getTheme } from "./styles.js";
 import { useEffect, useRef } from "preact/hooks";
 import { effect } from "@preact/signals";
 import { html } from "htm/preact";
@@ -20,6 +20,9 @@ import { formatClock, formatDate, humanDayText } from "./utils.js";
  * @returns {import("chart.js").ChartConfiguration}
  */
 function getDefaultGraphOptions() {
+    const theme = getTheme();
+    Chart.defaults.font.family = theme.font;
+    Chart.defaults.color = theme.muted;
     return {
         type: "line",
         data: {
@@ -47,6 +50,7 @@ function getDefaultGraphOptions() {
  * @param {Chart|null} fore
  */
 function updateCharts(obs, fore) {
+    const theme = getTheme();
     const shared = {
         spanGaps: true,
         borderJoinStyle: "round",
@@ -62,13 +66,13 @@ function updateCharts(obs, fore) {
         {
             label: "B+ Kelpparit",
             data: data.map(() => 11),
-            borderColor: "red",
+            borderColor: theme.danger,
             pointRadius: 0,
         },
         {
             label: "Oppilaat",
             data: data.map(() => 8),
-            borderColor: "orange",
+            borderColor: theme.warning,
             pointRadius: 0,
         },
     ];
@@ -83,13 +87,13 @@ function updateCharts(obs, fore) {
                 ...shared,
                 label: "Puuska (m/s)",
                 data: OBSERVATIONS.value.map((obs) => obs.gust ?? 0).reverse(),
-                borderColor: "blue",
+                borderColor: theme.primary,
             },
             {
                 ...shared,
                 label: "Tuuli (m/s)",
                 data: OBSERVATIONS.value.map((obs) => obs.speed ?? 0).reverse(),
-                borderColor: "lightblue",
+                borderColor: theme.sky,
             },
             ...createWarningLines(OBSERVATIONS.value),
         ];
@@ -107,7 +111,7 @@ function updateCharts(obs, fore) {
                 ...shared,
                 label: "Puuskaennuste (m/s)",
                 data: FORECASTS.value.map((obs) => obs.gust ?? 0),
-                borderColor: "blue",
+                borderColor: theme.primary,
                 cubicInterpolationMode: "monotone",
                 borderDash: [5, 5],
                 borderWidth: 5,
@@ -116,7 +120,7 @@ function updateCharts(obs, fore) {
                 ...shared,
                 label: "Tuuli (m/s)",
                 data: FORECASTS.value.map((obs) => obs.speed ?? 0),
-                borderColor: "lightblue",
+                borderColor: theme.sky,
                 cubicInterpolationMode: "monotone",
                 borderDash: [5, 5],
                 borderWidth: 5,
@@ -133,7 +137,9 @@ export function Graph() {
         .chart {
             position: relative;
             height: clamp(350px, 70vh, 600px);
-            border: 1px solid black;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface);
         }
         ${dateHeadingStyles}
         ${freshnessStyles}

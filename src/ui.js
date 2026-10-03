@@ -366,7 +366,15 @@ function DataTable(props) {
         :scope td,
         :scope th {
             white-space: nowrap;
-            background-color: white;
+            padding: 8px 6px;
+            border-bottom: 1px solid var(--color-border);
+            background-color: var(--color-surface);
+        }
+
+        :scope thead th {
+            color: var(--color-muted);
+            background: var(--color-surface-soft);
+            font-size: 0.85rem;
         }
 
         :scope td:first-of-type,
@@ -379,7 +387,7 @@ function DataTable(props) {
 
         :scope tbody tr:hover th,
         :scope tbody tr:hover td {
-            background-color: #e9e9e9;
+            background-color: var(--color-surface-hover);
         }
         :scope th.cloud-low-heading {
             width: 10ch;
@@ -558,7 +566,7 @@ function CloudLayer({ cloud }) {
     const scope = useScope(css`
         :scope {
             font-size: 120%;
-            font-family: monospace;
+            font-family: var(--font-mono);
         }
     `);
     return html`
@@ -587,7 +595,7 @@ function CloudSummary() {
 
         .metar {
             font-size: 70%;
-            font-family: monospace;
+            font-family: var(--font-mono);
         }
         .condensation {
             margin-top: 10px;
@@ -918,14 +926,14 @@ export function SideMenu() {
         :scope {
             position: fixed;
             z-index: 200;
-            background-color: white;
+            background-color: var(--color-surface);
             right: -100%;
             top: 0;
             bottom: 0px;
             width: clamp(250px, 300px, 70vw);
             overflow-y: auto;
-            background-color: white;
-            box-shadow: -6px 0 2px -2px gray;
+            background-color: var(--color-surface);
+            box-shadow: var(--shadow-floating);
             transition: right 0.3s ease;
             padding: 40px;
             padding-bottom: 100px;
@@ -1214,14 +1222,23 @@ export function StickyFooter() {
             display: flex;
             z-index: 200;
             align-items: center;
-            height: 50px;
+            height: 64px;
             position: fixed;
             bottom: 0;
             width: 100%;
-            background-color: white;
-            box-shadow: 0 -4px 2px -2px gray;
+            border-top: 1px solid var(--color-border);
+            background-color: var(--color-surface);
+            box-shadow: var(--shadow-floating);
             overflow-x: auto;
             justify-content: space-around;
+        }
+        :scope .item {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        :scope .item:hover {
+            background: var(--color-surface-hover);
         }
         .menu-burger {
             height: 40px;
@@ -1367,7 +1384,8 @@ function Info() {
     const scope = useScope(css`
         :scope {
             grid-area: info;
-            width: calc(100vw - 30px - var(--compass-width));
+            max-width: calc(100vw - 48px - var(--compass-width));
+            width: 100%;
             line-height: 1.8;
         }
         .disclaimer {
@@ -1433,7 +1451,8 @@ function Title() {
     const scope = useScope(css`
         :scope {
             grid-area: title;
-            width: calc(100vw - 30px - var(--compass-width));
+            max-width: calc(100vw - 48px - var(--compass-width));
+            width: 100%;
             word-break: break-word;
         }
         .nowrap {
@@ -1442,8 +1461,8 @@ function Title() {
 
         .title-temp {
             font-size: 65%;
-            color: #707070;
-            font-family: monospace;
+            color: var(--color-muted);
+            font-family: var(--font-mono);
         }
 
         .title-name,
@@ -1523,10 +1542,10 @@ export function Root() {
     const scope = useScope(css`
         :scope {
             display: grid;
-            margin: 10px;
+            margin: 20px;
             margin-bottom: 100px;
             grid-template-columns: 1fr;
-            gap: 10px;
+            gap: 20px;
 
             /** MOBILE **/
             grid-template-areas:
@@ -1560,6 +1579,50 @@ export function Root() {
                     "high-winds-details high-winds-details";
             }
         }
+        :scope
+            > :is(
+                #clouds,
+                #winds,
+                #observations-graph,
+                #forecasts-graph,
+                #dropzone-map,
+                #observations-table,
+                #forecasts-table,
+                #high-winds-today,
+                #high-winds-tomorrow,
+                #high-winds-details
+            ) {
+            min-width: 0;
+            padding: 20px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-panel);
+            box-shadow: var(--shadow-panel);
+        }
+
+        @media (max-width: 550px) {
+            :scope {
+                margin: 12px;
+                margin-bottom: 100px;
+                gap: 12px;
+            }
+            :scope
+                > :is(
+                    #clouds,
+                    #winds,
+                    #observations-graph,
+                    #forecasts-graph,
+                    #dropzone-map,
+                    #observations-table,
+                    #forecasts-table,
+                    #high-winds-today,
+                    #high-winds-tomorrow,
+                    #high-winds-details
+                ) {
+                padding: 14px;
+            }
+        }
+
         #clouds {
             grid-area: clouds;
         }
@@ -1620,13 +1683,13 @@ export function Root() {
         }
 
         .errors p {
-            color: red;
+            color: var(--color-danger);
         }
 
         .sticky {
             position: sticky;
             top: 0;
-            background-color: white;
+            background-color: var(--color-surface);
             z-index: 50;
         }
 

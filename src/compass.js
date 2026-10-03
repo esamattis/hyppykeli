@@ -91,9 +91,9 @@ export function Compass() {
             position: fixed;
             padding: 2px;
             /* border: 1px dashed black; */
-            box-shadow: 0 0 10px 5px gray;
-            border-radius: 5px;
-            background: white;
+            box-shadow: var(--shadow-floating);
+            border-radius: var(--radius-panel);
+            background: var(--color-surface);
             top: 5px;
             right: 5px;
             flex-direction: column;

@@ -1,32 +1,165 @@
 @layer base, components;
 
-/* Page defaults and shared theme; component rules live beside their markup. */
+/* Shared sky-blue theme. Override these tokens to customize the whole app. */
 @layer base {
     :root {
+        color-scheme: light;
+        --font-sans:
+            "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Arial,
+            sans-serif;
+        --font-mono:
+            ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        --color-sky: skyblue;
+        --color-page: #eef7fc;
+        --color-surface: #ffffff;
+        --color-surface-soft: #f5fbff;
+        --color-surface-hover: #e1f2fc;
+        --color-text: #19394d;
+        --color-muted: #526e80;
+        --color-primary: #126b98;
+        --color-primary-hover: #084d73;
+        --color-border: #c8e2ef;
+        --color-success: #237345;
+        --color-warning: #946000;
+        --color-danger: #bf3545;
+        --color-wind-low: #dcf2e3;
+        --color-wind-medium: #fff2b8;
+        --color-wind-high: #ffdbad;
+        --color-wind-very-high: #ffcbd0;
+        --radius-sm: 8px;
+        --radius-panel: 16px;
+        --shadow-panel: 0 4px 20px rgb(25 79 108 / 7%);
+        --shadow-floating: 0 8px 32px rgb(25 79 108 / 16%);
+        --color-backdrop: rgb(18 49 69 / 35%);
         --compass-width: 100px;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    html {
+        scroll-padding-bottom: 80px;
     }
 
     body {
         margin: 0;
         padding: 0;
+        background: var(--color-page);
+        color: var(--color-text);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.5;
+    }
+
+    h1,
+    h2,
+    h3 {
+        color: var(--color-text);
+        line-height: 1.25;
+        font-weight: 650;
+        letter-spacing: -0.025em;
+    }
+    h1 {
+        font-size: clamp(2rem, 4vw, 3rem);
+    }
+    h2 {
+        font-size: 1.3rem;
+        margin: 0 0 16px;
+    }
+    h3 {
+        font-size: 1.05rem;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+        font: inherit;
     }
 
     button {
-        padding: 5px;
+        padding: 8px 14px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: var(--color-surface-hover);
+        color: var(--color-primary);
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+    button:hover {
+        background: var(--color-sky);
+    }
+    button:disabled {
+        opacity: 0.5;
+        cursor: default;
     }
 
+    input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    select,
+    textarea {
+        max-width: 100%;
+        padding: 8px 10px;
+        color: var(--color-text);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+    }
+    input[type="checkbox"],
+    input[type="radio"] {
+        accent-color: var(--color-primary);
+    }
+    :focus-visible {
+        outline: 3px solid var(--color-primary);
+        outline-offset: 3px;
+    }
+
+    a,
     a:visited {
-        color: blue;
+        color: var(--color-primary);
+        text-underline-offset: 3px;
     }
-
+    a:hover {
+        color: var(--color-primary-hover);
+    }
     .ext,
     .ext:visited,
     a[href^="http"]:not([href*="hyppykeli.fi"]),
     a[href^="http"]:not([href*="hyppykeli.fi"]):visited {
-        color: black;
-        border-bottom: 1px dashed blue;
+        color: var(--color-primary);
+        border-bottom: 1px dashed var(--color-sky);
         text-decoration: none;
     }
+
+    fieldset {
+        margin: 16px 0;
+        padding: 20px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-panel);
+    }
+    legend {
+        color: var(--color-primary);
+        font-weight: 600;
+        padding: 0 8px;
+    }
+    dialog {
+        padding: 24px;
+        max-width: calc(100vw - 24px);
+        color: var(--color-text);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-panel);
+        box-shadow: var(--shadow-floating);
+    }
+    dialog::backdrop {
+        background: var(--color-backdrop);
+    }
+    ::selection {
+        background: var(--color-sky);
+        color: var(--color-text);
+    }
+
     @media (min-width: 900px) {
         :root {
             --compass-width: 200px;

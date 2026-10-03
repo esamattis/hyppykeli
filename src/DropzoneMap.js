@@ -1,7 +1,8 @@
+import { getTheme } from "./styles.js";
 // @ts-check
 import { html, h } from "htm/preact";
 import { useEffect, useRef, useState } from "preact/hooks";
-import { map, tileLayer, circleMarker } from "leaflet";
+import { map, tileLayer, circleMarker, point } from "leaflet";
 import { css, useScope } from "./useScope.js";
 import {
     FORECAST_COORDINATES,
@@ -11,6 +12,7 @@ import {
 } from "./data.js";
 import { OM_DATA } from "./om.js";
 import { formatClock } from "./utils.js";
+import { Help } from "./components.js";
 
 /** @type {Array<{ level: OpenMeteoPressureLevel, height: number }>} */
 const LEVELS = [
@@ -39,7 +41,9 @@ function WindLevel({ wind }) {
     const direction = validDirection
         ? ((wind.direction ?? 0) + 360) % 360
         : null;
-    const label = validSpeed ? `${wind.speed?.toFixed(1)} m/s` : "Ei tietoa";
+    const label = validSpeed
+        ? `${Math.round(wind.speed ?? 0)} m/s`
+        : "Ei tietoa";
     // The SVG points north; meteorological direction is where wind comes from.
     const rotation = (direction ?? 0) + 180;
     const length = validSpeed ? 14 + Math.min(wind.speed ?? 0, 25) * 1.1 : 14;
@@ -48,9 +52,6 @@ function WindLevel({ wind }) {
             <div>
                 <strong>${wind.label}</strong>
                 <div>${label}</div>
-                <small>
-                    ${direction !== null ? `${Math.round(direction)}°` : "Suunta puuttuu"}
-                </small>
             </div>
             <svg
                 width="64"
@@ -106,55 +107,51 @@ export function DropzoneMap() {
             grid-area: dropzone-map;
             min-width: 0;
         }
+        :scope {
+            --map-card-padding: 20px;
+        }
+        @media (max-width: 550px) {
+            :scope {
+                --map-card-padding: 14px;
+            }
+        }
         .map-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 190px;
+            grid-template-columns: minmax(0, 1fr);
             gap: 16px;
         }
         .dz-map {
             min-height: 440px;
-            height: 100%;
+            width: calc(100% + 2 * var(--map-card-padding));
+            margin: 0 calc(-1 * var(--map-card-padding))
+                calc(-1 * var(--map-card-padding));
             isolation: isolate;
-            border-radius: 8px;
-            background: #e7ece8;
+            border-radius: 0 0 var(--radius-panel) var(--radius-panel);
+            background: var(--color-surface-hover);
         }
         .wind-profile {
             min-width: 0;
         }
-        h3 {
-            margin: 0 0 8px;
-        }
         ul {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
             list-style: none;
             padding: 0;
             margin: 0;
         }
         .wind-level {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #8885;
+            gap: 4px;
+            font-size: 0.8rem;
             padding: 4px 0;
         }
         .wind-level svg {
             flex-shrink: 0;
-            color: #26739b;
-        }
-        small {
-            font-size: 0.8em;
-        }
-        .source-note {
-            font-size: 0.8em;
-            margin: 8px 0;
-        }
-        @media (max-width: 550px) {
-            .map-layout {
-                grid-template-columns: minmax(0, 1fr) 135px;
-                gap: 8px;
-            }
-            .wind-level svg {
-                width: 44px;
-            }
+            width: 36px;
+            height: 36px;
+            color: var(--color-primary);
         }
     `);
     /** @type {import('preact').RefObject<HTMLDivElement>} */
@@ -179,9 +176,96 @@ export function DropzoneMap() {
             Math.abs(lon) > 180
         )
             return;
-        const leafletMap = map(mapRef.current, {
+        const container = mapRef.current;
+        const leafletMap = map(container, {
             scrollWheelZoom: false,
-        }).setView([lat, lon], 14);
+            touchZoom: false,
+            zoomSnap: 0,
+            tapHold: false,
+        }).setView([lat, lon], 12);
+
+        // Let one finger scroll the page. Handle two-finger pan/pinch ourselves
+        // so Leaflet's single-touch dragging cannot capture the gesture.
+        /** @param {PointerEvent} event */
+        const selectDragging = (event) => {
+            if (event.pointerType === "touch") leafletMap.dragging.disable();
+            else leafletMap.dragging.enable();
+        };
+        /** @type {{ center: import('leaflet').Point, anchor: import('leaflet').Point, distance: number, zoom: number } | null} */
+        let gesture = null;
+        /** @param {TouchEvent} event */
+        const touchPosition = (event) => {
+            const first = event.touches[0];
+            const second = event.touches[1];
+            if (!first || !second) return null;
+            const rect = container.getBoundingClientRect();
+            return {
+                center: point(
+                    (first.clientX + second.clientX) / 2 - rect.left,
+                    (first.clientY + second.clientY) / 2 - rect.top,
+                ),
+                distance: Math.hypot(
+                    first.clientX - second.clientX,
+                    first.clientY - second.clientY,
+                ),
+            };
+        };
+        /** @param {TouchEvent} event */
+        const startGesture = (event) => {
+            const position = touchPosition(event);
+            if (!position || event.touches.length !== 2) {
+                gesture = null;
+                return;
+            }
+            event.preventDefault();
+            leafletMap.stop();
+            const zoom = leafletMap.getZoom();
+            gesture = {
+                ...position,
+                zoom,
+                anchor: leafletMap.project(
+                    leafletMap.containerPointToLatLng(position.center),
+                    zoom,
+                ),
+            };
+        };
+        /** @param {TouchEvent} event */
+        const moveGesture = (event) => {
+            const position = touchPosition(event);
+            if (!gesture || !position || event.touches.length !== 2) return;
+            event.preventDefault();
+            const zoom = Math.max(
+                leafletMap.getMinZoom(),
+                Math.min(
+                    leafletMap.getMaxZoom(),
+                    gesture.zoom +
+                        Math.log2(
+                            position.distance / Math.max(gesture.distance, 1),
+                        ),
+                ),
+            );
+            const anchor = gesture.anchor.multiplyBy(
+                2 ** (zoom - gesture.zoom),
+            );
+            const center = anchor.subtract(
+                position.center.subtract(leafletMap.getSize().divideBy(2)),
+            );
+            leafletMap.setView(leafletMap.unproject(center, zoom), zoom, {
+                animate: false,
+            });
+        };
+        const endGesture = () => {
+            gesture = null;
+        };
+        container.addEventListener("pointerdown", selectDragging, true);
+        container.addEventListener("touchstart", startGesture, {
+            passive: false,
+        });
+        container.addEventListener("touchmove", moveGesture, {
+            passive: false,
+        });
+        container.addEventListener("touchend", endGesture);
+        container.addEventListener("touchcancel", endGesture);
         tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution:
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -189,10 +273,11 @@ export function DropzoneMap() {
         }).addTo(leafletMap);
         const markerLabel = document.createElement("span");
         markerLabel.textContent = name;
+        const theme = getTheme();
         circleMarker([lat, lon], {
             radius: 8,
-            color: "#156389",
-            fillColor: "#fff",
+            color: theme.primary,
+            fillColor: theme.surface,
             fillOpacity: 1,
             weight: 3,
         })
@@ -202,6 +287,11 @@ export function DropzoneMap() {
         observer.observe(mapRef.current);
         return () => {
             observer.disconnect();
+            container.removeEventListener("pointerdown", selectDragging, true);
+            container.removeEventListener("touchstart", startGesture);
+            container.removeEventListener("touchmove", moveGesture);
+            container.removeEventListener("touchend", endGesture);
+            container.removeEventListener("touchcancel", endGesture);
             leafletMap.remove();
         };
     }, [coordinates, name]);
@@ -246,35 +336,46 @@ export function DropzoneMap() {
             aria-label="Hyppypaikan kartta ja tuuliprofiili"
         >
             ${scope.style}
-            <h2>Hyppypaikka ja tuulet nyt</h2>
+            <h2>
+                Ylätuulet
+                ${h(
+                    Help,
+                    { label: "?", id: "map-wind-help" },
+                    html`
+                        <p>
+                            Karttaa voi liikuttaa ja zoomata kahdella sormella.
+                        </p>
+                        <p>
+                            N ↑ · Nuolet näyttävät virtaussuunnan. Pituus kuvaa
+                            nopeutta (enintään 25 m/s).
+                        </p>
+                        <p>
+                            Ylätuulet:
+                            Open-Meteo${time && data ? `, klo ${formatClock(forecastTime(time, data.utc_offset_seconds))}` : " — ei nykyisen tunnin tietoja"}.
+                            Korkeudet ovat arvioita merenpinnasta.
+                        </p>
+                        <p>
+                            Maanpinta:
+                            ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, klo ${formatClock(ground.time)}` : " — ei havaintoa"}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
+                        </p>
+                    `,
+                )}
+            </h2>
             <div class="map-layout">
+                <aside class="wind-profile">
+                    <ul>
+                        ${winds.map((wind) => h(WindLevel, { key: wind.label, wind }))}
+                    </ul>
+                </aside>
                 <div
                     class=${`dz-map ${scope.end}`}
                     ref=${mapRef}
+                    style="touch-action: pan-y"
                     role="region"
                     aria-label=${`${name} kartalla`}
                 >
                     ${!coordinates ? "Odotetaan koordinaatteja…" : null}
                 </div>
-                <aside class="wind-profile">
-                    <h3>Tuuliprofiili</h3>
-                    <ul>
-                        ${winds.map((wind) => h(WindLevel, { key: wind.label, wind }))}
-                    </ul>
-                    <p class="source-note">
-                        N ↑ · Nuolet näyttävät virtaussuunnan. Pituus kuvaa
-                        nopeutta (enintään 25 m/s).
-                    </p>
-                    <p class="source-note">
-                        Ylätuulet:
-                        Open-Meteo${time && data ? `, klo ${formatClock(forecastTime(time, data.utc_offset_seconds))}` : " — ei nykyisen tunnin tietoja"}.
-                        Korkeudet ovat arvioita merenpinnasta.
-                    </p>
-                    <p class="source-note">
-                        Maanpinta:
-                        ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, klo ${formatClock(ground.time)}` : " — ei havaintoa"}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
-                    </p>
-                </aside>
             </div>
         </section>
     `;

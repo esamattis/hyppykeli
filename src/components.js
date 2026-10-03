@@ -18,7 +18,7 @@ export function Help(props) {
             margin: 0;
             padding: 5px;
             background-color: transparent;
-            color: blue;
+            color: var(--color-primary);
             border: none;
         }
         :scope:is(dialog) {
@@ -30,10 +30,10 @@ export function Help(props) {
         }
         .help-content {
             font-size: initial;
-            font-family: initial;
+            font-family: var(--font-sans);
             font-weight: initial;
             font-style: normal;
-            width: clamp(300px, 400px, 90vw);
+            width: 100%;
         }
     `);
 

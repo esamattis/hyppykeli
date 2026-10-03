@@ -308,23 +308,23 @@ export function WindCell({ data, columnClass, height }) {
         }
 
         .wind-direction {
-            color: #666;
+            color: var(--color-muted);
         }
 
         :scope.wind-low {
-            background-color: #90ee90; /* vihreä */
+            background-color: var(--color-wind-low); /* vihreä */
         }
 
         :scope.wind-medium {
-            background-color: #ffff00; /* keltainen */
+            background-color: var(--color-wind-medium); /* keltainen */
         }
 
         :scope.wind-high {
-            background-color: #ffa500; /* oranssi */
+            background-color: var(--color-wind-high); /* oranssi */
         }
 
         :scope.wind-very-high {
-            background-color: #ff6347; /* punainen */
+            background-color: var(--color-wind-very-high); /* punainen */
         }
 
         .wind-direction {

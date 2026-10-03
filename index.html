@@ -43,11 +43,29 @@
                     @scope {
                         :scope {
                             display: grid;
-                            margin: 10px;
-                            margin-bottom: 100px;
+                            max-width: 960px;
+                            margin: 32px auto 100px;
+                            padding: 32px;
+                            background: var(--color-surface);
+                            border: 1px solid var(--color-border);
+                            border-radius: var(--radius-panel);
+                            box-shadow: var(--shadow-panel);
                         }
                         p {
                             line-height: 1.5;
+                        }
+                        .dz-list p {
+                            padding: 12px 16px;
+                            margin: 8px 0;
+                            background: var(--color-surface-soft);
+                            border: 1px solid var(--color-border);
+                            border-radius: var(--radius-sm);
+                        }
+                        @media (max-width: 600px) {
+                            :scope {
+                                margin: 12px 12px 80px;
+                                padding: 20px;
+                            }
                         }
                         .dz-list a {
                             font-size: 120%;
@@ -201,17 +219,27 @@
                                 margin-left: 200px;
                                 font-style: italic;
                                 margin-bottom: 5px;
-                                color: gray;
+                                color: var(--color-muted);
                                 font-size: 80%;
                             }
                             input[type="text"] {
                                 display: flex;
                                 width: 20ch;
-                                padding: 2px;
+                                padding: 8px 10px;
                             }
 
                             .create-dz {
                                 margin-top: 10px;
+                            }
+                            @media (max-width: 600px) {
+                                label {
+                                    flex-direction: column;
+                                    gap: 4px;
+                                }
+                                .desc {
+                                    margin-left: 0;
+                                    margin-bottom: 12px;
+                                }
                             }
                             label small {
                                 font-weight: normal;
