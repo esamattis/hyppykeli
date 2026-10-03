@@ -125,7 +125,6 @@ export const EXAMPLE_CSS = `
     #clouds,
     #forecasts-graph,
     #forecasts-table,
-    #high-winds p,
     #high-winds-today h2 + p,
     #high-winds-tomorrow,
     #info,
@@ -154,12 +153,16 @@ export const EXAMPLE_CSS = `
         height: clamp(200px, 50vh, 400px) !important;
         width: clamp(200px, 100vw, 480px) !important;
     }
-    #high-winds-today.side-scroll {
+    #high-winds-today {
         grid-column: 1;
         grid-row: 2;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
+    }
+    #high-winds-today .wind-table-scroll {
+        max-width: 100%;
     }
     .time-header {
         min-width: 50px;

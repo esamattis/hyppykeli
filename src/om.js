@@ -346,64 +346,62 @@ export function WindTable({ title, tableData }) {
     }
 
     return html`
-        <table class="wind-table upperwinds-compact">
-            <thead>
-                <tr>
-                    <th colspan=${Object.keys(tableData).length + 1}>
-                        ${title}
-                    </th>
-                </tr>
-                <tr>
-                    <th></th>
-                    ${Object.entries(tableData).map(
-                        ([hour, { isCurrentBlock }]) => {
-                            const startHour = parseInt(hour);
-                            const endHour = (startHour + 3) % 24;
-                            const timeRange = `${startHour.toString().padStart(2, "0")}-${endHour.toString().padStart(2, "0")}`;
-                            return html`
-                                <th
-                                    class=${`time-header ${getColumnClass(
-                                        hour,
-                                        isCurrentBlock,
-                                    )}`}
-                                >
-                                    ${isCurrentBlock
-                                        ? `${currentHour}:00`
-                                        : timeRange}
-                                </th>
-                            `;
-                        },
-                    )}
-                </tr>
-            </thead>
-            <tbody>
-                ${PRESSURE_LEVELS.map(
-                    ({ pressure, height }) => html`
-                        <tr key=${pressure}>
-                            <td class="pressure-cell">${height}</td>
-                            ${Object.entries(tableData).map(
-                                ([
-                                    hour,
-                                    { data: hourData, isCurrentBlock },
-                                ]) => html`
-                                    <${WindCell}
-                                        key=${hour}
-                                        data=${hourData[
-                                            pressure.split(" ")[0] ?? ""
-                                        ]}
-                                        columnClass=${getColumnClass(
+        <div class="wind-table-title">${title}</div>
+        <div class="wind-table-scroll" tabindex="0" aria-label=${title}>
+            <table class="wind-table upperwinds-compact">
+                <thead>
+                    <tr>
+                        <th></th>
+                        ${Object.entries(tableData).map(
+                            ([hour, { isCurrentBlock }]) => {
+                                const startHour = parseInt(hour);
+                                const endHour = (startHour + 3) % 24;
+                                const timeRange = `${startHour.toString().padStart(2, "0")}-${endHour.toString().padStart(2, "0")}`;
+                                return html`
+                                    <th
+                                        class=${`time-header ${getColumnClass(
                                             hour,
                                             isCurrentBlock,
-                                        )}
-                                        height=${height}
-                                    />
-                                `,
-                            )}
-                        </tr>
-                    `,
-                )}
-            </tbody>
-        </table>
+                                        )}`}
+                                    >
+                                        ${isCurrentBlock
+                                            ? `${currentHour}:00`
+                                            : timeRange}
+                                    </th>
+                                `;
+                            },
+                        )}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${PRESSURE_LEVELS.map(
+                        ({ pressure, height }) => html`
+                            <tr key=${pressure}>
+                                <td class="pressure-cell">${height}</td>
+                                ${Object.entries(tableData).map(
+                                    ([
+                                        hour,
+                                        { data: hourData, isCurrentBlock },
+                                    ]) => html`
+                                        <${WindCell}
+                                            key=${hour}
+                                            data=${hourData[
+                                                pressure.split(" ")[0] ?? ""
+                                            ]}
+                                            columnClass=${getColumnClass(
+                                                hour,
+                                                isCurrentBlock,
+                                            )}
+                                            height=${height}
+                                        />
+                                    `,
+                                )}
+                            </tr>
+                        `,
+                    )}
+                </tbody>
+            </table>
+        </div>
     `;
 }
 
@@ -483,6 +481,12 @@ export function OpenMeteoRaw() {
     };
 
     return html`
-        <div>${renderTable()}</div>
+        <div
+            class="wind-table-scroll"
+            tabindex="0"
+            aria-label="Ylätuuliennusteet"
+        >
+            ${renderTable()}
+        </div>
     `;
 }

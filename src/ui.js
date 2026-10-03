@@ -1071,7 +1071,7 @@ function HighWinds() {
 
     if (showDetails) {
         return html`
-            <div id="high-winds-details" class="side-scroll">
+            <div id="high-winds-details">
                 <h2>ECMWF Ylätuuliennusteet</h2>
 
                 <p>
@@ -1089,7 +1089,7 @@ function HighWinds() {
     }
 
     return html`
-        <div id="high-winds-today" class="side-scroll">
+        <div id="high-winds-today">
             <h2>ECMWF Ylätuuliennusteet</h2>
 
             <p>
@@ -1107,7 +1107,7 @@ function HighWinds() {
             </${ErrorBoundary}>
         </div>
 
-        <div id="high-winds-tomorrow" class="side-scroll">
+        <div id="high-winds-tomorrow">
                 <${ErrorBoundary}>
                     <${OpenMeteoTool} tomorrow />
                 </${ErrorBoundary}>
