@@ -1454,7 +1454,7 @@ function Info() {
     const scope = useScope(css`
         :scope {
             grid-area: info;
-            max-width: calc(100vw - 48px - var(--compass-width));
+            max-width: 100%;
             width: 100%;
             line-height: 1.8;
         }
@@ -1521,7 +1521,7 @@ function Title() {
     const scope = useScope(css`
         :scope {
             grid-area: title;
-            max-width: calc(100vw - 48px - var(--compass-width));
+            max-width: 100%;
             width: 100%;
             word-break: break-word;
         }
@@ -1624,7 +1624,6 @@ export function Root() {
                 "info info"
                 "clouds clouds"
                 "winds winds"
-                "compass compass"
                 "observations-graph observations-graph"
                 "forecasts-graph forecasts-graph"
                 "dropzone-map dropzone-map"
@@ -1699,6 +1698,8 @@ export function Root() {
 
         #winds {
             grid-area: winds;
+            display: flex;
+            flex-direction: column;
         }
 
         #winds .h2-with-icon,
@@ -1716,10 +1717,6 @@ export function Root() {
         #winds .wind-heading-icon .rotate-container {
             width: 36px;
             height: 36px;
-        }
-
-        #compass {
-            grid-area: compass;
         }
 
         #observations-graph {
@@ -1846,9 +1843,10 @@ export function Root() {
                     </span>
                 </h2>
                 <${WindSummary} />
+                ${h(Compass, { floating: false })}
             </div>
 
-            <${Compass} />
+            ${h(Compass, { floating: true })}
 
             <${Graph} />
 

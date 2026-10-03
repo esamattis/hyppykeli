@@ -74,32 +74,41 @@ function calculateNeedleLength(gust) {
     }
 }
 
-export function Compass() {
+/** @param {{ floating?: boolean }} props */
+export function Compass({ floating = false } = {}) {
     const scope = useScope(css`
         svg,
         text {
             transform-origin: center;
         }
         :scope svg {
-            width: 100%;
+            width: min(100%, 300px);
+            align-self: center;
         }
 
         :scope {
             display: flex;
-            width: var(--compass-width);
-            z-index: 100;
-            position: fixed;
+            width: 100%;
+            flex: 1;
+            max-width: 100%;
+            margin: 0;
+            position: relative;
             padding: 2px;
-            /* border: 1px dashed black; */
-            box-shadow: var(--shadow-floating);
+
             border-radius: var(--radius-panel);
             background: var(--color-surface);
+
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        :scope.floating {
+            width: 100px;
+            position: fixed;
+            z-index: 100;
             top: 5px;
             right: 5px;
-            flex-direction: column;
-        }
-        svg .historic {
-            opacity: 0.3;
+            box-shadow: var(--shadow-floating);
+            pointer-events: none;
         }
 
         .compass-observations-gust {
@@ -108,6 +117,12 @@ export function Compass() {
 
         .compass-observations-speed {
             display: none;
+        }
+
+        :scope > .help {
+            position: absolute;
+            right: 0;
+            bottom: 0;
         }
 
         .compass-time {
@@ -123,11 +138,17 @@ export function Compass() {
     const rotation = isNaN(rc) ? 0 : rc; // Default to 0 degrees if invalid
     const circle = INSTRUCTOR_LIMIT_LENGTH;
     const studentCircle = STUDENT_LIMIT_LENGTH;
-    const latestObservation = OBSERVATIONS.value[0];
+    const observation = floating
+        ? HOVERED_OBSERVATION.value
+        : LATEST_OBSERVATION.value;
+
+    if (floating && !observation) {
+        return null;
+    }
 
     // prettier-ignore
     return html`
-        <div id="compass" class="compass">
+        <div id=${floating ? "hovered-compass" : "compass"} class=${floating ? "compass floating" : "compass"}>
             ${scope.style}
             <svg
                 style="transform: rotate(${rotation}deg); "
@@ -144,7 +165,7 @@ export function Compass() {
               <text x="200" y="390" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">S</text>
               <text x="380" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">E</text>
               <${HistoryNeedles} />
-              <${GustNeedle} />
+              ${h(GustNeedle, { observation, history: floating })}
               <${WindVariations} />
               <text
                     x="200"
@@ -156,7 +177,7 @@ export function Compass() {
                     class="compass-observations-gust"
                     style="transform: rotate(-${rotation}deg); "
                 >
-                    ${latestObservation ? latestObservation.gust + " m/s" : ""}
+                    ${observation ? observation.gust + " m/s" : ""}
                 </text>
                 <text
                     x="200"
@@ -167,16 +188,16 @@ export function Compass() {
                     class="compass-observations-speed"
                     style="transform: rotate(-${rotation}deg); "
                 >
-                    ${latestObservation ? latestObservation.speed + " m/s" : ""}
+                    ${observation ? observation.speed + " m/s" : ""}
                 </text>
 
             </svg>
 
-            <p class="compass-time">
-                <${FromNow} date=${HOVERED_OBSERVATION.value?.time} />
-            </p>
+            ${floating && html`<p class="compass-time">
+                ${h(FromNow, { date: observation?.time })}
+            </p>`}
 
-            <${Help}>
+            ${!floating && html`<${Help}>
                 <p>
                     Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Oranssi
                     ympyrä on oppilasraja (8 m/s) ja musta ympyrä on kelppariraja (11 m/s).
@@ -191,7 +212,7 @@ export function Compass() {
                     <li>Oranssi: Kun vaihtelu on 45-90 astetta tai puuska on 50-100 % suurempi kuin keskimääräinen tuuli. Kaari on tässä tapauksessa 10px leveämpi.</li>
                     <li>Punainen: Kun vaihtelu on yli 90 astetta tai puuska on 100 % tai enemmän suurempi kuin keskimääräinen tuuli. Kaari on tässä tapauksessa 20px leveämpi.</li>
                 </ul>
-            </${Help}>
+            </${Help}>`}
         </div>
     `;
 }
@@ -213,10 +234,10 @@ function NeedlePolygon(props) {
     `;
 }
 
-function GustNeedle() {
-    const history = !!HOVERED_OBSERVATION.value;
-    const obs = HOVERED_OBSERVATION.value ?? LATEST_OBSERVATION.value;
-
+/**
+ * @param {{ observation: WeatherData | undefined, history: boolean }} props
+ */
+function GustNeedle({ observation: obs, history }) {
     // When using metar based observations, gust might not be available.
     // Fall back to speed in that case.
     const gust = obs?.gust ?? obs?.speed;
