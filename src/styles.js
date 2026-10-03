@@ -129,3 +129,31 @@ export function getTheme() {
         font: styles.getPropertyValue("--font-sans").trim(),
     };
 }
+
+// Shared layout for the cloud and wind summary readings.
+export const summaryStyles = css`
+    .summary-metrics {
+        display: grid;
+        gap: 12px;
+        margin: 0;
+    }
+
+    .summary-metrics dt {
+        color: var(--color-muted);
+        font-size: 0.85rem;
+        margin-bottom: 4px;
+    }
+
+    .summary-metrics dd {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .summary-time {
+        margin-top: 12px;
+        color: var(--color-muted);
+        font-size: 0.85rem;
+    }
+`;

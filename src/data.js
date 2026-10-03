@@ -3,7 +3,6 @@
 import { computed, effect, signal } from "@preact/signals";
 import {
     debug,
-    filterNullish,
     isNullish,
     hasValidWindData,
     knotsToMs,
@@ -162,32 +161,6 @@ export const SINGLE_FORECAST = computed(() => {
     return FORECASTS.value.find((fore) => {
         return fore.time.getTime() > inTwoHours;
     });
-});
-
-/**
- * @type {Signal<number>}
- */
-export const GUST_TREND = computed(() => {
-    const maxAge = Date.now() + 1000 * 60 * 60;
-    const latestGust = OBSERVATIONS.value[0]?.gust ?? 0;
-
-    const recentGusts = FORECASTS.value.flatMap((point) => {
-        if (point.time.getTime() <= maxAge) {
-            return point.gust;
-        }
-
-        return [];
-    });
-
-    if (recentGusts.length === 0) {
-        return 0;
-    }
-
-    const avg =
-        filterNullish(recentGusts).reduce((sum, gust) => sum + gust, 0) /
-        recentGusts.length;
-
-    return -latestGust + avg;
 });
 
 /**

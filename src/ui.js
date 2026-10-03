@@ -4,6 +4,7 @@ import {
     windStatusStyles,
     dateHeadingStyles,
     freshnessStyles,
+    summaryStyles,
 } from "./styles.js";
 import { effect, signal } from "@preact/signals";
 import { useState } from "preact/hooks";
@@ -26,7 +27,6 @@ import {
     FORECAST_DAY,
     FORECAST_DATE,
     STALE_FORECASTS,
-    GUST_TREND,
     FORECAST_LOCATION_NAME,
     QUERY_PARAMS,
     navigateQs,
@@ -435,26 +435,32 @@ function DataTable(props) {
 
 function WindSummary() {
     const scope = useScope(css`
-        .latest-wind-cell {
-            display: flex;
-            white-space: nowrap;
-            justify-content: space-between;
-            max-width: 20ch;
+        ${summaryStyles}
+        .wind-metrics {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
-
-        .latest-value {
-            font-weight: bold;
-            font-size: 130%;
+        .latest-wind-cell + .latest-wind-cell {
+            border-left: 1px solid var(--color-border);
+            padding-left: 12px;
+        }
+        .wind-metrics .latest-value {
+            display: flex;
+            align-items: baseline;
+            gap: 3px;
+            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            white-space: nowrap;
+        }
+        .latest-value .direction-value {
+            width: auto;
+        }
+        .unit {
+            font-size: 0.65em;
+            font-weight: normal;
         }
         :scope.historic {
             opacity: 0.5;
         }
         ${windStatusStyles}
-        @media (min-width: 900px) {
-            .latest-wind-cell {
-                display: inline;
-            }
-        }
     `);
 
     const history = !!HOVERED_OBSERVATION.value;
@@ -471,66 +477,33 @@ function WindSummary() {
     }
 
     return html`
-        <p class=${history ? "historic" : ""}>
+        <div class=${history ? "wind-summary historic" : "wind-summary"}>
             ${scope.style}
-
-            <div class="latest-wind-cell">
-            Puuska
-                <span
-                    class=${
-                        "latest-value latest-gust " +
-                        getWarningLevel(obs.gust ?? 0)
-                    }
-                >
-                    ${" "}${obs.gust?.toFixed(1) ?? "?"} m/s${" "}
-                </span>
-            </div>
-
-            <div class="latest-wind-cell">
-            Keskituuli
-            <span class="latest-value latest-wind">
-                ${" "}${obs.speed?.toFixed(1) ?? "?"} m/s${" "}
-            </span>
-            </div>
-
-            <div class="latest-wind-cell">
-            Suunta${" "}
-            <span class="latest-value latest-wind">
-                <${WindDirection} direction=${obs.direction} />
-            </span>
-            ${" "}
-            </div>
-
-            <div>
-                <${FromNow} date=${obs.time} />
-            </div>
-
-            <div>
-                <${GustTrend} />
-            </div>
-        </p>
-    `;
-}
-
-function GustTrend() {
-    const trend = GUST_TREND.value;
-    if (Math.abs(trend) < 2) {
-        return;
-    }
-
-    const help = html`<${Help} label="?">Seuraavan tunnin aikana puuska vaikuttaa muuttuvan yli 2m/s.</${Help}>`;
-
-    return html`
-        <div title=${`Ero ${trend.toFixed(1)}m/s`}>
-            ${
-                trend > 0
-                    ? html`
-                          Mahdollisesti voimistuva ↗ ${help}
-                      `
-                    : html`
-                          Mahdollisesti heikkenevä ↘ ${help}
-                      `
-            }
+            <dl class="summary-metrics wind-metrics">
+                <div class="latest-wind-cell">
+                    <dt>Puuska</dt>
+                    <dd
+                        class=${"latest-value latest-gust " + getWarningLevel(obs.gust ?? 0)}
+                    >
+                        ${obs.gust?.toFixed(1) ?? "?"}
+                        <span class="unit">m/s</span>
+                    </dd>
+                </div>
+                <div class="latest-wind-cell">
+                    <dt>Keskituuli</dt>
+                    <dd class="latest-value latest-wind">
+                        ${obs.speed?.toFixed(1) ?? "?"}
+                        <span class="unit">m/s</span>
+                    </dd>
+                </div>
+                <div class="latest-wind-cell">
+                    <dt>Suunta</dt>
+                    <dd class="latest-value latest-wind">
+                        ${h(WindDirection, { direction: obs.direction, value: true })}
+                    </dd>
+                </div>
+            </dl>
+            <div class="summary-time">${h(FromNow, { date: obs.time })}</div>
         </div>
     `;
 }
@@ -588,20 +561,77 @@ function CloudLayer({ cloud }) {
 
 function CloudSummary() {
     const scope = useScope(css`
-        .vertical-center {
-            display: inline-flex;
+        ${summaryStyles}
+        .cloud-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .cloud-layers {
+            display: grid;
+            gap: 8px;
+            font-size: 1.1rem;
+        }
+        .cloud-estimates {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--color-border);
+        }
+        .summary-metrics > div {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .summary-metrics dt {
+            margin: 0;
+        }
+        .summary-metrics dd {
+            white-space: nowrap;
+            font-size: 1.1rem;
+        }
+        .cloud-forecast {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface-soft);
+        }
+        .forecast-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            font-weight: 650;
+        }
+        .forecast-heading h3 {
+            margin: 0;
+            font: inherit;
+            letter-spacing: normal;
+        }
+        .forecast-reading {
+            display: flex;
             align-items: center;
         }
-
+        .forecast-reading .cloud-cover {
+            align-items: center;
+        }
+        .cloud-estimates:empty {
+            display: none;
+        }
         .metar {
-            font-size: 70%;
+            display: block;
+            width: 100%;
+            min-width: 0;
+            margin-top: 8px;
+            padding-bottom: 4px;
+            overflow-x: auto;
+            white-space: nowrap;
             font-family: var(--font-mono);
-        }
-        .condensation {
-            margin-top: 10px;
-        }
-        .forecast-label {
-            margin-right: 1ch;
+            font-size: 0.8rem;
+            color: var(--color-muted);
         }
     `);
 
@@ -617,49 +647,64 @@ function CloudSummary() {
     }
 
     return html`
-        <ul class="cloud-list" style=${{ display: metar ? "block" : "none" }}>
+        <div class="cloud-summary">
             ${scope.style}
-            <li>
-                ${
-                    msg
-                        ? msg
-                        : metar?.clouds.map((cloud) => h(CloudLayer, { cloud }))
-                }
-                ${metar?.cb ? "Ukkospilviä ⚡️" : null}
-            </li>
+            ${
+                metar
+                    ? html`
+                          <ul class="cloud-list">
+                              <li class="cloud-layers">
+                                  ${
+                                      msg
+                                          ? msg
+                                          : metar?.clouds.map(
+                                                (cloud) => html`
+                                                    <div>
+                                                        ${h(CloudLayer, { cloud })}
+                                                    </div>
+                                                `,
+                                            )
+                                  }
+                                  ${metar?.cb ? "Ukkospilviä ⚡️" : null}
+                              </li>
 
-            <li>
-                <small>
-                    <${FromNow} date=${time} />
-                </small>
+                              <li>
+                                  ${
+                                      metar?.metar
+                                          ? html`
+                                                <code
+                                                    class="metar"
+                                                    tabindex="0"
+                                                    aria-label="METAR"
+                                                >
+                                                    ${metar.metar}
+                                                </code>
+                                            `
+                                          : null
+                                  }
+                                  <div class="summary-time">
+                                      ${h(FromNow, { date: time })}
+                                  </div>
+                              </li>
+                          </ul>
+                      `
+                    : null
+            }
 
-                <br />
-                ${
-                    metar?.metar
-                        ? html`
-                              <em class="metar">${metar.metar}</em>
-                          `
-                        : null
-                }
-            </li>
-        </ul>
-
-        <ul class="cloud-list">
-            ${scope.style}
-            ${whenAll(
-                [latest?.temperature, latest?.dewPoint],
-                (temp, dew) => html`
-                    <li class="condensation">
-                        <span class="cloud-list-item-alt">
-                            Tiivistymiskorkeus${" "}
-                            <b>${getLiftedCondensationLevel(temp, dew)}M</b>
-                        </span>
-                        ${h(
-                            Help,
-                            { label: "?", id: "dewpoint" },
-                            html`
-                                <!-- prettier-ignore -->
-                                <p>
+            <dl class="summary-metrics cloud-estimates">
+                ${whenAll(
+                    [latest?.temperature, latest?.dewPoint],
+                    (temp, dew) => html`
+                        <div class="condensation">
+                            <dt>Tiivistymiskorkeus</dt>
+                            <dd class="cloud-list-item-alt">
+                                <b>${getLiftedCondensationLevel(temp, dew)}M</b>
+                                ${h(
+                                    Help,
+                                    { label: "?", id: "dewpoint" },
+                                    html`
+                                        <!-- prettier-ignore -->
+                                        <p>
                                     Arvio mahdollisten pilvien korkeudesta${" "}
                                     <a href="https://fi.wikipedia.org/wiki/Nostotiivistyskorkeus">tiivistymiskorkeuden</a>${" "}
                                     perusteella.
@@ -670,51 +715,76 @@ function CloudSummary() {
 
                                 </p>
 
-                                <p>
-                                    Arvio on järjellinen vain silloin kun pilvet
-                                    ovat muodostuneet mittauspaikalla. Jos
-                                    pilvet ovat muodostuneet toisaalla eri
-                                    lämpötilassa/kastepisteessä ja saapuneet
-                                    tuulen mukana, arvio on todennäköisesti päin
-                                    prinkkalaa.
-                                </p>
-                            `,
-                        )}
-                    </li>
-
-                    <li>
-                        <span class="vertical-center">
-                            <span class="forecast-label">
-                                2h päästä
-                                ${whenAll(
-                                    [forecast?.temperature, forecast?.dewPoint],
-                                    (temp, dew) =>
-                                        ` ${getLiftedCondensationLevel(temp, dew)}M`,
+                                        <p>
+                                            Arvio on järjellinen vain silloin
+                                            kun pilvet ovat muodostuneet
+                                            mittauspaikalla. Jos pilvet ovat
+                                            muodostuneet toisaalla eri
+                                            lämpötilassa/kastepisteessä ja
+                                            saapuneet tuulen mukana, arvio on
+                                            todennäköisesti päin prinkkalaa.
+                                        </p>
+                                    `,
                                 )}
-                            </span>
-                            ${h(PercentagePie, {
-                                percentage: forecast?.lowCloudCover ?? 0,
-                            })}
-                            ${h(
-                                Help,
-                                { label: "?", id: "cloudforecast" },
-                                html`
-                                    <p>
-                                        Tiivistymiskorkeuden ja pilvipeiton
-                                        ennuste matalille (alle 2km) pilville
-                                        ${
-                                            forecast
-                                                ? ` klo ${formatClock(forecast?.time)}`
-                                                : null
-                                        }
-                                    </p>
-                                `,
-                            )}
-                        </span>
-                    </li>
-                `,
-            )}
-        </ul>
+                            </dd>
+                        </div>
+                    `,
+                )}
+            </dl>
+            ${
+                forecast
+                    ? html`
+                          <section
+                              class="cloud-forecast"
+                              aria-label="Pilvien ennuste"
+                          >
+                              <div class="forecast-heading">
+                                  <h3>Ennuste · 2h päästä</h3>
+                                  ${h(
+                                      Help,
+                                      { label: "?", id: "cloudforecast" },
+                                      html`
+                                          <p>
+                                              Tiivistymiskorkeuden ja
+                                              pilvipeiton ennuste matalille
+                                              (alle 2km) pilville
+                                              ${
+                                                  forecast
+                                                      ? ` klo ${formatClock(forecast?.time)}`
+                                                      : null
+                                              }
+                                          </p>
+                                      `,
+                                  )}
+                              </div>
+                              <dl class="summary-metrics">
+                                  <div>
+                                      <dt>Tiivistymiskorkeus</dt>
+                                      <dd class="forecast-label">
+                                          ${
+                                              whenAll(
+                                                  [
+                                                      forecast.temperature,
+                                                      forecast.dewPoint,
+                                                  ],
+                                                  (temp, dew) =>
+                                                      `${getLiftedCondensationLevel(temp, dew)}M`,
+                                              ) ?? "—"
+                                          }
+                                      </dd>
+                                  </div>
+                                  <div>
+                                      <dt>Pilvipeitto</dt>
+                                      <dd class="forecast-reading">
+                                          ${isNullish(forecast.lowCloudCover) ? "—" : h(PercentagePie, { percentage: forecast.lowCloudCover })}
+                                      </dd>
+                                  </div>
+                              </dl>
+                          </section>
+                      `
+                    : null
+            }
+        </div>
     `;
 }
 
@@ -1631,6 +1701,23 @@ export function Root() {
             grid-area: winds;
         }
 
+        #winds .h2-with-icon,
+        #clouds .h2-with-icon {
+            min-height: 36px;
+            justify-content: space-between;
+        }
+
+        .wind-heading-icon {
+            width: 40px;
+            height: 36px;
+            position: relative;
+        }
+
+        #winds .wind-heading-icon .rotate-container {
+            width: 36px;
+            height: 36px;
+        }
+
         #compass {
             grid-area: compass;
         }
@@ -1752,10 +1839,11 @@ export function Root() {
             <div id="winds">
                 <h2 class="h2-with-icon">
                     Tuulet
-                    <div class="heading-spacer"></div>
-                    <${ErrorBoundary}>
-                        <${DynamicParachute} />
-                    </${ErrorBoundary}>
+                    <span class="wind-heading-icon">
+                        <${ErrorBoundary}>
+                            <${DynamicParachute} />
+                        </${ErrorBoundary}>
+                    </span>
                 </h2>
                 <${WindSummary} />
             </div>
