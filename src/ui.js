@@ -1,4 +1,10 @@
 // @ts-check
+import { css, useScope } from "./useScope.js";
+import {
+    windStatusStyles,
+    dateHeadingStyles,
+    freshnessStyles,
+} from "./styles.js";
 import { effect, signal } from "@preact/signals";
 import { useState } from "preact/hooks";
 import { h, html } from "htm/preact";
@@ -81,7 +87,7 @@ function ObservationTHead() {
             <th>Puuska</th>
             <th>Tuuli</th>
             <th>Suunta</th>
-            <th style="width: 8ch">
+            <th>
             TK
             <${Help} label="?">
                 <p>
@@ -138,7 +144,7 @@ function ForecastTHead() {
         <th>Puuska</th>
         <th>Tuuli</th>
         <th>Suunta</th>
-        <th style="width: 10ch">
+        <th class="cloud-low-heading">
             Pilvet L
             <${Help} label="?">
                 <p>
@@ -146,7 +152,7 @@ function ForecastTHead() {
                 </p>
             </${Help}>
         </th>
-        <th style="width: 11ch">
+        <th class="cloud-middle-heading">
             Pilvet ML
             <${Help} label="?">
                 <p>
@@ -155,7 +161,7 @@ function ForecastTHead() {
             </${Help}>
         </th>
 
-        <th style="width: 8ch">
+        <th>
             TK
             <${Help} label="?">
                 <p>
@@ -230,12 +236,23 @@ function ForecastRows(props) {
  * @param {number} [props.percentage]
  */
 function PercentagePie(props) {
+    const scope = useScope(css`
+        :scope {
+            display: inline-flex;
+        }
+
+        :scope svg {
+            margin-right: 1ch;
+        }
+    `);
+
     if (isNullish(props.percentage)) {
         return null;
     }
 
     return html`
         <span class="cloud-cover">
+            ${scope.style}
             <${PieChart} percentage=${props.percentage} />
             <span class="text">${props.percentage.toFixed(0)} %</span>
         </span>
@@ -278,19 +295,41 @@ function PieChart({ percentage }) {
  * @param {boolean} props.value
  */
 function WindDirection(props) {
+    const scope = useScope(css`
+        .direction-value {
+            width: 4ch;
+            display: inline-block;
+            padding-right: 3px;
+            z-index: -1;
+        }
+
+        .direction {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 80%;
+            width: 20px;
+            height: 20px;
+            transform: rotate(var(--direction));
+        }
+    `);
+
     if (isNullish(props.direction)) {
         return null;
     }
 
     return html`
         <span>
-            ${props.value !== false
-                ? html`
-                      <span class="direction-value">
-                          ${props.direction.toFixed(0)}°
-                      </span>
-                  `
-                : null}
+            ${scope.style}
+            ${
+                props.value !== false
+                    ? html`
+                          <span class="direction-value">
+                              ${props.direction.toFixed(0)}°
+                          </span>
+                      `
+                    : null
+            }
             <span
                 class="direction"
                 style=${{
@@ -311,30 +350,104 @@ function WindDirection(props) {
  * @param {any} props.thead
  */
 function DataTable(props) {
+    const scope = useScope(css`
+        :scope {
+            table-layout: fixed;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        :scope th {
+            text-align: left;
+            width: 8ch;
+        }
+
+        :scope td,
+        :scope th {
+            white-space: nowrap;
+            background-color: white;
+        }
+
+        :scope td:first-of-type,
+        :scope th:first-of-type {
+            position: sticky;
+            width: 5ch;
+            z-index: 10;
+            left: 0;
+        }
+
+        :scope tbody tr:hover th,
+        :scope tbody tr:hover td {
+            background-color: #e9e9e9;
+        }
+        :scope th.cloud-low-heading {
+            width: 10ch;
+        }
+        :scope th.cloud-middle-heading {
+            width: 11ch;
+        }
+        ${windStatusStyles}
+    `);
+
+    const moreScope = useScope(css`
+        :scope {
+            font-size: 80%;
+        }
+    `);
     const [showAll, setShowAll] = useState(false);
     const data = showAll ? props.data.value : props.data.value.slice(0, 50);
     const showLoadMore = !showAll && props.data.value.length > data.length;
 
     return html`
         <table class="weather-table">
+            ${scope.style}
             <thead>${props.thead}</thead>
             <tbody>
                 <${props.Rows} data=${data} />
             </tbody>
         </table>
-        ${showLoadMore
-            ? html`
-                  <div class="show-more">
-                      <button type="button" onClick=${() => setShowAll(true)}>
-                          Näytä kaikki (${props.data.value.length})
-                      </button>
-                  </div>
-              `
-            : null}
+        ${
+            showLoadMore
+                ? html`
+                      <div class="show-more">
+                          ${moreScope.style}
+                          <button
+                              type="button"
+                              onClick=${() => setShowAll(true)}
+                          >
+                              Näytä kaikki (${props.data.value.length})
+                          </button>
+                      </div>
+                  `
+                : null
+        }
     `;
 }
 
 function WindSummary() {
+    const scope = useScope(css`
+        .latest-wind-cell {
+            display: flex;
+            white-space: nowrap;
+            justify-content: space-between;
+            max-width: 20ch;
+        }
+
+        .latest-value {
+            font-weight: bold;
+            font-size: 130%;
+        }
+        :scope.historic {
+            opacity: 0.5;
+        }
+        ${windStatusStyles}
+        @media (min-width: 900px) {
+            .latest-wind-cell {
+                display: inline;
+            }
+        }
+    `);
+
     const history = !!HOVERED_OBSERVATION.value;
     const obs = HOVERED_OBSERVATION.value || LATEST_OBSERVATION.value;
 
@@ -350,6 +463,7 @@ function WindSummary() {
 
     return html`
         <p class=${history ? "historic" : ""}>
+            ${scope.style}
 
             <div class="latest-wind-cell">
             Puuska
@@ -399,13 +513,15 @@ function GustTrend() {
 
     return html`
         <div title=${`Ero ${trend.toFixed(1)}m/s`}>
-            ${trend > 0
-                ? html`
-                      Mahdollisesti voimistuva ↗ ${help}
-                  `
-                : html`
-                      Mahdollisesti heikkenevä ↘ ${help}
-                  `}
+            ${
+                trend > 0
+                    ? html`
+                          Mahdollisesti voimistuva ↗ ${help}
+                      `
+                    : html`
+                          Mahdollisesti heikkenevä ↘ ${help}
+                      `
+            }
         </div>
     `;
 }
@@ -438,6 +554,12 @@ const CLOUD_TYPES = {
  * @param {CloudLayer} props.cloud
  **/
 function CloudLayer({ cloud }) {
+    const scope = useScope(css`
+        :scope {
+            font-size: 120%;
+            font-family: monospace;
+        }
+    `);
     return html`
         <a href=${cloud.href}>${CLOUD_TYPES[cloud.amount] ?? cloud.amount}</a>
         ${" "}
@@ -446,7 +568,8 @@ function CloudLayer({ cloud }) {
             Help,
             { label: "?" },
             html`
-                <p class="metar" style="font-size: 120%">
+                <p class="metar">
+                    ${scope.style}
                     ${cloud.amount}${" "}${cloud.base}${cloud.unit}
                 </p>
             `,
@@ -455,6 +578,24 @@ function CloudLayer({ cloud }) {
 }
 
 function CloudSummary() {
+    const scope = useScope(css`
+        .vertical-center {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .metar {
+            font-size: 70%;
+            font-family: monospace;
+        }
+        .condensation {
+            margin-top: 10px;
+        }
+        .forecast-label {
+            margin-right: 1ch;
+        }
+    `);
+
     const metar = METARS.value?.at(-1);
     const latest = LATEST_OBSERVATION.value;
     const time = metar?.time ?? latest?.time;
@@ -468,10 +609,13 @@ function CloudSummary() {
 
     return html`
         <ul class="cloud-list" style=${{ display: metar ? "block" : "none" }}>
+            ${scope.style}
             <li>
-                ${msg
-                    ? msg
-                    : metar?.clouds.map((cloud) => h(CloudLayer, { cloud }))}
+                ${
+                    msg
+                        ? msg
+                        : metar?.clouds.map((cloud) => h(CloudLayer, { cloud }))
+                }
                 ${metar?.cb ? "Ukkospilviä ⚡️" : null}
             </li>
 
@@ -481,19 +625,22 @@ function CloudSummary() {
                 </small>
 
                 <br />
-                ${metar?.metar
-                    ? html`
-                          <em class="metar">${metar.metar}</em>
-                      `
-                    : null}
+                ${
+                    metar?.metar
+                        ? html`
+                              <em class="metar">${metar.metar}</em>
+                          `
+                        : null
+                }
             </li>
         </ul>
 
         <ul class="cloud-list">
+            ${scope.style}
             ${whenAll(
                 [latest?.temperature, latest?.dewPoint],
                 (temp, dew) => html`
-                    <li style="margin-top: 10px">
+                    <li class="condensation">
                         <span class="cloud-list-item-alt">
                             Tiivistymiskorkeus${" "}
                             <b>${getLiftedCondensationLevel(temp, dew)}M</b>
@@ -528,7 +675,7 @@ function CloudSummary() {
 
                     <li>
                         <span class="vertical-center">
-                            <span style="margin-right: 1ch">
+                            <span class="forecast-label">
                                 2h päästä
                                 ${whenAll(
                                     [forecast?.temperature, forecast?.dewPoint],
@@ -546,9 +693,11 @@ function CloudSummary() {
                                     <p>
                                         Tiivistymiskorkeuden ja pilvipeiton
                                         ennuste matalille (alle 2km) pilville
-                                        ${forecast
-                                            ? ` klo ${formatClock(forecast?.time)}`
-                                            : null}
+                                        ${
+                                            forecast
+                                                ? ` klo ${formatClock(forecast?.time)}`
+                                                : null
+                                        }
                                     </p>
                                 `,
                             )}
@@ -764,6 +913,50 @@ function savePreviousDz(e) {
 }
 
 export function SideMenu() {
+    const scope = useScope(css`
+        :scope {
+            position: fixed;
+            z-index: 200;
+            background-color: white;
+            right: -100%;
+            top: 0;
+            bottom: 0px;
+            width: clamp(250px, 300px, 70vw);
+            overflow-y: auto;
+            background-color: white;
+            box-shadow: -6px 0 2px -2px gray;
+            transition: right 0.3s ease;
+            padding: 40px;
+            padding-bottom: 100px;
+        }
+
+        :scope select {
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        :scope.open {
+            right: 0;
+        }
+        .hide {
+            display: none;
+        }
+
+        button[value="share"] {
+            margin-left: 1ch;
+        }
+
+        .dz-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2px;
+        }
+        .dzs button {
+            margin-left: 1ch;
+            font-size: 50%;
+        }
+    `);
+
     /**
      * @param {MouseEvent} e
      */
@@ -782,6 +975,7 @@ export function SideMenu() {
             class="${MENU_OPEN.value ? "side-menu open" : "side-menu"}"
             onClick=${closeMenuOnLinkClick}
         >
+            ${scope.style}
             <h1>${NAME.value}</h1>
 
             <a href="/?no_redirect">Etusivulle</a>
@@ -789,23 +983,25 @@ export function SideMenu() {
             <h2>Ennuste</h2>
 
             <p>
-                ${FORECAST_DAY.value === 0
-                    ? html`
-                          <a
-                              onClick=${asInPageNavigation}
-                              href="${getQs({ forecast_day: "1" })}"
-                          >
-                              Näytä huomisen ennuste
-                          </a>
-                      `
-                    : html`
-                          <a
-                              onClick=${asInPageNavigation}
-                              href="${getQs({ forecast_day: undefined })}"
-                          >
-                              Näytä tämän päivän ennuste
-                          </a>
-                      `}
+                ${
+                    FORECAST_DAY.value === 0
+                        ? html`
+                              <a
+                                  onClick=${asInPageNavigation}
+                                  href="${getQs({ forecast_day: "1" })}"
+                              >
+                                  Näytä huomisen ennuste
+                              </a>
+                          `
+                        : html`
+                              <a
+                                  onClick=${asInPageNavigation}
+                                  href="${getQs({ forecast_day: undefined })}"
+                              >
+                                  Näytä tämän päivän ennuste
+                              </a>
+                          `
+                }
             </p>
 
             <form>
@@ -834,9 +1030,11 @@ export function SideMenu() {
             <p><a href="#forecasts-table">Ennusteet 🧾</a></p>
             <p>
                 <a
-                    href="${QUERY_PARAMS.value.high_winds_details
-                        ? "#high-winds-details"
-                        : "#high-winds-today"}"
+                    href="${
+                        QUERY_PARAMS.value.high_winds_details
+                            ? "#high-winds-details"
+                            : "#high-winds-today"
+                    }"
                 >
                     Ylätuuliennusteet
                 </a>
@@ -861,7 +1059,6 @@ export function SideMenu() {
                             <a href=${qs}>${name}</a>
                             <button
                                 type="button"
-                                style="margin-left: 1ch; font-size: 50%"
                                 onClick=${() => {
                                     if (
                                         confirm(
@@ -967,9 +1164,17 @@ function handleCSSEditorSubmit(e) {
 }
 
 function CSSEditor() {
+    const scope = useScope(css`
+        :scope textarea {
+            width: 100%;
+            height: 30ch;
+        }
+    `);
+
     // prettier-ignore
     return html`
         <form class="css-editor" onSubmit=${handleCSSEditorSubmit}>
+            ${scope.style}
             <textarea name="css">${atob(QUERY_PARAMS.value.css || "")}</textarea>
             <button type="submit">Submit</button>
         </form>
@@ -989,8 +1194,47 @@ function RenderInjectedCSS() {
 }
 
 export function StickyFooter() {
+    const scope = useScope(css`
+        :scope .item .icon,
+        :scope .item .text {
+            display: flex;
+            justify-content: center;
+        }
+
+        :scope .item {
+            display: flex;
+            justify-items: center;
+            align-items: center;
+            text-decoration: none;
+            height: 100%;
+        }
+
+        :scope {
+            display: flex;
+            z-index: 200;
+            align-items: center;
+            height: 50px;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background-color: white;
+            box-shadow: 0 -4px 2px -2px gray;
+            overflow-x: auto;
+            justify-content: space-around;
+        }
+        .menu-burger {
+            height: 40px;
+            width: 40px;
+            font-size: 150%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    `);
+
     return html`
         <div class="sticky-footer">
+            ${scope.style}
             <a class="item" href="#top">
                 <div class="wrap">
                     <div class="icon">⬆️</div>
@@ -1013,9 +1257,11 @@ export function StickyFooter() {
 
             <a
                 class="item"
-                href="${QUERY_PARAMS.value.high_winds_details
-                    ? "#high-winds-details"
-                    : "#high-winds-today"}"
+                href="${
+                    QUERY_PARAMS.value.high_winds_details
+                        ? "#high-winds-details"
+                        : "#high-winds-today"
+                }"
             >
                 <div class="wrap">
                     <div class="icon">💨</div>
@@ -1057,8 +1303,9 @@ function ForecastLocationInfo() {
     return html`
         Ennuste on tehty alueelle${" "}
         <a
-            href="https://www.google.fi/maps/place/${FORECAST_COORDINATES.value ||
-            STATION_COORDINATES.value}"
+            href="https://www.google.fi/maps/place/${
+                FORECAST_COORDINATES.value || STATION_COORDINATES.value
+            }"
         >
             ${FORECAST_LOCATION_NAME.value}
         </a>
@@ -1116,28 +1363,45 @@ function HighWinds() {
 }
 
 function Info() {
+    const scope = useScope(css`
+        :scope {
+            grid-area: info;
+            width: calc(100vw - 30px - var(--compass-width));
+            line-height: 1.8;
+        }
+        .disclaimer {
+            font-style: italic;
+            font-weight: bold;
+        }
+    `);
+
     const metar = METARS.value?.[0];
 
     return html`
         <div id="info">
-            ${STATION_NAME.value
-                ? html`
-                      Havaintotiedot haettu havaintoasemalta${" "}
-                      <a
-                          href="https://www.google.fi/maps/place/${STATION_COORDINATES.value}"
-                      >
-                          ${STATION_NAME}
-                      </a>
-                      .${" "}
-                  `
-                : null}
+            ${scope.style}
+            ${
+                STATION_NAME.value
+                    ? html`
+                          Havaintotiedot haettu havaintoasemalta${" "}
+                          <a
+                              href="https://www.google.fi/maps/place/${STATION_COORDINATES.value}"
+                          >
+                              ${STATION_NAME}
+                          </a>
+                          .${" "}
+                      `
+                    : null
+            }
             <${ForecastLocationInfo} />
-            ${metar?.elevation !== undefined
-                ? html`
-                      ${" "}Lentokentän korkeus meren pinnasta${" "}
-                      ${metar.elevation.toFixed(0)}M. ${" "}
-                  `
-                : null}
+            ${
+                metar?.elevation !== undefined
+                    ? html`
+                          ${" "}Lentokentän korkeus meren pinnasta${" "}
+                          ${metar.elevation.toFixed(0)}M. ${" "}
+                      `
+                    : null
+            }
             ${whenAll(
                 [STATION_COORDINATES.value, FORECAST_COORDINATES.value],
                 (station, forecast) => {
@@ -1156,13 +1420,37 @@ function Info() {
                 ovat oikein.
             </div>
             <small>
-                Psst, onko tarvetta hyppypäiväkirjalle? Tsekkaa <a href="https://loki.hyppykeli.fi/">Loki</a>. Koodi HYPPYKELI2026
+                Psst, onko tarvetta hyppypäiväkirjalle? Tsekkaa
+                <a href="https://loki.hyppykeli.fi/">Loki</a>
+                . Koodi HYPPYKELI2026
             </small>
         </div>
     `;
 }
 
 function Title() {
+    const scope = useScope(css`
+        :scope {
+            grid-area: title;
+            width: calc(100vw - 30px - var(--compass-width));
+            word-break: break-word;
+        }
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .title-temp {
+            font-size: 65%;
+            color: #707070;
+            font-family: monospace;
+        }
+
+        .title-name,
+        .title-temp {
+            display: block;
+        }
+    `);
+
     const historic = !!HOVERED_OBSERVATION.value;
     const time =
         HOVERED_OBSERVATION.value?.time ?? LATEST_OBSERVATION.value?.time;
@@ -1181,55 +1469,193 @@ function Title() {
 
     return html`
         <h1 id="title">
+            ${scope.style}
             <span class="title-name">${NAME}</span>
-            ${temps
-                ? html`
-                      <span
-                          class="title-temp"
-                          style=${{ opacity: historic ? 0.5 : 1 }}
-                      >
-                          <span class="nowrap">
-                              ${temperature?.toFixed(1)}°C maassa,
-                          </span>
-                          ${" "}
-                          <span class="nowrap">
-                              ${temps[4].toFixed(1)}°C 4km:ssä
-                          </span>
-                          ${h(
-                              Help,
-                              { label: "?" },
-                              html`
-                                  <p>
-                                      ICAO:n${" "}
-                                      <a
-                                          href="https://fi.wikipedia.org/wiki/Kansainv%C3%A4linen_standardi-ilmakeh%C3%A4"
-                                      >
-                                          ilmakehämallin
-                                      </a>
-                                      ${" "} mukainen lämpötilan muutos
-                                      Troposfäärissä (-6.5°C/km)
-                                  </p>
+            ${
+                temps
+                    ? html`
+                          <span
+                              class="title-temp"
+                              style=${{ opacity: historic ? 0.5 : 1 }}
+                          >
+                              <span class="nowrap">
+                                  ${temperature?.toFixed(1)}°C maassa,
+                              </span>
+                              ${" "}
+                              <span class="nowrap">
+                                  ${temps[4].toFixed(1)}°C 4km:ssä
+                              </span>
+                              ${h(
+                                  Help,
+                                  { label: "?" },
+                                  html`
+                                      <p>
+                                          ICAO:n${" "}
+                                          <a
+                                              href="https://fi.wikipedia.org/wiki/Kansainv%C3%A4linen_standardi-ilmakeh%C3%A4"
+                                          >
+                                              ilmakehämallin
+                                          </a>
+                                          ${" "} mukainen lämpötilan muutos
+                                          Troposfäärissä (-6.5°C/km)
+                                      </p>
 
-                                  <ul>
-                                      <li>1km ${temps[1].toFixed(1)}°C</li>
-                                      <li>2km ${temps[2].toFixed(1)}°C</li>
-                                      <li>3km ${temps[3].toFixed(1)}°C</li>
-                                      <li>4km ${temps[4].toFixed(1)}°C</li>
-                                  </ul>
+                                      <ul>
+                                          <li>1km ${temps[1].toFixed(1)}°C</li>
+                                          <li>2km ${temps[2].toFixed(1)}°C</li>
+                                          <li>3km ${temps[3].toFixed(1)}°C</li>
+                                          <li>4km ${temps[4].toFixed(1)}°C</li>
+                                      </ul>
 
-                                  <p>${h(FromNow, { date: time })}</p>
-                              `,
-                          )}
-                      </span>
-                  `
-                : null}
+                                      <p>${h(FromNow, { date: time })}</p>
+                                  `,
+                              )}
+                          </span>
+                      `
+                    : null
+            }
         </h1>
     `;
 }
 
 export function Root() {
+    const scope = useScope(css`
+        :scope {
+            display: grid;
+            margin: 10px;
+            margin-bottom: 100px;
+            grid-template-columns: 1fr;
+            gap: 10px;
+
+            /** MOBILE **/
+            grid-template-areas:
+                "errors errors"
+                "title title"
+                "info info"
+                "clouds clouds"
+                "winds winds"
+                "compass compass"
+                "observations-graph observations-graph"
+                "forecasts-graph forecasts-graph"
+                "observations-table observations-table"
+                "forecasts-table forecasts-table"
+                "high-winds-details high-winds-details"
+                "high-winds-today high-winds-today"
+                "high-winds-tomorrow high-winds-tomorrow";
+        }
+        @media (min-width: 900px) {
+            :scope {
+                grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr);
+                grid-template-areas:
+                    "errors errors"
+                    "title title"
+                    "info info"
+                    "clouds winds"
+                    "observations-graph forecasts-graph"
+                    "observations-table forecasts-table"
+                    "high-winds-today high-winds-tomorrow"
+                    "high-winds-details high-winds-details";
+            }
+        }
+        #clouds {
+            grid-area: clouds;
+        }
+
+        #winds {
+            grid-area: winds;
+        }
+
+        #compass {
+            grid-area: compass;
+        }
+
+        #observations-graph {
+            grid-area: observations-graph;
+        }
+
+        #forecasts-graph {
+            grid-area: forecasts-graph;
+        }
+
+        #forecasts-table {
+            grid-area: forecasts-table;
+        }
+
+        #observations-table {
+            grid-area: observations-table;
+        }
+
+        #high-winds-today {
+            grid-area: high-winds-today;
+        }
+
+        #high-winds-tomorrow {
+            grid-area: high-winds-tomorrow;
+            align-self: end;
+        }
+
+        #high-winds-details {
+            grid-area: high-winds-details;
+        }
+
+        #high-winds-today,
+        #high-winds-tomorrow,
+        #high-winds-details {
+            min-width: 0;
+        }
+
+        #errors {
+            grid-area: errors;
+        }
+
+        .side-scroll {
+            overflow-x: auto;
+            overflow-y: hidden;
+            width: 100%;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .errors p {
+            color: red;
+        }
+
+        .sticky {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 50;
+        }
+
+        .anchor {
+            height: 0;
+        }
+
+        .h2-with-icon {
+            display: flex;
+            align-items: center;
+        }
+
+        .heading-spacer {
+            width: 1ch;
+        }
+        .anvil {
+            height: 30px;
+            margin-left: 1ch;
+        }
+        #title {
+            grid-area: title;
+        }
+        #info {
+            grid-area: info;
+        }
+        ${dateHeadingStyles}
+        ${freshnessStyles}
+    `);
+
     return html`
         <div class="content grid">
+            ${scope.style}
             ${
                 ERRORS.value.length > 0
                     ? html`
@@ -1260,7 +1686,7 @@ export function Root() {
             <div id="winds">
                 <h2 class="h2-with-icon">
                     Tuulet
-                    <div style="width: 1ch"></div>
+                    <div class="heading-spacer"></div>
                     <${ErrorBoundary}>
                         <${DynamicParachute} />
                     </${ErrorBoundary}>

@@ -8,7 +8,7 @@ The project uses TypeScript through JSDoc comments in `.js` files, with strict
 mode enabled. Always check TypeScript diagnostics after code changes by running
 `npm run tsc`.
 
-Define helper types and interfaces in `types.ts`. They can be referenced globally
+Define helper types and interfaces in `types.d.ts`. They can be referenced globally
 throughout the project.
 
 ## Dependencies and UI
@@ -37,6 +37,29 @@ html`
     )}
 `;
 ```
+
+## Tooling
+
+Use mise for the Node version in `mise.toml`. The pnpm version is pinned by
+`packageManager` in `package.json`, rather than by mise. Run project scripts with
+`mise exec -- corepack pnpm run <script>` (for example, `tsc`).
+
+## Component CSS
+
+Use `css` and `useScope` from `src/useScope.js` for component styles. Render
+`${scope.style}` directly inside the DOM element that owns the styles; use
+`:scope` to style that element. Components with sibling roots need a style node
+inside each root. Call hooks before conditional returns.
+
+Add `scope.end` to a content wrapper's classes when the component's rules should
+exclude supplied children. This excludes the wrapper's children, not the wrapper
+itself, and does not block inheritance or styles from other scopes.
+
+Share reusable CSS snippets in `src/styles.js`. Keep page defaults and theme rules
+in `styles.css`; static landing-page sections use inline native `@scope` rules.
+Component styles use the `components` layer so unlayered custom CSS from the CSS
+editor can override them. Keep existing IDs and classes used by custom CSS.
+`@scope` does not isolate keyframe names, so prefix animation names by component.
 
 ## Local runtime
 

@@ -1,4 +1,5 @@
 // @ts-check
+import { css, useScope } from "./useScope.js";
 
 import { Component, html } from "htm/preact";
 import { Fragment } from "preact";
@@ -12,6 +13,30 @@ import { formatClock } from "./utils.js";
  * @param {string} [props.id]
  */
 export function Help(props) {
+    const scope = useScope(css`
+        :scope.help {
+            margin: 0;
+            padding: 5px;
+            background-color: transparent;
+            color: blue;
+            border: none;
+        }
+        :scope:is(dialog) {
+            margin: 0 auto;
+            margin-top: 20px;
+            font-weight: normal;
+            width: clamp(300px, 400px, 95vw);
+            white-space: wrap;
+        }
+        .help-content {
+            font-size: initial;
+            font-family: initial;
+            font-weight: initial;
+            font-style: normal;
+            width: clamp(300px, 400px, 90vw);
+        }
+    `);
+
     /** @type {import('preact').RefObject<HTMLDialogElement>} */
     const ref = useRef(null);
 
@@ -25,10 +50,11 @@ export function Help(props) {
 
     return html`
         <button class="help" type="button" onClick=${open} id=${props.id}>
-            ${props.label ?? "Ohje"}
+            ${scope.style} ${props.label ?? "Ohje"}
         </button>
         <dialog ref=${ref}>
-            <div class="help-content">${props.children}</div>
+            ${scope.style}
+            <div class=${`help-content ${scope.end}`}>${props.children}</div>
             <div>
                 <button type="button" onClick=${close}>Sulje</button>
             </div>

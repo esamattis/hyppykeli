@@ -1,4 +1,6 @@
 // @ts-check
+import { css, useScope } from "./useScope.js";
+import { upperWindTableStyles } from "./styles.js";
 import { html } from "htm/preact";
 import { FORECAST_COORDINATES, STATION_COORDINATES } from "./data.js";
 import { signal } from "@preact/signals";
@@ -260,6 +262,11 @@ function roundToNearestFive(num) {
  * @param {number|null} props.direction
  */
 export function WindArrow({ direction }) {
+    const scope = useScope(css`
+        :scope {
+            display: inline-block;
+        }
+    `);
     if (isNullish(direction)) {
         return null;
     }
@@ -269,11 +276,10 @@ export function WindArrow({ direction }) {
     return html`
         <span
             style=${{
-                display: "inline-block",
                 transform: `rotate(${rotationDegree}deg)`,
             }}
         >
-            ${arrow}
+            ${scope.style} ${arrow}
         </span>
     `;
 }
@@ -287,6 +293,46 @@ export function WindArrow({ direction }) {
  * @param {string} props.height
  */
 export function WindCell({ data, columnClass, height }) {
+    const scope = useScope(css`
+        :scope {
+            padding: 2px;
+        }
+
+        .wind-speed {
+            font-weight: bold;
+        }
+
+        .wind-direction {
+            color: #666;
+        }
+
+        :scope.wind-low {
+            background-color: #90ee90; /* vihreä */
+        }
+
+        :scope.wind-medium {
+            background-color: #ffff00; /* keltainen */
+        }
+
+        :scope.wind-high {
+            background-color: #ffa500; /* oranssi */
+        }
+
+        :scope.wind-very-high {
+            background-color: #ff6347; /* punainen */
+        }
+
+        .wind-direction {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wind-direction span {
+            margin-left: 4px;
+            font-size: 14px;
+        }
+    `);
     if (!data)
         return html`
             <td class=${columnClass}>-</td>
@@ -305,19 +351,24 @@ export function WindCell({ data, columnClass, height }) {
                 height,
             )}`}
         >
-            ${isNullish(speed)
-                ? null
-                : html`
-                      <div class="wind-speed">${speedInMS} m/s</div>
-                  `}
-            ${isNullish(speed)
-                ? null
-                : html`
-                      <div class="wind-direction">
-                          ${roundedDirection}°
-                          <${WindArrow} direction=${roundedDirection} />
-                      </div>
-                  `}
+            ${scope.style}
+            ${
+                isNullish(speed)
+                    ? null
+                    : html`
+                          <div class="wind-speed">${speedInMS} m/s</div>
+                      `
+            }
+            ${
+                isNullish(speed)
+                    ? null
+                    : html`
+                          <div class="wind-direction">
+                              ${roundedDirection}°
+                              <${WindArrow} direction=${roundedDirection} />
+                          </div>
+                      `
+            }
         </td>
     `;
 }
@@ -328,6 +379,9 @@ export function WindCell({ data, columnClass, height }) {
  * @param {OpenMeteoDayData} props.tableData
  */
 export function WindTable({ title, tableData }) {
+    const scope = useScope(css`
+        ${upperWindTableStyles}
+    `);
     if (!tableData) return null;
 
     const currentHour = new Date().getHours();
@@ -346,8 +400,9 @@ export function WindTable({ title, tableData }) {
     }
 
     return html`
-        <div class="wind-table-title">${title}</div>
+        <div class="wind-table-title">${scope.style}${title}</div>
         <div class="wind-table-scroll" tabindex="0" aria-label=${title}>
+            ${scope.style}
             <table class="wind-table upperwinds-compact">
                 <thead>
                     <tr>
@@ -364,9 +419,11 @@ export function WindTable({ title, tableData }) {
                                             isCurrentBlock,
                                         )}`}
                                     >
-                                        ${isCurrentBlock
-                                            ? `${currentHour}:00`
-                                            : timeRange}
+                                        ${
+                                            isCurrentBlock
+                                                ? `${currentHour}:00`
+                                                : timeRange
+                                        }
                                     </th>
                                 `;
                             },
@@ -385,9 +442,11 @@ export function WindTable({ title, tableData }) {
                                     ]) => html`
                                         <${WindCell}
                                             key=${hour}
-                                            data=${hourData[
-                                                pressure.split(" ")[0] ?? ""
-                                            ]}
+                                            data=${
+                                                hourData[
+                                                    pressure.split(" ")[0] ?? ""
+                                                ]
+                                            }
                                             columnClass=${getColumnClass(
                                                 hour,
                                                 isCurrentBlock,
@@ -426,6 +485,10 @@ export function OpenMeteoTool({ tomorrow }) {
 }
 
 export function OpenMeteoRaw() {
+    const scope = useScope(css`
+        ${upperWindTableStyles}
+    `);
+
     const data = OM_DATA.value;
 
     if (!data) {
@@ -486,7 +549,7 @@ export function OpenMeteoRaw() {
             tabindex="0"
             aria-label="Ylätuuliennusteet"
         >
-            ${renderTable()}
+            ${scope.style} ${renderTable()}
         </div>
     `;
 }

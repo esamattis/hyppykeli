@@ -1,4 +1,5 @@
 // @ts-check
+import { css, useScope } from "./useScope.js";
 
 import { html } from "htm/preact";
 import { useEffect, useRef } from "preact/hooks";
@@ -109,6 +110,46 @@ const swingAnimation = computed(() => {
  * The parachute's color, rotation, and swing are controlled by wind variations.
  */
 export function DynamicParachute() {
+    const scope = useScope(css`
+        @keyframes hyppykeli-parachute-swing {
+            0% {
+                transform: rotate(var(--swing-angle));
+            }
+            100% {
+                transform: rotate(calc(-1 * var(--swing-angle)));
+            }
+        }
+        @keyframes hyppykeli-parachute-rotate {
+            0% {
+                transform: rotateY(calc(-1 * var(--rotate-angle) / 2));
+            }
+            100% {
+                transform: rotateY(calc(var(--rotate-angle) / 2));
+            }
+        }
+        :scope {
+            width: 100px;
+            height: 100px;
+            display: inline-block;
+            animation: var(--rotate-animation, none);
+        }
+        .swing-container {
+            width: 100%;
+            height: 100%;
+            display: inline-block;
+            transform-origin: center top;
+            animation: var(--swing-animation);
+        }
+        .dynamic-parachute {
+            width: 100%;
+            height: 100%;
+            fill: var(--parachute-color);
+        }
+        .parachute-color {
+            fill: var(--parachute-color);
+        }
+    `);
+
     /** @type {import("preact/compat").MutableRefObject<SVGElement|null>} */
     const svgRef = useRef(null);
 
@@ -131,7 +172,7 @@ export function DynamicParachute() {
                 );
                 swingContainer.style.setProperty(
                     "--swing-animation",
-                    `swing ${duration}s ease-in-out infinite alternate`,
+                    `hyppykeli-parachute-swing ${duration}s ease-in-out infinite alternate`,
                 );
                 debug(
                     `Swing animation applied: ${swingContainer.style.getPropertyValue("--swing-animation")}`,
@@ -147,7 +188,7 @@ export function DynamicParachute() {
                     );
                     rotateContainer.style.setProperty(
                         "--rotate-animation",
-                        `rotate ${duration}s linear infinite alternate`,
+                        `hyppykeli-parachute-rotate ${duration}s linear infinite alternate`,
                     );
                     debug(
                         `Rotate animation applied: ${rotateContainer.style.getPropertyValue("--rotate-animation")}`,
@@ -166,46 +207,8 @@ export function DynamicParachute() {
     ]);
 
     return html`
-        <style>
-            @keyframes swing {
-                0% {
-                    transform: rotate(var(--swing-angle));
-                }
-                100% {
-                    transform: rotate(calc(-1 * var(--swing-angle)));
-                }
-            }
-            @keyframes rotate {
-                0% {
-                    transform: rotateY(calc(-1 * var(--rotate-angle) / 2));
-                }
-                100% {
-                    transform: rotateY(calc(var(--rotate-angle) / 2));
-                }
-            }
-            .rotate-container {
-                width: 100px;
-                height: 100px;
-                display: inline-block;
-                animation: var(--rotate-animation, none);
-            }
-            .swing-container {
-                width: 100%;
-                height: 100%;
-                display: inline-block;
-                transform-origin: center top;
-                animation: var(--swing-animation);
-            }
-            .dynamic-parachute {
-                width: 100%;
-                height: 100%;
-                fill: var(--parachute-color);
-            }
-            .parachute-color {
-                fill: var(--parachute-color);
-            }
-        </style>
         <div class="rotate-container">
+            ${scope.style}
             <div class="swing-container">
                 <svg
                     ref=${svgRef}

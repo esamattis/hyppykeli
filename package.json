@@ -1,5 +1,6 @@
 {
     "type": "module",
+    "packageManager": "pnpm@10.7.1",
     "scripts": {
         "dev": "python3 -m http.server",
         "prettier-check": "prettier --check index.html src/ *.css",

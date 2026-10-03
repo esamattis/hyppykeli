@@ -1,4 +1,6 @@
 // @ts-check
+import { css, useScope } from "./useScope.js";
+import { dateHeadingStyles, freshnessStyles } from "./styles.js";
 import { useEffect, useRef } from "preact/hooks";
 import { effect } from "@preact/signals";
 import { html } from "htm/preact";
@@ -127,6 +129,16 @@ function updateCharts(obs, fore) {
 }
 
 export function Graph() {
+    const scope = useScope(css`
+        .chart {
+            position: relative;
+            height: clamp(350px, 70vh, 600px);
+            border: 1px solid black;
+        }
+        ${dateHeadingStyles}
+        ${freshnessStyles}
+    `);
+
     const obsChartRef = useRef(null);
     const foreChartRef = useRef(null);
 
@@ -165,24 +177,30 @@ export function Graph() {
     };
 
     return html`
-        ${HAS_WIND_OBSERVATIONS.value
-            ? html`
-                  <div id="observations-graph">
-                      <h2>
-                          Havainnot
-                          <span class="date">${formatDate(new Date())}</span>
-                      </h2>
-                      <div class="chart" onMouseLeave=${onMouseLeaveObs}>
-                          <canvas ref=${obsChartRef}></canvas>
+        ${
+            HAS_WIND_OBSERVATIONS.value
+                ? html`
+                      <div id="observations-graph">
+                          ${scope.style}
+                          <h2>
+                              Havainnot
+                              <span class="date">
+                                  ${formatDate(new Date())}
+                              </span>
+                          </h2>
+                          <div class="chart" onMouseLeave=${onMouseLeaveObs}>
+                              <canvas ref=${obsChartRef}></canvas>
+                          </div>
                       </div>
-                  </div>
-              `
-            : null}
+                  `
+                : null
+        }
 
         <div
             id="forecasts-graph"
             style=${HAS_WIND_OBSERVATIONS.value ? "" : "grid-column-start: 1"}
         >
+            ${scope.style}
             <h2>
                 Ennusteet
                 <span class="date">

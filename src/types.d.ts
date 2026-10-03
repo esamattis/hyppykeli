@@ -318,3 +318,8 @@ interface RoadStationInfoDetailed {
 
 declare module "metar" {}
 declare function parseMETAR(metarString: string): MetarJSResponse;
+
+interface CSSScope {
+    end: string;
+    style: import("preact").VNode;
+}

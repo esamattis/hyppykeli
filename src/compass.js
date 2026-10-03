@@ -1,6 +1,6 @@
 // @ts-check
-import { html } from "htm/preact";
-import { h } from "preact";
+import { css, useScope } from "./useScope.js";
+import { h, html } from "htm/preact";
 import {
     HOVERED_OBSERVATION,
     LATEST_OBSERVATION,
@@ -75,6 +75,50 @@ function calculateNeedleLength(gust) {
 }
 
 export function Compass() {
+    const scope = useScope(css`
+        svg,
+        text {
+            transform-origin: center;
+        }
+        :scope svg {
+            width: 100%;
+        }
+
+        :scope {
+            display: flex;
+            width: var(--compass-width);
+            z-index: 100;
+            position: fixed;
+            padding: 2px;
+            /* border: 1px dashed black; */
+            box-shadow: 0 0 10px 5px gray;
+            border-radius: 5px;
+            background: white;
+            top: 5px;
+            right: 5px;
+            flex-direction: column;
+        }
+        svg .historic {
+            opacity: 0.3;
+        }
+
+        .compass-observations-gust {
+            display: none;
+        }
+
+        .compass-observations-speed {
+            display: none;
+        }
+
+        .compass-time {
+            margin: 0;
+            padding-left: 5px;
+            padding-right: 5px;
+            font-size: 70%;
+            text-align: center;
+        }
+    `);
+
     const rc = parseInt(QUERY_PARAMS.value.rc ?? "0", 10);
     const rotation = isNaN(rc) ? 0 : rc; // Default to 0 degrees if invalid
     const circle = INSTRUCTOR_LIMIT_LENGTH;
@@ -84,8 +128,9 @@ export function Compass() {
     // prettier-ignore
     return html`
         <div id="compass" class="compass">
+            ${scope.style}
             <svg
-                style="transform: rotate(${rotation}deg); transform-origin: center;"
+                style="transform: rotate(${rotation}deg); "
                 viewBox="0 0 400 400"
                 xmlns="http://www.w3.org/2000/svg">
 
@@ -109,7 +154,7 @@ export function Compass() {
                     fill="black"
                     font-weight="bold"
                     class="compass-observations-gust"
-                    style="transform: rotate(-${rotation}deg); transform-origin: center;"
+                    style="transform: rotate(-${rotation}deg); "
                 >
                     ${latestObservation ? latestObservation.gust + " m/s" : ""}
                 </text>
@@ -120,7 +165,7 @@ export function Compass() {
                     text-anchor="middle"
                     fill="black"
                     class="compass-observations-speed"
-                    style="transform: rotate(-${rotation}deg); transform-origin: center;"
+                    style="transform: rotate(-${rotation}deg); "
                 >
                     ${latestObservation ? latestObservation.speed + " m/s" : ""}
                 </text>
