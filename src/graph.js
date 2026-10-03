@@ -132,8 +132,23 @@ function updateCharts(obs, fore) {
     }
 }
 
-export function Graph() {
+/**
+ * @param {Object} props
+ * @param {import("preact").ComponentChildren} props.observationsTable
+ * @param {import("preact").ComponentChildren} props.forecastsTable
+ */
+export function Graph(props) {
     const scope = useScope(css`
+        .chart-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .chart-heading h2 {
+            margin: 0;
+        }
         .chart {
             position: relative;
             height: clamp(350px, 70vh, 600px);
@@ -188,12 +203,15 @@ export function Graph() {
                 ? html`
                       <div id="observations-graph">
                           ${scope.style}
-                          <h2>
-                              Havainnot
-                              <span class="date">
-                                  ${formatDate(new Date())}
-                              </span>
-                          </h2>
+                          <div class="chart-heading">
+                              <h2>
+                                  Havainnot
+                                  <span class="date">
+                                      ${formatDate(new Date())}
+                                  </span>
+                              </h2>
+                              ${props.observationsTable}
+                          </div>
                           <div class="chart" onMouseLeave=${onMouseLeaveObs}>
                               <canvas ref=${obsChartRef}></canvas>
                           </div>
@@ -207,13 +225,16 @@ export function Graph() {
             style=${HAS_WIND_OBSERVATIONS.value ? "" : "grid-column-start: 1"}
         >
             ${scope.style}
-            <h2>
-                Ennusteet
-                <span class="date">
-                    ${formatDate(FORECAST_DATE.value)} ${" "}
-                    ${humanDayText(FORECAST_DATE.value)}
-                </span>
-            </h2>
+            <div class="chart-heading">
+                <h2>
+                    Ennusteet
+                    <span class="date">
+                        ${formatDate(FORECAST_DATE.value)} ${" "}
+                        ${humanDayText(FORECAST_DATE.value)}
+                    </span>
+                </h2>
+                ${props.forecastsTable}
+            </div>
 
             <div
                 class=${STALE_FORECASTS.value ? "chart stale" : "chart fresh"}

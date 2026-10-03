@@ -7,7 +7,7 @@ import {
     summaryStyles,
 } from "./styles.js";
 import { effect, signal } from "@preact/signals";
-import { useState } from "preact/hooks";
+import { useRef } from "preact/hooks";
 import { h, html } from "htm/preact";
 import { clearOMCache, OpenMeteoTool, OpenMeteoRaw } from "./om.js";
 import {
@@ -398,38 +398,99 @@ function DataTable(props) {
         ${windStatusStyles}
     `);
 
-    const moreScope = useScope(css`
-        :scope {
-            font-size: 80%;
-        }
-    `);
-    const [showAll, setShowAll] = useState(false);
-    const data = showAll ? props.data.value : props.data.value.slice(0, 50);
-    const showLoadMore = !showAll && props.data.value.length > data.length;
-
     return html`
         <table class="weather-table">
             ${scope.style}
             <thead>${props.thead}</thead>
             <tbody>
-                <${props.Rows} data=${data} />
+                <${props.Rows} data=${props.data.value} />
             </tbody>
         </table>
-        ${
-            showLoadMore
-                ? html`
-                      <div class="show-more">
-                          ${moreScope.style}
-                          <button
-                              type="button"
-                              onClick=${() => setShowAll(true)}
-                          >
-                              Näytä kaikki (${props.data.value.length})
-                          </button>
-                      </div>
-                  `
-                : null
+    `;
+}
+
+/**
+ * @param {Object} props
+ * @param {string} props.id
+ * @param {string} props.title
+ * @param {import("preact").ComponentChildren} props.children
+ */
+function TableDialog(props) {
+    const scope = useScope(css`
+        :scope.table-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            padding: 8px;
         }
+        :scope:is(dialog) {
+            width: 1100px;
+            max-height: calc(100dvh - 24px);
+            box-sizing: border-box;
+        }
+        .dialog-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .dialog-heading h2 {
+            margin: 0;
+        }
+        .side-scroll {
+            overflow-x: auto;
+            width: 100%;
+            position: relative;
+        }
+    `);
+    /** @type {import("preact").RefObject<HTMLDialogElement>} */
+    const ref = useRef(null);
+
+    return html`
+        <button
+            class="table-button"
+            type="button"
+            aria-label=${`${props.title} taulukkona`}
+            aria-haspopup="dialog"
+            aria-controls=${props.id}
+            title=${`${props.title} taulukkona`}
+            onClick=${() => ref.current?.showModal()}
+        >
+            ${scope.style}
+            <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                focusable="false"
+            >
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18M3 15h18M9 9v12" />
+            </svg>
+        </button>
+        <dialog
+            id=${props.id}
+            ref=${ref}
+            aria-labelledby=${`${props.id}-title`}
+        >
+            ${scope.style}
+            <div class="dialog-heading">
+                <h2 id=${`${props.id}-title`}>${props.title}</h2>
+                <button type="button" onClick=${() => ref.current?.close()}>
+                    Sulje
+                </button>
+            </div>
+            <div class=${scope.end}>${props.children}</div>
+        </dialog>
     `;
 }
 
@@ -1105,8 +1166,6 @@ export function SideMenu() {
 
             <p><a href="#observations-graph">Havainnot 📈</a></p>
             <p><a href="#forecasts-graph">Ennusteet 📈</a></p>
-            <p><a href="#observations-table">Havainnot 🧾</a></p>
-            <p><a href="#forecasts-table">Ennusteet 🧾</a></p>
             <p>
                 <a
                     href="${
@@ -1333,13 +1392,6 @@ export function StickyFooter() {
                 <div class="wrap">
                     <div class="icon">📈</div>
                     <div class="text">Kaaviot</div>
-                </div>
-            </a>
-
-            <a class="item" href="#observations-table">
-                <div class="wrap">
-                    <div class="icon">🧾</div>
-                    <div class="text">Taulukot</div>
                 </div>
             </a>
 
@@ -1649,8 +1701,6 @@ export function Root() {
                 "observations-graph observations-graph"
                 "forecasts-graph forecasts-graph"
                 "dropzone-map dropzone-map"
-                "observations-table observations-table"
-                "forecasts-table forecasts-table"
                 "high-winds-details high-winds-details"
                 "high-winds-today high-winds-today";
         }
@@ -1664,7 +1714,6 @@ export function Root() {
                     "clouds winds"
                     "observations-graph forecasts-graph"
                     "dropzone-map dropzone-map"
-                    "observations-table forecasts-table"
                     "high-winds-today high-winds-today"
                     "high-winds-details high-winds-details";
             }
@@ -1676,8 +1725,6 @@ export function Root() {
                 #observations-graph,
                 #forecasts-graph,
                 #dropzone-map,
-                #observations-table,
-                #forecasts-table,
                 #high-winds-today,
                 #high-winds-details
             ) {
@@ -1702,8 +1749,6 @@ export function Root() {
                     #observations-graph,
                     #forecasts-graph,
                     #dropzone-map,
-                    #observations-table,
-                    #forecasts-table,
                     #high-winds-today,
                     #high-winds-details
                 ) {
@@ -1746,14 +1791,6 @@ export function Root() {
             grid-area: forecasts-graph;
         }
 
-        #forecasts-table {
-            grid-area: forecasts-table;
-        }
-
-        #observations-table {
-            grid-area: observations-table;
-        }
-
         #high-winds-today {
             grid-area: high-winds-today;
         }
@@ -1782,17 +1819,6 @@ export function Root() {
 
         .errors p {
             color: var(--color-danger);
-        }
-
-        .sticky {
-            position: sticky;
-            top: 0;
-            background-color: var(--color-surface);
-            z-index: 50;
-        }
-
-        .anchor {
-            height: 0;
         }
 
         .h2-with-icon {
@@ -1862,53 +1888,50 @@ export function Root() {
 
             ${h(Compass, { floating: true })}
 
-            <${Graph} />
+            ${h(Graph, {
+                observationsTable: h(TableDialog, {
+                    id: "observations-table",
+                    title: "Havainnot",
+                    children: html`
+                        <div class="observations">
+                            <p class="date">${formatDate(new Date())}</p>
+                            <div class="side-scroll">
+                                ${h(DataTable, {
+                                    data: OBSERVATIONS,
+                                    thead: html`
+                                        <${ObservationTHead} />
+                                    `,
+                                    Rows: ObservationRows,
+                                })}
+                            </div>
+                        </div>
+                    `,
+                }),
+                forecastsTable: h(TableDialog, {
+                    id: "forecasts-table",
+                    title: "Ennuste",
+                    children: html`
+                        <div class=${STALE_FORECASTS.value ? "stale" : "fresh"}>
+                            <p class="date">
+                                ${formatDate(FORECAST_DATE.value)} ${" "}
+                                ${humanDayText(FORECAST_DATE.value)}
+                            </p>
+                            <p><${ForecastLocationInfo} /></p>
+                            <div class="side-scroll">
+                                ${h(DataTable, {
+                                    data: FORECASTS,
+                                    thead: html`
+                                        <${ForecastTHead} />
+                                    `,
+                                    Rows: ForecastRows,
+                                })}
+                            </div>
+                        </div>
+                    `,
+                }),
+            })}
 
             ${h(DropzoneMap, {})}
-
-            <div id="observations-table" class="observations">
-                <h2 class="sticky">
-                    Havainnot
-                    <span class="date">${formatDate(new Date())}</span>
-                </h2>
-                <div class="side-scroll">
-                    <${DataTable}
-                        data=${OBSERVATIONS}
-                        thead=${html`
-                            <${ObservationTHead} />
-                        `}
-                        Rows=${ObservationRows}
-                    />
-                </div>
-            </div>
-
-            <div
-                id="forecasts-table"
-                class=${STALE_FORECASTS.value ? "stale" : "fresh"}
-            >
-                <div class="anchor" id="forecasts"></div>
-                <h2 class="sticky">
-                    Ennuste
-                    <span class="date">
-                        ${formatDate(FORECAST_DATE.value)} ${" "}
-                        ${humanDayText(FORECAST_DATE.value)}
-                    </span>
-                </h2>
-
-                <p>
-                    <${ForecastLocationInfo} />
-                </p>
-
-                <div class="side-scroll">
-                    <${DataTable}
-                        data=${FORECASTS}
-                        thead=${html`
-                            <${ForecastTHead} />
-                        `}
-                        Rows=${ForecastRows}
-                    />
-                </div>
-            </div>
 
             <${HighWinds} />
         </div>
