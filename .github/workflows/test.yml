@@ -29,5 +29,5 @@ jobs:
             - name: Run TypeScript typecheck
               run: pnpm run tsc
 
-            - name: Check formatting (auto fix with `pnpm run prettier`)
-              run: pnpm run prettier-check
+            - name: Check formatting (auto fix with `pnpm run oxfmt`)
+              run: pnpm run oxfmt-check

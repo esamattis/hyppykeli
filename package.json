@@ -9,8 +9,8 @@
     },
     "scripts": {
         "dev": "python3 -m http.server",
-        "prettier-check": "prettier --check index.html src/ *.css",
-        "prettier": "prettier --write index.html src/ *.css",
+        "oxfmt-check": "oxfmt --check index.html src/ *.css",
+        "oxfmt": "oxfmt --write index.html src/ *.css",
         "tsc": "tsc",
         "build": "./build.sh"
     },
@@ -20,7 +20,9 @@
         "esbuild": "^0.21.5",
         "htm": "^3.1.1",
         "preact": "^10.22.0",
-        "prettier": "^3.3.2",
         "typescript": "^7.0.2"
+    },
+    "devDependencies": {
+        "oxfmt": "^0.71.0"
     }
 }
