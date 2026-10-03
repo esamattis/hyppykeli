@@ -2,7 +2,6 @@
 // docs https://opendata.fmi.fi/wfs?service=WFS&version=2.0.0&request=describeStoredQueries&
 import { computed, effect, signal } from "@preact/signals";
 import {
-    debug,
     isNullish,
     hasValidWindData,
     knotsToMs,
@@ -62,6 +61,52 @@ export const QUERY_PARAMS = signal(
     Object.fromEntries(new URLSearchParams(location.search)),
 );
 
+export const DEV_DEBUG = computed(() => QUERY_PARAMS.value.DEV_debug === "1");
+export const DEV_MOCK = computed(() => QUERY_PARAMS.value.DEV_mock === "1");
+
+/**
+ * Logs wind calculations when developer debug mode is enabled.
+ * @param {...any} args
+ */
+export function debug(...args) {
+    if (DEV_DEBUG.value) console.log(...args);
+}
+
+export const DEV_ACTIVE = computed(() =>
+    Object.entries(QUERY_PARAMS.value).some(
+        ([key, value]) => key.startsWith("DEV_") && !!value?.trim(),
+    ),
+);
+
+/** @param {DeveloperKey} key */
+export function getDevNumber(key) {
+    const text = QUERY_PARAMS.value[key]?.trim();
+    if (!text) return undefined;
+    const value = Number(text);
+    const max = key.endsWith("direction") ? 360 : Infinity;
+    return Number.isFinite(value) && value >= 0 && value <= max
+        ? value
+        : undefined;
+}
+
+/** @param {WeatherData | undefined} observation */
+export function applyGroundOverrides(observation) {
+    const gust = getDevNumber("DEV_ground_gust");
+    const speed = getDevNumber("DEV_ground_avg");
+    const direction = getDevNumber("DEV_ground_direction");
+    if (gust === undefined && speed === undefined && direction === undefined) {
+        return observation;
+    }
+    return {
+        source: /** @type {const} */ ("mock"),
+        time: observation?.time ?? new Date(),
+        ...observation,
+        gust: gust ?? observation?.gust,
+        speed: speed ?? observation?.speed,
+        direction: direction ?? observation?.direction,
+    };
+}
+
 /**
  * @type {Signal<string|undefined>}
  */
@@ -112,7 +157,7 @@ export const HOVERED_OBSERVATION = signal(undefined);
 /**
  * @type {Signal<WeatherData|undefined>}
  */
-export const LATEST_OBSERVATION = computed(() => {
+const LIVE_LATEST_OBSERVATION = computed(() => {
     const obs = OBSERVATIONS.value[0];
 
     if (obs && hasValidWindData(obs)) {
@@ -148,6 +193,10 @@ export const LATEST_OBSERVATION = computed(() => {
     }
 });
 
+export const LATEST_OBSERVATION = computed(() =>
+    applyGroundOverrides(LIVE_LATEST_OBSERVATION.value),
+);
+
 /**
  * @type {Signal<WeatherData[]>}
  */
@@ -166,7 +215,17 @@ export const SINGLE_FORECAST = computed(() => {
 /**
  * @type {Signal<MetarData[] | undefined>}
  */
-export const METARS = signal(undefined);
+const LIVE_METARS = signal(undefined);
+
+export const METARS = computed(() => {
+    const text = QUERY_PARAMS.value.DEV_metar?.trim();
+    if (!text) return LIVE_METARS.value;
+    try {
+        return parseMetarMessages([text]);
+    } catch {
+        return LIVE_METARS.value;
+    }
+});
 
 /**
  * @type {Signal<string|null>}
@@ -262,15 +321,12 @@ document.addEventListener("click", (e) => {
  * Makes a request to the FMI API with the given options.
  * @param {StoredQuery} storedQuery - The stored query ID for the request.
  * @param {Object} params - The parameters for the request.
- * @param {string} [mock]
+ * @param {string} [exampleUrl]
  * @returns {Promise<Document|undefined|"error">} The parsed XML document from the response.
  * @throws Will throw an error if the request fails.
  */
-export async function fmiRequest(storedQuery, params, mock) {
-    const allowMock = new URL(location.href).searchParams.has("mock");
-    if (!allowMock) {
-        mock = undefined;
-    }
+export async function fmiRequest(storedQuery, params, exampleUrl) {
+    const useExample = DEV_MOCK.value;
 
     const url = new URL(`https://opendata.fmi.fi/wfs?request=getFeature`);
     url.searchParams.set("storedquery_id", storedQuery);
@@ -280,7 +336,7 @@ export async function fmiRequest(storedQuery, params, mock) {
 
     LOADING.value += 1;
     try {
-        const response = await fetch(mock ?? url);
+        const response = await fetch(useExample ? (exampleUrl ?? url) : url);
         if (response.status === 404) {
             return;
         }
@@ -540,7 +596,12 @@ async function fetchFlykMetar(icaocode) {
  * @param {string[]} metars
  */
 function setMETARSfromMetarMessage(metars) {
-    const parsed = metars.map((metar) => {
+    LIVE_METARS.value = parseMetarMessages(metars);
+}
+
+/** @param {string[]} metars */
+export function parseMetarMessages(metars) {
+    return metars.map((metar) => {
         const m = parseMETAR(metar);
 
         /** @type MetarData */
@@ -567,8 +628,6 @@ function setMETARSfromMetarMessage(metars) {
 
         return metarData;
     });
-
-    METARS.value = parsed;
 }
 
 function getObservationStartTime() {
@@ -962,6 +1021,12 @@ export function navigateQs(params, options) {
     }
 }
 
+window.addEventListener("popstate", () => {
+    QUERY_PARAMS.value = Object.fromEntries(
+        new URLSearchParams(location.search),
+    );
+});
+
 /**
  * Get query string for for <a href> rendering
  *
@@ -1028,10 +1093,6 @@ QUERY_PARAMS.subscribe(() => {
 });
 
 // Constants for WIND_VARIATIONS
-const DEBUG_SPEEDS = [1];
-const DEBUG_GUSTS = [9];
-const DEBUG_DIRECTIONS = [40, 0, 40, 0];
-
 const THIRTY_MINUTES_IN_MS = 30 * 60 * 1000;
 const MAX_EXTRA_WIDTH = 30;
 const EXTRA_WIDTH_MULTIPLIER = 3;
@@ -1206,7 +1267,7 @@ function calculateWindRef(avgSpeed, gustSpeed, directionVariation) {
  * @param {WeatherData[]} observations
  */
 function filterRecentObservations(observations) {
-    if (QUERY_PARAMS.value.debug) return observations;
+    if (DEV_DEBUG.value) return observations;
     const thirtyMinutesAgo = new Date(Date.now() - THIRTY_MINUTES_IN_MS);
     return observations.filter(
         (obs) => obs.time >= thirtyMinutesAgo && obs.direction !== -1,
@@ -1260,21 +1321,22 @@ function calculateExtraWidth(maxGust, averageSpeed) {
 export const WIND_VARIATIONS = computed(() => {
     debug("WIND_VARIATIONS: Calculating...");
 
-    /** @type {WeatherData[]} */
-    const observations =
-        QUERY_PARAMS.value.mock === "wind-variations"
-            ? DEBUG_DIRECTIONS.map((dir, idx) => ({
-                  source: "mock",
-                  direction: dir,
-                  speed: DEBUG_SPEEDS[idx % DEBUG_SPEEDS.length],
-                  gust: DEBUG_GUSTS[idx % DEBUG_GUSTS.length],
-                  time: new Date(),
-              }))
-            : OBSERVATIONS.value;
+    const observations = OBSERVATIONS.value;
 
     debug("WIND_VARIATIONS: observations = ", observations);
 
-    const recentObservations = filterRecentObservations(observations);
+    const recentObservations = filterRecentObservations(observations).map(
+        (observation) => applyGroundOverrides(observation) ?? observation,
+    );
+    if (
+        recentObservations.length === 0 &&
+        LATEST_OBSERVATION.value &&
+        (getDevNumber("DEV_ground_gust") !== undefined ||
+            getDevNumber("DEV_ground_avg") !== undefined ||
+            getDevNumber("DEV_ground_direction") !== undefined)
+    ) {
+        recentObservations.push(LATEST_OBSERVATION.value);
+    }
 
     if (recentObservations.length === 0) {
         console.warn("WIND_VARIATIONS: No recent observations available");

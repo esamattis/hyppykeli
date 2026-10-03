@@ -9,6 +9,8 @@ import {
     OBSERVATIONS,
     STATION_NAME,
     NAME,
+    getDevNumber,
+    applyGroundOverrides,
 } from "./data.js";
 import { OM_DATA } from "./om.js";
 import { formatClock } from "./utils.js";
@@ -348,12 +350,15 @@ export function DropzoneMap() {
             return start <= now && now < start + 60 * 60 * 1000;
         }) ?? -1;
     const time = index >= 0 ? data?.hourly.time[index] : undefined;
-    const ground = OBSERVATIONS.value
-        .filter((obs) => obs.source === "fmi" || obs.source === "roads")
-        .reduce(
-            (latest, obs) => (!latest || obs.time > latest.time ? obs : latest),
-            /** @type {WeatherData | undefined} */ (undefined),
-        );
+    const ground = applyGroundOverrides(
+        OBSERVATIONS.value
+            .filter((obs) => obs.source === "fmi" || obs.source === "roads")
+            .reduce(
+                (latest, obs) =>
+                    !latest || obs.time > latest.time ? obs : latest,
+                /** @type {WeatherData | undefined} */ (undefined),
+            ),
+    );
     /** @type {MapWindLevel[]} */
     const winds = LEVELS.map(({ level, height }) => ({
         label: `≈ ${height} m`,
@@ -375,6 +380,9 @@ export function DropzoneMap() {
             return height !== undefined && height >= 800 && height <= 4200;
         }),
     );
+    averageWind.speed = getDevNumber("DEV_map_speed") ?? averageWind.speed;
+    averageWind.direction =
+        getDevNumber("DEV_map_direction") ?? averageWind.direction;
     winds.unshift(averageWind);
     winds.push({
         label: "Maanpinta",

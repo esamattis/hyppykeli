@@ -1,16 +1,6 @@
 // @ts-check
 
 /**
- * Logs the provided arguments to the console when the query string contains debug=1
- * @param {...any} args - The arguments to log.
- */
-export function debug(...args) {
-    if (/debug/.test(location.search)) {
-        console.log(...args);
-    }
-}
-
-/**
  * @param {Date} date
  */
 export function formatClock(date) {

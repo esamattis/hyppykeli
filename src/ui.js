@@ -36,7 +36,9 @@ import {
     saveCurrentDz,
     removeSavedDz,
     SINGLE_FORECAST,
+    applyGroundOverrides,
 } from "./data.js";
+import { DeveloperBanner, DeveloperMode } from "./DeveloperMode.js";
 
 import { Graph } from "./graph.js";
 import { DropzoneMap } from "./DropzoneMap.js";
@@ -522,7 +524,9 @@ function WindSummary() {
     `);
 
     const history = !!HOVERED_OBSERVATION.value;
-    const obs = HOVERED_OBSERVATION.value || LATEST_OBSERVATION.value;
+    const obs = applyGroundOverrides(
+        HOVERED_OBSERVATION.value || LATEST_OBSERVATION.value,
+    );
 
     if (!obs) {
         return null;
@@ -1643,7 +1647,8 @@ export function Root() {
                 "forecasts-graph forecasts-graph"
                 "dropzone-map dropzone-map"
                 "high-winds-details high-winds-details"
-                "high-winds-today high-winds-today";
+                "high-winds-today high-winds-today"
+                "developer-controls developer-controls";
         }
         @media (min-width: 900px) {
             :scope {
@@ -1656,7 +1661,8 @@ export function Root() {
                     "observations-graph forecasts-graph"
                     "dropzone-map dropzone-map"
                     "high-winds-today high-winds-today"
-                    "high-winds-details high-winds-details";
+                    "high-winds-details high-winds-details"
+                    "developer-controls developer-controls";
             }
         }
         :scope
@@ -1785,6 +1791,7 @@ export function Root() {
     `);
 
     return html`
+        <${DeveloperBanner} />
         <div class="content grid">
             ${scope.style}
             ${
@@ -1875,6 +1882,7 @@ export function Root() {
             ${h(DropzoneMap, {})}
 
             <${HighWinds} />
+            <${DeveloperMode} />
         </div>
         <${SideMenu} />
         <${StickyFooter} />

@@ -144,11 +144,17 @@ interface MetarData {
  * Interface representing query parameters.
  */
 interface QueryParams {
+    DEV_debug?: string;
+    DEV_mock?: string;
+    DEV_ground_gust?: string;
+    DEV_ground_avg?: string;
+    DEV_ground_direction?: string;
+    DEV_metar?: string;
+    DEV_map_speed?: string;
+    DEV_map_direction?: string;
     __gusts?: string;
     __speeds?: string;
     __directions?: string;
-    debug?: string;
-    mock?: string;
     rc?: string;
     fmisid?: string;
     roadsid?: string;
@@ -161,6 +167,15 @@ interface QueryParams {
     forecast_range?: string;
     css?: string;
     save?: string;
+}
+
+type DeveloperKey = Extract<keyof QueryParams, `DEV_${string}`>;
+
+interface DeveloperField {
+    key: DeveloperKey;
+    label: string;
+    max?: number;
+    checkbox?: boolean;
 }
 
 /**

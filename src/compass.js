@@ -7,6 +7,7 @@ import {
     OBSERVATIONS,
     QUERY_PARAMS,
     WIND_VARIATIONS,
+    applyGroundOverrides,
 } from "./data.js";
 import { isNullish, hasValidWindData } from "./utils.js";
 import { FromNow, Help } from "./components.js";
@@ -139,7 +140,8 @@ export function Compass({ floating = false } = {}) {
     const circle = INSTRUCTOR_LIMIT_LENGTH;
     const studentCircle = STUDENT_LIMIT_LENGTH;
     const observation = floating
-        ? HOVERED_OBSERVATION.value
+        ? HOVERED_OBSERVATION.value &&
+          applyGroundOverrides(HOVERED_OBSERVATION.value)
         : LATEST_OBSERVATION.value;
 
     if (floating && !observation) {
@@ -266,7 +268,8 @@ function GustNeedle({ observation: obs, history }) {
 }
 
 function HistoryNeedles() {
-    const observations = OBSERVATIONS.value.flatMap((obs) => {
+    const observations = OBSERVATIONS.value.flatMap((original) => {
+        const obs = applyGroundOverrides(original) ?? original;
         if (isNullish(obs.gust) || isNullish(obs.direction)) {
             return [];
         }

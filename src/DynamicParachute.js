@@ -4,8 +4,7 @@ import { css, useScope } from "./useScope.js";
 import { html } from "htm/preact";
 import { useEffect, useRef } from "preact/hooks";
 import { computed } from "@preact/signals";
-import { LATEST_OBSERVATION, WIND_VARIATIONS } from "./data.js";
-import { debug } from "./utils.js";
+import { LATEST_OBSERVATION, WIND_VARIATIONS, debug } from "./data.js";
 
 /**
  * Calculates common animation parameters based on input factors.
