@@ -1,7 +1,7 @@
 // @ts-check
 import { css, useScope } from "./useScope.js";
 import { upperWindTableStyles } from "./styles.js";
-import { html } from "htm/preact";
+import { h, html } from "htm/preact";
 import { FORECAST_COORDINATES, STATION_COORDINATES } from "./data.js";
 import { signal } from "@preact/signals";
 import { isNullish } from "./utils.js";
@@ -16,7 +16,7 @@ const PRESSURE_LEVELS = [
 ];
 
 /**
- * @type {Array<{ pressure: string, key: keyof OpenMeteoHourlyData, directionKey: keyof OpenMeteoHourlyData }>}
+ * @type {Array<{ pressure: string, key: `windspeed_${OpenMeteoPressureLevel}hPa`, directionKey: `winddirection_${OpenMeteoPressureLevel}hPa` }>}
  */
 const PRESSURE_LEVELS_RAW = [
     {
@@ -173,18 +173,18 @@ function getAverageData(hourly, targetHour, dayOffset) {
     const isCurrentBlock =
         targetHour === Math.floor(currentHour / 3) * 3 && dayOffset === 0;
 
-    const relevantIndices = [0, 1, 2]
-        .map((i) => {
-            const hour = (targetHour + i * 3) % 24;
-            return hourly.time.findIndex((time) => {
-                const date = new Date(time);
-                return (
-                    date.getHours() === hour &&
-                    date.getDate() === now.getDate() + dayOffset
-                );
-            });
-        })
-        .filter((index) => index !== -1);
+    const blockStart = new Date(now);
+    blockStart.setDate(now.getDate() + dayOffset);
+    blockStart.setHours(targetHour, 0, 0, 0);
+    const blockEnd = new Date(blockStart);
+    blockEnd.setHours(targetHour + 3);
+    const currentTime = new Date(now);
+    currentTime.setMinutes(0, 0, 0);
+
+    const relevantIndices = hourly.time.flatMap((time, index) => {
+        const date = new Date(time);
+        return date >= blockStart && date < blockEnd ? [index] : [];
+    });
 
     /**
      * @type {OpenMeteoPressureLevel[]}
@@ -204,19 +204,35 @@ function getAverageData(hourly, targetHour, dayOffset) {
 
         if (isCurrentBlock) {
             const currentIndex = hourly.time.findIndex(
-                (time) => new Date(time).getHours() === currentHour,
+                (time) => new Date(time).getTime() === currentTime.getTime(),
             );
 
             result[level] = {
-                speed: hourly[speedKey]?.[currentIndex] ?? 0,
-                direction: hourly[directionKey]?.[currentIndex] ?? 0,
+                speed: hourly[speedKey]?.[currentIndex] ?? null,
+                direction: hourly[directionKey]?.[currentIndex] ?? null,
             };
         } else {
-            const speeds = relevantIndices.map(
-                (i) => hourly[speedKey]?.[i] ?? 0,
+            const speeds = relevantIndices
+                .map((i) => hourly[speedKey]?.[i])
+                .flatMap((value) =>
+                    typeof value === "number" && Number.isFinite(value)
+                        ? [value]
+                        : [],
+                );
+            const directions = relevantIndices
+                .map((i) => hourly[directionKey]?.[i])
+                .flatMap((value) =>
+                    typeof value === "number" && Number.isFinite(value)
+                        ? [value]
+                        : [],
+                );
+            const sinSum = directions.reduce(
+                (sum, direction) => sum + Math.sin((direction * Math.PI) / 180),
+                0,
             );
-            const directions = relevantIndices.map(
-                (i) => hourly[directionKey]?.[i] ?? 0,
+            const cosSum = directions.reduce(
+                (sum, direction) => sum + Math.cos((direction * Math.PI) / 180),
+                0,
             );
 
             result[level] = {
@@ -225,9 +241,9 @@ function getAverageData(hourly, targetHour, dayOffset) {
                         ? speeds.reduce((a, b) => a + b, 0) / speeds.length
                         : null,
                 direction:
-                    directions.length > 0
-                        ? directions.reduce((a, b) => a + b, 0) /
-                          directions.length
+                    Math.hypot(sinSum, cosSum) > 1e-10
+                        ? ((Math.atan2(sinSum, cosSum) * 180) / Math.PI + 360) %
+                          360
                         : null,
             };
         }
@@ -295,13 +311,14 @@ export function WindArrow({ direction }) {
 
 /**
  * @param {Object} props
- * @param {Object} props.data
+ * @param {Object} [props.data]
  * @param {number|null} props.data.speed
  * @param {number|null} props.data.direction
  * @param {string} props.columnClass
  * @param {string} props.height
+ * @param {boolean} [props.hourly]
  */
-export function WindCell({ data, columnClass, height }) {
+export function WindCell({ data, columnClass, height, hourly = false }) {
     const scope = useScope(css`
         :scope {
             padding: 2px;
@@ -351,7 +368,9 @@ export function WindCell({ data, columnClass, height }) {
     const speedInMS = isNullish(speed) ? null : Math.round(speed / 3.6);
     const roundedDirection = isNullish(direction)
         ? null
-        : roundToNearestFive(direction.toFixed(0));
+        : hourly
+          ? Math.round(direction)
+          : roundToNearestFive(direction.toFixed(0));
 
     return html`
         <td
@@ -369,7 +388,7 @@ export function WindCell({ data, columnClass, height }) {
                       `
             }
             ${
-                isNullish(speed)
+                isNullish(direction)
                     ? null
                     : html`
                           <div class="wind-direction">
@@ -384,62 +403,73 @@ export function WindCell({ data, columnClass, height }) {
 
 /**
  * @param {Object} props
- * @param {string} props.title
- * @param {OpenMeteoDayData} props.tableData
+ * @param {WindTableDay[]} props.days
+ * @param {boolean} [props.hourly]
  */
-export function WindTable({ title, tableData }) {
+export function WindTable({ days, hourly = false }) {
     const scope = useScope(css`
         ${upperWindTableStyles}
     `);
-    if (!tableData) return null;
-
     const currentHour = new Date().getHours();
     const blockStartHour = Math.floor(currentHour / 3) * 3;
-
-    /**
-     * @param {string}  hour
-     * @param {boolean} isCurrentBlock
-     */
-    function getColumnClass(hour, isCurrentBlock) {
-        if (title === "Tänään") {
-            if (isCurrentBlock) return "current-column";
-            if (parseInt(hour) < blockStartHour) return "past-column";
-        }
-        return "";
-    }
+    const columns = days.flatMap(({ tableData, isToday, isPast }, dayIndex) =>
+        Object.entries(tableData).map(([hour, { data, isCurrentBlock }]) => ({
+            key: `${dayIndex}-${hour}`,
+            hour,
+            data,
+            isCurrentBlock,
+            columnClass: !isToday
+                ? isPast
+                    ? "past-column"
+                    : ""
+                : isCurrentBlock
+                  ? "current-column"
+                  : parseInt(hour) < (hourly ? currentHour : blockStartHour)
+                    ? "past-column"
+                    : "",
+        })),
+    );
 
     return html`
-        <div class="wind-table-scroll" tabindex="0" aria-label=${title}>
+        <div
+            class="wind-table-scroll"
+            tabindex="0"
+            aria-label="Ylätuuliennusteet"
+        >
             ${scope.style}
-            <table class="wind-table upperwinds-compact">
+            <table
+                class=${`wind-table ${hourly ? "upperwinds-raw" : "upperwinds-compact"}`}
+            >
                 <thead>
                     <tr>
-                        <th
-                            class="wind-table-title"
-                            colspan=${Object.keys(tableData).length + 1}
-                        >
-                            ${title}
-                        </th>
+                        <th></th>
+                        ${days.map(
+                            ({ title, tableData, id }) => html`
+                                <th
+                                    id=${id}
+                                    class="wind-table-title"
+                                    scope="colgroup"
+                                    colspan=${Object.keys(tableData).length}
+                                >
+                                    ${title}
+                                </th>
+                            `,
+                        )}
                     </tr>
                     <tr>
-                        <th></th>
-                        ${Object.entries(tableData).map(
-                            ([hour, { isCurrentBlock }]) => {
+                        <th scope="col">m</th>
+                        ${columns.map(
+                            ({ key, hour, isCurrentBlock, columnClass }) => {
                                 const startHour = parseInt(hour);
                                 const endHour = (startHour + 3) % 24;
                                 const timeRange = `${startHour.toString().padStart(2, "0")}-${endHour.toString().padStart(2, "0")}`;
                                 return html`
                                     <th
-                                        class=${`time-header ${getColumnClass(
-                                            hour,
-                                            isCurrentBlock,
-                                        )}`}
+                                        key=${key}
+                                        scope="col"
+                                        class=${`time-header ${columnClass}`}
                                     >
-                                        ${
-                                            isCurrentBlock
-                                                ? `${currentHour}:00`
-                                                : timeRange
-                                        }
+                                        ${hourly || isCurrentBlock ? `${isCurrentBlock ? currentHour : startHour}:00` : timeRange}
                                     </th>
                                 `;
                             },
@@ -450,26 +480,19 @@ export function WindTable({ title, tableData }) {
                     ${PRESSURE_LEVELS.map(
                         ({ pressure, height }) => html`
                             <tr key=${pressure}>
-                                <td class="pressure-cell">${height}</td>
-                                ${Object.entries(tableData).map(
-                                    ([
-                                        hour,
-                                        { data: hourData, isCurrentBlock },
-                                    ]) => html`
-                                        <${WindCell}
-                                            key=${hour}
-                                            data=${
-                                                hourData[
-                                                    pressure.split(" ")[0] ?? ""
-                                                ]
-                                            }
-                                            columnClass=${getColumnClass(
-                                                hour,
-                                                isCurrentBlock,
-                                            )}
-                                            height=${height}
-                                        />
-                                    `,
+                                <th scope="row" class="pressure-cell">
+                                    ${height}
+                                </th>
+                                ${columns.map(({ key, data, columnClass }) =>
+                                    h(WindCell, {
+                                        key,
+                                        data: data[
+                                            pressure.split(" ")[0] ?? ""
+                                        ],
+                                        columnClass,
+                                        height,
+                                        hourly,
+                                    }),
                                 )}
                             </tr>
                         `,
@@ -480,11 +503,7 @@ export function WindTable({ title, tableData }) {
     `;
 }
 
-/**
- * @param {Object} props
- * @param {boolean} props.tomorrow
- */
-export function OpenMeteoTool({ tomorrow }) {
+export function OpenMeteoTool() {
     const data = OM_DATA.value ? formatTableData(OM_DATA.value.hourly) : null;
 
     if (!data)
@@ -492,19 +511,20 @@ export function OpenMeteoTool({ tomorrow }) {
             <div>Loading...</div>
         `;
 
-    return html`
-        <${WindTable}
-            title=${tomorrow ? "Huomenna" : "Tänään"}
-            tableData=${tomorrow ? data.tomorrowData : data.todayData}
-        />
-    `;
+    return h(WindTable, {
+        days: [
+            { title: "Tänään", tableData: data.todayData, isToday: true },
+            {
+                title: "Huomenna",
+                tableData: data.tomorrowData,
+                isToday: false,
+                id: "high-winds-tomorrow",
+            },
+        ],
+    });
 }
 
 export function OpenMeteoRaw() {
-    const scope = useScope(css`
-        ${upperWindTableStyles}
-    `);
-
     const data = OM_DATA.value;
 
     if (!data) {
@@ -513,59 +533,60 @@ export function OpenMeteoRaw() {
         `;
     }
 
-    const renderTable = () => {
-        const hourly = data.hourly;
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const currentHourStart = new Date(today);
+    currentHourStart.setMinutes(0, 0, 0);
+    const todayStart = new Date(today);
+    todayStart.setHours(0, 0, 0, 0);
+    const pastIndices = new Set(
+        data.hourly.time
+            .map((time, index) => ({ time: new Date(time).getTime(), index }))
+            .filter(({ time }) => time < currentHourStart.getTime())
+            .sort((a, b) => b.time - a.time)
+            .slice(0, 3)
+            .map(({ index }) => index),
+    );
+    /** @type {Map<string, WindTableDay>} */
+    const days = new Map();
 
-        /** @type {number[]} */
-        const timeSlots = hourly.time.map((time) => new Date(time).getHours());
+    data.hourly.time.forEach((time, index) => {
+        const date = new Date(time);
+        if (date < currentHourStart && !pastIndices.has(index)) return;
+        const dateKey = date.toDateString();
+        const isToday = dateKey === today.toDateString();
+        let day = days.get(dateKey);
+        if (!day) {
+            day = {
+                title: isToday
+                    ? "Tänään"
+                    : dateKey === tomorrow.toDateString()
+                      ? "Huomenna"
+                      : date.toLocaleDateString("fi-FI"),
+                tableData: {},
+                isToday,
+                isPast: date < todayStart,
+                id:
+                    dateKey === tomorrow.toDateString()
+                        ? "high-winds-tomorrow"
+                        : undefined,
+            };
+            days.set(dateKey, day);
+        }
+        /** @type {AverageWindSpeeds} */
+        const winds = {};
+        PRESSURE_LEVELS_RAW.forEach(({ pressure, key, directionKey }) => {
+            winds[pressure.split(" ")[0] ?? ""] = {
+                speed: data.hourly[key][index] ?? null,
+                direction: data.hourly[directionKey][index] ?? null,
+            };
+        });
+        day.tableData[date.getHours()] = {
+            data: winds,
+            isCurrentBlock: isToday && date.getHours() === today.getHours(),
+        };
+    });
 
-        return html`
-            <table class="wind-table upperwinds-raw">
-                <thead>
-                    <tr>
-                        <th>Height</th>
-                        ${timeSlots.map(
-                            (hour) => html`
-                                <th>${hour}:00</th>
-                            `,
-                        )}
-                    </tr>
-                </thead>
-                <tbody>
-                    ${PRESSURE_LEVELS_RAW.map(
-                        ({ pressure, key, directionKey }) => html`
-                            <tr>
-                                <td>${pressure}</td>
-                                ${timeSlots.map((_, index) => {
-                                    const speed =
-                                        Number(hourly[key][index] ?? 0) / 3.6;
-
-                                    const direction = Number(
-                                        hourly[directionKey][index] ?? 0,
-                                    );
-
-                                    return html`
-                                        <td>
-                                            ${speed.toFixed(0)} m/s |
-                                            ${direction.toFixed(0)}°
-                                        </td>
-                                    `;
-                                })}
-                            </tr>
-                        `,
-                    )}
-                </tbody>
-            </table>
-        `;
-    };
-
-    return html`
-        <div
-            class="wind-table-scroll"
-            tabindex="0"
-            aria-label="Ylätuuliennusteet"
-        >
-            ${scope.style} ${renderTable()}
-        </div>
-    `;
+    return h(WindTable, { days: [...days.values()], hourly: true });
 }

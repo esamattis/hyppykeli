@@ -73,6 +73,14 @@ type OpenMeteoDayData = Record<
     }
 >;
 
+interface WindTableDay {
+    title: string;
+    tableData: OpenMeteoDayData;
+    isToday: boolean;
+    isPast?: boolean;
+    id?: string;
+}
+
 /**
  * Interface representing weather data.
  */
@@ -138,7 +146,6 @@ interface QueryParams {
     forecast_day?: string;
     forecast_range?: string;
     css?: string;
-    high_winds_details?: string;
     save?: string;
 }
 

@@ -7,7 +7,7 @@ import {
     summaryStyles,
 } from "./styles.js";
 import { effect, signal } from "@preact/signals";
-import { useRef } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
 import { h, html } from "htm/preact";
 import { clearOMCache, OpenMeteoTool, OpenMeteoRaw } from "./om.js";
 import {
@@ -995,7 +995,7 @@ function downloadDataDump(e) {
 }
 
 /**
- * Navigate to a link without reloading the while updating the QUERY_PARAMS signal
+ * Navigate to a link without reloading while updating the QUERY_PARAMS signal
  *
  * @param {MouseEvent} e
  */
@@ -1019,8 +1019,8 @@ function asInPageNavigation(e) {
     e.preventDefault();
 
     const target = new URL(e.target.href);
-    const foo = Object.fromEntries(target.searchParams);
-    navigateQs(foo, { replace: true });
+    const params = Object.fromEntries(target.searchParams);
+    navigateQs(params, { mode: "replace", replace: true });
 }
 
 /**
@@ -1163,17 +1163,7 @@ export function SideMenu() {
 
             <p><a href="#observations-graph">Havainnot 📈</a></p>
             <p><a href="#forecasts-graph">Ennusteet 📈</a></p>
-            <p>
-                <a
-                    href="${
-                        QUERY_PARAMS.value.high_winds_details
-                            ? "#high-winds-details"
-                            : "#high-winds-today"
-                    }"
-                >
-                    Ylätuuliennusteet
-                </a>
-            </p>
+            <p><a href="#high-winds-today">Ylätuuliennusteet</a></p>
 
             <h2>Hyppypaikat</h2>
 
@@ -1392,14 +1382,7 @@ export function StickyFooter() {
                 </div>
             </a>
 
-            <a
-                class="item"
-                href="${
-                    QUERY_PARAMS.value.high_winds_details
-                        ? "#high-winds-details"
-                        : "#high-winds-today"
-                }"
-            >
+            <a class="item" href="#high-winds-today">
                 <div class="wrap">
                     <div class="icon">💨</div>
                     <div class="text">Ylätuulet</div>
@@ -1451,72 +1434,33 @@ function ForecastLocationInfo() {
 }
 
 function HighWinds() {
-    const scope = useScope(css`
-        .high-winds-days {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr);
-            gap: 16px;
-        }
-
-        .high-winds-days > div {
-            min-width: 0;
-        }
-
-        @media (min-width: 900px) {
-            .high-winds-days {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-        }
-    `);
-    const showDetails = Boolean(QUERY_PARAMS.value.high_winds_details);
-
-    if (showDetails) {
-        return html`
-            <div id="high-winds-details">
-                <h2>ECMWF Ylätuuliennusteet</h2>
-
-                <p>
-                    <a
-                        onClick=${asInPageNavigation}
-                        href="${getQs({ high_winds_details: undefined })}"
-                    >
-                        Näytä kooste
-                    </a>
-                </p>
-
-                <${OpenMeteoRaw} />
-            </div>
-        `;
-    }
+    const [showDetails, setShowDetails] = useState(false);
 
     return html`
         <div id="high-winds-today">
-            ${scope.style}
             <h2>ECMWF Ylätuuliennusteet</h2>
 
             <p>
-                Lähde <a href="https://open-meteo.com/">Open-Meteo</a> API.${" "}
-                <a
-                    onClick=${asInPageNavigation}
-                    href="${getQs({ high_winds_details: "1" })}"
+                <button
+                    type="button"
+                    onClick=${() => setShowDetails(!showDetails)}
                 >
-                    Näytä tarkat tiedot
-                </a>
+                    ${showDetails ? "Näytä kooste" : "Näytä tarkat tiedot"}
+                </button>
             </p>
 
-            <div class="high-winds-days">
-                <div>
-                    <${ErrorBoundary}>
-                        ${h(OpenMeteoTool, { tomorrow: false })}
-                    </${ErrorBoundary}>
-                </div>
-
-                <div id="high-winds-tomorrow">
-                    <${ErrorBoundary}>
-                        ${h(OpenMeteoTool, { tomorrow: true })}
-                    </${ErrorBoundary}>
-                </div>
+            <div
+                id=${showDetails ? "high-winds-details" : undefined}
+                class="high-winds-days"
+            >
+                <${ErrorBoundary}>
+                    ${showDetails ? h(OpenMeteoRaw, {}) : h(OpenMeteoTool, {})}
+                </${ErrorBoundary}>
             </div>
+
+            <p>
+                Lähde <a href="https://open-meteo.com/">Open-Meteo</a> API.
+            </p>
         </div>
     `;
 }
