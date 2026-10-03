@@ -1402,6 +1402,23 @@ function ForecastLocationInfo() {
 }
 
 function HighWinds() {
+    const scope = useScope(css`
+        .high-winds-days {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        .high-winds-days > div {
+            min-width: 0;
+        }
+
+        @media (min-width: 900px) {
+            .high-winds-days {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    `);
     const showDetails = Boolean(QUERY_PARAMS.value.high_winds_details);
 
     if (showDetails) {
@@ -1425,6 +1442,7 @@ function HighWinds() {
 
     return html`
         <div id="high-winds-today">
+            ${scope.style}
             <h2>ECMWF Ylätuuliennusteet</h2>
 
             <p>
@@ -1437,15 +1455,19 @@ function HighWinds() {
                 </a>
             </p>
 
-            <${ErrorBoundary}>
-                <${OpenMeteoTool} />
-            </${ErrorBoundary}>
-        </div>
+            <div class="high-winds-days">
+                <div>
+                    <${ErrorBoundary}>
+                        ${h(OpenMeteoTool, { tomorrow: false })}
+                    </${ErrorBoundary}>
+                </div>
 
-        <div id="high-winds-tomorrow">
-                <${ErrorBoundary}>
-                    <${OpenMeteoTool} tomorrow />
-                </${ErrorBoundary}>
+                <div id="high-winds-tomorrow">
+                    <${ErrorBoundary}>
+                        ${h(OpenMeteoTool, { tomorrow: true })}
+                    </${ErrorBoundary}>
+                </div>
+            </div>
         </div>
     `;
 }
@@ -1630,8 +1652,7 @@ export function Root() {
                 "observations-table observations-table"
                 "forecasts-table forecasts-table"
                 "high-winds-details high-winds-details"
-                "high-winds-today high-winds-today"
-                "high-winds-tomorrow high-winds-tomorrow";
+                "high-winds-today high-winds-today";
         }
         @media (min-width: 900px) {
             :scope {
@@ -1644,7 +1665,7 @@ export function Root() {
                     "observations-graph forecasts-graph"
                     "dropzone-map dropzone-map"
                     "observations-table forecasts-table"
-                    "high-winds-today high-winds-tomorrow"
+                    "high-winds-today high-winds-today"
                     "high-winds-details high-winds-details";
             }
         }
@@ -1658,7 +1679,6 @@ export function Root() {
                 #observations-table,
                 #forecasts-table,
                 #high-winds-today,
-                #high-winds-tomorrow,
                 #high-winds-details
             ) {
             min-width: 0;
@@ -1685,7 +1705,6 @@ export function Root() {
                     #observations-table,
                     #forecasts-table,
                     #high-winds-today,
-                    #high-winds-tomorrow,
                     #high-winds-details
                 ) {
                 padding: 14px;
@@ -1737,11 +1756,6 @@ export function Root() {
 
         #high-winds-today {
             grid-area: high-winds-today;
-        }
-
-        #high-winds-tomorrow {
-            grid-area: high-winds-tomorrow;
-            align-self: end;
         }
 
         #high-winds-details {

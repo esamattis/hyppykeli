@@ -150,8 +150,12 @@ function formatTableData(hourly) {
     /** @type {OpenMeteoDayData} */
     const tomorrowData = {};
 
+    const blockStartHour = Math.floor(new Date().getHours() / 3) * 3;
+
     TIME_SLOTS.forEach((slot) => {
-        todayData[slot] = getAverageData(hourly, slot, 0);
+        if (slot >= blockStartHour - 9) {
+            todayData[slot] = getAverageData(hourly, slot, 0);
+        }
         tomorrowData[slot] = getAverageData(hourly, slot, 1);
     });
 
@@ -405,11 +409,18 @@ export function WindTable({ title, tableData }) {
     }
 
     return html`
-        <div class="wind-table-title">${scope.style}${title}</div>
         <div class="wind-table-scroll" tabindex="0" aria-label=${title}>
             ${scope.style}
             <table class="wind-table upperwinds-compact">
                 <thead>
+                    <tr>
+                        <th
+                            class="wind-table-title"
+                            colspan=${Object.keys(tableData).length + 1}
+                        >
+                            ${title}
+                        </th>
+                    </tr>
                     <tr>
                         <th></th>
                         ${Object.entries(tableData).map(

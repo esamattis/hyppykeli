@@ -42,7 +42,7 @@ export const upperWindTableStyles = css`
         isolation: isolate;
     }
 
-    :scope.wind-table-title {
+    .wind-table .wind-table-title {
         padding: 6px 8px;
         border: 1px solid var(--color-border);
         background-color: var(--color-surface-hover);
