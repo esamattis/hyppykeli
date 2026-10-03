@@ -352,23 +352,19 @@ export function WindCell({ data, columnClass, height }) {
             )}`}
         >
             ${scope.style}
-            ${
-                isNullish(speed)
-                    ? null
-                    : html`
-                          <div class="wind-speed">${speedInMS} m/s</div>
-                      `
-            }
-            ${
-                isNullish(speed)
-                    ? null
-                    : html`
-                          <div class="wind-direction">
-                              ${roundedDirection}°
-                              <${WindArrow} direction=${roundedDirection} />
-                          </div>
-                      `
-            }
+            ${isNullish(speed)
+                ? null
+                : html`
+                      <div class="wind-speed">${speedInMS} m/s</div>
+                  `}
+            ${isNullish(speed)
+                ? null
+                : html`
+                      <div class="wind-direction">
+                          ${roundedDirection}°
+                          <${WindArrow} direction=${roundedDirection} />
+                      </div>
+                  `}
         </td>
     `;
 }
@@ -419,11 +415,9 @@ export function WindTable({ title, tableData }) {
                                             isCurrentBlock,
                                         )}`}
                                     >
-                                        ${
-                                            isCurrentBlock
-                                                ? `${currentHour}:00`
-                                                : timeRange
-                                        }
+                                        ${isCurrentBlock
+                                            ? `${currentHour}:00`
+                                            : timeRange}
                                     </th>
                                 `;
                             },
@@ -442,11 +436,9 @@ export function WindTable({ title, tableData }) {
                                     ]) => html`
                                         <${WindCell}
                                             key=${hour}
-                                            data=${
-                                                hourData[
-                                                    pressure.split(" ")[0] ?? ""
-                                                ]
-                                            }
+                                            data=${hourData[
+                                                pressure.split(" ")[0] ?? ""
+                                            ]}
                                             columnClass=${getColumnClass(
                                                 hour,
                                                 isCurrentBlock,

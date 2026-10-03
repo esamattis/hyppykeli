@@ -40,9 +40,9 @@ html`
 
 ## Tooling
 
-Use mise for the Node version in `mise.toml`. The pnpm version is pinned by
-`packageManager` in `package.json`, rather than by mise. Run project scripts with
-`mise exec -- corepack pnpm run <script>` (for example, `tsc`).
+Use mise to select Node from `devEngines.runtime` and pnpm from `packageManager`
+in `package.json`. `mise.toml` enables reading these version declarations.
+Run project scripts with `mise exec -- pnpm run <script>` (for example, `tsc`).
 
 ## Component CSS
 

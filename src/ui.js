@@ -321,15 +321,13 @@ function WindDirection(props) {
     return html`
         <span>
             ${scope.style}
-            ${
-                props.value !== false
-                    ? html`
-                          <span class="direction-value">
-                              ${props.direction.toFixed(0)}°
-                          </span>
-                      `
-                    : null
-            }
+            ${props.value !== false
+                ? html`
+                      <span class="direction-value">
+                          ${props.direction.toFixed(0)}°
+                      </span>
+                  `
+                : null}
             <span
                 class="direction"
                 style=${{
@@ -406,21 +404,16 @@ function DataTable(props) {
                 <${props.Rows} data=${data} />
             </tbody>
         </table>
-        ${
-            showLoadMore
-                ? html`
-                      <div class="show-more">
-                          ${moreScope.style}
-                          <button
-                              type="button"
-                              onClick=${() => setShowAll(true)}
-                          >
-                              Näytä kaikki (${props.data.value.length})
-                          </button>
-                      </div>
-                  `
-                : null
-        }
+        ${showLoadMore
+            ? html`
+                  <div class="show-more">
+                      ${moreScope.style}
+                      <button type="button" onClick=${() => setShowAll(true)}>
+                          Näytä kaikki (${props.data.value.length})
+                      </button>
+                  </div>
+              `
+            : null}
     `;
 }
 
@@ -513,15 +506,13 @@ function GustTrend() {
 
     return html`
         <div title=${`Ero ${trend.toFixed(1)}m/s`}>
-            ${
-                trend > 0
-                    ? html`
-                          Mahdollisesti voimistuva ↗ ${help}
-                      `
-                    : html`
-                          Mahdollisesti heikkenevä ↘ ${help}
-                      `
-            }
+            ${trend > 0
+                ? html`
+                      Mahdollisesti voimistuva ↗ ${help}
+                  `
+                : html`
+                      Mahdollisesti heikkenevä ↘ ${help}
+                  `}
         </div>
     `;
 }
@@ -611,11 +602,9 @@ function CloudSummary() {
         <ul class="cloud-list" style=${{ display: metar ? "block" : "none" }}>
             ${scope.style}
             <li>
-                ${
-                    msg
-                        ? msg
-                        : metar?.clouds.map((cloud) => h(CloudLayer, { cloud }))
-                }
+                ${msg
+                    ? msg
+                    : metar?.clouds.map((cloud) => h(CloudLayer, { cloud }))}
                 ${metar?.cb ? "Ukkospilviä ⚡️" : null}
             </li>
 
@@ -625,13 +614,11 @@ function CloudSummary() {
                 </small>
 
                 <br />
-                ${
-                    metar?.metar
-                        ? html`
-                              <em class="metar">${metar.metar}</em>
-                          `
-                        : null
-                }
+                ${metar?.metar
+                    ? html`
+                          <em class="metar">${metar.metar}</em>
+                      `
+                    : null}
             </li>
         </ul>
 
@@ -693,11 +680,9 @@ function CloudSummary() {
                                     <p>
                                         Tiivistymiskorkeuden ja pilvipeiton
                                         ennuste matalille (alle 2km) pilville
-                                        ${
-                                            forecast
-                                                ? ` klo ${formatClock(forecast?.time)}`
-                                                : null
-                                        }
+                                        ${forecast
+                                            ? ` klo ${formatClock(forecast?.time)}`
+                                            : null}
                                     </p>
                                 `,
                             )}
@@ -983,25 +968,23 @@ export function SideMenu() {
             <h2>Ennuste</h2>
 
             <p>
-                ${
-                    FORECAST_DAY.value === 0
-                        ? html`
-                              <a
-                                  onClick=${asInPageNavigation}
-                                  href="${getQs({ forecast_day: "1" })}"
-                              >
-                                  Näytä huomisen ennuste
-                              </a>
-                          `
-                        : html`
-                              <a
-                                  onClick=${asInPageNavigation}
-                                  href="${getQs({ forecast_day: undefined })}"
-                              >
-                                  Näytä tämän päivän ennuste
-                              </a>
-                          `
-                }
+                ${FORECAST_DAY.value === 0
+                    ? html`
+                          <a
+                              onClick=${asInPageNavigation}
+                              href="${getQs({ forecast_day: "1" })}"
+                          >
+                              Näytä huomisen ennuste
+                          </a>
+                      `
+                    : html`
+                          <a
+                              onClick=${asInPageNavigation}
+                              href="${getQs({ forecast_day: undefined })}"
+                          >
+                              Näytä tämän päivän ennuste
+                          </a>
+                      `}
             </p>
 
             <form>
@@ -1030,11 +1013,9 @@ export function SideMenu() {
             <p><a href="#forecasts-table">Ennusteet 🧾</a></p>
             <p>
                 <a
-                    href="${
-                        QUERY_PARAMS.value.high_winds_details
-                            ? "#high-winds-details"
-                            : "#high-winds-today"
-                    }"
+                    href="${QUERY_PARAMS.value.high_winds_details
+                        ? "#high-winds-details"
+                        : "#high-winds-today"}"
                 >
                     Ylätuuliennusteet
                 </a>
@@ -1257,11 +1238,9 @@ export function StickyFooter() {
 
             <a
                 class="item"
-                href="${
-                    QUERY_PARAMS.value.high_winds_details
-                        ? "#high-winds-details"
-                        : "#high-winds-today"
-                }"
+                href="${QUERY_PARAMS.value.high_winds_details
+                    ? "#high-winds-details"
+                    : "#high-winds-today"}"
             >
                 <div class="wrap">
                     <div class="icon">💨</div>
@@ -1303,9 +1282,8 @@ function ForecastLocationInfo() {
     return html`
         Ennuste on tehty alueelle${" "}
         <a
-            href="https://www.google.fi/maps/place/${
-                FORECAST_COORDINATES.value || STATION_COORDINATES.value
-            }"
+            href="https://www.google.fi/maps/place/${FORECAST_COORDINATES.value ||
+            STATION_COORDINATES.value}"
         >
             ${FORECAST_LOCATION_NAME.value}
         </a>
@@ -1380,28 +1358,24 @@ function Info() {
     return html`
         <div id="info">
             ${scope.style}
-            ${
-                STATION_NAME.value
-                    ? html`
-                          Havaintotiedot haettu havaintoasemalta${" "}
-                          <a
-                              href="https://www.google.fi/maps/place/${STATION_COORDINATES.value}"
-                          >
-                              ${STATION_NAME}
-                          </a>
-                          .${" "}
-                      `
-                    : null
-            }
+            ${STATION_NAME.value
+                ? html`
+                      Havaintotiedot haettu havaintoasemalta${" "}
+                      <a
+                          href="https://www.google.fi/maps/place/${STATION_COORDINATES.value}"
+                      >
+                          ${STATION_NAME}
+                      </a>
+                      .${" "}
+                  `
+                : null}
             <${ForecastLocationInfo} />
-            ${
-                metar?.elevation !== undefined
-                    ? html`
-                          ${" "}Lentokentän korkeus meren pinnasta${" "}
-                          ${metar.elevation.toFixed(0)}M. ${" "}
-                      `
-                    : null
-            }
+            ${metar?.elevation !== undefined
+                ? html`
+                      ${" "}Lentokentän korkeus meren pinnasta${" "}
+                      ${metar.elevation.toFixed(0)}M. ${" "}
+                  `
+                : null}
             ${whenAll(
                 [STATION_COORDINATES.value, FORECAST_COORDINATES.value],
                 (station, forecast) => {
@@ -1471,49 +1445,47 @@ function Title() {
         <h1 id="title">
             ${scope.style}
             <span class="title-name">${NAME}</span>
-            ${
-                temps
-                    ? html`
-                          <span
-                              class="title-temp"
-                              style=${{ opacity: historic ? 0.5 : 1 }}
-                          >
-                              <span class="nowrap">
-                                  ${temperature?.toFixed(1)}°C maassa,
-                              </span>
-                              ${" "}
-                              <span class="nowrap">
-                                  ${temps[4].toFixed(1)}°C 4km:ssä
-                              </span>
-                              ${h(
-                                  Help,
-                                  { label: "?" },
-                                  html`
-                                      <p>
-                                          ICAO:n${" "}
-                                          <a
-                                              href="https://fi.wikipedia.org/wiki/Kansainv%C3%A4linen_standardi-ilmakeh%C3%A4"
-                                          >
-                                              ilmakehämallin
-                                          </a>
-                                          ${" "} mukainen lämpötilan muutos
-                                          Troposfäärissä (-6.5°C/km)
-                                      </p>
-
-                                      <ul>
-                                          <li>1km ${temps[1].toFixed(1)}°C</li>
-                                          <li>2km ${temps[2].toFixed(1)}°C</li>
-                                          <li>3km ${temps[3].toFixed(1)}°C</li>
-                                          <li>4km ${temps[4].toFixed(1)}°C</li>
-                                      </ul>
-
-                                      <p>${h(FromNow, { date: time })}</p>
-                                  `,
-                              )}
+            ${temps
+                ? html`
+                      <span
+                          class="title-temp"
+                          style=${{ opacity: historic ? 0.5 : 1 }}
+                      >
+                          <span class="nowrap">
+                              ${temperature?.toFixed(1)}°C maassa,
                           </span>
-                      `
-                    : null
-            }
+                          ${" "}
+                          <span class="nowrap">
+                              ${temps[4].toFixed(1)}°C 4km:ssä
+                          </span>
+                          ${h(
+                              Help,
+                              { label: "?" },
+                              html`
+                                  <p>
+                                      ICAO:n${" "}
+                                      <a
+                                          href="https://fi.wikipedia.org/wiki/Kansainv%C3%A4linen_standardi-ilmakeh%C3%A4"
+                                      >
+                                          ilmakehämallin
+                                      </a>
+                                      ${" "} mukainen lämpötilan muutos
+                                      Troposfäärissä (-6.5°C/km)
+                                  </p>
+
+                                  <ul>
+                                      <li>1km ${temps[1].toFixed(1)}°C</li>
+                                      <li>2km ${temps[2].toFixed(1)}°C</li>
+                                      <li>3km ${temps[3].toFixed(1)}°C</li>
+                                      <li>4km ${temps[4].toFixed(1)}°C</li>
+                                  </ul>
+
+                                  <p>${h(FromNow, { date: time })}</p>
+                              `,
+                          )}
+                      </span>
+                  `
+                : null}
         </h1>
     `;
 }
