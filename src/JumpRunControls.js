@@ -6,20 +6,18 @@ import { settingsDialogStyles } from "./styles.js";
 import { SpeedPresets } from "./SpeedPresets.js";
 import { ToolbarButton } from "./ToolbarButton.js";
 import { Dialog } from "./components.js";
-import { Icon } from "./icons.js";
+import { Icon, WindArrow } from "./icons.js";
 import { css, useScope } from "./useScope.js";
 import { t } from "./translations.js";
 
 /** @param {JumpRunControlsProps} props */
 export function JumpRunControls({
     settings,
-    defaultJumpRunDirection,
     defaultJumperCount,
     jumpers,
     nextJumper,
     onNextJumperChange,
     onChange,
-    onDefaultJumpRunDirectionChange,
     onDefaultJumperCountChange,
     onJumpersChange,
     onPosition,
@@ -35,9 +33,29 @@ export function JumpRunControls({
         }
         ${settingsDialogStyles}
         fieldset {
-            margin-top: 20px;
+            margin-top: 14px;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
+        }
+        .direction-field {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 4px;
+        }
+        .direction-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .direction-row input {
+            flex: 1;
+            min-width: 0;
+        }
+        .direction-reading {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 6ch;
+            white-space: nowrap;
         }
         .direction-value {
             font-variant-numeric: tabular-nums;
@@ -148,52 +166,38 @@ export function JumpRunControls({
                 <form
                     onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
                 >
-                    <label>
+                    <label class="direction-field">
                         ${t("settings.jumpRunDirection")}
-                        <input
-                            type="range"
-                            min="0"
-                            max="360"
-                            step="1"
-                            value=${settings.direction}
-                            onInput=${
-                                /** @param {Event} event */ (event) =>
-                                    onChange({
-                                        ...settings,
-                                        direction: Number(
-                                            /** @type {HTMLInputElement} */ (
-                                                event.currentTarget
-                                            ).value,
-                                        ),
-                                    })
-                            }
-                        />
-                        <output class="direction-value">
-                            ${settings.direction}°
-                        </output>
-                    </label>
-                    <label>
-                        ${t("settings.defaultJumpRunDirection")}
-                        <input
-                            type="range"
-                            min="0"
-                            max="360"
-                            step="1"
-                            value=${defaultJumpRunDirection}
-                            onInput=${
-                                /** @param {Event} event */ (event) =>
-                                    onDefaultJumpRunDirectionChange(
-                                        Number(
-                                            /** @type {HTMLInputElement} */ (
-                                                event.currentTarget
-                                            ).value,
-                                        ),
-                                    )
-                            }
-                        />
-                        <output class="default-jump-run-direction-value">
-                            ${defaultJumpRunDirection}°
-                        </output>
+                        <span class="direction-row">
+                            <input
+                                type="range"
+                                aria-label=${t("settings.jumpRunDirection")}
+                                min="0"
+                                max="360"
+                                step="1"
+                                value=${settings.direction}
+                                onInput=${
+                                    /** @param {Event} event */ (event) =>
+                                        onChange({
+                                            ...settings,
+                                            direction: Number(
+                                                /** @type {HTMLInputElement} */ (
+                                                    event.currentTarget
+                                                ).value,
+                                            ),
+                                        })
+                                }
+                            />
+                            <span class="direction-reading">
+                                ${h(WindArrow, {
+                                    // WindArrow takes the origin; jump run direction is the heading.
+                                    direction: (settings.direction + 180) % 360,
+                                })}
+                                <output class="direction-value">
+                                    ${Math.round(settings.direction)}°
+                                </output>
+                            </span>
+                        </span>
                     </label>
                     <label>
                         ${t("settings.defaultJumperCount")}

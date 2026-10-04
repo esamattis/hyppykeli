@@ -103,7 +103,6 @@ interface JumpRunSettings {
 
 interface JumpRunControlsProps {
     settings: JumpRunSettings;
-    defaultJumpRunDirection: number;
     defaultJumperCount: number;
     jumpers: JumpRunJumper[];
     nextJumper: JumpRunJumper;
@@ -112,7 +111,6 @@ interface JumpRunControlsProps {
     ) => void;
     onJumpersChange: (jumpers: JumpRunJumper[]) => void;
     onChange: (settings: JumpRunSettings) => void;
-    onDefaultJumpRunDirectionChange: (direction: number) => void;
     onDefaultJumperCountChange: (count: number) => void;
     onPosition: () => void;
     onAdd: () => void;

@@ -1495,6 +1495,32 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(arrows).toHaveCount(1);
 });
 
+test("jump run heading displays whole degrees without changing its precision", async ({
+    page,
+}) => {
+    const runSettings = {
+        direction: 16.6,
+        speedKmh: 120,
+        separationSeconds: 5,
+        exitHeight: 4000,
+    };
+    await page.goto(
+        `${developerPath}&map_run_settings=${encodeURIComponent(JSON.stringify(runSettings))}`,
+    );
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    const settings = page.getByRole("dialog", {
+        name: "Hyppylinjan asetukset",
+    });
+    await expect(settings.locator(".direction-value")).toHaveText("17°");
+    expect(
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+            .direction,
+    ).toBe(16.6);
+});
+
 test("default direction is used only when creating a jump run", async ({
     page,
 }) => {
@@ -1526,7 +1552,7 @@ test("default direction is used only when creating a jump run", async ({
         name: "Hyppylinjan oletussuunta",
     });
     await expect(direction).toHaveValue("180");
-    await expect(defaultDirection).toHaveValue("180");
+    await expect(defaultDirection).toHaveCount(0);
     await direction.fill("225");
 
     await expect(settings.locator(".direction-value")).toHaveText("225°");
@@ -1538,13 +1564,6 @@ test("default direction is used only when creating a jump run", async ({
             .direction,
     ).toBe(225);
 
-    await defaultDirection.fill("90");
-    await expect(
-        settings.locator(".default-jump-run-direction-value"),
-    ).toHaveText("90°");
-    expect(
-        new URL(page.url()).searchParams.get("default_jump_run_direction"),
-    ).toBe("90");
     await page.keyboard.press("Escape");
     await position.click();
     expect(

@@ -1081,21 +1081,12 @@ export function DropzoneMap() {
                         },
                         jumpRun: {
                             settings: jumpRunSettings,
-                            defaultJumpRunDirection,
                             defaultJumperCount,
                             jumpers,
                             nextJumper,
                             onNextJumperChange: setNextJumper,
                             onJumpersChange: setJumpers,
                             onChange: setJumpRunSettings,
-                            onDefaultJumpRunDirectionChange: (direction) =>
-                                navigateQs(
-                                    {
-                                        default_jump_run_direction:
-                                            String(direction),
-                                    },
-                                    { replace: true },
-                                ),
                             onDefaultJumperCountChange: (count) =>
                                 navigateQs(
                                     { default_jumper_count: String(count) },
