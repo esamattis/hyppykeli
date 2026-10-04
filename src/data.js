@@ -89,22 +89,38 @@ export function getDevNumber(key) {
         : undefined;
 }
 
-/** @param {WeatherData | undefined} observation */
-export function applyGroundOverrides(observation) {
-    const gust = getDevNumber("DEV_ground_gust");
-    const speed = getDevNumber("DEV_ground_avg");
-    const direction = getDevNumber("DEV_ground_direction");
-    if (gust === undefined && speed === undefined && direction === undefined) {
-        return observation;
+/**
+ * Decode newest-first rows: gust, average speed, direction, age in minutes.
+ * Empty wind values represent missing data. Invalid overrides use live data.
+ * @param {string | undefined} text
+ * @returns {DeveloperObservation[] | undefined}
+ */
+export function parseGroundObservations(text) {
+    if (!text?.trim()) return undefined;
+    const rows = text.split(";").map((row) => row.split(","));
+    /** @type {DeveloperObservation[]} */
+    const observations = [];
+    for (const row of rows) {
+        if (row.length !== 4 || !row[3]?.trim()) return undefined;
+        const numbers = row.map((value) =>
+            value.trim() ? Number(value) : undefined,
+        );
+        const [gust, speed, direction, age] = numbers;
+        if (
+            numbers.some(
+                (value) => value !== undefined && !Number.isFinite(value),
+            ) ||
+            (gust !== undefined && gust < 0) ||
+            (speed !== undefined && speed < 0) ||
+            (direction !== undefined && (direction < -1 || direction > 360)) ||
+            age === undefined ||
+            age < 0 ||
+            age > 60
+        )
+            return undefined;
+        observations.push({ gust, speed, direction, age });
     }
-    return {
-        source: /** @type {const} */ ("mock"),
-        time: observation?.time ?? new Date(),
-        ...observation,
-        gust: gust ?? observation?.gust,
-        speed: speed ?? observation?.speed,
-        direction: direction ?? observation?.direction,
-    };
+    return observations.sort((a, b) => a.age - b.age);
 }
 
 /**
@@ -130,7 +146,32 @@ export const STATION_NAME = signal(undefined);
 /**
  * @type {Signal<WeatherData[]>}
  */
-export const OBSERVATIONS = signal([]);
+const LIVE_OBSERVATIONS = signal([]);
+
+export const OBSERVATIONS = computed(() => {
+    const live = LIVE_OBSERVATIONS.value;
+    const overrides = parseGroundObservations(
+        QUERY_PARAMS.value.DEV_ground_obs,
+    );
+    if (!overrides) return live;
+    const now = Date.now();
+    const cutoff = now - 60 * 60 * 1000;
+    const recent = live.filter(
+        (observation) => observation.time.getTime() >= cutoff,
+    );
+    const edited = overrides.map(({ age, gust, speed, direction }, index) => ({
+        ...recent[index],
+        source: /** @type {const} */ ("mock"),
+        time: new Date(now - age * 60 * 1000),
+        gust,
+        speed,
+        direction,
+    }));
+    return [
+        ...edited,
+        ...live.filter((observation) => observation.time.getTime() < cutoff),
+    ];
+});
 
 export const HAS_WIND_OBSERVATIONS = computed(() => {
     let count = 0;
@@ -155,12 +196,12 @@ export const HAS_WIND_OBSERVATIONS = computed(() => {
 export const HOVERED_OBSERVATION = signal(undefined);
 
 /**
- * @type {Signal<WeatherData|undefined>}
+ * @type {ReadonlySignal<WeatherData|undefined>}
  */
-const LIVE_LATEST_OBSERVATION = computed(() => {
+export const LATEST_OBSERVATION = computed(() => {
     const obs = OBSERVATIONS.value[0];
 
-    if (obs && hasValidWindData(obs)) {
+    if (obs && (obs.source === "mock" || hasValidWindData(obs))) {
         return OBSERVATIONS.value[0];
     }
 
@@ -192,10 +233,6 @@ const LIVE_LATEST_OBSERVATION = computed(() => {
         return metarObs;
     }
 });
-
-export const LATEST_OBSERVATION = computed(() =>
-    applyGroundOverrides(LIVE_LATEST_OBSERVATION.value),
-);
 
 /**
  * @type {Signal<WeatherData[]>}
@@ -761,7 +798,7 @@ export async function fetchFmiObservations(fmisid) {
 
     mockAllEntries(combined);
 
-    OBSERVATIONS.value = combined;
+    LIVE_OBSERVATIONS.value = combined;
 }
 
 /**
@@ -902,7 +939,7 @@ async function fetchRoadObservations(roadsid) {
         time: new Date(data.dataUpdatedTime),
     };
 
-    OBSERVATIONS.value = [obs];
+    LIVE_OBSERVATIONS.value = [obs];
 
     const history = await historyPromise;
     if (!history) {
@@ -960,7 +997,7 @@ async function fetchRoadObservations(roadsid) {
 
     mockAllEntries(full);
 
-    OBSERVATIONS.value = full;
+    LIVE_OBSERVATIONS.value = full;
 }
 
 async function fetchObservations() {
@@ -1297,18 +1334,7 @@ export const WIND_VARIATIONS = computed(() => {
 
     debug("WIND_VARIATIONS: observations = ", observations);
 
-    const recentObservations = filterRecentObservations(observations).map(
-        (observation) => applyGroundOverrides(observation) ?? observation,
-    );
-    if (
-        recentObservations.length === 0 &&
-        LATEST_OBSERVATION.value &&
-        (getDevNumber("DEV_ground_gust") !== undefined ||
-            getDevNumber("DEV_ground_avg") !== undefined ||
-            getDevNumber("DEV_ground_direction") !== undefined)
-    ) {
-        recentObservations.push(LATEST_OBSERVATION.value);
-    }
+    const recentObservations = filterRecentObservations(observations);
 
     if (recentObservations.length === 0) {
         console.warn("WIND_VARIATIONS: No recent observations available");

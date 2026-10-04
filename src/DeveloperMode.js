@@ -6,6 +6,9 @@ import { css, useScope } from "./useScope.js";
 import {
     DEV_ACTIVE,
     QUERY_PARAMS,
+    OBSERVATIONS,
+    LATEST_OBSERVATION,
+    parseGroundObservations,
     navigateQs,
     parseMetarMessages,
 } from "./data.js";
@@ -18,9 +21,6 @@ const FIELDS = [
         checkbox: true,
     },
     { key: "DEV_mock", label: "Käytä FMI:n esimerkkitietoja", checkbox: true },
-    { key: "DEV_ground_gust", label: "Maanpinnan puuska (m/s)" },
-    { key: "DEV_ground_avg", label: "Maanpinnan keskituuli (m/s)" },
-    { key: "DEV_ground_direction", label: "Maanpinnan suunta (°)", max: 360 },
     { key: "DEV_metar", label: "METAR-teksti" },
     { key: "DEV_map_speed", label: "Kartan tuulen nopeus (m/s)" },
     { key: "DEV_map_direction", label: "Kartan tuulen suunta (°)", max: 360 },
@@ -113,6 +113,22 @@ export function DeveloperMode() {
             resize: vertical;
             font-family: var(--font-mono);
         }
+        .developer-observations {
+            width: 100%;
+            margin-top: 14px;
+            border-collapse: collapse;
+        }
+        .developer-observations th,
+        .developer-observations td {
+            padding: 4px;
+            text-align: left;
+        }
+        .developer-observations input {
+            min-width: 0;
+        }
+        .developer-observations th:first-child {
+            white-space: nowrap;
+        }
         .developer-actions {
             display: flex;
             flex-wrap: wrap;
@@ -127,11 +143,67 @@ export function DeveloperMode() {
     const dialogRef = useRef(null);
     const [values, setValues] = useState(/** @type {QueryParams} */ ({}));
     const [error, setError] = useState("");
+    const [observations, setObservations] = useState(
+        /** @type {DeveloperObservationInput[]} */ ([]),
+    );
+    const [observationsEdited, setObservationsEdited] = useState(false);
 
     function open() {
         setValues({ ...QUERY_PARAMS.value });
         setError("");
+        const now = Date.now();
+        const saved = parseGroundObservations(
+            QUERY_PARAMS.value.DEV_ground_obs,
+        );
+        let recent =
+            saved ??
+            OBSERVATIONS.value
+                .filter((observation) => {
+                    const age = now - observation.time.getTime();
+                    return age >= 0 && age <= 60 * 60 * 1000;
+                })
+                .map((observation) => ({
+                    ...observation,
+                    age:
+                        Math.round((now - observation.time.getTime()) / 6000) /
+                        10,
+                }));
+        if (!recent.length) {
+            // Provide an editable hour even when the station has no recent data.
+            recent = Array.from({ length: 7 }, (_, index) => ({
+                gust: LATEST_OBSERVATION.value?.gust,
+                speed: LATEST_OBSERVATION.value?.speed,
+                direction: LATEST_OBSERVATION.value?.direction,
+                age: index * 10,
+            }));
+        }
+        setObservations(
+            recent.map(({ gust, speed, direction, age }) => ({
+                gust: gust !== undefined && gust >= 0 ? gust.toString() : "",
+                speed:
+                    speed !== undefined && speed >= 0 ? speed.toString() : "",
+                direction: direction?.toString() ?? "",
+                age,
+            })),
+        );
+        setObservationsEdited(false);
         dialogRef.current?.showModal();
+    }
+
+    /**
+     * @param {number} index
+     * @param {"gust" | "speed" | "direction"} key
+     * @param {Event & { currentTarget: HTMLInputElement }} event
+     */
+    function editObservation(index, key, event) {
+        const value = event.currentTarget.value;
+        setObservations((previous) =>
+            previous.map((row, rowIndex) =>
+                rowIndex === index ? { ...row, [key]: value } : row,
+            ),
+        );
+        setObservationsEdited(true);
+        setError("");
     }
 
     /** @param {SubmitEvent} event */
@@ -151,14 +223,34 @@ export function DeveloperMode() {
                 return;
             }
         }
-        navigateQs(
-            Object.fromEntries(
+        const groundObservations = observationsEdited
+            ? observations
+                  .map(({ gust, speed, direction, age }) =>
+                      [gust.trim(), speed.trim(), direction.trim(), age].join(
+                          ",",
+                      ),
+                  )
+                  .join(";")
+            : values.DEV_ground_obs;
+        if (
+            groundObservations &&
+            !parseGroundObservations(groundObservations)
+        ) {
+            setError("Tarkista havaintojen tuuliarvot ja suunnat.");
+            return;
+        }
+        navigateQs({
+            ...Object.fromEntries(
                 FIELDS.map(({ key }) => [
                     key,
                     values[key]?.trim() || undefined,
                 ]),
             ),
-        );
+            DEV_ground_obs: groundObservations,
+            DEV_ground_gust: undefined,
+            DEV_ground_avg: undefined,
+            DEV_ground_direction: undefined,
+        });
         dialogRef.current?.close();
     }
 
@@ -186,7 +278,7 @@ export function DeveloperMode() {
                 <h2 id="developer-mode-title">Kehittäjätila</h2>
                 <p>
                     Testiarvot tallennetaan osoitteen DEV_-parametreihin. Tyhjä
-                    kenttä käyttää oikeita tietoja.
+                    METAR- tai karttakenttä käyttää oikeita tietoja.
                 </p>
                 <p>
                     Kartan arvot korvaavat vapaapudotuksen keskituulen ja
@@ -252,6 +344,59 @@ export function DeveloperMode() {
                             `;
                         })}
                     </div>
+                    <h3>Maanpinnan havainnot viimeiseltä tunnilta</h3>
+                    <p>
+                        Uusin rivi on nykyinen maanpinnan tuuli. Taulukon
+                        muokkaus korvaa viimeisen tunnin havainnot. Tyhjä
+                        tuuliarvo tarkoittaa puuttuvaa havaintoa. Suunta −1
+                        tarkoittaa vaihtelevaa tuulta.
+                    </p>
+                    <table class="developer-observations">
+                        <thead>
+                            <tr>
+                                <th scope="col">Min sitten</th>
+                                <th scope="col">Puuska (m/s)</th>
+                                <th scope="col">Keski (m/s)</th>
+                                <th scope="col">Suunta (°)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${observations.map(
+                                (observation, index) => html`
+                                    <tr>
+                                        <th scope="row">${observation.age}</th>
+                                        ${
+                                            /** @type {const} */ ([
+                                                "gust",
+                                                "speed",
+                                                "direction",
+                                            ]).map((key) => {
+                                                const label = {
+                                                    gust: "Puuska",
+                                                    speed: "Keskituuli",
+                                                    direction: "Suunta",
+                                                }[key];
+                                                return html`
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            name=${`DEV_ground_obs_${index}_${key}`}
+                                                            aria-label=${`${label}, ${observation.age} min sitten`}
+                                                            min=${key === "direction" ? -1 : 0}
+                                                            max=${key === "direction" ? 360 : undefined}
+                                                            step="any"
+                                                            value=${observation[key]}
+                                                            onInput=${/** @param {Event & { currentTarget: HTMLInputElement }} event */ (event) => editObservation(index, key, event)}
+                                                        />
+                                                    </td>
+                                                `;
+                                            })
+                                        }
+                                    </tr>
+                                `,
+                            )}
+                        </tbody>
+                    </table>
                     ${
                         error
                             ? html`

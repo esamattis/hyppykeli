@@ -10,7 +10,6 @@ import {
     STATION_NAME,
     NAME,
     getDevNumber,
-    applyGroundOverrides,
 } from "./data.js";
 import { OM_DATA } from "./om.js";
 import { formatClock } from "./utils.js";
@@ -350,15 +349,17 @@ export function DropzoneMap() {
             return start <= now && now < start + 60 * 60 * 1000;
         }) ?? -1;
     const time = index >= 0 ? data?.hourly.time[index] : undefined;
-    const ground = applyGroundOverrides(
-        OBSERVATIONS.value
-            .filter((obs) => obs.source === "fmi" || obs.source === "roads")
-            .reduce(
-                (latest, obs) =>
-                    !latest || obs.time > latest.time ? obs : latest,
-                /** @type {WeatherData | undefined} */ (undefined),
-            ),
-    );
+    const ground = OBSERVATIONS.value
+        .filter(
+            (obs) =>
+                obs.source === "fmi" ||
+                obs.source === "roads" ||
+                obs.source === "mock",
+        )
+        .reduce(
+            (latest, obs) => (!latest || obs.time > latest.time ? obs : latest),
+            /** @type {WeatherData | undefined} */ (undefined),
+        );
     /** @type {MapWindLevel[]} */
     const winds = LEVELS.map(({ level, height }) => ({
         label: `≈ ${height} m`,

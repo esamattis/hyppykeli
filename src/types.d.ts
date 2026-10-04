@@ -146,6 +146,7 @@ interface MetarData {
 interface QueryParams {
     DEV_debug?: string;
     DEV_mock?: string;
+    DEV_ground_obs?: string;
     DEV_ground_gust?: string;
     DEV_ground_avg?: string;
     DEV_ground_direction?: string;
@@ -170,6 +171,20 @@ interface QueryParams {
 }
 
 type DeveloperKey = Extract<keyof QueryParams, `DEV_${string}`>;
+
+interface DeveloperObservation {
+    gust?: number;
+    speed?: number;
+    direction?: number;
+    age: number;
+}
+
+interface DeveloperObservationInput {
+    gust: string;
+    speed: string;
+    direction: string;
+    age: number;
+}
 
 interface DeveloperField {
     key: DeveloperKey;
