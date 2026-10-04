@@ -506,23 +506,39 @@ export function WindTable({ days, hourly = false }) {
     `);
     const currentHour = new Date().getHours();
     const blockStartHour = Math.floor(currentHour / 3) * 3;
-    const columns = days.flatMap(({ tableData, isToday, isPast }, dayIndex) =>
-        Object.entries(tableData).map(([hour, { data, isCurrentBlock }]) => ({
-            key: `${dayIndex}-${hour}`,
-            hour,
-            data,
-            isCurrentBlock,
-            columnClass: !isToday
-                ? isPast
-                    ? "past-column"
-                    : ""
-                : isCurrentBlock
-                  ? "current-column"
-                  : parseInt(hour) < (hourly ? currentHour : blockStartHour)
-                    ? "past-column"
-                    : "",
-        })),
+    const visibleDays = days.flatMap(
+        ({ title, tableData, isToday, isPast, id }, dayIndex) => {
+            const columns = Object.entries(tableData).flatMap(
+                ([hour, { data, isCurrentBlock }]) => {
+                    const hasData = Object.values(data).some(
+                        ({ speed, direction }) =>
+                            !isNullish(speed) || !isNullish(direction),
+                    );
+                    if (!hasData) return [];
+
+                    return {
+                        key: `${dayIndex}-${hour}`,
+                        hour,
+                        data,
+                        isCurrentBlock,
+                        columnClass: !isToday
+                            ? isPast
+                                ? "past-column"
+                                : ""
+                            : isCurrentBlock
+                              ? "current-column"
+                              : parseInt(hour) <
+                                  (hourly ? currentHour : blockStartHour)
+                                ? "past-column"
+                                : "",
+                    };
+                },
+            );
+
+            return columns.length > 0 ? [{ title, id, columns }] : [];
+        },
     );
+    const columns = visibleDays.flatMap(({ columns }) => columns);
 
     return html`
         <div
@@ -537,13 +553,13 @@ export function WindTable({ days, hourly = false }) {
                 <thead>
                     <tr>
                         <th></th>
-                        ${days.map(
-                            ({ title, tableData, id }) => html`
+                        ${visibleDays.map(
+                            ({ title, columns: dayColumns, id }) => html`
                                 <th
                                     id=${id}
                                     class="wind-table-title"
                                     scope="colgroup"
-                                    colspan=${Object.keys(tableData).length}
+                                    colspan=${dayColumns.length}
                                 >
                                     ${title}
                                 </th>

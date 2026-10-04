@@ -1096,11 +1096,20 @@ test.describe("upper wind forecast timezones", () => {
                 "19 m/s",
             );
             // Local 12–15 is UTC 09–12, and tomorrow 00–03 starts at UTC 21.
+            const headerTexts = await compact
+                .locator("th.time-header")
+                .allTextContents();
             await expect(
-                row.locator("td").nth(4).locator(".wind-speed"),
+                row
+                    .locator("td")
+                    .nth(headerTexts.indexOf("12-15"))
+                    .locator(".wind-speed"),
             ).toHaveText("21 m/s");
             await expect(
-                row.locator("td").nth(8).locator(".wind-speed"),
+                row
+                    .locator("td")
+                    .nth(headerTexts.indexOf("00-03"))
+                    .locator(".wind-speed"),
             ).toHaveText("33 m/s");
 
             await page
@@ -1121,6 +1130,34 @@ test.describe("upper wind forecast timezones", () => {
             );
         });
     }
+});
+
+test("upper wind forecast omits empty time columns and day headings", async ({
+    page,
+}) => {
+    await page.clock.install({ time: new Date("2026-07-04T08:30:00Z") });
+    await page.reload();
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("/src/om.js");
+        const time = ["2026-07-04T12:00"];
+        const hourly = { time };
+        for (const level of ["600", "700", "850", "925", "1000"]) {
+            hourly[`windspeed_${level}hPa`] = [10.8];
+            hourly[`winddirection_${level}hPa`] = [225];
+        }
+        OM_DATA.value = { utc_offset_seconds: 0, hourly };
+    });
+
+    const table = page.locator(".upperwinds-compact");
+    await expect(table.locator(".wind-table-title")).toHaveText(["Tänään"]);
+    await expect(table.locator(".wind-table-title")).toHaveAttribute(
+        "colspan",
+        "1",
+    );
+    await expect(table.locator("th.time-header")).toHaveText(["12-15"]);
+    await expect(table.locator("tbody tr").first().locator("td")).toHaveCount(
+        1,
+    );
 });
 
 test("jump run redraws all jumpers and applies individual settings immediately", async ({
