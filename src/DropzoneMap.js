@@ -195,58 +195,26 @@ export function DropzoneMap() {
             min-width: 0;
             position: relative;
         }
-        :scope > h2 {
-            padding-right: 48px;
-        }
-        .window-toggle {
-            position: absolute;
-            top: var(--panel-padding);
-            right: var(--panel-padding);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            background: transparent;
-            border: 0;
-        }
-        :scope#dropzone-map.full-window {
+        .map-frame.full-window {
             position: fixed;
             inset: 0;
             z-index: 2000;
             display: flex;
             flex-direction: column;
+            width: 100%;
             margin: 0;
             border: 0;
             border-radius: 0;
-            overflow: auto;
             background: var(--color-surface);
         }
-        :scope.full-window > h2 {
-            display: none;
-        }
-        :scope.full-window .wind-profile {
-            padding-right: 48px;
-        }
-        :scope.full-window .map-layout {
+        .map-frame.full-window .map-viewport {
             flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-        :scope.full-window .map-frame {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            border-radius: 0;
-        }
-        :scope.full-window .map-viewport {
-            flex: 1;
+            min-height: 0;
             display: flex;
         }
-        :scope.full-window .dz-map {
+        .map-frame.full-window .dz-map {
             flex: 1;
-            min-height: 240px;
+            min-height: 0;
         }
         .map-layout {
             display: grid;
@@ -568,22 +536,41 @@ export function DropzoneMap() {
     useEffect(() => {
         if (!leafletInstance || !jumpRunStart) return;
         const layers = layerGroup().addTo(leafletInstance);
-        const end = jumpRunCoordinates(
-            jumpRunStart,
-            jumpRunSettings,
-            Math.max(1, jumperCount - 1),
-        );
-        polyline([jumpRunStart, end], {
+        const line = polyline([], {
             color: "#2563eb",
             weight: 3,
             dashArray: "8 6",
             interactive: false,
             className: "jump-run-line",
         }).addTo(layers);
-        jumperStarts.forEach((start) => {
+        // Extend beyond the viewport in both directions, including after panning
+        // away from the exit point. The line does not depend on jumper spacing.
+        const updateLine = () => {
+            const start = leafletInstance.project(jumpRunStart);
+            const radians = (jumpRunSettings.direction * Math.PI) / 180;
+            const direction = point(Math.sin(radians), -Math.cos(radians));
+            const size = leafletInstance.getSize();
+            const center = leafletInstance.project(leafletInstance.getCenter());
+            const length =
+                start.distanceTo(center) + Math.hypot(size.x, size.y);
+            const offset = direction.multiplyBy(length);
+            line.setLatLngs([
+                leafletInstance.unproject(start.subtract(offset)),
+                leafletInstance.unproject(start.add(offset)),
+            ]);
+        };
+        updateLine();
+        leafletInstance.on("moveend zoomend resize", updateLine);
+        jumperStarts.forEach((start, index) => {
+            const color =
+                index === 0
+                    ? "#16a34a"
+                    : index === jumperCount - 1
+                      ? "#dc2626"
+                      : "#2563eb";
             circleMarker(start, {
                 radius: 5,
-                color: "#2563eb",
+                color,
                 fillColor: "white",
                 fillOpacity: 1,
                 weight: 2,
@@ -592,6 +579,7 @@ export function DropzoneMap() {
             }).addTo(layers);
         });
         return () => {
+            leafletInstance.off("moveend zoomend resize", updateLine);
             layers.remove();
         };
     }, [leafletInstance, jumpRunStart, jumpRunSettings, jumperCount]);
@@ -684,20 +672,9 @@ export function DropzoneMap() {
     return html`
         <section
             id="dropzone-map"
-            class=${fullWindow ? "full-window" : undefined}
             aria-label="Hyppypaikan kartta ja tuuliprofiili"
         >
             ${scope.style}
-            <button
-                type="button"
-                class="window-toggle"
-                aria-label=${fullWindow ? "Palauta Ylätuulet" : "Laajenna Ylätuulet koko ikkunaan"}
-                title=${fullWindow ? "Palauta Ylätuulet" : "Laajenna Ylätuulet koko ikkunaan"}
-                aria-pressed=${fullWindow}
-                onClick=${() => setFullWindow((expanded) => !expanded)}
-            >
-                ${h(Icon, { name: fullWindow ? "collapse" : "expand", size: 20 })}
-            </button>
             <h2>
                 Ylätuulet
                 ${h(
@@ -791,8 +768,11 @@ export function DropzoneMap() {
                           `
                         : null
                 }
-                <div class="map-frame">
+                <div class=${`map-frame${fullWindow ? " full-window" : ""}`}>
                     ${h(FreefallToolbar, {
+                        fullWindow,
+                        onToggleFullWindow: () =>
+                            setFullWindow((expanded) => !expanded),
                         jumpRunActive,
                         onToggleJumpRun: () =>
                             setJumpRunActive((active) => !active),

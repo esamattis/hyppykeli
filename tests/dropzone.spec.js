@@ -434,7 +434,7 @@ test("developer banner opens the editor and applies METAR changes", async ({
     await expect(page.locator("#developer-mode")).toHaveCount(1);
 });
 
-test("wind card expands, hides its heading and help, and restores", async ({
+test("map toolbar expands only the map in both modes and restores", async ({
     page,
 }) => {
     const card = page.locator("#dropzone-map");
@@ -446,15 +446,29 @@ test("wind card expands, hides its heading and help, and restores", async ({
     await expect(heading).toBeVisible();
     await expect(help).toBeVisible();
     await expand.click();
-    await expect(heading).toBeHidden();
-    await expect(help).toBeHidden();
+    const frame = card.locator(".map-frame");
+    await expect(frame).toHaveClass(/full-window/);
+    await expect(frame).toHaveCSS("position", "fixed");
+    await expect(frame.locator(".freefall-toolbar .window-toggle")).toHaveCount(
+        1,
+    );
+    await expect(
+        frame.locator(":scope > h2, .wind-profile, .flight-details"),
+    ).toHaveCount(0);
+    const bounds = await frame.boundingBox();
+    expect(bounds.x).toBe(0);
+    expect(bounds.y).toBe(0);
+    expect(bounds.width).toBe(page.viewportSize().width);
+    expect(bounds.height).toBe(page.viewportSize().height);
     const restore = card.getByRole("button", { name: "Palauta Ylätuulet" });
     await expect(restore).toHaveAttribute("aria-pressed", "true");
     await expect(card.locator(".wind-level-button").first()).toBeVisible();
     await restore.click();
     await expect(heading).toBeVisible();
     await expect(help).toBeVisible();
+    await card.getByRole("button", { name: "Hyppylinja", exact: true }).click();
     await expand.click();
+    await expect(frame).toHaveClass(/full-window/);
     await page.keyboard.press("Escape");
     await expect(expand).toHaveAttribute("aria-pressed", "false");
     await expect(heading).toBeVisible();
@@ -616,7 +630,9 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     await place();
     await expect(line).toHaveCount(1);
     const firstPath = await line.first().getAttribute("d");
-    await clear.focus();
+    await page
+        .getByRole("button", { name: "Laajenna Ylätuulet koko ikkunaan" })
+        .focus();
     await page.keyboard.press("Tab");
     await expect(map).toBeFocused();
     await expect(line).toHaveCount(2);
@@ -649,7 +665,6 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     await speed.fill("200");
     await expect(toolbar).toContainText("1000 m");
     await expect(toolbar).toContainText("200 km/h");
-    await expect(toolbar).toContainText("36 s");
     await expect(line.first()).toHaveAttribute("d", firstPath);
     await expect(line.last()).toHaveAttribute("d", centeredPath);
     await page.keyboard.press("Escape");
@@ -657,10 +672,10 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     await expect(line).toHaveCount(3);
     await expect(line.last()).not.toHaveAttribute("d", firstPath);
     let latestPath = await line.last().getAttribute("d");
-    for (const [preset, value, seconds] of [
-        ["Freefly", "240", "30"],
-        ["Wingsuit", "80", "90"],
-        ["FS", "180", "40"],
+    for (const [preset, value] of [
+        ["Freefly", "240"],
+        ["Wingsuit", "80"],
+        ["FS", "180"],
     ]) {
         await edit.click();
         await dialog
@@ -668,7 +683,6 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
             .click();
         await expect(speed).toHaveValue(value);
         await expect(toolbar).toContainText(`${value} km/h`);
-        await expect(toolbar).toContainText(`${seconds} s`);
         await expect(line.last()).toHaveAttribute("d", latestPath);
         await page.keyboard.press("Escape");
         const count = await line.count();
@@ -811,6 +825,13 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     const run = map.locator(".jump-run-line");
     const jumpers = map.locator(".jump-run-jumper");
     const arrows = map.locator(".freefall-drift-line");
+    await expect(jumpers).toHaveCount(1);
+    const lineBounds = await run.boundingBox();
+    const mapBounds = await map.boundingBox();
+    expect(lineBounds.y).toBeLessThan(mapBounds.y);
+    expect(lineBounds.y + lineBounds.height).toBeGreaterThan(
+        mapBounds.y + mapBounds.height,
+    );
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await expect(jumpers).toHaveCount(3);
@@ -865,13 +886,15 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     for (let i = 0; i < 3; i++)
         await expect(arrows.nth(i)).not.toHaveAttribute("d", beforeExit[i]);
     const runPath = await run.getAttribute("d");
+    const secondStart = await jumpers.nth(1).getAttribute("d");
     const speed = settings.getByRole("spinbutton", {
         name: "Hyppylinjan nopeus (km/h)",
     });
     await speed.fill("0");
     await expect(run).toHaveAttribute("d", runPath);
     await speed.fill("180");
-    await expect(run).not.toHaveAttribute("d", runPath);
+    await expect(run).toHaveAttribute("d", runPath);
+    await expect(jumpers.nth(1)).not.toHaveAttribute("d", secondStart);
     await settings
         .getByRole("spinbutton", { name: "Hyppääjien väli (s)" })
         .fill("10");

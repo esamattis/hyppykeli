@@ -10,6 +10,8 @@ includes this check; run `mise exec -- pnpm run tsc` when only checking types.
 
 Purely visual changes do not need tests unless explicitly asked. Do not add or
 run tests solely to verify styling, layout, or artwork for those changes.
+Do not assert visual details such as colors, SVG stroke/fill values, styling,
+layout, or artwork in tests. Test behavior and functionality instead.
 
 For other changes, run `pn test` (`mise exec -- pnpm test` when invoking through
 mise). This formats files, checks TypeScript diagnostics, and runs the headless

@@ -7,6 +7,8 @@ import { css, useScope } from "./useScope.js";
 
 /** @param {FreefallToolbarProps} props */
 export function FreefallToolbar({
+    fullWindow,
+    onToggleFullWindow,
     exitHeight,
     openingHeight,
     speedKmh,
@@ -52,15 +54,11 @@ export function FreefallToolbar({
         .arrow-action:disabled {
             opacity: 0.5;
         }
-        .flight-details {
+        .window-toggle {
             margin-left: auto;
-            padding: 0 4px;
-            font-size: 0.75rem;
-            white-space: nowrap;
-            color: var(--color-muted);
+            flex-shrink: 0;
         }
     `);
-    const seconds = Math.round((exitHeight - openingHeight) / (speedKmh / 3.6));
     return html`
         <div
             class="freefall-toolbar"
@@ -76,7 +74,7 @@ export function FreefallToolbar({
                 aria-pressed=${jumpRunActive}
                 onClick=${onToggleJumpRun}
             >
-                ${h(Icon, { name: "plane", size: 20 })}
+                ${h(Icon, { name: jumpRunActive ? "plane" : "freefall", size: 20 })}
             </button>
             ${jumpRunActive ? h(JumpRunControls, jumpRun) : null}
             ${!jumpRunActive ? h(EditableSettings, { exitHeight, openingHeight, speedKmh, onAltitudeChange, onSpeedChange }) : null}
@@ -100,18 +98,16 @@ export function FreefallToolbar({
             >
                 ${h(Icon, { name: "trash", size: 18 })}
             </button>
-            ${
-                !jumpRunActive
-                    ? html`
-                          <span
-                              class="flight-details"
-                              title="Vapaapudotuksen kesto"
-                          >
-                              ${seconds} s
-                          </span>
-                      `
-                    : null
-            }
+            <button
+                type="button"
+                class="arrow-action window-toggle"
+                aria-label=${fullWindow ? "Palauta Ylätuulet" : "Laajenna Ylätuulet koko ikkunaan"}
+                title=${fullWindow ? "Palauta Ylätuulet" : "Laajenna Ylätuulet koko ikkunaan"}
+                aria-pressed=${fullWindow}
+                onClick=${onToggleFullWindow}
+            >
+                ${h(Icon, { name: fullWindow ? "collapse" : "expand", size: 20 })}
+            </button>
         </div>
     `;
 }

@@ -106,6 +106,8 @@ interface JumpRunControlsProps {
 }
 
 interface FreefallToolbarProps {
+    fullWindow: boolean;
+    onToggleFullWindow: () => void;
     jumpRunActive: boolean;
     onToggleJumpRun: () => void;
     jumpRun: JumpRunControlsProps;
@@ -494,6 +496,7 @@ interface LandingDropzone {
 interface IconProps {
     name:
         | "plane"
+        | "freefall"
         | "plus"
         | "settings"
         | "expand"
