@@ -225,9 +225,7 @@ function OpenMeteoClouds({ profile }) {
             margin-top: 12px;
         }
         .cloud-profile-content {
-            /* Keep the five forecast rows and their timestamps out of the load shifts. */
             display: flow-root;
-            min-height: 22rem;
         }
         .cloud-profile-note {
             color: var(--color-muted);
