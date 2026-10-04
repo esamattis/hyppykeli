@@ -88,6 +88,9 @@ export function Compass({ floating = false } = {}) {
             width: min(100%, 300px);
             align-self: center;
         }
+        :scope:not(.floating) svg {
+            margin-block: auto;
+        }
 
         :scope {
             display: flex;
