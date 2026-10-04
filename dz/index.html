@@ -5,7 +5,6 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Parempi Hyppykeli</title>
         <link rel="stylesheet" href="/styles.css" />
-        <link rel="stylesheet" href="/vendor/build/leaflet.css" />
         <link rel="preconnect" href="https://opendata.fmi.fi/" />
 
         <link rel="icon" href="/assets/icon.png" />
@@ -34,7 +33,20 @@
                 }
             }
         </script>
-        <!-- preload to avoid request waterfalls -->
+        <!-- Discover the initial UI and deep weather dependencies without a bundler.
+             The map and its stylesheet load after the weather UI has rendered. -->
+        <link rel="modulepreload" href="/src/app/App.js" />
+        <link rel="modulepreload" href="/src/app/start.js" />
+        <link rel="modulepreload" href="/src/app/settings.js" />
+        <link rel="modulepreload" href="/src/app/SideMenu.js" />
+        <link rel="modulepreload" href="/src/weather/CloudSummary.js" />
+        <link rel="modulepreload" href="/src/weather/WindSummary.js" />
+        <link rel="modulepreload" href="/src/weather/WeatherTables.js" />
+        <link rel="modulepreload" href="/src/weather/CloudForecastTable.js" />
+        <link rel="modulepreload" href="/src/weather/UpperWindTable.js" />
+        <link rel="modulepreload" href="/src/weather/calculations.js" />
+        <link rel="modulepreload" href="/src/weather/providers/fmi.js" />
+        <link rel="modulepreload" href="/src/weather/providers/openMeteo.js" />
         <link rel="modulepreload" href="/src/weather/state.js" />
         <link rel="modulepreload" href="/src/weather/refresh.js" />
         <link rel="modulepreload" href="/src/shared/dates.js" />
@@ -44,7 +56,6 @@
         <link rel="modulepreload" href="/vendor/build/preact-hooks.js" />
         <link rel="modulepreload" href="/vendor/build/preact-signals.js" />
         <link rel="modulepreload" href="/vendor/build/chart.js" />
-        <link rel="modulepreload" href="/vendor/build/leaflet.js" />
         <script type="module">
             // init the app
             import { App } from "#app/app/App.js";

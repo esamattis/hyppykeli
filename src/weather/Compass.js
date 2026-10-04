@@ -92,6 +92,7 @@ export function Compass({ floating = false } = {}) {
         }
         :scope svg {
             width: min(100%, 300px);
+            aspect-ratio: 1;
             align-self: center;
         }
         :scope:not(.floating) svg {

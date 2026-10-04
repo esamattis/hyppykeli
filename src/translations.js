@@ -178,6 +178,8 @@ export const english = {
         `${value}°C at 4 km`,
     "title.temperatureHelp":
         "Temperature change according to the ICAO standard atmosphere in the troposphere (-6.5°C/km)",
+    "map.loading": "Loading map…",
+    "common.retry": "Try again",
     "map.title": "Windmap",
     "map.region": "Dropzone map and wind profile",
     "map.onMap": (/** @type {string} */ name) => `${name} on map`,
@@ -532,6 +534,8 @@ const finnish = {
     "title.altitudeTemperature": (value) => `${value}°C 4km:ssä`,
     "title.temperatureHelp":
         "ICAO:n ilmakehämallin mukainen lämpötilan muutos troposfäärissä (-6.5°C/km)",
+    "map.loading": "Ladataan karttaa…",
+    "common.retry": "Yritä uudelleen",
     "map.title": "Tuulikartta",
     "map.region": "Hyppypaikan kartta ja tuuliprofiili",
     "map.onMap": (name) => `${name} kartalla`,

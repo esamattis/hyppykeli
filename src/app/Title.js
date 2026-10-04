@@ -56,6 +56,7 @@ export function Title() {
         }
 
         .title-temp {
+            min-height: 1.5em;
             font-size: 65%;
             color: var(--color-muted);
             font-family: var(--font-mono);
@@ -146,37 +147,47 @@ export function Title() {
                     ${h(Icon, { name: "pen", size: 20 })}
                 </button>
             </span>
-            ${
-                temps
-                    ? html`
-                          <span class="title-temp">
-                              <span class="nowrap">
-                                  ${t("title.groundTemperature", temperature?.toFixed(0) ?? "")}
-                              </span>
-                              ${" "}
-                              <span class="nowrap">
-                                  ${t("title.altitudeTemperature", temps[4].toFixed(0))}
-                              </span>
-                              ${h(
-                                  Help,
-                                  {},
-                                  html`
-                                      <p>${t("title.temperatureHelp")}</p>
+            <span class="title-temp">
+                ${
+                    temps
+                        ? html`
+                              <span>
+                                  <span class="nowrap">
+                                      ${t("title.groundTemperature", temperature?.toFixed(0) ?? "")}
+                                  </span>
+                                  ${" "}
+                                  <span class="nowrap">
+                                      ${t("title.altitudeTemperature", temps[4].toFixed(0))}
+                                  </span>
+                                  ${h(
+                                      Help,
+                                      {},
+                                      html`
+                                          <p>${t("title.temperatureHelp")}</p>
 
-                                      <ul>
-                                          <li>1km ${temps[1].toFixed(1)}°C</li>
-                                          <li>2km ${temps[2].toFixed(1)}°C</li>
-                                          <li>3km ${temps[3].toFixed(1)}°C</li>
-                                          <li>4km ${temps[4].toFixed(1)}°C</li>
-                                      </ul>
+                                          <ul>
+                                              <li>
+                                                  1km ${temps[1].toFixed(1)}°C
+                                              </li>
+                                              <li>
+                                                  2km ${temps[2].toFixed(1)}°C
+                                              </li>
+                                              <li>
+                                                  3km ${temps[3].toFixed(1)}°C
+                                              </li>
+                                              <li>
+                                                  4km ${temps[4].toFixed(1)}°C
+                                              </li>
+                                          </ul>
 
-                                      <p>${h(FromNow, { date: time })}</p>
-                                  `,
-                              )}
-                          </span>
-                      `
-                    : null
-            }
+                                          <p>${h(FromNow, { date: time })}</p>
+                                      `,
+                                  )}
+                              </span>
+                          `
+                        : null
+                }
+            </span>
         </h1>
         ${h(
             Dialog,

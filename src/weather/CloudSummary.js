@@ -224,6 +224,11 @@ function OpenMeteoClouds({ profile }) {
         :scope {
             margin-top: 12px;
         }
+        .cloud-profile-content {
+            /* Keep the five forecast rows and their timestamps out of the load shifts. */
+            display: flow-root;
+            min-height: 22rem;
+        }
         .cloud-profile-note {
             color: var(--color-muted);
             font-size: 0.75rem;
@@ -249,25 +254,27 @@ function OpenMeteoClouds({ profile }) {
                 </h3>
                 ${h(DataSource, { sources: ["Open-Meteo"] })}
             </div>
-            ${
-                profile
-                    ? html`
-                          <p class="cloud-profile-altitude-note">
-                              ${t("cloud.altitudeSeaLevel")}
-                          </p>
-                          <ul
-                              class="cloud-list cloud-layers cloud-profile-layers"
-                          >
-                              ${profile.layers.map((layer) => h(OpenMeteoCloudLayer, { layer }))}
-                          </ul>
-                          <p class="summary-time">
-                              ${h(FromNow, { date: profile.time })}
-                          </p>
-                      `
-                    : html`
-                          <p>${t("cloud.modelUnavailable")}</p>
-                      `
-            }
+            <div class="cloud-profile-content">
+                ${
+                    profile
+                        ? html`
+                              <p class="cloud-profile-altitude-note">
+                                  ${t("cloud.altitudeSeaLevel")}
+                              </p>
+                              <ul
+                                  class="cloud-list cloud-layers cloud-profile-layers"
+                              >
+                                  ${profile.layers.map((layer) => h(OpenMeteoCloudLayer, { layer }))}
+                              </ul>
+                              <p class="summary-time">
+                                  ${h(FromNow, { date: profile.time })}
+                              </p>
+                          `
+                        : html`
+                              <p>${t("cloud.modelUnavailable")}</p>
+                          `
+                }
+            </div>
             <p class="cloud-profile-note">${t("cloud.modelHelp")}</p>
         </section>
     `;
@@ -394,6 +401,7 @@ export function CloudSummary() {
             cursor: pointer;
         }
         .cloud-estimates {
+            min-height: 5rem;
             margin-top: 16px;
             padding-top: 16px;
             border-top: 1px solid var(--color-border);
@@ -521,9 +529,6 @@ export function CloudSummary() {
             margin: 12px 0 0;
             color: var(--color-muted);
             font-size: 0.8rem;
-        }
-        .cloud-estimates:empty {
-            display: none;
         }
         .metar {
             display: block;

@@ -1,6 +1,6 @@
 // @ts-check
 import { DeveloperBanner } from "#app/developer/DeveloperMode.js";
-import { DropzoneMap } from "#app/map/DropzoneMap.js";
+import { LazyDropzoneMap } from "#app/map/LazyDropzoneMap.js";
 import { formatDate, humanDayText } from "#app/shared/dates.js";
 import {
     cardHeadingStyles,
@@ -260,7 +260,7 @@ export function App() {
                     `,
                 }),
             })}
-            ${h(DropzoneMap, {})}
+            ${h(LazyDropzoneMap, {})}
 
             <${HighWinds} />
             <${Info} />

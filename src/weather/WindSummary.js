@@ -14,6 +14,9 @@ import { h, html } from "htm/preact";
 export function WindSummary() {
     const scope = useScope(css`
         ${summaryStyles}
+        :scope {
+            min-height: 5rem;
+        }
         .wind-metrics {
             grid-template-columns: repeat(3, minmax(0, 1fr));
         }
@@ -46,19 +49,21 @@ export function WindSummary() {
 
     const obs = LATEST_OBSERVATION.value;
 
-    if (!obs) {
-        return null;
-    }
-
-    if (!hasValidAverageWindData(obs)) {
+    if (obs && !hasValidAverageWindData(obs)) {
         return html`
-            <p>Ei havaintoja :(</p>
+            <div class="wind-summary">
+                ${scope.style}
+                <p>${t("common.noData")}</p>
+            </div>
         `;
     }
 
-    const observations = OBSERVATIONS.value.includes(obs)
-        ? OBSERVATIONS.value
-        : [obs, ...OBSERVATIONS.value];
+    const observations =
+        obs && OBSERVATIONS.value.includes(obs)
+            ? OBSERVATIONS.value
+            : obs
+              ? [obs, ...OBSERVATIONS.value]
+              : OBSERVATIONS.value;
     const now = Date.now();
     /** @param {"gust" | "speed" | "direction"} key */
     function hourlyRange(key) {
@@ -79,9 +84,9 @@ export function WindSummary() {
                 <div class="latest-wind-cell">
                     <dt>${t("weather.gust")}</dt>
                     <dd
-                        class=${"latest-value latest-gust " + getWarningLevel(obs.gust ?? 0)}
+                        class=${"latest-value latest-gust " + getWarningLevel(obs?.gust ?? 0)}
                     >
-                        ${obs.gust?.toFixed(0) ?? "-"}
+                        ${obs?.gust?.toFixed(0) ?? "-"}
                         <span class="unit">m/s</span>
                     </dd>
                     ${hourlyRange("gust")}
@@ -89,7 +94,7 @@ export function WindSummary() {
                 <div class="latest-wind-cell">
                     <dt>${t("weather.wind")}</dt>
                     <dd class="latest-value latest-wind">
-                        ${obs.speed?.toFixed(0) ?? "?"}
+                        ${obs?.speed?.toFixed(0) ?? "?"}
                         <span class="unit">m/s</span>
                     </dd>
                     ${hourlyRange("speed")}
@@ -97,7 +102,7 @@ export function WindSummary() {
                 <div class="latest-wind-cell">
                     <dt>${t("weather.direction")}</dt>
                     <dd class="latest-value latest-wind">
-                        ${h(WindDirection, { direction: obs.direction, value: true })}
+                        ${h(WindDirection, { direction: obs?.direction, value: true })}
                     </dd>
                     ${hourlyRange("direction")}
                 </div>
