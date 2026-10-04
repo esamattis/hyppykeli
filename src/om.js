@@ -4,6 +4,7 @@ import { upperWindTableStyles } from "./styles.js";
 import { h, html } from "htm/preact";
 import { FORECAST_COORDINATES, STATION_COORDINATES } from "./data.js";
 import { signal } from "@preact/signals";
+import { WindArrow } from "./icons.js";
 import { isNullish } from "./utils.js";
 
 // Vakiot tiedoston alussa
@@ -348,33 +349,6 @@ function roundToNearestFive(num) {
 
 /**
  * @param {Object} props
- * @param {number|null} props.direction
- */
-export function WindArrow({ direction }) {
-    const scope = useScope(css`
-        :scope {
-            display: inline-block;
-        }
-    `);
-    if (isNullish(direction)) {
-        return null;
-    }
-
-    const arrow = "➤";
-    const rotationDegree = direction + 90;
-    return html`
-        <span
-            style=${{
-                transform: `rotate(${rotationDegree}deg)`,
-            }}
-        >
-            ${scope.style} ${arrow}
-        </span>
-    `;
-}
-
-/**
- * @param {Object} props
  * @param {Object} [props.data]
  * @param {number|null} props.data.speed
  * @param {number|null} props.data.direction
@@ -418,9 +392,8 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
             justify-content: center;
         }
 
-        .wind-direction span {
-            margin-left: 4px;
-            font-size: 14px;
+        .wind-direction .direction-degrees {
+            font-size: 0.8em;
         }
     `);
     if (!data)
@@ -456,8 +429,8 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
                     ? null
                     : html`
                           <div class="wind-direction">
-                              ${roundedDirection}°
-                              <${WindArrow} direction=${roundedDirection} />
+                              <span class="direction-degrees">${roundedDirection}°</span>
+                              ${h(WindArrow, { direction: roundedDirection })}
                           </div>
                       `
             }

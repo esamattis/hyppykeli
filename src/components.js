@@ -4,6 +4,7 @@ import { css, useScope } from "./useScope.js";
 import { Component, h, html } from "htm/preact";
 import { Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { Icon } from "./icons.js";
 import { formatClock } from "./utils.js";
 
 /**
@@ -91,19 +92,7 @@ export function Dialog(props) {
                     title="Sulje"
                     onClick=${() => ref.current?.close()}
                 >
-                    <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        aria-hidden="true"
-                        focusable="false"
-                    >
-                        <path d="M6 6l12 12M18 6L6 18" />
-                    </svg>
+                    ${h(Icon, { name: "close", size: 24 })}
                 </button>
             </div>
             ${props.children}
@@ -171,29 +160,7 @@ export function Help(props) {
             title=${props.label ?? "Ohje"}
             aria-haspopup="dialog"
         >
-            ${scope.style}
-            <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5" />
-                <circle
-                    cx="12"
-                    cy="16"
-                    r="0.9"
-                    fill="currentColor"
-                    stroke="none"
-                />
-            </svg>
+            ${scope.style} ${h(Icon, { name: "help", size: 20 })}
         </button>
         ${h(
             Dialog,

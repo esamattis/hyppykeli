@@ -13,6 +13,7 @@ import {
 } from "./data.js";
 import { OM_DATA } from "./om.js";
 import { formatClock } from "./utils.js";
+import { Icon, WindArrow } from "./icons.js";
 import { Help } from "./components.js";
 import { MapWindOverlay } from "./MapWindOverlay.js";
 
@@ -138,9 +139,6 @@ function WindLevel({ wind }) {
     const label = validSpeed
         ? `${Math.round(wind.speed ?? 0)} m/s`
         : "Ei tietoa";
-    // The SVG points north; meteorological direction is where wind comes from.
-    const rotation = (direction ?? 0) + 180;
-    const length = validSpeed ? 14 + Math.min(wind.speed ?? 0, 25) * 1.1 : 14;
     return html`
         <li class="wind-level">
             <div>
@@ -149,50 +147,27 @@ function WindLevel({ wind }) {
                     ${label}${validSpeed && direction !== null ? ` ${Math.round(direction) % 360}°` : ""}
                 </div>
             </div>
-            <svg
-                width="64"
-                height="64"
-                viewBox="0 0 64 64"
-                role="img"
-                aria-label=${`${wind.label}: ${label}, tuuli suunnasta ${direction ?? "tuntematon"}°`}
-            >
+            <span class="wind-level-arrow">
                 ${
                     validSpeed && wind.speed === 0
-                        ? html`
-                              <circle
-                                  cx="32"
-                                  cy="32"
-                                  r="5"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  stroke-width="2"
-                              />
-                          `
-                        : validSpeed && validDirection
-                          ? html`
-                                <g transform=${`rotate(${rotation} 32 32)`}>
-                                    <path
-                                        d=${`M32 ${32 + length / 2} V${32 - length / 2} m-6 7 6-7 6 7`}
-                                        fill="none"
-                                        stroke="currentColor"
-                                        stroke-width="3"
-                                        stroke-linecap="round"
-                                        stroke-linejoin="round"
-                                    />
-                                </g>
-                            `
-                          : html`
-                                <text
-                                    x="32"
-                                    y="38"
-                                    text-anchor="middle"
-                                    fill="currentColor"
-                                >
-                                    –
-                                </text>
-                            `
+                        ? h(Icon, {
+                              name: "calm",
+                              size: 20,
+                              label: `${wind.label}: tyyntä`,
+                          })
+                        : validSpeed && direction !== null
+                          ? h(WindArrow, {
+                                direction,
+                                size: 20,
+                                label: `${wind.label}: ${label}, tuuli suunnasta ${direction}°`,
+                            })
+                          : h(Icon, {
+                                name: "missing",
+                                size: 20,
+                                label: `${wind.label}: ei tietoa`,
+                            })
                 }
-            </svg>
+            </span>
         </li>
     `;
 }
@@ -249,8 +224,8 @@ export function DropzoneMap() {
         }
         .wind-level svg {
             flex-shrink: 0;
-            width: 36px;
-            height: 36px;
+            width: 20px;
+            height: 20px;
             color: var(--color-primary);
         }
     `);
@@ -414,8 +389,9 @@ export function DropzoneMap() {
                             Karttaa voi liikuttaa ja zoomata kahdella sormella.
                         </p>
                         <p>
-                            N ↑ · Nuolet näyttävät virtaussuunnan. Pituus kuvaa
-                            nopeutta (enintään 25 m/s).
+                            N ${h(Icon, { name: "up" })} · Nuolet näyttävät
+                            virtaussuunnan. Kartan viivojen pituus kuvaa
+                            nopeutta.
                         </p>
                         <p>
                             Ylätuulet:

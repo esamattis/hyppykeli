@@ -40,6 +40,7 @@ import { DeveloperBanner, DeveloperMode } from "./DeveloperMode.js";
 
 import { Graph } from "./graph.js";
 import { DropzoneMap } from "./DropzoneMap.js";
+import { Icon, WindArrow, PieChart } from "./icons.js";
 import { Compass } from "./compass.js";
 import {
     getLiftedCondensationLevel,
@@ -293,39 +294,9 @@ function PercentagePie(props) {
 
     return html`
         <span class="cloud-cover">
-            ${scope.style}
-            <${PieChart} percentage=${props.percentage} />
+            ${scope.style} ${h(PieChart, { percentage: props.percentage })}
             <span class="text">${props.percentage.toFixed(0)} %</span>
         </span>
-    `;
-}
-
-/**
- * @param {Object} props
- * @param {number} props.percentage
- */
-function PieChart({ percentage }) {
-    const adjustedPercentage = Math.min(100, Math.max(0, percentage));
-    const angle = (adjustedPercentage / 100) * 360;
-    const largeArcFlag = angle > 180 ? 1 : 0;
-    const endX = 50 + 50 * Math.cos(((angle - 90) * Math.PI) / 180);
-    const endY = 50 + 50 * Math.sin(((angle - 90) * Math.PI) / 180);
-
-    return html`
-        <svg class="pie" width="20" height="20" viewBox="0 0 100 100">
-            <circle
-                cx="50"
-                cy="50"
-                r="50"
-                fill=${percentage >= 100 ? "black" : "white"}
-                stroke="black"
-                stroke-width="1"
-            />
-            <path
-                d=${`M 50 50 L 50 0 A 50 50 0 ${largeArcFlag} 1 ${endX} ${endY} Z`}
-                fill="black"
-            />
-        </svg>
     `;
 }
 
@@ -351,7 +322,6 @@ function WindDirection(props) {
             font-size: 80%;
             width: 20px;
             height: 20px;
-            transform: rotate(var(--direction));
         }
     `);
 
@@ -374,11 +344,10 @@ function WindDirection(props) {
             <span
                 class="direction"
                 style=${{
-                    "--direction": props.direction - 180 - 90 + "deg",
                     visibility: props.direction !== -1 ? "visible" : "hidden",
                 }}
             >
-                ➤
+                ${h(WindArrow, { direction: props.direction, size: 20 })}
             </span>
         </span>
     `;
@@ -496,22 +465,7 @@ function TableDialog(props) {
             title=${`${props.title} taulukkona`}
             onClick=${() => ref.current?.showModal()}
         >
-            ${scope.style}
-            <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="1.75"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-                focusable="false"
-            >
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <path d="M3 9h18M3 15h18M9 9v12" />
-            </svg>
+            ${scope.style} ${h(Icon, { name: "table", size: 24 })}
         </button>
         ${h(
             Dialog,
@@ -826,7 +780,14 @@ function CloudSummary() {
                                                 `,
                                             )
                                   }
-                                  ${metar?.cb ? "Ukkospilviä ⚡️" : null}
+                                  ${
+                                      metar?.cb
+                                          ? html`
+                                                Ukkospilviä
+                                                ${h(Icon, { name: "lightning" })}
+                                            `
+                                          : null
+                                  }
                               </li>
 
                               <li>
@@ -1012,7 +973,7 @@ document.addEventListener("click", (e) => {
     }
 
     if (
-        e.target instanceof HTMLElement &&
+        e.target instanceof Element &&
         e.target.closest(".side-menu,.sticky-footer")
     ) {
         return;
@@ -1235,7 +1196,7 @@ export function SideMenu() {
      * @param {MouseEvent} e
      */
     const closeMenuOnLinkClick = (e) => {
-        if (!(e.target instanceof HTMLElement)) {
+        if (!(e.target instanceof Element)) {
             return;
         }
 
@@ -1298,8 +1259,16 @@ export function SideMenu() {
 
             <h2>Osiot</h2>
 
-            <p><a href="#observations-graph">Havainnot 📈</a></p>
-            <p><a href="#forecasts-graph">Ennusteet 📈</a></p>
+            <p>
+                <a href="#observations-graph">
+                    Havainnot ${h(Icon, { name: "chart" })}
+                </a>
+            </p>
+            <p>
+                <a href="#forecasts-graph">
+                    Ennusteet ${h(Icon, { name: "chart" })}
+                </a>
+            </p>
             <p><a href="#high-winds-today">Ylätuuliennusteet</a></p>
 
             <h2>Hyppypaikat</h2>
@@ -1511,22 +1480,26 @@ export function StickyFooter() {
     return html`
         <div class="sticky-footer">
             ${scope.style}
-            <a class="item" href="#top">
+            <a class="item" href="#top" aria-label="Takaisin ylös">
                 <div class="wrap">
-                    <div class="icon">⬆️</div>
+                    <div class="icon">${h(Icon, { name: "up", size: 24 })}</div>
                 </div>
             </a>
 
             <a class="item" href="#observations-graph">
                 <div class="wrap">
-                    <div class="icon">📈</div>
+                    <div class="icon">
+                        ${h(Icon, { name: "chart", size: 24 })}
+                    </div>
                     <div class="text">Kaaviot</div>
                 </div>
             </a>
 
             <a class="item" href="#high-winds-today">
                 <div class="wrap">
-                    <div class="icon">💨</div>
+                    <div class="icon">
+                        ${h(Icon, { name: "wind", size: 24 })}
+                    </div>
                     <div class="text">Ylätuulet</div>
                 </div>
             </a>
@@ -1534,11 +1507,13 @@ export function StickyFooter() {
             <button
                 class="menu-burger"
                 type="button"
+                aria-label="Valikko"
+                aria-expanded=${MENU_OPEN.value}
                 onClick=${() => {
                     MENU_OPEN.value = !MENU_OPEN.value;
                 }}
             >
-                ☰
+                ${h(Icon, { name: "menu", size: 24 })}
             </button>
         </div>
     `;
@@ -1550,12 +1525,7 @@ function Anvil() {
     }
 
     return html`
-        <img
-            class="anvil"
-            alt="Ukkospilvi"
-            title="Ukkospilvi"
-            src="/assets/anvil.svg"
-        />
+        ${h(Icon, { name: "storm", size: 30, className: "anvil", label: "Ukkospilvi" })}
     `;
 }
 

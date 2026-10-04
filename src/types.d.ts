@@ -397,3 +397,29 @@ interface LandingDropzone {
     href: string;
     description: string;
 }
+
+interface IconProps {
+    name:
+        | "close"
+        | "help"
+        | "table"
+        | "up"
+        | "chart"
+        | "wind"
+        | "menu"
+        | "lightning"
+        | "storm"
+        | "arrow"
+        | "calm"
+        | "missing";
+    size?: number | string;
+    label?: string;
+    className?: string;
+    rotation?: number;
+}
+
+interface WindArrowProps {
+    direction: number | null | undefined;
+    size?: number | string;
+    label?: string;
+}
