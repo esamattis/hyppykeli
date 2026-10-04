@@ -41,6 +41,7 @@ import {
     isValidJumpRunSettings,
 } from "./mapState.js";
 import { FreefallToolbar } from "./FreefallToolbar.js";
+import { t } from "./translations.js";
 
 /** @type {Readonly<JumpRunJumper>} */
 const DEFAULT_JUMPER = { speedKmh: 180, openingHeight: 800 };
@@ -99,7 +100,7 @@ export function getMapWindData(now = Date.now()) {
         getDevNumber("DEV_map_direction") ?? averageWind.direction;
     winds.unshift(averageWind);
     winds.push({
-        label: "Maanpinta",
+        label: t("map.ground"),
         speed: ground?.speed ?? null,
         direction: ground?.direction ?? null,
     });
@@ -156,7 +157,7 @@ function WindLevel({ wind, selected, onSelect }) {
         : null;
     const label = validSpeed
         ? `${Math.round(wind.speed ?? 0)} m/s`
-        : "Ei tietoa";
+        : t("common.noData");
     return html`
         <li class="wind-level">
             <button
@@ -177,18 +178,26 @@ function WindLevel({ wind, selected, onSelect }) {
                             ? h(Icon, {
                                   name: "calm",
                                   size: 20,
-                                  label: `${wind.label}: tyyntä`,
+                                  label: t("map.windLabelCalm", wind.label),
                               })
                             : validSpeed && direction !== null
                               ? h(WindArrow, {
                                     direction,
                                     size: 20,
-                                    label: `${wind.label}: ${label}, tuuli suunnasta ${direction}°`,
+                                    label: t(
+                                        "map.windLabel",
+                                        wind.label,
+                                        label,
+                                        direction,
+                                    ),
                                 })
                               : h(Icon, {
                                     name: "missing",
                                     size: 20,
-                                    label: `${wind.label}: ei tietoa`,
+                                    label: t(
+                                        "map.windLabelMissing",
+                                        wind.label,
+                                    ),
                                 })
                     }
                 </span>
@@ -916,83 +925,37 @@ export function DropzoneMap() {
         winds.find((wind) => wind.label === selectedLabel) ?? averageWind;
 
     return html`
-        <section
-            id="dropzone-map"
-            aria-label="Hyppypaikan kartta ja tuuliprofiili"
-        >
+        <section id="dropzone-map" aria-label=${t("map.region")}>
             ${scope.style}
             <h2>
-                Ylätuulet
+                ${t("map.title")}
                 ${h(
                     Help,
                     { id: "map-wind-help" },
                     html`
+                        <p>${t("map.navigationHelp")}</p>
+                        <p>${t("map.freefallHelp")}</p>
+                        <p>${t("map.jumpRunHelp")}</p>
                         <p>
-                            Karttaa voi liikuttaa ja zoomata kahdella sormella.
+                            N ${h(Icon, { name: "up" })} ·
+                            ${t("map.legendHelp")}
                         </p>
                         <p>
-                            Napauta tai klikkaa karttaa lisätäksesi uuden
-                            ajautumisnuolen. Sarkaimella kartalle siirtyminen
-                            lisää nuolen kartan keskikohtaan; Enter lisää uuden
-                            nuolen kartan liikuttamisen jälkeen. Ajautumisviiva
-                            arvioi vapaapudotuksen valitusta
-                            uloshyppykorkeudesta valittuun avauskorkeuteen
-                            valitulla nopeudella. Voit muuttaa korkeutta ja
-                            nopeutta kartan yläpuolen kynäpainikkeesta. Jokainen
-                            nuoli säilyttää lisäyshetken korkeudet ja nopeuden.
-                            Kartalla voi olla enintään 10 nuolta; uusi nuoli
-                            poistaa tarvittaessa vanhimman. Poista viimeisin
-                            nuoli -painike poistaa uusimman nuolen. Tyhjennä
-                            nuolet -painike poistaa kaikki nuolet. Tuulen nopeus
-                            ja virtaussuunta interpoloidaan korkeuksien 4200,
-                            3000, 1500 ja 800 m välillä. Arvio olettaa
-                            ajautumisen tuulen mukana ilman omaa vaakaliikettä.
+                            ${t("map.title")}:
+                            Open-Meteo${time && data ? `, ${t("time.clock", formatClock(forecastTime(time, data.utc_offset_seconds)))}` : ` — ${t("map.sourceNoCurrent")}`}.
+                            ${t("map.altitudeNote")}
                         </p>
+                        <p>≈ 4200-800 m: ${t("map.averageHelp")}</p>
+                        <p>${t("map.selectWind")} ${t("map.flowHelp")}</p>
                         <p>
-                            Hyppylinja-painike vaihtaa kartan hyppylinjatilaan.
-                            Ensimmäinen klikkaus tai napautus asettaa
-                            ensimmäisen hyppääjän paikan. Linjan suunta seuraa
-                            hiirtä; toinen klikkaus tai napautus lukitsee
-                            suunnan. Kosketusnäytöllä voit myös vetää suuntaa ja
-                            lukita sen nostamalla sormen. Voit siirtää linjan
-                            samalla tavalla kahdella klikkauksella. Lisää
-                            hyppääjä pluspainikkeesta. Hyppylinjan asetuksista
-                            voit muuttaa maanopeutta ja hyppääjien aikaväliä
-                            sekä yhteistä uloshyppykorkeutta. Jokaiselle
-                            hyppääjälle voi asettaa oman vapaapudotusnopeuden ja
-                            avauskorkeuden.
-                        </p>
-                        <p>
-                            N ${h(Icon, { name: "up" })} · Nuolet näyttävät
-                            virtaussuunnan. Kartan viivojen pituus kuvaa
-                            nopeutta.
-                        </p>
-                        <p>
-                            Ylätuulet:
-                            Open-Meteo${time && data ? `, klo ${formatClock(forecastTime(time, data.utc_offset_seconds))}` : " — ei nykyisen tunnin tietoja"}.
-                            Korkeudet ovat arvioita merenpinnasta.
-                        </p>
-                        <p>
-                            ≈ 4200-800 m: nopeuden ja suunnan keskiarvo
-                            korkeuksilta 800, 1500, 3000 ja 4200 m. Suunnan
-                            keskiarvo huomioi pohjoissuunnan ylityksen. Antaa
-                            karkean arvion ajautumisesta vapaapudotuksessa.
-                        </p>
-                        <p>
-                            Valitse korkeus nähdäksesi sen tuulen kartalla.
-                            Kartan liikkuvat viivat näyttävät valitun tuulen
-                            virtaussuunnan. Voimakkaampi tuuli näkyy pidempinä
-                            ja nopeammin liikkuvina viivoina.
-                        </p>
-                        <p>
-                            Maanpinta:
-                            ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, klo ${formatClock(ground.time)}` : " — ei havaintoa"}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
+                            ${t("map.ground")}:
+                            ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, ${t("time.clock", formatClock(ground.time))}` : ` — ${t("map.sourceNoObservation")}`}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
                         </p>
                     `,
                 )}
             </h2>
             <small class="source-note">
-                Lähde:
+                ${t("common.source")}:
                 Open-Meteo${
                     ground ? `, ${weatherSourceLabel(ground.source)}` : ""
                 }
@@ -1017,8 +980,7 @@ export function DropzoneMap() {
                                   class="freefall-drift-summary"
                                   aria-live="polite"
                               >
-                                  Ajautumisarvio ei saatavilla: ylätuulitietoja
-                                  puuttuu.
+                                  ${t("map.driftUnavailable")}
                               </div>
                           `
                         : null
@@ -1046,9 +1008,7 @@ export function DropzoneMap() {
                                         error.name === "AbortError"
                                     )
                                 )
-                                    setShareError(
-                                        "Kartan jakaminen epäonnistui.",
-                                    );
+                                    setShareError(t("map.shareFailed"));
                             }
                         },
                         onToggleFullWindow: () =>
@@ -1112,8 +1072,7 @@ export function DropzoneMap() {
                             placingJumpRunDirection
                                 ? html`
                                       <div class="direction-hint" role="status">
-                                          Aseta hyppylinjan suunta: klikkaa tai
-                                          vedä sormella.
+                                          ${t("map.directionPrompt")}
                                       </div>
                                   `
                                 : null
@@ -1123,9 +1082,9 @@ export function DropzoneMap() {
                             ref=${mapRef}
                             style=${{ touchAction: placingJumpRunDirection ? "none" : "pan-y" }}
                             role="region"
-                            aria-label=${`${name} kartalla`}
+                            aria-label=${t("map.onMap", name)}
                         >
-                            ${!coordinates ? "Odotetaan koordinaatteja…" : null}
+                            ${!coordinates ? t("common.waitingCoordinates") : null}
                         </div>
                         ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
                     </div>

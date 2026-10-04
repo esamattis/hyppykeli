@@ -24,6 +24,7 @@
                     "preact/hooks": "/vendor/build/preact-hooks.js",
                     "htm/preact": "/vendor/build/htm.js",
                     "preact": "/vendor/build/preact.js",
+                    "@preact/signals": "/vendor/build/preact-signals.js",
                     "leaflet": "/vendor/build/leaflet.js"
                 }
             }
@@ -53,6 +54,12 @@
                         p {
                             line-height: 1.5;
                         }
+                        .language-copy {
+                            display: contents;
+                        }
+                        .language-copy[hidden] {
+                            display: none;
+                        }
                         @media (max-width: 600px) {
                             :scope {
                                 margin: 12px 12px 80px;
@@ -64,34 +71,68 @@
             </style>
             <h1>Hyppykeli</h1>
 
-            <!-- prettier-ignore -->
-            <p>
-                Hyppykeli.fi on laskuvarjohyppääjien sääpalvelu joka tarjoaa
-                ajankohtaisia havaintotietoja sekä ennusteita tuulen puuskasta, suunnasta sekä pilvien määrästä ja korkeudesta.
-                Tiedot haetaan
-                <a href="https://www.ilmatieteenlaitos.fi/avoin-data">Ilmatieteenlaitoksen havaintoasemista</a>
-                ja <a href="https://www.digitraffic.fi/tieliikenne/">Digitrafficin tiesääasemilta</a>.
-                Ylätuulien ennusteet haetaan
-                <a href="https://open-meteo.com/">Open-Meteosta</a>.
-                METAR-sanomat haetaan
-                <a href="https://flyk.com">Flyk.com</a>:n rajapinnasta.
-            </p>
+            <section class="language-copy" data-language="en" lang="en">
+                <!-- prettier-ignore -->
+                <p>
+                    Hyppykeli.fi is a weather service for skydivers, providing
+                    current observations and forecasts for wind gusts, direction,
+                    cloud coverage, and cloud height. Data comes from
+                    <a href="https://www.ilmatieteenlaitos.fi/avoin-data">FMI observation stations</a>
+                    and <a href="https://www.digitraffic.fi/tieliikenne/">Digitraffic road weather stations</a>.
+                    Upper-wind forecasts come from
+                    <a href="https://open-meteo.com/">Open-Meteo</a>, and METAR
+                    messages from the <a href="https://flyk.com">Flyk.com</a> API.
+                </p>
 
-            <!-- prettier-ignore -->
-            <p>
-                Ennusteet voidaan tehdä minne tahansa Suomeen, mutta järkeviä havaintotietoja on saatavilla vain jos havaintoasema on lähellä.
-            </p>
+                <p>
+                    Forecasts are available anywhere in Finland, but useful
+                    observations require a nearby observation station.
+                </p>
 
-            <!-- prettier-ignore -->
-            <p>
-                Palvelun on luonut <a href="https://esamatti.fi">Esa-Matti Suuronen</a> muiden nörttihyppääjien <a href="https://github.com/esamattis/hyppykeli/graphs/contributors">avustuksella</a>.
-                Se on ilmainen ja avoin kaikille.
-                Lähdekoodit löytyvät GPL-lisenssillä <a href="https://github.com/esamattis/hyppykeli">Githubista.</a>
-            </p>
+                <!-- prettier-ignore -->
+                <p>
+                    The service was created by <a href="https://esamatti.fi">Esa-Matti Suuronen</a>
+                    with help from other skydiving nerds and is free for everyone.
+                    The GPL-licensed source code is available on
+                    <a href="https://github.com/esamattis/hyppykeli">GitHub.</a>
+                </p>
+            </section>
+
+            <section class="language-copy" data-language="fi" lang="fi" hidden>
+                <!-- prettier-ignore -->
+                <p>
+                    Hyppykeli.fi on laskuvarjohyppääjien sääpalvelu, joka tarjoaa
+                    ajankohtaisia havaintotietoja sekä ennusteita tuulen puuskasta,
+                    suunnasta sekä pilvien määrästä ja korkeudesta. Tiedot haetaan
+                    <a href="https://www.ilmatieteenlaitos.fi/avoin-data">Ilmatieteen laitoksen havaintoasemilta</a>
+                    ja <a href="https://www.digitraffic.fi/tieliikenne/">Digitrafficin tiesääasemilta</a>.
+                    Ylätuulien ennusteet haetaan
+                    <a href="https://open-meteo.com/">Open-Meteosta</a> ja METAR-sanomat
+                    <a href="https://flyk.com">Flyk.comin</a> rajapinnasta.
+                </p>
+
+                <p>
+                    Ennusteet voidaan tehdä minne tahansa Suomeen, mutta
+                    hyödyllisiä havaintotietoja on saatavilla vain, jos
+                    havaintoasema on lähellä.
+                </p>
+
+                <!-- prettier-ignore -->
+                <p>
+                    Palvelun on luonut <a href="https://esamatti.fi">Esa-Matti Suuronen</a>
+                    muiden nörttihyppääjien avustuksella. Palvelu on ilmainen ja
+                    avoin kaikille. GPL-lisensoitu lähdekoodi löytyy
+                    <a href="https://github.com/esamattis/hyppykeli">GitHubista.</a>
+                </p>
+            </section>
 
             <div id="landing-page" style="display: contents"></div>
 
-            <p>
+            <p data-language="en" lang="en">
+                The old version is still available
+                <a href="https://hyppykeli-fi.vercel.app/">here.</a>
+            </p>
+            <p data-language="fi" lang="fi" hidden>
                 Vanha versio löytyy vielä
                 <a href="https://hyppykeli-fi.vercel.app/">täältä.</a>
             </p>

@@ -7,6 +7,7 @@ import { Dialog } from "./components.js";
 import { SpeedPresets } from "./SpeedPresets.js";
 import { ToolbarButton } from "./ToolbarButton.js";
 import { css, useScope } from "./useScope.js";
+import { t } from "./translations.js";
 
 /** @param {FreefallSettingsProps} props */
 export function EditableSettings({
@@ -15,7 +16,7 @@ export function EditableSettings({
     speedKmh,
     onAltitudeChange,
     onSpeedChange,
-    title = "Vapaapudotuksen asetukset",
+    title = t("settings.freefall"),
     exitReadOnly = false,
     showExit = true,
 }) {
@@ -66,7 +67,7 @@ export function EditableSettings({
                         showExit
                             ? html`
                                   <label>
-                                      Uloshyppykorkeus (m)
+                                      ${t("settings.exitHeight")}
                                       <input
                                           ref=${!exitReadOnly ? inputRef : undefined}
                                           readonly=${exitReadOnly}
@@ -104,18 +105,11 @@ export function EditableSettings({
                             ${
                                 exitReadOnly
                                     ? html`
-                                          <p>
-                                              Uloshyppykorkeus on yhteinen
-                                              kaikille hyppääjille. Muuta sitä
-                                              hyppylinjan asetuksista.
-                                          </p>
+                                          <p>${t("settings.exitSharedHelp")}</p>
                                       `
                                     : null
                             }
-                            <p>
-                                Tuuliprofiili kattaa 800–4200 m. Avauskorkeuden
-                                tulee olla uloshyppykorkeutta alempana.
-                            </p>
+                            <p>${t("settings.openingRange")}</p>
                         `,
                     )}
                     ${h(SpeedPresets, {

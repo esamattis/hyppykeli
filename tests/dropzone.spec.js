@@ -77,6 +77,30 @@ test("menu opens and closes with its toggle", async ({ page }) => {
     await expect(menu).not.toBeInViewport();
 });
 
+test("language can be changed live and persists", async ({ page }) => {
+    await page.getByRole("button", { name: "Valikko", exact: true }).click();
+
+    const language = page.getByRole("combobox", { name: "Kieli" });
+    await language.selectOption("en");
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(
+        page.getByRole("heading", { name: "Forecast day" }),
+    ).toBeVisible();
+    await expect(
+        page.getByRole("heading", { name: "Winds", exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => localStorage.getItem("language"))).toBe(
+        "en",
+    );
+
+    await page.reload();
+    await page.getByRole("button", { name: "Menu", exact: true }).click();
+    await expect(page.getByRole("combobox", { name: "Language" })).toHaveValue(
+        "en",
+    );
+});
+
 test("name editor updates and removes the name query parameter", async ({
     page,
 }) => {
@@ -136,6 +160,7 @@ test("redesigned menu lists dropzones and removes obsolete tools", async ({
         "EFJY",
         "Ennustepäivä",
         "Hyppypaikat",
+        "Kieli",
     ]);
     await expect(
         menu.locator('select[name="storedQuery"], .css-editor'),

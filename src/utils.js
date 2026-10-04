@@ -1,4 +1,5 @@
 // @ts-check
+import { getIntlLocale, t } from "./translations.js";
 
 /**
  * @param {Date} date
@@ -15,7 +16,7 @@ export function formatClock(date) {
  * @param {Date} date
  */
 export function formatDate(date) {
-    return date.toLocaleDateString("fi-FI");
+    return date.toLocaleDateString(getIntlLocale());
 }
 
 /**
@@ -35,15 +36,15 @@ export function humanDayText(date) {
     const today = new Date().getDate();
 
     if (day === today) {
-        return "tänään";
+        return t("common.today").toLocaleLowerCase(getIntlLocale());
     }
 
     if (day === today + 1) {
-        return "huomenna";
+        return t("common.tomorrow").toLocaleLowerCase(getIntlLocale());
     }
 
     if (day === today + 2) {
-        return "ylihuomenna";
+        return t("common.dayAfterTomorrow");
     }
 
     return "";
@@ -241,10 +242,13 @@ export function formatCloudBase(base, unit, { approximate = false } = {}) {
                 : undefined;
     if (meters === undefined) return `${base}${unit}`;
     const reading = approximate ? Math.round(meters / 50) * 50 : meters;
-    return `${approximate ? "≈ " : ""}${reading.toLocaleString("fi-FI", {
-        useGrouping: false,
-        maximumFractionDigits: 6,
-    })} m`;
+    return `${approximate ? "≈ " : ""}${reading.toLocaleString(
+        getIntlLocale(),
+        {
+            useGrouping: false,
+            maximumFractionDigits: 6,
+        },
+    )} m`;
 }
 
 /**

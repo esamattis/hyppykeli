@@ -6,6 +6,7 @@ import { Fragment } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { Icon } from "./icons.js";
 import { formatClock } from "./utils.js";
+import { t } from "./translations.js";
 
 /**
  * Native modal dialog with shared backdrop dismissal and page scroll locking.
@@ -94,8 +95,8 @@ export function Dialog(props) {
                 <button
                     class="dialog-close"
                     type="button"
-                    aria-label="Sulje"
-                    title="Sulje"
+                    aria-label=${t("common.close")}
+                    title=${t("common.close")}
                     onClick=${() => ref.current?.close()}
                 >
                     ${h(Icon, { name: "close", size: 24 })}
@@ -162,8 +163,8 @@ export function Help(props) {
             type="button"
             onClick=${open}
             id=${props.id}
-            aria-label=${props.label ?? "Ohje"}
-            title=${props.label ?? "Ohje"}
+            aria-label=${props.label ?? t("common.help")}
+            title=${props.label ?? t("common.help")}
             aria-haspopup="dialog"
         >
             ${scope.style} ${h(Icon, { name: "help", size: 20 })}
@@ -209,7 +210,7 @@ export class ErrorBoundary extends Component {
             return (
                 this.props.fallback ??
                 html`
-                    <div>Tässä tapahtui virhe :(</div>
+                    <div>${t("common.error")}</div>
                 `
             );
         }
@@ -257,16 +258,10 @@ export function FromNow(props) {
 
         if (Math.abs(diffInMinutes) > 120) {
             const diffInHours = Math.round(diffInMinutes / 60);
-            return new Intl.RelativeTimeFormat("fi").format(
-                diffInHours,
-                "hours",
-            );
+            return t("fromNow.hours", diffInHours);
         }
 
-        return new Intl.RelativeTimeFormat("fi").format(
-            diffInMinutes,
-            "minutes",
-        );
+        return t("fromNow.minutes", diffInMinutes);
     }, [props.date]);
 
     if (!props.date) {
@@ -278,6 +273,6 @@ export function FromNow(props) {
     return html`
         <span class="from-now">${fromNow}</span>
         ${" "}
-        <small>(klo ${formatClock(props.date)})</small>
+        <small>(${t("time.clock", formatClock(props.date))})</small>
     `;
 }

@@ -1,4 +1,5 @@
 // @ts-check
+import { t } from "./translations.js";
 
 /** @type {LandingDropzone[]} */
 export const completeDropzones = [
@@ -59,28 +60,26 @@ export const partialDropzones = [
     {
         name: "EFJM",
         href: "/dz/?fmisid=101291&lat=61.780727&lon=22.718886&name=EFJM",
-        description: "– Jämijärvi. Ei METAR-sanomia, havaintoasema kaukana.",
+        description: () => t("landing.partialJamijarvi"),
     },
     {
         name: "EFAL",
         href: "/dz/?roadsid=10035&lat=62.5551416&lon=23.571403&name=EFAL",
-        description:
-            "– Alavus. Ei METAR-sanomia, käytetään tieliikenteen säähavaintoasemaa.",
+        description: () => t("landing.partialAlavus"),
     },
     {
         name: "EFLA",
         href: "/dz/?fmisid=104796&icaocode=EFLA&lat=61.146406&lon=25.693366",
-        description: "– Vesivehmaa, Asikkala. Vain METAR-sanomat ja ennusteet",
+        description: () => t("landing.partialVesivehmaa"),
     },
     {
         name: "EFIM",
         href: "/dz/?name=EFIM&roadsid=5004&icaocode=&lat=61.2496030163607&lon=28.90338474282989",
-        description: "– Immola. Ei METAR-sanomia",
+        description: () => t("landing.partialImmola"),
     },
     {
         name: "Meripuisto",
         href: "/dz/?icaocode=EFHK&fmisid=100968&name=Meripuisto&lat=60.155125&lon=24.945773",
-        description:
-            "– Meripuisto, Helsinki. EFKH:n havainnot ja METAR-sanomat",
+        description: () => t("landing.partialMeripuisto"),
     },
 ];

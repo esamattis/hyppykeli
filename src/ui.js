@@ -61,6 +61,7 @@ import {
     coordinateDistance,
 } from "./utils.js";
 import { Help, FromNow, ErrorBoundary, Dialog } from "./components.js";
+import { LANGUAGE, setLanguage, t } from "./translations.js";
 
 effect(() => {
     document.title =
@@ -89,18 +90,18 @@ function getWarningLevel(gust) {
 function ObservationTHead() {
     return html`
         <tr>
-            <th>Kello</th>
-            <th>Puuska</th>
-            <th>Tuuli</th>
-            <th>Suunta</th>
+            <th>${t("weather.clock")}</th>
+            <th>${t("weather.gust")}</th>
+            <th>${t("weather.wind")}</th>
+            <th>${t("weather.direction")}</th>
             <th>
-                TK
+                ${t("weather.condensationLevelShort")}
                 ${h(
                     Help,
                     {},
                     html`
                         <p>
-                            Tiivistymiskorkeus.${" "}
+                            ${t("weather.condensationLevel")}.${" "}
                             <a
                                 href="#"
                                 onClick=${(/** @type {any} */ e) => {
@@ -110,13 +111,13 @@ function ObservationTHead() {
                                         ?.click();
                                 }}
                             >
-                                Lue lisää
+                                ${t("weather.readMore")}
                             </a>
                         </p>
                     `,
                 )}
             </th>
-            <th>Lämpötila</th>
+            <th>${t("weather.temperature")}</th>
         </tr>
     `;
 }
@@ -158,47 +159,39 @@ function ObservationRows(props) {
 function ForecastTHead() {
     return html`
         <tr>
-            <th>Kello</th>
-            <th>Puuska</th>
-            <th>Tuuli</th>
-            <th>Suunta</th>
+            <th>${t("weather.clock")}</th>
+            <th>${t("weather.gust")}</th>
+            <th>${t("weather.wind")}</th>
+            <th>${t("weather.direction")}</th>
             <th class="cloud-low-heading">
-                Pilvet L
+                ${t("weather.cloudsLow")}
                 ${h(
                     Help,
                     {},
                     html`
-                        <p>
-                            Matalakerroksen (Low) pilvien peittävyys jotka
-                            sijaitsevat yleensä alle 2 kilometrin (noin 6 500
-                            jalan) korkeudella merenpinnasta.
-                        </p>
+                        <p>${t("weather.lowCloudHelp")}</p>
                     `,
                 )}
             </th>
             <th class="cloud-middle-heading">
-                Pilvet ML
+                ${t("weather.cloudsMiddle")}
                 ${h(
                     Help,
                     {},
                     html`
-                        <p>
-                            Matalan ja keskikerroksen (MiddleAndLow) pilvien
-                            peittävyys jotka sijaitsevat yleensä 2-7 kilometrin
-                            (noin 6 500-23 000 jalan) korkeudella merenpinnasta.
-                        </p>
+                        <p>${t("weather.middleCloudHelp")}</p>
                     `,
                 )}
             </th>
 
             <th>
-                TK
+                ${t("weather.condensationLevelShort")}
                 ${h(
                     Help,
                     {},
                     html`
                         <p>
-                            Tiivistymiskorkeus.${" "}
+                            ${t("weather.condensationLevel")}.${" "}
                             <a
                                 href="#"
                                 onClick=${(/** @type {any} */ e) => {
@@ -208,7 +201,7 @@ function ForecastTHead() {
                                         ?.click();
                                 }}
                             >
-                                Lue lisää
+                                ${t("weather.readMore")}
                             </a>
                         </p>
                     `,
@@ -216,17 +209,17 @@ function ForecastTHead() {
             </th>
 
             <th>
-                Sade
+                ${t("weather.rain")}
                 ${h(
                     Help,
                     {},
                     html`
-                        <p>Sateen todenäköisyys prosentteina.</p>
+                        <p>${t("weather.rainHelp")}</p>
                     `,
                 )}
             </th>
 
-            <th>Lämpötila</th>
+            <th>${t("weather.temperature")}</th>
         </tr>
     `;
 }
@@ -492,10 +485,10 @@ function TableDialog(props) {
         <button
             class="table-button"
             type="button"
-            aria-label=${`${props.title} taulukkona`}
+            aria-label=${t("common.asTable", props.title)}
             aria-haspopup="dialog"
             aria-controls=${props.id}
-            title=${`${props.title} taulukkona`}
+            title=${t("common.asTable", props.title)}
             onClick=${() => ref.current?.showModal()}
         >
             ${scope.style} ${h(Icon, { name: "table", size: 24 })}
@@ -525,7 +518,9 @@ function SourceNote({ sources }) {
     );
     if (!unique.length) return null;
     return html`
-        <small class="source-note">Lähde: ${unique.join(", ")}</small>
+        <small class="source-note">
+            ${t("common.source")}: ${unique.join(", ")}
+        </small>
     `;
 }
 
@@ -595,7 +590,7 @@ function WindSummary() {
             ${scope.style}
             <dl class="summary-metrics wind-metrics">
                 <div class="latest-wind-cell">
-                    <dt>Puuska</dt>
+                    <dt>${t("weather.gust")}</dt>
                     <dd
                         class=${"latest-value latest-gust " + getWarningLevel(obs.gust ?? 0)}
                     >
@@ -605,7 +600,7 @@ function WindSummary() {
                     ${hourlyRange("gust")}
                 </div>
                 <div class="latest-wind-cell">
-                    <dt>Keskituuli</dt>
+                    <dt>${t("weather.wind")}</dt>
                     <dd class="latest-value latest-wind">
                         ${obs.speed?.toFixed(0) ?? "?"}
                         <span class="unit">m/s</span>
@@ -613,7 +608,7 @@ function WindSummary() {
                     ${hourlyRange("speed")}
                 </div>
                 <div class="latest-wind-cell">
-                    <dt>Suunta</dt>
+                    <dt>${t("weather.direction")}</dt>
                     <dd class="latest-value latest-wind">
                         ${h(WindDirection, { direction: obs.direction, value: true })}
                     </dd>
@@ -624,61 +619,52 @@ function WindSummary() {
     `;
 }
 
-/** @type {Record<string, CloudTypeDetails>} */
-const CLOUD_TYPES = {
-    NCD: {
-        label: "Ei pilviä",
-        icon: "cloudClear",
-        coverage: "Ei havaittuja pilviä",
-        explanation:
-            "NCD tarkoittaa, ettei automaattinen mittaus havainnut pilviä mittauksen havaintoalueella.",
-    },
-    NSC: {
-        label: "Ei merkittäviä pilviä",
-        icon: "cloudNsc",
-        coverage: "Ei merkittävää pilvisyyttä",
-        explanation:
-            "NSC tarkoittaa, ettei havaittu lentotoiminnan kannalta merkittäviä pilviä. Korkeammalla voi silti olla pilviä.",
-    },
-    FEW: {
-        label: "Muutamia",
-        icon: "cloudFew",
-        coverage: "1–2/8 taivaasta",
-        explanation:
-            "FEW tarkoittaa muutamia pilviä: tämä pilvikerros peittää 1–2 kahdeksasosaa taivaasta.",
-    },
-    SCT: {
-        label: "Hajanaisia",
-        icon: "cloudScattered",
-        coverage: "3–4/8 taivaasta",
-        explanation:
-            "SCT tarkoittaa hajanaisia pilviä: tämä pilvikerros peittää 3–4 kahdeksasosaa taivaasta.",
-    },
-    BKN: {
-        label: "Rakoileva",
-        icon: "cloudBroken",
-        coverage: "5–7/8 taivaasta",
-        explanation:
-            "BKN tarkoittaa rakoilevaa pilvikattoa: tämä pilvikerros peittää 5–7 kahdeksasosaa taivaasta.",
-    },
-    OVC: {
-        label: "Täysi pilvikatto",
-        icon: "cloudOvercast",
-        coverage: "8/8 taivaasta",
-        explanation:
-            "OVC tarkoittaa täyttä pilvikattoa: tämä pilvikerros peittää koko taivaan eli 8/8.",
-    },
-    VV: {
-        label: "SUMUA PERKELE",
-        icon: "cloudFog",
-        coverage: "Taivas peittynyt",
-        explanation:
-            "VV tarkoittaa pystynäkyvyyttä: kuinka korkealle maanpinnasta nähdään ylöspäin, kun sumu tai muu este peittää taivaan. Arvo ei ole mitattu pilven alaraja.",
-    },
-};
-
-const THUNDERCLOUD_EXPLANATION =
-    "CB tarkoittaa cumulonimbusta eli ukkospilveä. Ukkospilvi voi aiheuttaa äkillisiä muutoksia tuulen nopeudessa ja suunnassa sekä voimakkaita puuskia.";
+function cloudTypes() {
+    return /** @type {Record<string, CloudTypeDetails>} */ ({
+        NCD: {
+            label: t("cloud.none"),
+            icon: "cloudClear",
+            coverage: t("cloud.noneObserved"),
+            explanation: t("cloud.noneDescription"),
+        },
+        NSC: {
+            label: t("cloud.noSignificant"),
+            icon: "cloudNsc",
+            coverage: t("cloud.noSignificantCoverage"),
+            explanation: t("cloud.noSignificantDescription"),
+        },
+        FEW: {
+            label: t("cloud.fewShort"),
+            icon: "cloudFew",
+            coverage: t("cloud.coverage", "1–2/8"),
+            explanation: t("cloud.fewDescription"),
+        },
+        SCT: {
+            label: t("cloud.scatteredShort"),
+            icon: "cloudScattered",
+            coverage: t("cloud.coverage", "3–4/8"),
+            explanation: t("cloud.scatteredDescription"),
+        },
+        BKN: {
+            label: t("cloud.brokenShort"),
+            icon: "cloudBroken",
+            coverage: t("cloud.coverage", "5–7/8"),
+            explanation: t("cloud.brokenDescription"),
+        },
+        OVC: {
+            label: t("cloud.overcast"),
+            icon: "cloudOvercast",
+            coverage: t("cloud.coverage", "8/8"),
+            explanation: t("cloud.overcastDescription"),
+        },
+        VV: {
+            label: t("cloud.fogEmphasis"),
+            icon: "cloudFog",
+            coverage: t("cloud.skyObscured"),
+            explanation: t("cloud.verticalVisibilityDescription"),
+        },
+    });
+}
 
 /** @param {{ cloud: CloudLayer }} props */
 function CloudLayer({ cloud }) {
@@ -745,7 +731,7 @@ function CloudLayer({ cloud }) {
             }
         }
     `);
-    const type = CLOUD_TYPES[cloud.amount];
+    const type = cloudTypes()[cloud.amount];
     const hasBase =
         Number.isFinite(cloud.base) && !["NCD", "NSC"].includes(cloud.amount);
     return html`
@@ -757,7 +743,7 @@ function CloudLayer({ cloud }) {
                     cloud.cumulonimbus
                         ? html`
                               <span class="cloud-lightning">
-                                  ${h(Icon, { name: "lightning", size: 20, label: "Ukkospilviä" })}
+                                  ${h(Icon, { name: "lightning", size: 20, label: t("cloud.cumulonimbus") })}
                               </span>
                           `
                         : null
@@ -779,7 +765,7 @@ function CloudLayer({ cloud }) {
                                   ${formatCloudBase(cloud.base, cloud.unit, { approximate: true })}
                               </b>
                               <span class="cloud-base-label">
-                                  ${cloud.amount === "VV" ? "Pystynäkyvyys" : "Pilven alaraja"}
+                                  ${cloud.amount === "VV" ? t("cloud.verticalVisibility") : t("cloud.base")}
                               </span>
                           `
                         : null
@@ -790,7 +776,7 @@ function CloudLayer({ cloud }) {
                 {},
                 html`
                     <h3>
-                        ${cloud.amount === "VV" ? "Pystynäkyvyys" : "Pilvikerros"}
+                        ${cloud.amount === "VV" ? t("cloud.verticalVisibility") : t("cloud.layer")}
                     </h3>
                     <p>
                         ${type?.explanation ?? `Pilvikerroksen METAR-koodi on ${cloud.amount}.`}
@@ -798,7 +784,7 @@ function CloudLayer({ cloud }) {
                     ${
                         cloud.cumulonimbus
                             ? html`
-                                  <p>${THUNDERCLOUD_EXPLANATION}</p>
+                                  <p>${t("cloud.cumulonimbusDescription")}</p>
                               `
                             : null
                     }
@@ -808,19 +794,11 @@ function CloudLayer({ cloud }) {
                                   ${
                                       cloud.amount !== "VV"
                                           ? html`
-                                                <p>
-                                                    Pilven alaraja on
-                                                    pilvikerroksen pohjan
-                                                    korkeus havaintopaikan
-                                                    maanpinnasta.
-                                                </p>
+                                                <p>${t("cloud.baseHelp")}</p>
                                             `
                                           : null
                                   }
-                                  <p>
-                                      Kortin arvo on pyöristetty lähimpään 50
-                                      metriin.
-                                  </p>
+                                  <p>${t("cloud.roundingHelp")}</p>
                               `
                             : null
                     }
@@ -829,10 +807,7 @@ function CloudLayer({ cloud }) {
                     ${
                         hasBase
                             ? html`
-                                  <p>
-                                      METARin numerot ilmaisevat korkeuden
-                                      satoina jalkoina (ft).
-                                  </p>
+                                  <p>${t("cloud.metarHeightHelp")}</p>
                                   <p class="cloud-base-conversion">
                                       ${`${cloud.base} ${cloud.unit} = ${formatCloudBase(cloud.base, cloud.unit)}`}
                                   </p>
@@ -1031,7 +1006,7 @@ function CloudSummary() {
     let msg = "";
 
     if (metar?.clouds.length === 0 && metar.metar.includes("CAVOK")) {
-        msg = "Ei pilviä alle 1500M (CAVOK)";
+        msg = t("cloud.cavokMessage");
     }
 
     return html`
@@ -1041,7 +1016,7 @@ function CloudSummary() {
                 metar
                     ? html`
                           <h3 class="cloud-observation-heading">
-                              Havaitut pilvikerrokset
+                              ${t("cloud.observedLayers")}
                           </h3>
                           ${
                               msg
@@ -1049,7 +1024,7 @@ function CloudSummary() {
                                         <div class="cloud-clear">
                                             ${h(Icon, { name: "cloudClear", size: 32 })}
                                             <span>
-                                                Ei pilviä alle 1500 m
+                                                ${t("cloud.cavok")}
                                                 <small>(CAVOK)</small>
                                             </span>
                                         </div>
@@ -1071,20 +1046,25 @@ function CloudSummary() {
                                   ? html`
                                         <div class="cloud-warning">
                                             ${h(Icon, { name: "storm", size: 24 })}
-                                            <span>Ukkospilviä</span>
+                                            <span>
+                                                ${t("cloud.cumulonimbus")}
+                                            </span>
                                             ${h(
                                                 Help,
-                                                { label: "Ukkospilvien ohje" },
+                                                {
+                                                    label: t(
+                                                        "cloud.cumulonimbusHelp",
+                                                    ),
+                                                },
                                                 html`
-                                                    <h3>Ukkospilviä</h3>
+                                                    <h3>
+                                                        ${t("cloud.cumulonimbus")}
+                                                    </h3>
                                                     <p>
-                                                        ${THUNDERCLOUD_EXPLANATION}
+                                                        ${t("cloud.cumulonimbusDescription")}
                                                     </p>
                                                     <p>
-                                                        Havainto ei kerro
-                                                        ukkospilvien
-                                                        peittävyyttä tai
-                                                        korkeutta.
+                                                        ${t("cloud.cumulonimbusUnknown")}
                                                     </p>
                                                     <h3>METAR</h3>
                                                     <p class="metar">
@@ -1120,34 +1100,18 @@ function CloudSummary() {
                     [latest?.temperature, latest?.dewPoint],
                     (temp, dew) => html`
                         <div class="condensation">
-                            <dt>Tiivistymiskorkeus</dt>
+                            <dt>${t("weather.condensationLevel")}</dt>
                             <dd class="cloud-list-item-alt">
                                 <b>${getLiftedCondensationLevel(temp, dew)}M</b>
                                 ${h(
                                     Help,
                                     { id: "dewpoint" },
                                     html`
-                                        <!-- prettier-ignore -->
                                         <p>
-                                    Arvio mahdollisten pilvien korkeudesta${" "}
-                                    <a href="https://fi.wikipedia.org/wiki/Nostotiivistyskorkeus">tiivistymiskorkeuden</a>${" "}
-                                    perusteella.
-                                    Laskettu lämpötilasta ${temp.toFixed(1)}°C
-                                    ja kastepisteestä ${dew.toFixed(1)}°C
-                                    pyöristäen lähimpään 100 metriin.${" "}
-                                    ${h(FromNow, { date: latest?.time })}
-
-                                </p>
-
-                                        <p>
-                                            Arvio on järjellinen vain silloin
-                                            kun pilvet ovat muodostuneet
-                                            mittauspaikalla. Jos pilvet ovat
-                                            muodostuneet toisaalla eri
-                                            lämpötilassa/kastepisteessä ja
-                                            saapuneet tuulen mukana, arvio on
-                                            todennäköisesti päin prinkkalaa.
+                                            ${t("cloud.estimateHelp", temp.toFixed(1), dew.toFixed(1))}
+                                            ${h(FromNow, { date: latest?.time })}
                                         </p>
+                                        <p>${t("cloud.estimateCaveat")}</p>
                                     `,
                                 )}
                             </dd>
@@ -1160,20 +1124,15 @@ function CloudSummary() {
                     ? html`
                           <section
                               class="cloud-forecast"
-                              aria-label="Pilvien ennuste"
+                              aria-label=${t("cloud.forecast")}
                           >
                               <div class="forecast-heading">
-                                  <h3>Ennuste · 12 tuntia</h3>
+                                  <h3>${t("cloud.forecast12h")}</h3>
                                   ${h(
                                       Help,
                                       { id: "cloudforecast" },
                                       html`
-                                          <p>
-                                              Tiivistymiskorkeuden ja matalien
-                                              (alle 2km) pilvien peittävyyden
-                                              tuntiennuste. Vieritä sivulle
-                                              nähdäksesi lisää tunteja.
-                                          </p>
+                                          <p>${t("cloud.forecastHelp")}</p>
                                       `,
                                   )}
                               </div>
@@ -1181,12 +1140,14 @@ function CloudSummary() {
                                   class="forecast-scroll"
                                   tabindex="0"
                                   role="region"
-                                  aria-label="Pilvien tuntiennuste, vieritä sivulle"
+                                  aria-label=${t("cloud.hourlyForecast")}
                               >
                                   <table class="cloud-forecast-table">
                                       <thead>
                                           <tr>
-                                              <th scope="col">Kello</th>
+                                              <th scope="col">
+                                                  ${t("weather.clock")}
+                                              </th>
                                               ${forecasts.map(
                                                   (forecast) => html`
                                                       <th
@@ -1201,7 +1162,9 @@ function CloudSummary() {
                                       </thead>
                                       <tbody>
                                           <tr>
-                                              <th scope="row">Pilvipeitto</th>
+                                              <th scope="row">
+                                                  ${t("cloud.cover")}
+                                              </th>
                                               ${forecasts.map(
                                                   (forecast) => html`
                                                       <td
@@ -1214,7 +1177,7 @@ function CloudSummary() {
                                           </tr>
                                           <tr>
                                               <th scope="row">
-                                                  Tiivistymiskorkeus
+                                                  ${t("weather.condensationLevel")}
                                               </th>
                                               ${forecasts.map(
                                                   (forecast) => html`
@@ -1256,10 +1219,10 @@ function UpdateButton() {
                 updateWeatherData();
             }}
         >
-            Päivitä
+            ${t("update.button")}
         </button>
         <br />
-        <small>Tiedot päivitetään automaattisesti minuutin välein.</small>
+        <small>${t("update.automatic")}</small>
     `;
 }
 
@@ -1558,7 +1521,7 @@ export function SideMenu({ developerEditorRef }) {
     return html`
         <aside
             id="side-menu"
-            aria-label="Valikko"
+            aria-label=${t("menu.label")}
             inert=${!MENU_OPEN.value}
             class="${MENU_OPEN.value ? "side-menu open" : "side-menu"}"
             onClick=${closeMenuOnLinkClick}
@@ -1572,7 +1535,7 @@ export function SideMenu({ developerEditorRef }) {
                 <button
                     class="menu-close"
                     type="button"
-                    aria-label="Sulje valikko"
+                    aria-label=${t("menu.close")}
                     onClick=${() => {
                         MENU_OPEN.value = false;
                     }}
@@ -1583,24 +1546,26 @@ export function SideMenu({ developerEditorRef }) {
 
             <div class="menu-content">
                 <section class="menu-section" aria-labelledby="menu-forecast">
-                    <h2 id="menu-forecast">Ennustepäivä</h2>
+                    <h2 id="menu-forecast">${t("menu.forecastDay")}</h2>
                     <div class="forecast-days">
                         <a
                             onClick=${asInPageNavigation}
                             href=${getQs({ forecast_day: undefined })}
                             aria-current=${FORECAST_DAY.value === 0 ? "date" : undefined}
                         >
-                            Tänään
+                            ${t("common.today")}
                         </a>
                         <a
                             onClick=${asInPageNavigation}
                             href=${getQs({ forecast_day: "1" })}
                             aria-current=${FORECAST_DAY.value === 1 ? "date" : undefined}
                         >
-                            Huomenna
+                            ${t("common.tomorrow")}
                         </a>
                     </div>
-                    <label for="menu-forecast-date">Valitse päivä</label>
+                    <label for="menu-forecast-date">
+                        ${t("menu.selectDay")}
+                    </label>
                     <input
                         id="menu-forecast-date"
                         type="date"
@@ -1614,11 +1579,13 @@ export function SideMenu({ developerEditorRef }) {
                 </section>
 
                 <section class="menu-section" aria-labelledby="menu-dropzones">
-                    <h2 id="menu-dropzones">Hyppypaikat</h2>
+                    <h2 id="menu-dropzones">${t("menu.dropzones")}</h2>
                     ${
                         SAVED_DZs.value.length > 0
                             ? html`
-                                  <span class="saved-label">Tallennetut</span>
+                                  <span class="saved-label">
+                                      ${t("menu.saved")}
+                                  </span>
                               `
                             : null
                     }
@@ -1636,12 +1603,10 @@ export function SideMenu({ developerEditorRef }) {
                                     <a href=${qs}>${name}</a>
                                     <button
                                         type="button"
-                                        aria-label=${`Poista tallennettu hyppypaikka ${name}`}
+                                        aria-label=${t("menu.removeSaved", name)}
                                         onClick=${() => {
                                             if (
-                                                confirm(
-                                                    "Haluatko varmasti poistaa tallennetun DZ:n?",
-                                                )
+                                                confirm(t("menu.confirmRemove"))
                                             ) {
                                                 // Keep the target present until outside click detection runs.
                                                 setTimeout(() =>
@@ -1659,9 +1624,9 @@ export function SideMenu({ developerEditorRef }) {
                     <button
                         class="save-dz"
                         type="button"
-                        onClick=${() => saveCurrentDz(prompt("Nimi", NAME.value))}
+                        onClick=${() => saveCurrentDz(prompt(t("menu.namePrompt"), NAME.value))}
                     >
-                        + Tallenna nykyinen
+                        ${t("menu.saveCurrent")}
                     </button>
                     <div class="dzs dz-grid" onClick=${savePreviousDz}>
                         ${OTHER_DZs.map(
@@ -1672,8 +1637,26 @@ export function SideMenu({ developerEditorRef }) {
                     </div>
                 </section>
 
+                <section class="menu-section" aria-labelledby="menu-language">
+                    <h2 id="menu-language">${t("language.label")}</h2>
+                    <select
+                        aria-label=${t("language.label")}
+                        value=${LANGUAGE.value}
+                        onInput=${(/** @type {Event} */ event) => {
+                            const value = /** @type {HTMLSelectElement} */ (
+                                event.currentTarget
+                            ).value;
+                            if (value === "en" || value === "fi")
+                                setLanguage(value);
+                        }}
+                    >
+                        <option value="en">${t("language.english")}</option>
+                        <option value="fi">${t("language.finnish")}</option>
+                    </select>
+                </section>
+
                 <footer class="menu-section menu-footer">
-                    <a href="/?no_redirect=1">Etusivulle</a>
+                    <a href="/?no_redirect=1">${t("menu.home")}</a>
                     ${h(DeveloperMode, {
                         editorRef: developerEditorRef,
                         onOpen: () => {
@@ -1726,7 +1709,7 @@ export function FloatingMenuButton() {
         <button
             class="menu-burger"
             type="button"
-            aria-label="Valikko"
+            aria-label=${t("menu.label")}
             aria-expanded=${MENU_OPEN.value}
             aria-controls="side-menu"
             onClick=${() => {
@@ -1741,7 +1724,7 @@ export function FloatingMenuButton() {
 
 function ForecastLocationInfo() {
     return html`
-        Ennuste on tehty alueelle${" "}
+        ${t("forecast.location")}${" "}
         <a
             href="https://www.google.fi/maps/place/${
                 FORECAST_COORDINATES.value || STATION_COORDINATES.value
@@ -1758,15 +1741,15 @@ function HighWinds() {
 
     return html`
         <div id="high-winds-today">
-            <h2>ECMWF Ylätuuliennusteet</h2>
-            <small class="source-note">Lähde: Open-Meteo</small>
+            <h2>${t("highWinds.title")}</h2>
+            <small class="source-note">${t("common.source")}: Open-Meteo</small>
 
             <p>
                 <button
                     type="button"
                     onClick=${() => setShowDetails(!showDetails)}
                 >
-                    ${showDetails ? "Näytä kooste" : "Näytä tarkat tiedot"}
+                    ${showDetails ? t("highWinds.showSummary") : t("highWinds.showDetails")}
                 </button>
             </p>
 
@@ -1804,7 +1787,7 @@ function Info() {
             ${
                 STATION_NAME.value
                     ? html`
-                          Havaintotiedot haettu havaintoasemalta${" "}
+                          ${t("footer.observationStation")}${" "}
                           <a
                               href="https://www.google.fi/maps/place/${STATION_COORDINATES.value}"
                           >
@@ -1818,7 +1801,7 @@ function Info() {
             ${
                 metar?.elevation !== undefined
                     ? html`
-                          ${" "}Lentokentän korkeus meren pinnasta${" "}
+                          ${" "}${t("footer.airfieldElevation")}${" "}
                           ${metar.elevation.toFixed(0)}M. ${" "}
                       `
                     : null
@@ -1833,26 +1816,23 @@ function Info() {
                     const distance = coordinateDistance(station, forecast);
                     const km = (distance / 1000).toFixed(1);
 
-                    return `Etäisyys havaintoasemalle ${km}km.`;
+                    return t("footer.stationDistance", km);
                 },
             )}
             <div>
-                Lähteet:
+                ${t("common.sources")}: ${" "}
                 <a href="https://www.ilmatieteenlaitos.fi/">FMI</a>
                 ,${" "}
                 <a href="https://flyk.com/">Flyk</a>
-                ja${" "}
+                ${" "} ${t("footer.and")}${" "}
                 <a href="https://open-meteo.com/">Open-Meteo</a>
                 .
             </div>
-            <div class="disclaimer">
-                ${" "}Tietojen käyttö omalla vastuulla. Ei takeita että tiedot
-                ovat oikein.
-            </div>
+            <div class="disclaimer">${t("footer.disclaimer")}</div>
             <small>
-                Psst, onko tarvetta hyppypäiväkirjalle? Tsekkaa${" "}
+                ${t("footer.logbook")}${" "}
                 <a href="https://loki.hyppykeli.fi/">Loki</a>
-                . Koodi HYPPYKELI2026
+                . ${t("footer.code")} HYPPYKELI2026
             </small>
         </footer>
     `;
@@ -1983,8 +1963,8 @@ function Title() {
                 <button
                     class="edit-name"
                     type="button"
-                    aria-label="Muokkaa nimeä"
-                    title="Muokkaa nimeä"
+                    aria-label=${t("title.edit")}
+                    title=${t("title.edit")}
                     aria-haspopup="dialog"
                     onClick=${openNameEditor}
                 >
@@ -1996,26 +1976,17 @@ function Title() {
                     ? html`
                           <span class="title-temp">
                               <span class="nowrap">
-                                  ${temperature?.toFixed(0)}°C maassa,
+                                  ${t("title.groundTemperature", temperature?.toFixed(0) ?? "")}
                               </span>
                               ${" "}
                               <span class="nowrap">
-                                  ${temps[4].toFixed(0)}°C 4km:ssä
+                                  ${t("title.altitudeTemperature", temps[4].toFixed(0))}
                               </span>
                               ${h(
                                   Help,
                                   {},
                                   html`
-                                      <p>
-                                          ICAO:n${" "}
-                                          <a
-                                              href="https://fi.wikipedia.org/wiki/Kansainv%C3%A4linen_standardi-ilmakeh%C3%A4"
-                                          >
-                                              ilmakehämallin
-                                          </a>
-                                          ${" "} mukainen lämpötilan muutos
-                                          Troposfäärissä (-6.5°C/km)
-                                      </p>
+                                      <p>${t("title.temperatureHelp")}</p>
 
                                       <ul>
                                           <li>1km ${temps[1].toFixed(1)}°C</li>
@@ -2038,10 +2009,10 @@ function Title() {
             html`
                 ${dialogScope.style}
                 <div>
-                    <h2 id=${dialogTitleId}>Muokkaa nimeä</h2>
+                    <h2 id=${dialogTitleId}>${t("title.edit")}</h2>
                     <form onSubmit=${saveName}>
                         <label>
-                            Nimi
+                            ${t("menu.namePrompt")}
                             <input
                                 ref=${inputRef}
                                 name="name"
@@ -2055,11 +2026,9 @@ function Title() {
                                     )}
                             />
                         </label>
-                        <p class="name-hint">
-                            Tyhjä nimi palauttaa automaattisen nimen.
-                        </p>
+                        <p class="name-hint">${t("title.emptyName")}</p>
                         <div class="name-actions">
-                            <button type="submit">Tallenna</button>
+                            <button type="submit">${t("common.save")}</button>
                         </div>
                     </form>
                 </div>
@@ -2239,7 +2208,7 @@ export function Root() {
             <${Title} />
 
             <div class="clouds" id="clouds">
-                <h2 class="h2-with-icon">Pilvet</h2>
+                <h2 class="h2-with-icon">${t("weather.clouds")}</h2>
                 ${h(SourceNote, {
                     sources: [
                         METARS.value ? "METAR" : null,
@@ -2252,7 +2221,7 @@ export function Root() {
             </div>
 
             <div id="winds">
-                <h2 class="h2-with-icon">Tuulet</h2>
+                <h2 class="h2-with-icon">${t("weather.winds")}</h2>
                 ${h(SourceNote, { sources: [WIND_SOURCE.value] })}
                 <${WindSummary} />
                 ${h(Compass, { floating: false })}
@@ -2262,7 +2231,7 @@ export function Root() {
             ${h(Graph, {
                 observationsTable: h(TableDialog, {
                     id: "observations-table",
-                    title: "Havainnot",
+                    title: t("weather.observations"),
                     children: html`
                         <div class="observations">
                             <p class="date">${formatDate(new Date())}</p>
@@ -2280,7 +2249,7 @@ export function Root() {
                 }),
                 forecastsTable: h(TableDialog, {
                     id: "forecasts-table",
-                    title: "Ennuste",
+                    title: t("weather.forecast"),
                     children: html`
                         <div class=${STALE_FORECASTS.value ? "stale" : "fresh"}>
                             <p class="date">

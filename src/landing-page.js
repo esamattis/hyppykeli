@@ -9,6 +9,7 @@ import { Icon } from "./icons.js";
 import { coordinateDistance, fetchJSON } from "./utils.js";
 
 import { completeDropzones, partialDropzones } from "./dropzones.js";
+import { t } from "./translations.js";
 
 /**
  * @param {[number, number]} coordinates
@@ -117,7 +118,7 @@ function DropzoneList({ dropzones }) {
                     (dz) => html`
                         <p key=${dz.name}>
                             <a href=${dz.href}>${dz.name}</a>
-                            ${" "}${dz.description}
+                            ${" "}${typeof dz.description === "function" ? dz.description() : dz.description}
                         </p>
                     `,
                 )}
@@ -127,10 +128,10 @@ function DropzoneList({ dropzones }) {
 
 export function Dropzones() {
     return html`
-        <h2>Hyppypaikat</h2>
-        <p>Seuraaville hyppypaikoille löytyy kattavat säätiedot:</p>
+        <h2>${t("landing.dropzones")}</h2>
+        <p>${t("landing.complete")}</p>
         ${h(DropzoneList, { dropzones: completeDropzones })}
-        <p>Vajaavaiset tiedot löytyvät myös seuraaville paikoille:</p>
+        <p>${t("landing.partial")}</p>
         ${h(DropzoneList, { dropzones: partialDropzones })}
     `;
 }
@@ -251,15 +252,15 @@ function DropzoneCoordinateMap({ lat, lon, onSelect }) {
     }
 
     return html`
-        <div role="region" aria-label="Valitse DZ:n sijainti kartalta">
+        <div role="region" aria-label=${t("landing.mapRegion")}>
             ${scope.style}
             <div class="map-canvas" ref=${containerRef}></div>
             <button
                 class="location-button"
                 id="get-location"
                 type="button"
-                aria-label="Käytä nykyistä sijaintiani"
-                title="Käytä nykyistä sijaintiani"
+                aria-label=${t("landing.useLocation")}
+                title=${t("landing.useLocation")}
                 disabled=${locating}
                 onClick=${getLocation}
             >
@@ -341,8 +342,8 @@ function ClearableInput({
                           <button
                               class="clear-input"
                               type="button"
-                              aria-label=${`Tyhjennä ${label}`}
-                              title=${`Tyhjennä ${label}`}
+                              aria-label=${t("landing.clear", label)}
+                              title=${t("landing.clear", label)}
                               onClick=${clear}
                           >
                               ${h(Icon, { name: "close", size: 18 })}
@@ -457,7 +458,7 @@ export function CreateDropzoneForm() {
 
     async function getRoadStation() {
         if (!fields.lat || !fields.lon) {
-            alert("Koordinaatit puuttuvat");
+            alert(t("landing.coordinatesMissing"));
             return;
         }
         const station = await findClosestRoadStation([
@@ -488,9 +489,7 @@ export function CreateDropzoneForm() {
             lon <= 180;
         if (!validCoordinates && !fields.fmisid && !fields.roadsid) {
             event.preventDefault();
-            alert(
-                "Anna koordinaatit tai FMI:n tai Fintrafficin havaintoaseman tunnus.",
-            );
+            alert(t("landing.stationOrCoordinates"));
             return;
         }
 
@@ -503,15 +502,13 @@ export function CreateDropzoneForm() {
     }
 
     return html`
-        <h2>${headingScope.style}Luo hyppypaikka</h2>
+        <h2>${headingScope.style}${t("landing.create")}</h2>
         <form action="/dz" onSubmit=${validateCoordinates}>
             ${scope.style}
 
             <fieldset>
-                <legend>DZ koordinaatit</legend>
-                <p class="map-help">
-                    Valitse hyppypaikan sijainti kartalta napsauttamalla.
-                </p>
+                <legend>${t("landing.coordinates")}</legend>
+                <p class="map-help">${t("landing.mapHelp")}</p>
                 ${h(DropzoneCoordinateMap, {
                     lat: fields.lat,
                     lon: fields.lon,
@@ -519,7 +516,7 @@ export function CreateDropzoneForm() {
                 })}
 
                 <div class="field">
-                    <label for="lat">Leveysaste</label>
+                    <label for="lat">${t("landing.latitude")}</label>
                     ${h(ClearableInput, {
                         name: "lat",
                         placeholder: "60.1234",
@@ -533,7 +530,7 @@ export function CreateDropzoneForm() {
                 <div class="desc"></div>
 
                 <div class="field">
-                    <label for="lon">Pituusaste</label>
+                    <label for="lon">${t("landing.longitude")}</label>
                     ${h(ClearableInput, {
                         name: "lon",
                         placeholder: "24.1234",
@@ -543,13 +540,13 @@ export function CreateDropzoneForm() {
                         onClear: () => clearField("lon"),
                     })}
                 </div>
-                <div class="desc">Desimaalimuodossa.</div>
+                <div class="desc">${t("landing.decimal")}</div>
             </fieldset>
 
             <fieldset>
-                <legend>Muut tiedot</legend>
+                <legend>${t("landing.other")}</legend>
                 <div class="field">
-                    <label for="name">Nimi</label>
+                    <label for="name">${t("landing.name")}</label>
                     ${h(ClearableInput, {
                         name: "name",
                         placeholder: "My DZ",
@@ -574,19 +571,19 @@ export function CreateDropzoneForm() {
                 </div>
 
                 <div class="desc">
-                    Hae Ilmatieteenlaitoksen havaintoaseman FMISID${" "}
+                    ${t("landing.fmiHelp")}${" "}
                     <a href="https://www.ilmatieteenlaitos.fi/havaintoasemat">
-                        täältä
+                        ${t("landing.here")}
                     </a>
                 </div>
 
                 <div class="field">
-                    <label for="roadsid">Fintraffic sääasema</label>
+                    <label for="roadsid">${t("landing.roadStation")}</label>
                     ${h(ClearableInput, {
                         name: "roadsid",
                         placeholder: "123445",
                         value: fields.roadsid,
-                        label: "Fintraffic sääasema",
+                        label: t("landing.roadStation"),
                         onInput: updateField,
                         onClear: () => clearField("roadsid"),
                     })}
@@ -597,21 +594,20 @@ export function CreateDropzoneForm() {
                     type="button"
                     onClick=${getRoadStation}
                 >
-                    Hae lähin tieasema
+                    ${t("landing.nearestRoadStation")}
                 </button>
                 <div class="desc">
-                    Jos sopivaa Ilmatieteenlaitoksen havaintoasemaa ei löydy,
-                    voit käyttää vaihtoehtoisesti${" "}
+                    ${t("landing.roadHelp")}${" "}
                     <a
                         href="https://www.digitraffic.fi/tieliikenne/#ties%C3%A4%C3%A4asemien-ajantasaiset-mittaustiedot"
                     >
-                        Fintrafficin tieasääsemaa
+                        Fintraffic
                     </a>
                     . Hae aseman ID${" "}
                     <a
                         href="https://tie.digitraffic.fi/api/weather/v1/stations"
                     >
-                        täältä
+                        ${t("landing.here")}
                     </a>
                 </div>
 
@@ -626,19 +622,14 @@ export function CreateDropzoneForm() {
                         onClear: () => clearField("icaocode"),
                     })}
                 </div>
-                <div class="desc">
-                    Nelikirjaminen lentokentän tunnus, esim. EFUT
-                </div>
+                <div class="desc">${t("landing.icaoHelp")}</div>
             </fieldset>
 
             <input type="hidden" name="save" value="1" />
 
-            <button class="create-dz">Luo</button>
+            <button class="create-dz">${t("landing.createButton")}</button>
         </form>
-        <p>
-            Hyppypaikka tallennetaan vain tähän selaimeen. Hyppypaikan voi jakaa
-            muille jakamalla sen linkin.
-        </p>
+        <p>${t("landing.savedLocally")}</p>
     `;
 }
 

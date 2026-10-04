@@ -4,6 +4,7 @@ import { EditableSettings } from "./FreefallSettings.js";
 import { JumpRunControls } from "./JumpRunControls.js";
 import { ToolbarButton } from "./ToolbarButton.js";
 import { css, useScope } from "./useScope.js";
+import { t } from "./translations.js";
 
 /** @param {FreefallToolbarProps} props */
 export function FreefallToolbar({
@@ -69,12 +70,12 @@ export function FreefallToolbar({
         <div
             class="freefall-toolbar"
             role="group"
-            aria-label="Vapaapudotuksen arvot"
+            aria-label=${t("toolbar.freefallValues")}
         >
             ${scope.style}
             <div class="toolbar-actions">
                 ${h(ToolbarButton, {
-                    label: "Hyppylinja",
+                    label: t("toolbar.jumpRun"),
                     icon: jumpRunActive ? "plane" : "freefall",
                     size: 20,
                     className: "jump-run-toggle",
@@ -84,29 +85,29 @@ export function FreefallToolbar({
                 ${jumpRunActive ? h(JumpRunControls, jumpRun) : null}
                 ${!jumpRunActive ? h(EditableSettings, { exitHeight, openingHeight, speedKmh, onAltitudeChange, onSpeedChange }) : null}
                 ${h(ToolbarButton, {
-                    label: "Poista viimeisin nuoli",
+                    label: t("toolbar.undoArrow"),
                     icon: "undo",
                     className: "undo-arrow",
                     disabled: arrowCount === 0,
                     onClick: onUndo,
                 })}
                 ${h(ToolbarButton, {
-                    label: "Tyhjennä nuolet",
+                    label: t("toolbar.clearArrows"),
                     icon: "trash",
                     className: "clear-arrows",
                     disabled: arrowCount === 0,
                     onClick: onClear,
                 })}
                 ${h(ToolbarButton, {
-                    label: "Jaa kartta",
+                    label: t("toolbar.shareMap"),
                     icon: "share",
                     disabled: typeof navigator.share !== "function",
                     onClick: onShare,
                 })}
                 ${h(ToolbarButton, {
                     label: fullWindow
-                        ? "Palauta Ylätuulet"
-                        : "Laajenna Ylätuulet koko ikkunaan",
+                        ? t("toolbar.restoreMap")
+                        : t("toolbar.expandMap"),
                     icon: fullWindow ? "collapse" : "expand",
                     size: 20,
                     className: "window-toggle",
@@ -116,19 +117,19 @@ export function FreefallToolbar({
             </div>
             <div class="toolbar-summary">
                 <span>
-                    <span class="value-label">Uloshyppy</span>
+                    <span class="value-label">${t("toolbar.exit")}</span>
                     <strong class="value-number">
                         ${`${jumpRunActive ? jumpRun.settings.exitHeight : exitHeight} m`}
                     </strong>
                 </span>
                 <span>
-                    <span class="value-label">Avaus</span>
+                    <span class="value-label">${t("toolbar.opening")}</span>
                     <strong class="value-number">
                         ${`${jumpRunActive ? jumpRun.nextJumper.openingHeight : openingHeight} m`}
                     </strong>
                 </span>
                 <span>
-                    <span class="value-label">Nopeus</span>
+                    <span class="value-label">${t("toolbar.speed")}</span>
                     <strong class="value-number">
                         ${`${jumpRunActive ? jumpRun.nextJumper.speedKmh : speedKmh} km/h`}
                     </strong>
@@ -137,7 +138,9 @@ export function FreefallToolbar({
                     jumpRunActive
                         ? html`
                               <span>
-                                  <span class="value-label">Hyppylinja</span>
+                                  <span class="value-label">
+                                      ${t("toolbar.jumpRun")}
+                                  </span>
                                   <strong class="value-number">
                                       ${`${jumpRun.settings.speedKmh} km/h`}
                                   </strong>

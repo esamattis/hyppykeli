@@ -12,6 +12,7 @@ import {
 } from "./utils.js";
 import { fetchHighWinds, getOpenMeteoSurfaceWeather } from "./om.js";
 import { parseMETAR } from "./metar.js";
+import { t } from "./translations.js";
 
 /** @type {Signal<QueryParams[]>} */
 export const SAVED_DZs = signal(
@@ -252,9 +253,9 @@ export function weatherSourceLabel(source) {
         case "metar":
             return "METAR";
         case "openmeteo":
-            return "Open-Meteo (mallinnettu)";
+            return t("source.openMeteoModeled");
         case "mock":
-            return "Kehittäjätila";
+            return t("source.developerMode");
         case "forecast":
             return FORECAST_SOURCE.value;
         default:
@@ -717,7 +718,7 @@ async function fetchMetar() {
         setMETARSfromMetarMessage([metar]);
     } else {
         LIVE_METARS.value = undefined;
-        addError(`Ei METAR-sanomaa kentälle ${icaocode}.`);
+        addError(t("error.noMetar", icaocode));
     }
 }
 
@@ -801,14 +802,12 @@ export async function fetchFmiObservations(fmisid) {
     );
 
     if (!doc) {
-        addError(`Havaintoasemaa ${fmisid} ei löytynyt.`);
+        addError(t("error.stationNotFound", fmisid));
         return false;
     }
 
     if (doc === "error") {
-        addError(
-            `Virhe Ilmatieteenlaitoksen havaintoaseman ${fmisid} tietojen hakemisessa.`,
-        );
+        addError(t("error.fmiFetch", fmisid));
         return false;
     }
 
@@ -824,7 +823,7 @@ export async function fetchFmiObservations(fmisid) {
     )?.innerHTML;
 
     if (!name) {
-        addError(`Havaintoasema ${fmisid} ei taida toimia tässä.`);
+        addError(t("error.stationInvalid", fmisid));
         return false;
     }
 
@@ -1160,9 +1159,7 @@ export async function updateWeatherData() {
         FORECASTS.value = [];
         FORECAST_SOURCE.value = null;
         FORECAST_LOCATION_NAME.value = null;
-        addError(
-            "Koordinaatit puuttuvat. Anna leveys- ja pituusaste tai määritä FMI:n tai Fintrafficin havaintoasema.",
-        );
+        addError(t("error.coordinatesMissing"));
         return;
     }
 
@@ -1189,7 +1186,7 @@ export async function updateWeatherData() {
         FORECASTS.value = [];
         FORECAST_SOURCE.value = null;
         FORECAST_LOCATION_NAME.value = null;
-        addError("Ennusteita ei löytynyt.");
+        addError(t("error.noForecasts"));
     }
 }
 

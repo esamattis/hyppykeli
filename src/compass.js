@@ -14,6 +14,7 @@ import {
     hasValidWindData,
 } from "./utils.js";
 import { Help, FromNow } from "./components.js";
+import { t } from "./translations.js";
 
 // Constants for needle length calculation
 const MIN_NEEDLE_LENGTH = 30;
@@ -229,26 +230,14 @@ export function Compass({ floating = false } = {}) {
                             localStorage.setItem("compass-animation", String(enabled));
                         }}
                     />
-                    Animaatio
+                    ${t("compass.animation")}
                 </label>
 
                 <div class="summary-time">
                     ${observation && h(FromNow, { date: observation.time })}
                 </div>
 
-                ${h(Help, {}, html`
-                <p>
-                    Tuulilukemien alla näkyvät vaihteluvälit kertovat puuskan,
-                    keskituulen ja suunnan pienimmän ja suurimman havaitun arvon
-                    viimeisen tunnin ajalta. Arvot on pyöristetty kokonaisluvuiksi.
-                </p>
-                <p>
-                    Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Oranssi
-                    ympyrä on oppilasraja (8 m/s) ja musta ympyrä on kelppariraja (11 m/s).
-                    Animaatio toistaa viimeisen tunnin havainnot aikajärjestyksessä.
-                    Kun animaatio on pois päältä, nuoli näyttää uusimman havainnon.
-                </p>
-                `)}
+                ${h(Help, {}, html`<p>${t("compass.help")}</p>`)}
                 </div>
             `}
         </div>

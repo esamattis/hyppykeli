@@ -1,5 +1,6 @@
 // @ts-check
 import { html } from "htm/preact";
+import { t } from "./translations.js";
 
 /** Shared opening-height and freefall-speed inputs; parents own their drafts.
  * @param {FreefallFieldsProps} props
@@ -22,7 +23,7 @@ export function FreefallFields({
     };
     const opening = html`
         <label>
-            Avauskorkeus (m)
+            ${t("settings.openingHeight")}
             <input
                 type="number"
                 required
@@ -37,7 +38,7 @@ export function FreefallFields({
     `;
     const speed = html`
         <label>
-            Vapaapudotusnopeus (km/h)
+            ${t("settings.freefallSpeed")}
             <input
                 type="number"
                 required

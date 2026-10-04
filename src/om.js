@@ -6,6 +6,7 @@ import { FORECAST_COORDINATES, STATION_COORDINATES } from "./data.js";
 import { signal } from "@preact/signals";
 import { WindArrow } from "./icons.js";
 import { isNullish } from "./utils.js";
+import { t } from "./translations.js";
 
 // Vakiot tiedoston alussa
 const PRESSURE_LEVELS = [
@@ -544,7 +545,7 @@ export function WindTable({ days, hourly = false }) {
         <div
             class="wind-table-scroll"
             tabindex="0"
-            aria-label="Ylätuuliennusteet"
+            aria-label=${t("highWinds.title")}
         >
             ${scope.style}
             <table
@@ -623,9 +624,13 @@ export function OpenMeteoTool() {
 
     return h(WindTable, {
         days: [
-            { title: "Tänään", tableData: data.todayData, isToday: true },
             {
-                title: "Huomenna",
+                title: t("common.today"),
+                tableData: data.todayData,
+                isToday: true,
+            },
+            {
+                title: t("common.tomorrow"),
                 tableData: data.tomorrowData,
                 isToday: false,
                 id: "high-winds-tomorrow",
@@ -673,9 +678,9 @@ export function OpenMeteoRaw() {
         if (!day) {
             day = {
                 title: isToday
-                    ? "Tänään"
+                    ? t("common.today")
                     : dateKey === tomorrow.toDateString()
-                      ? "Huomenna"
+                      ? t("common.tomorrow")
                       : date.toLocaleDateString("fi-FI"),
                 tableData: {},
                 isToday,

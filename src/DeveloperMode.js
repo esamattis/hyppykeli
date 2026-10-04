@@ -14,19 +14,25 @@ import {
     navigateQs,
     parseMetarMessages,
 } from "./data.js";
+import { t } from "./translations.js";
 
-/** @type {DeveloperField[]} */
-const FIELDS = [
-    {
-        key: "DEV_debug",
-        label: "Debug-tila (konsolilokit ja kaikki havaintoajat)",
-        checkbox: true,
-    },
-    { key: "DEV_mock", label: "Käytä FMI:n esimerkkitietoja", checkbox: true },
-    { key: "DEV_metar", label: "METAR-teksti" },
-    { key: "DEV_map_speed", label: "Kartan tuulen nopeus (m/s)" },
-    { key: "DEV_map_direction", label: "Kartan tuulen suunta (°)", max: 360 },
-];
+function fields() {
+    return /** @type {DeveloperField[]} */ ([
+        {
+            key: "DEV_debug",
+            label: t("developer.debug"),
+            checkbox: true,
+        },
+        { key: "DEV_mock", label: t("developer.mock"), checkbox: true },
+        { key: "DEV_metar", label: t("developer.metar") },
+        { key: "DEV_map_speed", label: t("developer.mapSpeed") },
+        {
+            key: "DEV_map_direction",
+            label: t("developer.mapDirection"),
+            max: 360,
+        },
+    ]);
+}
 
 /** @param {DeveloperObservation[]} observations */
 function toObservationInputs(observations) {
@@ -91,8 +97,8 @@ export function DeveloperBanner({ onEdit }) {
         <aside class="developer-banner" role="status">
             ${scope.style}
             <span>
-                <strong>Kehittäjätila käytössä.</strong>
-                ${" "} Käytössä on testiasetuksia.
+                <strong>${t("developer.active")}</strong>
+                ${" "}${t("developer.testSettings")}
             </span>
             <div class="developer-banner-actions">
                 <button
@@ -101,10 +107,10 @@ export function DeveloperBanner({ onEdit }) {
                     aria-controls="developer-mode"
                     onClick=${onEdit}
                 >
-                    Muokkaa
+                    ${t("developer.edit")}
                 </button>
                 <button type="button" onClick=${clearOverrides}>
-                    Palauta oikeat tiedot
+                    ${t("developer.restore")}
                 </button>
             </div>
         </aside>
@@ -276,7 +282,7 @@ export function DeveloperMode(props) {
         setObservationsEdited(false);
         setError("");
         setCopyUrl("");
-        setStatus("Nykyiset arvot tallennettu osoitteeseen.");
+        setStatus(t("developer.saved"));
     }
 
     async function copyCurrentUrl() {
@@ -288,12 +294,10 @@ export function DeveloperMode(props) {
         try {
             await navigator.clipboard.writeText(location.href);
             setCopyUrl("");
-            setStatus("Osoite kopioitu.");
+            setStatus(t("developer.copied"));
         } catch {
             setCopyUrl(location.href);
-            setStatus(
-                "Kopiointi ei onnistunut. Kopioi osoite alla olevasta kentästä.",
-            );
+            setStatus(t("developer.copyFailed"));
         }
     }
 
@@ -308,7 +312,7 @@ export function DeveloperMode(props) {
         groundEdited = observationsEdited,
     ) {
         if (!dialogRef.current?.querySelector("form")?.checkValidity()) {
-            setError("Tarkista tuuliarvojen ja suuntien sallitut rajat.");
+            setError(t("developer.windInvalid"));
             return false;
         }
         const metar = editedValues.DEV_metar?.trim();
@@ -319,9 +323,7 @@ export function DeveloperMode(props) {
                     throw new Error("Invalid METAR time");
                 }
             } catch {
-                setError(
-                    "METAR-tekstin lukeminen epäonnistui. Tarkista teksti.",
-                );
+                setError(t("developer.metarInvalid"));
                 return false;
             }
         }
@@ -332,12 +334,12 @@ export function DeveloperMode(props) {
             groundObservations &&
             !parseGroundObservations(groundObservations)
         ) {
-            setError("Tarkista havaintojen tuuliarvot ja suunnat.");
+            setError(t("developer.observationsInvalid"));
             return false;
         }
         const params = {
             ...Object.fromEntries(
-                FIELDS.map(({ key }) => [
+                fields().map(({ key }) => [
                     key,
                     editedValues[key]?.trim() || undefined,
                 ]),
@@ -369,7 +371,7 @@ export function DeveloperMode(props) {
                 aria-controls="developer-mode"
                 onClick=${open}
             >
-                Kehittäjätila
+                ${t("developer.title")}
             </button>
         </div>
         ${h(
@@ -381,27 +383,18 @@ export function DeveloperMode(props) {
             },
             html`
                 ${scope.style}
-                <h2 id="developer-mode-title">Kehittäjätila</h2>
-                <p>
-                    Testiarvot tallennetaan osoitteen DEV_-parametreihin. Tyhjä
-                    METAR- tai karttakenttä käyttää oikeita tietoja.
-                </p>
-                <p>
-                    Kartan arvot korvaavat vapaapudotuksen keskituulen ja
-                    animaation.
-                </p>
+                <h2 id="developer-mode-title">${t("developer.title")}</h2>
+                <p>${t("developer.description")}</p>
+                <p>${t("developer.mapOverride")}</p>
                 <div class="developer-actions">
                     <button type="button" onClick=${captureCurrentValues}>
-                        Tallenna nykyiset arvot testiarvoiksi
+                        ${t("developer.capture")}
                     </button>
                     <button type="button" onClick=${copyCurrentUrl}>
-                        Kopioi URL
+                        ${t("developer.copyUrl")}
                     </button>
                 </div>
-                <p>
-                    Muokkaukset tulevat voimaan heti ja tallentuvat
-                    osoitteeseen.
-                </p>
+                <p>${t("developer.immediate")}</p>
                 ${
                     status &&
                     html`
@@ -412,7 +405,7 @@ export function DeveloperMode(props) {
                     copyUrl &&
                     html`
                         <label>
-                            Jaettava osoite
+                            ${t("developer.shareUrl")}
                             <input
                                 type="text"
                                 readonly
@@ -426,7 +419,7 @@ export function DeveloperMode(props) {
                     onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
                 >
                     <div class="developer-fields">
-                        ${FIELDS.map(({ key, label, max, checkbox }) => {
+                        ${fields().map(({ key, label, max, checkbox }) => {
                             /** @param {Event & { currentTarget: HTMLInputElement | HTMLTextAreaElement }} event */
                             const onInput = (event) => {
                                 const editedValues = {
@@ -487,20 +480,21 @@ export function DeveloperMode(props) {
                             `;
                         })}
                     </div>
-                    <h3>Maanpinnan havainnot viimeiseltä tunnilta</h3>
-                    <p>
-                        Uusin rivi on nykyinen maanpinnan tuuli. Taulukon
-                        muokkaus korvaa viimeisen tunnin havainnot. Tyhjä
-                        tuuliarvo tarkoittaa puuttuvaa havaintoa. Suunta −1
-                        tarkoittaa vaihtelevaa tuulta.
-                    </p>
+                    <h3>${t("developer.groundTitle")}</h3>
+                    <p>${t("developer.groundHelp")}</p>
                     <table class="developer-observations">
                         <thead>
                             <tr>
-                                <th scope="col">Min sitten</th>
-                                <th scope="col">Puuska (m/s)</th>
-                                <th scope="col">Keski (m/s)</th>
-                                <th scope="col">Suunta (°)</th>
+                                <th scope="col">
+                                    ${t("developer.minutesAgo")}
+                                </th>
+                                <th scope="col">${t("weather.gustUnit")}</th>
+                                <th scope="col">
+                                    ${t("developer.meanWindUnit")}
+                                </th>
+                                <th scope="col">
+                                    ${t("developer.directionUnit")}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -515,9 +509,12 @@ export function DeveloperMode(props) {
                                                 "direction",
                                             ]).map((key) => {
                                                 const label = {
-                                                    gust: "Puuska",
-                                                    speed: "Keskituuli",
-                                                    direction: "Suunta",
+                                                    gust: t("weather.gust"),
+                                                    speed: t(
+                                                        "developer.meanWind",
+                                                    ),
+                                                    direction:
+                                                        t("weather.direction"),
                                                 }[key];
                                                 return html`
                                                     <td>
@@ -557,7 +554,7 @@ export function DeveloperMode(props) {
                                 dialogRef.current?.close();
                             }}
                         >
-                            Tyhjennä testiarvot
+                            ${t("developer.clear")}
                         </button>
                     </div>
                 </form>

@@ -1,6 +1,14 @@
 type Signal<T> = import("@preact/signals").Signal<T>;
 type ReadonlySignal<T> = import("@preact/signals").ReadonlySignal<T>;
 
+type TranslationCatalog<T> = {
+    [K in keyof T]: T[K] extends (...args: infer A) => string
+        ? (...args: A) => string
+        : string;
+};
+
+type TranslationArgs<T> = T extends (...args: infer A) => string ? A : [];
+
 interface WindRange {
     min: number;
     max: number;
@@ -514,7 +522,7 @@ interface CSSScope {
 interface LandingDropzone {
     name: string;
     href: string;
-    description: string;
+    description: string | (() => string);
 }
 
 interface IconProps {

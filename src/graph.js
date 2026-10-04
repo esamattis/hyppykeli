@@ -17,6 +17,7 @@ import {
     FORECAST_SOURCE,
 } from "./data.js";
 import { formatClock, formatDate, humanDayText } from "./utils.js";
+import { t } from "./translations.js";
 
 /**
  * @returns {import("chart.js").ChartConfiguration}
@@ -66,13 +67,13 @@ function updateCharts(obs, fore) {
      */
     const createWarningLines = (data) => [
         {
-            label: "B+ Kelpparit",
+            label: t("weather.licensed"),
             data: data.map(() => 11),
             borderColor: theme.danger,
             pointRadius: 0,
         },
         {
-            label: "Oppilaat",
+            label: t("weather.students"),
             data: data.map(() => 8),
             borderColor: theme.warning,
             pointRadius: 0,
@@ -87,13 +88,13 @@ function updateCharts(obs, fore) {
         obs.data.datasets = [
             {
                 ...shared,
-                label: "Puuska (m/s)",
+                label: t("weather.gustUnit"),
                 data: OBSERVATIONS.value.map((obs) => obs.gust ?? 0).reverse(),
                 borderColor: theme.primary,
             },
             {
                 ...shared,
-                label: "Tuuli (m/s)",
+                label: t("weather.windUnit"),
                 data: OBSERVATIONS.value.map((obs) => obs.speed ?? 0).reverse(),
                 borderColor: theme.sky,
             },
@@ -111,7 +112,7 @@ function updateCharts(obs, fore) {
         fore.data.datasets = [
             {
                 ...shared,
-                label: "Puuskaennuste (m/s)",
+                label: t("weather.gustForecastUnit"),
                 data: FORECASTS.value.map((obs) => obs.gust ?? 0),
                 borderColor: theme.primary,
                 cubicInterpolationMode: "monotone",
@@ -120,7 +121,7 @@ function updateCharts(obs, fore) {
             },
             {
                 ...shared,
-                label: "Tuuli (m/s)",
+                label: t("weather.windUnit"),
                 data: FORECASTS.value.map((obs) => obs.speed ?? 0),
                 borderColor: theme.sky,
                 cubicInterpolationMode: "monotone",
@@ -215,13 +216,13 @@ export function Graph(props) {
                           ${scope.style}
                           <div class="chart-heading">
                               <h2>
-                                  Havainnot
+                                  ${t("weather.observations")}
                                   <span class="date">
                                       ${formatDate(new Date())}
                                   </span>
                               </h2>
                               <small class="source-note">
-                                  Lähde: ${OBSERVATION_SOURCE}
+                                  ${t("common.source")}: ${OBSERVATION_SOURCE}
                               </small>
                               ${props.observationsTable}
                           </div>
@@ -240,13 +241,15 @@ export function Graph(props) {
             ${scope.style}
             <div class="chart-heading">
                 <h2>
-                    Ennusteet
+                    ${t("weather.forecasts")}
                     <span class="date">
                         ${formatDate(FORECAST_DATE.value)} ${" "}
                         ${humanDayText(FORECAST_DATE.value)}
                     </span>
                 </h2>
-                <small class="source-note">Lähde: ${FORECAST_SOURCE}</small>
+                <small class="source-note">
+                    ${t("common.source")}: ${FORECAST_SOURCE}
+                </small>
                 ${props.forecastsTable}
             </div>
 

@@ -8,6 +8,7 @@ import { ToolbarButton } from "./ToolbarButton.js";
 import { Dialog } from "./components.js";
 import { Icon } from "./icons.js";
 import { css, useScope } from "./useScope.js";
+import { t } from "./translations.js";
 
 /** @param {JumpRunControlsProps} props */
 export function JumpRunControls({
@@ -114,13 +115,13 @@ export function JumpRunControls({
         <div class="jump-run-controls">
             ${scope.style}
             ${h(ToolbarButton, {
-                label: "Hyppylinjan asetukset",
+                label: t("settings.jumpRun"),
                 icon: "settings",
                 hasPopup: "dialog",
                 onClick: open,
             })}
             ${h(ToolbarButton, {
-                label: "Lisää hyppääjä",
+                label: t("settings.addJumper"),
                 icon: "plus",
                 onClick: onAdd,
             })}
@@ -130,12 +131,12 @@ export function JumpRunControls({
             { dialogRef, labelledBy: titleId },
             html`
                 ${scope.style}
-                <h2 id=${titleId}>Hyppylinjan asetukset</h2>
+                <h2 id=${titleId}>${t("settings.jumpRun")}</h2>
                 <form
                     onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
                 >
                     <label>
-                        Uloshyppykorkeus (m)
+                        ${t("settings.exitHeight")}
                         <input
                             type="number"
                             required
@@ -147,7 +148,7 @@ export function JumpRunControls({
                         />
                     </label>
                     <label>
-                        Hyppylinjan nopeus (km/h)
+                        ${t("settings.jumpRunSpeed")}
                         <input
                             type="number"
                             required
@@ -159,7 +160,7 @@ export function JumpRunControls({
                         />
                     </label>
                     <label>
-                        Hyppääjien väli (s)
+                        ${t("settings.jumperInterval")}
                         <input
                             type="number"
                             required
@@ -170,16 +171,13 @@ export function JumpRunControls({
                             onInput=${/** @param {Event} event */ (event) => updateSettings("separationSeconds", event)}
                         />
                     </label>
+                    <p>${t("settings.speedExplanation")}</p>
                     <p>
-                        Nopeus on maanopeus. Hyppääjien välimatka lasketaan
-                        nopeudesta ja uloshyppyjen välisestä ajasta.
-                    </p>
-                    <p>
-                        Uloshyppykorkeus on yhteinen kaikille hyppääjille.
-                        Tuuliprofiili kattaa 800–4200 m.
+                        ${t("settings.exitExplanation")}
+                        ${t("settings.profileRange")}
                     </p>
                     <fieldset>
-                        <legend>Lisättävän hyppääjän asetukset</legend>
+                        <legend>${t("settings.nextJumper")}</legend>
                         ${h(FreefallFields, {
                             exitHeight: settings.exitHeight,
                             openingDraft: nextDraft.openingHeight,
@@ -212,14 +210,16 @@ export function JumpRunControls({
                             class="add-jumper"
                             onClick=${addJumper}
                         >
-                            ${h(Icon, { name: "plus", size: 16 })} Lisää
-                            hyppääjä
+                            ${h(Icon, { name: "plus", size: 16 })}
+                            ${t("settings.addJumper")}
                         </button>
                     </fieldset>
                     ${jumperDrafts.map(
                         (jumper, index) => html`
                             <fieldset>
-                                <legend>Hyppääjä ${index + 1}</legend>
+                                <legend>
+                                    ${t("settings.jumper", index + 1)}
+                                </legend>
                                 ${h(FreefallFields, {
                                     exitHeight: settings.exitHeight,
                                     openingDraft: jumper.openingHeight,
@@ -239,11 +239,11 @@ export function JumpRunControls({
                                 <button
                                     type="button"
                                     class="remove-jumper"
-                                    aria-label=${`Poista hyppääjä ${index + 1}`}
+                                    aria-label=${t("settings.removeJumper", index + 1)}
                                     onClick=${() => removeJumper(index)}
                                 >
                                     ${h(Icon, { name: "trash", size: 16 })}
-                                    Poista
+                                    ${t("common.remove")}
                                 </button>
                             </fieldset>
                         `,
