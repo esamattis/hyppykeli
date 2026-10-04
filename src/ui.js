@@ -52,6 +52,7 @@ import {
     formatDate,
     humanDayText,
     isNullish,
+    hasValidAverageWindData,
     hasValidWindData,
     getHourlyWindRange,
     removeNullish,
@@ -566,7 +567,7 @@ function WindSummary() {
         return null;
     }
 
-    if (!hasValidWindData(obs)) {
+    if (!hasValidAverageWindData(obs)) {
         return html`
             <p>Ei havaintoja :(</p>
         `;
@@ -579,14 +580,12 @@ function WindSummary() {
     /** @param {"gust" | "speed" | "direction"} key */
     function hourlyRange(key) {
         const range = getHourlyWindRange(observations, key, now);
-        if (range && range.min === range.max) {
+        if (!range || range.min === range.max) {
             return null;
         }
         const unit = key === "direction" ? "°" : " m/s";
         return html`
-            <dd class="hourly-range">
-                ${range ? `${range.min}–${range.max}${unit}` : "?"}
-            </dd>
+            <dd class="hourly-range">${range.min}–${range.max}${unit}</dd>
         `;
     }
 
@@ -599,7 +598,7 @@ function WindSummary() {
                     <dd
                         class=${"latest-value latest-gust " + getWarningLevel(obs.gust ?? 0)}
                     >
-                        ${obs.gust?.toFixed(0) ?? "?"}
+                        ${obs.gust?.toFixed(0) ?? "-"}
                         <span class="unit">m/s</span>
                     </dd>
                     ${hourlyRange("gust")}

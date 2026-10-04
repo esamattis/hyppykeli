@@ -3,6 +3,7 @@
 import { computed, effect, signal } from "@preact/signals";
 import {
     isNullish,
+    hasValidAverageWindData,
     hasValidWindData,
     knotsToMs,
     removeNullish,
@@ -212,28 +213,26 @@ export const LATEST_OBSERVATION = computed(() => {
         return OBSERVATIONS.value[0];
     }
 
-    if (!QUERY_PARAMS.value.fmisid && !QUERY_PARAMS.value.roadsid) {
-        const metar = METARS.value?.[0];
-        if (metar) {
-            /** @type {WeatherData} */
-            const metarWeather = {
-                source: "metar",
-                time: metar.time,
-                gust: isNullish(metar.wind.gust)
-                    ? undefined
-                    : knotsToMs(metar.wind.gust),
-                speed: isNullish(metar.wind.speed)
-                    ? undefined
-                    : knotsToMs(metar.wind.speed),
-                direction:
-                    typeof metar.wind.direction === "number"
-                        ? metar.wind.direction
-                        : undefined,
-                temperature: metar.temperature,
-                dewPoint: metar.dewpoint,
-            };
-            if (hasValidWindData(metarWeather)) return metarWeather;
-        }
+    const metar = METARS.value?.[0];
+    if (metar) {
+        /** @type {WeatherData} */
+        const metarWeather = {
+            source: "metar",
+            time: metar.time,
+            gust: isNullish(metar.wind.gust)
+                ? undefined
+                : knotsToMs(metar.wind.gust),
+            speed: isNullish(metar.wind.speed)
+                ? undefined
+                : knotsToMs(metar.wind.speed),
+            direction:
+                typeof metar.wind.direction === "number"
+                    ? metar.wind.direction
+                    : undefined,
+            temperature: metar.temperature,
+            dewPoint: metar.dewpoint,
+        };
+        if (hasValidAverageWindData(metarWeather)) return metarWeather;
     }
 
     const model = OPEN_METEO_CURRENT.value;

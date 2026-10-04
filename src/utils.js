@@ -114,6 +114,25 @@ export function hasValidWindData(obs) {
 }
 
 /**
+ * @param {WeatherData|undefined} obs
+ */
+export function hasValidAverageWindData(obs) {
+    if (!obs) {
+        return false;
+    }
+
+    return (
+        typeof obs.direction === "number" &&
+        Number.isFinite(obs.direction) &&
+        obs.direction >= 0 &&
+        obs.direction <= 360 &&
+        typeof obs.speed === "number" &&
+        Number.isFinite(obs.speed) &&
+        obs.speed >= 0
+    );
+}
+
+/**
  * Minimum and maximum observed during the last hour.
  * @param {WeatherData[]} observations
  * @param {"gust" | "speed" | "direction"} key

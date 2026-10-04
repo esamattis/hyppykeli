@@ -215,6 +215,61 @@ test("METAR supplies the compass when no station source is configured", async ({
     await expect(page.locator("#observations-graph")).toHaveCount(0);
 });
 
+test("METAR average wind supplies the compass when gust is unavailable", async ({
+    page,
+}) => {
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: openMeteoResponse() }),
+    );
+    const params = new URLSearchParams({
+        fmisid: "missing",
+        icaocode: "EFLA",
+        lat: "61.146406",
+        lon: "25.693366",
+        DEV_metar:
+            "METAR EFLA 041150Z AUTO 22005KT 200V260 9999 -RA SCT007/// BKN009/// OVC014/// 12/11 Q1014 RERA=",
+    });
+    await page.goto(`/dz/?${params}`);
+
+    await expect(page.locator("#winds .source-note")).toHaveText(
+        "Lähde: METAR",
+    );
+    const gust = page.locator("#winds .latest-gust");
+    await expect(gust).toHaveText(/^-\s*m\/s$/);
+    await expect(
+        page.locator("#winds .latest-gust + .hourly-range"),
+    ).toHaveCount(0);
+    await expect(page.locator("#winds .latest-wind").first()).toHaveText(
+        /^3\s*m\/s$/,
+    );
+    await expect(
+        page.locator("#compass .compass-observations-gust"),
+    ).toHaveText("- m/s");
+});
+
+for (const stationParam of ["fmisid", "roadsid"]) {
+    test(`METAR supplies the compass when ${stationParam} has no observations`, async ({
+        page,
+    }) => {
+        await page.route("https://api.open-meteo.com/**", (route) =>
+            route.fulfill({ json: openMeteoResponse() }),
+        );
+        const params = new URLSearchParams({
+            name: "METAR fallback DZ",
+            lat: "40.7",
+            lon: "-74",
+            icaocode: "KJFK",
+            [stationParam]: "missing",
+            DEV_metar: "METAR KJFK 041200Z 18010G15KT 9999 FEW020 10/05 Q1014=",
+        });
+        await page.goto(`/dz/?${params}`);
+
+        await expect(page.locator("#winds .source-note")).toHaveText(
+            "Lähde: METAR",
+        );
+    });
+}
+
 test("FMI takes priority over a configured Fintraffic station and supplies coordinates", async ({
     page,
 }) => {

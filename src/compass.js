@@ -8,7 +8,11 @@ import {
     OBSERVATIONS,
     QUERY_PARAMS,
 } from "./data.js";
-import { isNullish, hasValidWindData } from "./utils.js";
+import {
+    isNullish,
+    hasValidAverageWindData,
+    hasValidWindData,
+} from "./utils.js";
 import { Help, FromNow } from "./components.js";
 
 // Constants for needle length calculation
@@ -197,7 +201,7 @@ export function Compass({ floating = false } = {}) {
                     class="compass-observations-gust"
                     style="transform: rotate(-${rotation}deg); "
                 >
-                    ${observation ? observation.gust + " m/s" : ""}
+                    ${observation ? (observation.gust ?? "-") + " m/s" : ""}
                 </text>
                 <text
                     x="200"
@@ -390,7 +394,7 @@ function GustNeedle({ observation: obs, history, animation }) {
         return null;
     }
 
-    if (!hasValidWindData(obs)) {
+    if (!hasValidAverageWindData(obs)) {
         return null;
     }
 
