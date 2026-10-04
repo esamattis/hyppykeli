@@ -2134,15 +2134,15 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
     await expect(dialog.getByRole("rowheader")).toContainText([
         "Tiivistymiskorkeus",
         "Kokonaispilvipeite",
-        "Matalat pilvet",
-        "Keskipilvet",
         "Korkeat pilvet",
+        "Keskipilvet",
+        "Matalat pilvet",
         "Keski- ja alapilvet",
-        "100 m",
-        "800 m",
-        "1500 m",
-        "3000 m",
         "4200 m",
+        "3000 m",
+        "1500 m",
+        "800 m",
+        "100 m",
     ]);
     await expect(dialog.locator(".cloud-forecast-altitude")).toHaveCount(0);
 });

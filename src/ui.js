@@ -389,6 +389,23 @@ function TableDialog(props) {
             width: 100%;
             position: relative;
         }
+        @media (max-width: 600px) {
+            :scope:is(dialog) {
+                max-width: calc(100vw - 12px);
+                padding: 12px;
+            }
+            :scope:is(dialog) > .dialog-controls {
+                margin-top: 0;
+                margin-bottom: 0;
+            }
+            :scope:is(dialog) > .dialog-controls > .dialog-close {
+                right: 0;
+            }
+            .dialog-heading {
+                padding-right: 44px;
+                min-height: 40px;
+            }
+        }
     `);
     /** @type {import("preact").RefObject<HTMLDialogElement>} */
     const ref = useRef(null);
@@ -424,7 +441,7 @@ function TableDialog(props) {
 }
 
 /** @type {OpenMeteoPressureLevel[]} */
-const CLOUD_FORECAST_LEVELS = ["1000", "925", "850", "700", "600"];
+const CLOUD_FORECAST_LEVELS = ["600", "700", "850", "925", "1000"];
 
 /** @param {number} altitude */
 function roundCloudForecastAltitude(altitude) {
@@ -499,9 +516,9 @@ function CloudForecastTable(props) {
                                 ),
                             },
                             {
-                                label: t("cloud.lowCover"),
+                                label: t("cloud.highCover"),
                                 values: props.forecasts.map(
-                                    (forecast) => forecast.lowCloudCover,
+                                    (forecast) => forecast.highCloudCover,
                                 ),
                             },
                             {
@@ -511,9 +528,9 @@ function CloudForecastTable(props) {
                                 ),
                             },
                             {
-                                label: t("cloud.highCover"),
+                                label: t("cloud.lowCover"),
                                 values: props.forecasts.map(
-                                    (forecast) => forecast.highCloudCover,
+                                    (forecast) => forecast.lowCloudCover,
                                 ),
                             },
                             {
