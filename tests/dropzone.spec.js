@@ -77,6 +77,41 @@ test("menu opens and closes with its toggle", async ({ page }) => {
     await expect(menu).not.toBeInViewport();
 });
 
+test("name editor updates and removes the name query parameter", async ({
+    page,
+}) => {
+    const editButton = page.getByRole("button", { name: "Muokkaa nimeä" });
+    await editButton.click();
+
+    const dialog = page.getByRole("dialog", { name: "Muokkaa nimeä" });
+    const input = dialog.getByRole("textbox", { name: "Nimi" });
+    await expect(input).toHaveValue("EFJY");
+    await input.fill("Testikenttä");
+    await dialog.getByRole("button", { name: "Tallenna" }).click();
+
+    await expect(page.locator("#title .title-name")).toHaveText("Testikenttä");
+    expect(new URL(page.url()).searchParams.get("name")).toBe("Testikenttä");
+
+    await editButton.click();
+    await input.fill("");
+    await dialog.getByRole("button", { name: "Tallenna" }).click();
+
+    await expect(page.locator("#title .title-name")).toHaveText("EFJY");
+    expect(new URL(page.url()).searchParams.has("name")).toBe(false);
+});
+
+test("title falls back to FMI location and then coordinates", async ({
+    page,
+}) => {
+    await page.goto("/dz/?fmisid=137208&DEV_mock=1");
+    await expect(page.locator("#title .title-name")).toHaveText("Utti");
+
+    await page.goto("/dz/?lat=40.7&lon=-74");
+    await expect(page.locator("#title .title-name")).toHaveText(
+        "40.7000, -74.0000",
+    );
+});
+
 test("menu closes when clicking outside", async ({ page }) => {
     const toggle = page.getByRole("button", { name: "Valikko", exact: true });
     await toggle.click();
@@ -347,11 +382,12 @@ test("Fintraffic station supplies observations and fallback coordinates", async 
             },
         });
     });
-    await page.goto("/dz/?name=Road+DZ&roadsid=5004");
+    await page.goto("/dz/?roadsid=5004");
 
     await expect(page.locator("#winds .source-note")).toHaveText(
         "Lähde: Fintraffic",
     );
+    await expect(page.locator("#title .title-name")).toHaveText("Tieasema");
     await expect
         .poll(() =>
             page.evaluate(async () => {

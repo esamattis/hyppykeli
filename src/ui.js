@@ -7,7 +7,7 @@ import {
     summaryStyles,
 } from "./styles.js";
 import { effect, signal } from "@preact/signals";
-import { useRef, useState } from "preact/hooks";
+import { useId, useRef, useState } from "preact/hooks";
 import { h, html } from "htm/preact";
 import { clearOMCache, OpenMeteoTool, OpenMeteoRaw } from "./om.js";
 import {
@@ -63,7 +63,8 @@ import {
 import { Help, FromNow, ErrorBoundary, Dialog } from "./components.js";
 
 effect(() => {
-    document.title = NAME.value + " – Hyppykeli";
+    document.title =
+        NAME.value === "Hyppykeli" ? "Hyppykeli" : NAME.value + " – Hyppykeli";
 });
 
 /**
@@ -1870,6 +1871,35 @@ function Title() {
             white-space: nowrap;
         }
 
+        .title-name-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .title-name {
+            min-width: 0;
+        }
+
+        .edit-name {
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            padding: 5px;
+            color: var(--color-primary);
+            background: transparent;
+            border: 0;
+            border-radius: 50%;
+        }
+
+        .edit-name:hover {
+            color: var(--color-primary-hover);
+            background: var(--color-surface-hover);
+        }
+
         .title-temp {
             font-size: 65%;
             color: var(--color-muted);
@@ -1881,6 +1911,57 @@ function Title() {
             display: block;
         }
     `);
+    const dialogScope = useScope(css`
+        :scope:is(dialog) {
+            width: min(420px, calc(100vw - 24px));
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        form label {
+            display: grid;
+            gap: 8px;
+        }
+
+        input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .name-hint {
+            color: var(--color-muted);
+            font-size: 0.85rem;
+        }
+
+        .name-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+    `);
+    /** @type {import('preact').RefObject<HTMLDialogElement>} */
+    const dialogRef = useRef(null);
+    /** @type {import('preact').RefObject<HTMLInputElement>} */
+    const inputRef = useRef(null);
+    const [nameDraft, setNameDraft] = useState("");
+    const dialogTitleId = useId();
+
+    const openNameEditor = () => {
+        setNameDraft(QUERY_PARAMS.value.name?.trim() || NAME.value);
+        dialogRef.current?.showModal();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+    };
+
+    /** @param {SubmitEvent} event */
+    const saveName = (event) => {
+        event.preventDefault();
+        navigateQs({ name: nameDraft.trim() || undefined });
+        dialogRef.current?.close();
+    };
 
     const time = LATEST_OBSERVATION.value?.time;
     const temperature = LATEST_OBSERVATION.value?.temperature;
@@ -1897,7 +1978,19 @@ function Title() {
     return html`
         <h1 id="title">
             ${scope.style}
-            <span class="title-name">${NAME}</span>
+            <span class="title-name-row">
+                <span class="title-name">${NAME}</span>
+                <button
+                    class="edit-name"
+                    type="button"
+                    aria-label="Muokkaa nimeä"
+                    title="Muokkaa nimeä"
+                    aria-haspopup="dialog"
+                    onClick=${openNameEditor}
+                >
+                    ${h(Icon, { name: "pen", size: 20 })}
+                </button>
+            </span>
             ${
                 temps
                     ? html`
@@ -1939,6 +2032,39 @@ function Title() {
                     : null
             }
         </h1>
+        ${h(
+            Dialog,
+            { dialogRef, labelledBy: dialogTitleId },
+            html`
+                ${dialogScope.style}
+                <div>
+                    <h2 id=${dialogTitleId}>Muokkaa nimeä</h2>
+                    <form onSubmit=${saveName}>
+                        <label>
+                            Nimi
+                            <input
+                                ref=${inputRef}
+                                name="name"
+                                type="text"
+                                value=${nameDraft}
+                                onInput=${(/** @type {Event} */ event) =>
+                                    setNameDraft(
+                                        /** @type {HTMLInputElement} */ (
+                                            event.currentTarget
+                                        ).value,
+                                    )}
+                            />
+                        </label>
+                        <p class="name-hint">
+                            Tyhjä nimi palauttaa automaattisen nimen.
+                        </p>
+                        <div class="name-actions">
+                            <button type="submit">Tallenna</button>
+                        </div>
+                    </form>
+                </div>
+            `,
+        )}
     `;
 }
 

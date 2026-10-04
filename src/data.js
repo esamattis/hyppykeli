@@ -124,11 +124,6 @@ export function parseGroundObservations(text) {
 }
 
 /**
- * @type {Signal<string|undefined>}
- */
-export const NAME = signal(QUERY_PARAMS.value.name);
-
-/**
  * @type {Signal<number>}
  */
 export const LOADING = signal(0);
@@ -322,6 +317,43 @@ if (QUERY_PARAMS.value.lat && QUERY_PARAMS.value.lon) {
  * @type {Signal<string|null>}
  */
 export const FORECAST_LOCATION_NAME = signal(null);
+
+/** @type {Signal<string|undefined>} */
+const FMI_FORECAST_NAME = signal(undefined);
+
+/** @param {string|null|undefined} value */
+function nonEmpty(value) {
+    return value?.trim() || undefined;
+}
+
+/** @param {string|null} coordinates */
+function formatCoordinates(coordinates) {
+    if (!coordinates) return undefined;
+    const [latitudeText, longitudeText] = coordinates.split(",");
+    const latitude = Number(latitudeText);
+    const longitude = Number(longitudeText);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return undefined;
+    }
+    return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+}
+
+/**
+ * Display name precedence: explicit name, ICAO code, FMI forecast location,
+ * observation station, forecast coordinates, and finally the app name.
+ */
+export const NAME = computed(
+    () =>
+        nonEmpty(QUERY_PARAMS.value.name) ??
+        nonEmpty(QUERY_PARAMS.value.icaocode) ??
+        nonEmpty(FMI_FORECAST_NAME.value) ??
+        nonEmpty(STATION_NAME.value)?.replace(
+            / \((?:FMI|Digitraffic)\)$/,
+            "",
+        ) ??
+        formatCoordinates(FORECAST_COORDINATES.value) ??
+        "Hyppykeli",
+);
 
 /**
  * @type {Signal<string[]>}
@@ -626,10 +658,9 @@ async function fetchFmiForecasts(coordinates) {
     const locationCollection = forecastXml.querySelector("LocationCollection");
     const locationName = locationCollection?.querySelector("name")?.innerHTML;
     const regionName = locationCollection?.querySelector("region")?.innerHTML;
-    FORECAST_LOCATION_NAME.value = `${locationName}, ${regionName}`;
-    if (!NAME.value) {
-        NAME.value = locationName;
-    }
+    FMI_FORECAST_NAME.value = nonEmpty(locationName);
+    FORECAST_LOCATION_NAME.value =
+        [locationName, regionName].filter(Boolean).join(", ") || null;
 
     /** @type {WeatherData[]} */
     const combinedForecasts = gustForecasts.map((gust, i) => {
@@ -740,11 +771,11 @@ function getObservationStartTime() {
  * @param {string} fmisid
  */
 export async function fetchFmiObservations(fmisid) {
-    const customName = QUERY_PARAMS.value.name;
-
-    NAME.value = customName || QUERY_PARAMS.value.icaocode || undefined;
-    if (NAME.value) {
-        localStorage.setItem("previous_dz", NAME.value);
+    const selectedName =
+        nonEmpty(QUERY_PARAMS.value.name) ??
+        nonEmpty(QUERY_PARAMS.value.icaocode);
+    if (selectedName) {
+        localStorage.setItem("previous_dz", selectedName);
     }
 
     const obsStartTime = getObservationStartTime();
@@ -1116,9 +1147,8 @@ export async function updateWeatherData() {
     STALE_FORECASTS.value = true;
     STATION_COORDINATES.value = null;
     STATION_NAME.value = undefined;
+    FMI_FORECAST_NAME.value = undefined;
     FORECAST_COORDINATES.value = explicitForecastCoordinates();
-    NAME.value =
-        QUERY_PARAMS.value.name ?? QUERY_PARAMS.value.icaocode ?? undefined;
 
     const metarPromise = fetchMetar();
     await fetchObservations();
