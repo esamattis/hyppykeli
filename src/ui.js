@@ -19,7 +19,6 @@ import {
     METARS,
     STATION_NAME,
     ERRORS,
-    HOVERED_OBSERVATION,
     updateWeatherData,
     LOADING,
     addError,
@@ -36,7 +35,6 @@ import {
     saveCurrentDz,
     removeSavedDz,
     SINGLE_FORECAST,
-    applyGroundOverrides,
 } from "./data.js";
 import { DeveloperBanner, DeveloperMode } from "./DeveloperMode.js";
 
@@ -517,16 +515,10 @@ function WindSummary() {
             font-size: 0.65em;
             font-weight: normal;
         }
-        :scope.historic {
-            opacity: 0.5;
-        }
         ${windStatusStyles}
     `);
 
-    const history = !!HOVERED_OBSERVATION.value;
-    const obs = applyGroundOverrides(
-        HOVERED_OBSERVATION.value || LATEST_OBSERVATION.value,
-    );
+    const obs = LATEST_OBSERVATION.value;
 
     if (!obs) {
         return null;
@@ -539,7 +531,7 @@ function WindSummary() {
     }
 
     return html`
-        <div class=${history ? "wind-summary historic" : "wind-summary"}>
+        <div class="wind-summary">
             ${scope.style}
             <dl class="summary-metrics wind-metrics">
                 <div class="latest-wind-cell">
@@ -1560,12 +1552,8 @@ function Title() {
         }
     `);
 
-    const historic = !!HOVERED_OBSERVATION.value;
-    const time =
-        HOVERED_OBSERVATION.value?.time ?? LATEST_OBSERVATION.value?.time;
-    const temperature =
-        HOVERED_OBSERVATION.value?.temperature ??
-        LATEST_OBSERVATION.value?.temperature;
+    const time = LATEST_OBSERVATION.value?.time;
+    const temperature = LATEST_OBSERVATION.value?.temperature;
 
     const temps = isNullish(temperature)
         ? null
@@ -1583,10 +1571,7 @@ function Title() {
             ${
                 temps
                     ? html`
-                          <span
-                              class="title-temp"
-                              style=${{ opacity: historic ? 0.5 : 1 }}
-                          >
+                          <span class="title-temp">
                               <span class="nowrap">
                                   ${temperature?.toFixed(1)}°C maassa,
                               </span>

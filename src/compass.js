@@ -9,7 +9,7 @@ import {
     applyGroundOverrides,
 } from "./data.js";
 import { isNullish, hasValidWindData } from "./utils.js";
-import { FromNow, Help } from "./components.js";
+import { Help } from "./components.js";
 
 // Constants for needle length calculation
 const MIN_NEEDLE_LENGTH = 30;
@@ -124,14 +124,6 @@ export function Compass({ floating = false } = {}) {
             right: 0;
             bottom: 0;
         }
-
-        .compass-time {
-            margin: 0;
-            padding-left: 5px;
-            padding-right: 5px;
-            font-size: 70%;
-            text-align: center;
-        }
     `);
 
     const rc = parseInt(QUERY_PARAMS.value.rc ?? "0", 10);
@@ -192,10 +184,6 @@ export function Compass({ floating = false } = {}) {
                 </text>
 
             </svg>
-
-            ${floating && html`<p class="compass-time">
-                ${h(FromNow, { date: observation?.time })}
-            </p>`}
 
             ${!floating && html`<${Help}>
                 <p>
