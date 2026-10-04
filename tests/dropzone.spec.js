@@ -2136,8 +2136,8 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         "Kokonaispilvipeite",
         "Korkeat pilvet",
         "Keskipilvet",
-        "Matalat pilvet",
         "Keski- ja alapilvet",
+        "Matalat pilvet",
         "4200 m",
         "3000 m",
         "1500 m",
@@ -2145,6 +2145,32 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         "100 m",
     ]);
     await expect(dialog.locator(".cloud-forecast-altitude")).toHaveCount(0);
+
+    for (const [label, explanation] of [
+        ["Tiivistymiskorkeus", "lämpötilasta ja kastepisteestä"],
+        ["Kokonaispilvipeite", "kaikki pilvikerrokset"],
+        ["Korkeat pilvet", "ei sisällä keski- tai alapilviä"],
+        ["Keskipilvet", "pelkkien keskipilvien"],
+        [
+            "Keski- ja alapilvet",
+            "ei ole keski- ja alapilvien erillisten prosenttien summa",
+        ],
+        ["Matalat pilvet", "ei pilven alarajan korkeutta"],
+    ]) {
+        const button = dialog.getByRole("button", {
+            name: `${label}: Ohje`,
+            exact: true,
+        });
+        await button.click();
+        const help = page.locator("dialog:modal").last();
+        await expect(
+            help.getByRole("heading", { name: label, exact: true }),
+        ).toBeVisible();
+        await expect(help).toContainText(explanation);
+        await help.getByRole("button", { name: "Sulje", exact: true }).click();
+        await expect(dialog).toBeVisible();
+        await expect(button).toBeFocused();
+    }
 });
 
 test("wind tables omit cloud cover and condensation level columns", async ({

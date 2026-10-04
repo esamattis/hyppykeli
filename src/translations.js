@@ -139,6 +139,20 @@ export const english = {
     "cloud.middleCover": "Middle cloud cover",
     "cloud.highCover": "High cloud cover",
     "cloud.middleAndLowCover": "Middle and low cloud cover",
+    "cloud.totalCoverHelp":
+        "Covers all altitudes: low, middle and high clouds. FMI's forecast of the fraction of sky covered by clouds across all cloud layers. Overlapping layers mean the individual cover percentages cannot simply be added together.",
+    "cloud.highCoverHelp":
+        "High-cloud bases are typically around 5–9 km above ground or higher. FMI's forecast of the fraction of sky covered by high clouds. This row excludes middle and low clouds and does not show the height of the cloud base.",
+    "cloud.middleCoverHelp":
+        "Middle-cloud bases are typically around 2–6 km above ground. FMI's forecast of the fraction of sky covered by middle clouds only. Low clouds are excluded; their combined cover is shown in the Middle and low cloud cover row.",
+    "cloud.middleAndLowCoverHelp":
+        "Covers low and middle clouds together, with bases generally below about 6 km above ground. FMI's combined forecast of the fraction of sky covered by middle and low clouds. High clouds are excluded. Because layers can overlap, this is not the sum of the separate middle and low percentages.",
+    "cloud.lowCoverHelp":
+        "Low-cloud bases are generally below 2 km above ground. FMI's forecast of the fraction of sky covered by low clouds. This describes cloud cover, not the height of the cloud base; the condensation level is a separate estimate.",
+    "cloud.fmiCoverHelp":
+        "0% means no cloud cover in the indicated layers and 100% means complete cover. The percentage is a weather-model forecast, not a probability of clouds or a direct observation. The altitude ranges describe typical cloud-base categories, not exact limits or a predicted cloud-base height.",
+    "cloud.condensationForecastHelp":
+        "An estimate of the height above ground where rising air would begin to condense, calculated from FMI's forecast temperature and dew point and rounded to the nearest 100 metres. It is not a forecast or observation of every cloud layer's base. Clouds formed elsewhere can have a different base.",
     "cloud.altitudeMeters": (/** @type {string} */ altitude) => `${altitude} m`,
     "cloud.forecastTableHelp":
         "Open-Meteo rows show cloud cover at modeled altitudes above sea level, rounded to the nearest 50 metres.",
@@ -481,6 +495,20 @@ const finnish = {
     "cloud.middleCover": "Keskipilvet",
     "cloud.highCover": "Korkeat pilvet",
     "cloud.middleAndLowCover": "Keski- ja alapilvet",
+    "cloud.totalCoverHelp":
+        "Sisältää kaikki korkeudet: ala-, keski- ja yläpilvet. Ilmatieteen laitoksen ennuste siitä, kuinka suuri osa taivaasta on pilvien peitossa kaikki pilvikerrokset huomioiden. Eri kerrosten pilvet voivat olla päällekkäin, joten kerrosten prosentteja ei voi suoraan laskea yhteen.",
+    "cloud.highCoverHelp":
+        "Yläpilvien alaraja on tyypillisesti noin 5–9 km maanpinnasta tai korkeammalla. Ilmatieteen laitoksen ennuste korkeiden pilvien peittämästä osuudesta taivaalla. Rivi ei sisällä keski- tai alapilviä eikä kerro pilven alarajan korkeutta.",
+    "cloud.middleCoverHelp":
+        "Keskipilvien alaraja on tyypillisesti noin 2–6 km maanpinnasta. Ilmatieteen laitoksen ennuste pelkkien keskipilvien peittämästä osuudesta taivaalla. Alapilvet eivät sisälly tähän lukuun; niiden yhteinen peittävyys näkyy Keski- ja alapilvet -rivillä.",
+    "cloud.middleAndLowCoverHelp":
+        "Sisältää ala- ja keskipilvet yhdessä, joiden alaraja on yleensä alle noin 6 km maanpinnasta. Ilmatieteen laitoksen ennuste keski- ja alapilvien yhdessä peittämästä osuudesta taivaalla. Korkeat pilvet eivät sisälly lukuun. Kerrokset voivat olla päällekkäin, joten luku ei ole keski- ja alapilvien erillisten prosenttien summa.",
+    "cloud.lowCoverHelp":
+        "Alapilvien alaraja on yleensä alle 2 km maanpinnasta. Ilmatieteen laitoksen ennuste matalien pilvien peittämästä osuudesta taivaalla. Luku kuvaa pilvipeittoa, ei pilven alarajan korkeutta; tiivistymiskorkeus on erillinen arvio.",
+    "cloud.fmiCoverHelp":
+        "0 % tarkoittaa, ettei kyseisissä kerroksissa ole pilvipeittoa, ja 100 % tarkoittaa täyttä peittoa. Prosentti on säämallin ennuste, ei pilvien todennäköisyys tai suora havainto. Korkeusvälit kuvaavat pilvilajien tyypillisiä alarajoja, eivät tarkkoja rajoja tai ennustettua pilven alarajaa.",
+    "cloud.condensationForecastHelp":
+        "Arvio korkeudesta maanpinnasta, jolla nousevan ilman vesihöyry alkaa tiivistyä. Lasketaan Ilmatieteen laitoksen ennustamasta lämpötilasta ja kastepisteestä ja pyöristetään lähimpään 100 metriin. Se ei ole kaikkien pilvikerrosten alarajan ennuste tai havainto. Muualla syntyneiden pilvien alaraja voi olla eri korkeudella.",
     "cloud.altitudeMeters": (altitude) => `${altitude} m`,
     "cloud.forecastTableHelp":
         "Open-Meteon rivit näyttävät pilvipeiton mallinnetuilla korkeuksilla merenpinnasta, pyöristettynä lähimpään 50 metriin.",

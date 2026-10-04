@@ -180,7 +180,7 @@ function ForecastRows(props) {
 }
 
 /**
- * Compact cloud-cover reading for the cloud card. Unlike the exact pies in the
+ * Compact cloud-cover reading for the cloud card. Unlike the shaded squares in the
  * full forecast dialog, its weather symbols are deliberately stepped so a run
  * of hours can be scanned quickly.
  *
@@ -231,6 +231,42 @@ function PercentagePie(props) {
     return html`
         <span class="cloud-cover">
             ${scope.style} ${h(PieChart, { percentage: props.percentage })}
+            <span class="text">${props.percentage.toFixed(0)} %</span>
+        </span>
+    `;
+}
+
+/**
+ * @param {Object} props
+ * @param {number} props.percentage
+ */
+function CloudCoverSquare(props) {
+    const scope = useScope(css`
+        :scope {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 3.25rem;
+            height: 3.25rem;
+            font-size: 0.8rem;
+            line-height: 1;
+            font-variant-numeric: tabular-nums;
+            background: var(--cloud-cover-background);
+            color: var(--cloud-cover-text);
+        }
+    `);
+    const percentage = Math.max(0, Math.min(100, props.percentage));
+    const lightness = 96 - percentage * 0.76;
+
+    return html`
+        <span
+            class="cloud-cover cloud-cover-square"
+            style=${{
+                "--cloud-cover-background": `hsl(0 0% ${lightness}%)`,
+                "--cloud-cover-text": lightness < 50 ? "#fff" : "#111",
+            }}
+        >
+            ${scope.style}
             <span class="text">${props.percentage.toFixed(0)} %</span>
         </span>
     `;
@@ -490,6 +526,20 @@ function CloudForecastTable(props) {
                             <th scope="row">
                                 <span class="forecast-source-label">FMI</span>
                                 ${t("weather.condensationLevel")}
+                                ${h(
+                                    Help,
+                                    {
+                                        label: `${t("weather.condensationLevel")}: ${t("common.help")}`,
+                                    },
+                                    html`
+                                        <h3>
+                                            ${t("weather.condensationLevel")}
+                                        </h3>
+                                        <p>
+                                            ${t("cloud.condensationForecastHelp")}
+                                        </p>
+                                    `,
+                                )}
                             </th>
                             ${props.forecasts.map(
                                 (forecast) => html`
@@ -511,45 +561,70 @@ function CloudForecastTable(props) {
                         ${[
                             {
                                 label: t("cloud.totalCover"),
+                                altitude: "0+ km",
+                                help: t("cloud.totalCoverHelp"),
                                 values: props.forecasts.map(
                                     (forecast) => forecast.totalCloudCover,
                                 ),
                             },
                             {
                                 label: t("cloud.highCover"),
+                                altitude: "5–9+ km",
+                                help: t("cloud.highCoverHelp"),
                                 values: props.forecasts.map(
                                     (forecast) => forecast.highCloudCover,
                                 ),
                             },
                             {
                                 label: t("cloud.middleCover"),
+                                altitude: "2–6 km",
+                                help: t("cloud.middleCoverHelp"),
                                 values: props.forecasts.map(
                                     (forecast) => forecast.middleOnlyCloudCover,
                                 ),
                             },
                             {
-                                label: t("cloud.lowCover"),
+                                label: t("cloud.middleAndLowCover"),
+                                altitude: "0–6 km",
+                                help: t("cloud.middleAndLowCoverHelp"),
                                 values: props.forecasts.map(
-                                    (forecast) => forecast.lowCloudCover,
+                                    (forecast) => forecast.middleCloudCover,
                                 ),
                             },
                             {
-                                label: t("cloud.middleAndLowCover"),
+                                label: t("cloud.lowCover"),
+                                altitude: "0–2 km",
+                                help: t("cloud.lowCoverHelp"),
                                 values: props.forecasts.map(
-                                    (forecast) => forecast.middleCloudCover,
+                                    (forecast) => forecast.lowCloudCover,
                                 ),
                             },
                         ].map(
                             (row) => html`
                                 <tr>
-                                    <th scope="row">${row.label}</th>
+                                    <th scope="row">
+                                        ${row.altitude}
+                                        ${h(
+                                            Help,
+                                            {
+                                                label: `${row.label}: ${t("common.help")}`,
+                                            },
+                                            html`
+                                                <h3>${row.label}</h3>
+                                                <p>${row.help}</p>
+                                                <p>
+                                                    ${t("cloud.fmiCoverHelp")}
+                                                </p>
+                                            `,
+                                        )}
+                                    </th>
                                     ${row.values.map(
                                         (percentage) => html`
                                             <td class="forecast-reading">
                                                 ${
                                                     isNullish(percentage)
                                                         ? "—"
-                                                        : h(PercentagePie, {
+                                                        : h(CloudCoverSquare, {
                                                               percentage,
                                                           })
                                                 }
@@ -614,7 +689,7 @@ function CloudForecastTable(props) {
                                                 ${
                                                     isNullish(cover)
                                                         ? "—"
-                                                        : h(PercentagePie, {
+                                                        : h(CloudCoverSquare, {
                                                               percentage: cover,
                                                           })
                                                 }
@@ -1171,7 +1246,6 @@ function CloudSummary() {
             background: var(--color-surface-soft);
             text-align: left;
             padding-left: 12px;
-            border-right: 1px solid var(--color-border);
         }
         .cloud-forecast-table td {
             min-width: 7ch;
@@ -1190,11 +1264,21 @@ function CloudSummary() {
             min-width: 14ch;
             padding-left: 12px;
         }
+        .cloud-forecast-detail-table tr > :not(:first-child) {
+            width: 3.25rem;
+            min-width: 0;
+            padding-inline: 0;
+        }
+        .cloud-forecast-detail-table tbody tr + tr > * {
+            border-top: 0;
+        }
+        .cloud-forecast-detail-table tr:has(.forecast-reading) > th {
+            padding-block: 0;
+        }
         .cloud-forecast-detail-table
             tr.forecast-group-start:not(:first-child)
             > * {
             border-top: 3px solid var(--color-border);
-            padding-top: 16px;
         }
         .forecast-source-label {
             display: block;
@@ -1207,7 +1291,7 @@ function CloudSummary() {
             text-transform: uppercase;
         }
         .cloud-forecast-detail-table .forecast-reading {
-            min-width: 9ch;
+            padding: 0;
         }
         .cloud-forecast-note {
             margin: 12px 0 0;
