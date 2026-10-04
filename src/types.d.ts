@@ -233,6 +233,9 @@ interface WeatherData {
     rain?: number;
     lowCloudCover?: number;
     middleCloudCover?: number;
+    middleOnlyCloudCover?: number;
+    highCloudCover?: number;
+    totalCloudCover?: number;
     time: Date;
 }
 

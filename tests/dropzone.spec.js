@@ -2053,6 +2053,147 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
     await expect(card.locator(".cloud-profile-layer")).toHaveCount(3);
 });
 
+test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
+    page,
+}) => {
+    await page.evaluate(async () => {
+        const { FORECASTS, FORECAST_SOURCE } = await import("/src/data.js");
+        const { OM_DATA } = await import("/src/om.js");
+        const firstHour = new Date();
+        firstHour.setMinutes(0, 0, 0);
+        firstHour.setHours(firstHour.getHours() + 1);
+        const times = Array.from(
+            { length: 3 },
+            (_, index) =>
+                new Date(firstHour.getTime() + index * 60 * 60 * 1000),
+        );
+        FORECASTS.value = times.map((time, index) => ({
+            source: "forecast",
+            time,
+            speed: 5,
+            gust: 8,
+            direction: 180,
+            totalCloudCover: 50 + index * 10,
+            lowCloudCover: 10 + index * 10,
+            middleOnlyCloudCover: 20 + index * 10,
+            highCloudCover: 30 + index * 10,
+            middleCloudCover: 40 + index * 10,
+            temperature: 10,
+            dewPoint: 5,
+        }));
+        FORECAST_SOURCE.value = "FMI";
+
+        const hourlyTimes = times.map((time) =>
+            time.toISOString().slice(0, 16),
+        );
+        const hourly = {
+            time: hourlyTimes,
+            wind_speed_10m: hourlyTimes.map(() => 5),
+            wind_gusts_10m: hourlyTimes.map(() => 8),
+            wind_direction_10m: hourlyTimes.map(() => 180),
+            temperature_2m: hourlyTimes.map(() => 10),
+            dew_point_2m: hourlyTimes.map(() => 5),
+            precipitation_probability: hourlyTimes.map(() => 0),
+            cloud_cover_low: hourlyTimes.map(() => 20),
+            cloud_cover_mid: hourlyTimes.map(() => 30),
+        };
+        for (const [level, height] of Object.entries({
+            1000: 110,
+            925: 800,
+            850: 1500,
+            700: 3024,
+            600: 4200,
+        })) {
+            hourly[`windspeed_${level}hPa`] = hourlyTimes.map(() => 12);
+            hourly[`winddirection_${level}hPa`] = hourlyTimes.map(() => 200);
+            hourly[`cloud_cover_${level}hPa`] = hourlyTimes.map(() => 40);
+            hourly[`geopotential_height_${level}hPa`] = hourlyTimes.map(
+                () => height,
+            );
+        }
+        OM_DATA.value = { utc_offset_seconds: 0, hourly };
+    });
+
+    const forecast = page.locator("#clouds .cloud-forecast");
+    const compactTable = forecast.locator(
+        ":scope > .forecast-scroll .cloud-forecast-table",
+    );
+    await expect(compactTable.locator("tbody tr")).toHaveCount(1);
+    await expect(compactTable).not.toContainText("Tiivistymiskorkeus");
+    await forecast
+        .getByRole("button", {
+            name: "Yksityiskohtainen pilviennuste taulukkona",
+        })
+        .click();
+
+    const dialog = page.getByRole("dialog", {
+        name: "Yksityiskohtainen pilviennuste",
+    });
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator("tbody tr")).toHaveCount(11);
+    await expect(dialog).toContainText("Kokonaispilvipeite");
+    await expect(dialog).toContainText("Matalat pilvet");
+    await expect(dialog).toContainText("Keskipilvet");
+    await expect(dialog).toContainText("Korkeat pilvet");
+    await expect(dialog).toContainText("Keski- ja alapilvet");
+    await expect(dialog).toContainText("Tiivistymiskorkeus");
+    await expect(dialog.locator(".forecast-source-label")).toHaveText([
+        "FMI",
+        "Open-Meteo",
+    ]);
+    await expect(dialog.getByRole("rowheader")).toContainText([
+        "Tiivistymiskorkeus",
+        "Kokonaispilvipeite",
+        "Matalat pilvet",
+        "Keskipilvet",
+        "Korkeat pilvet",
+        "Keski- ja alapilvet",
+        "100 m",
+        "800 m",
+        "1500 m",
+        "3000 m",
+        "4200 m",
+    ]);
+    await expect(dialog.locator(".cloud-forecast-altitude")).toHaveCount(0);
+});
+
+test("wind tables omit cloud cover and condensation level columns", async ({
+    page,
+}) => {
+    await page
+        .getByRole("button", { name: "Ennuste taulukkona", exact: true })
+        .click();
+    const forecastDialog = page.getByRole("dialog", {
+        name: "Ennuste",
+        exact: true,
+    });
+    await expect(forecastDialog.getByRole("columnheader")).toHaveCount(6);
+    await expect(
+        forecastDialog.getByText("Pilvet L", { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+        forecastDialog.getByText("Pilvet ML", { exact: true }),
+    ).toHaveCount(0);
+    await expect(forecastDialog.getByText("TK", { exact: true })).toHaveCount(
+        0,
+    );
+    await forecastDialog
+        .getByRole("button", { name: "Sulje", exact: true })
+        .click();
+
+    await page
+        .getByRole("button", { name: "Havainnot taulukkona", exact: true })
+        .click();
+    const observationsDialog = page.getByRole("dialog", {
+        name: "Havainnot",
+        exact: true,
+    });
+    await expect(observationsDialog.getByRole("columnheader")).toHaveCount(5);
+    await expect(
+        observationsDialog.getByText("TK", { exact: true }),
+    ).toHaveCount(0);
+});
+
 test("missing current Open-Meteo cloud data shows an unavailable message", async ({
     page,
 }) => {

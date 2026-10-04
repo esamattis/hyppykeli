@@ -580,12 +580,16 @@ async function fetchFmiForecasts(coordinates) {
             timestep: 10,
             // parameters: FORECAST_PAREMETERS.join(","),
             // parameters: "WindGust",
-            // LowCloudCover, MiddleCloudCover, HighCloudCover, MiddleAndLowCloudCover
+            // TotalCloudCover, LowCloudCover, MediumCloudCover,
+            // HighCloudCover, MiddleAndLowCloudCover
             parameters: [
                 "HourlyMaximumGust",
                 "WindDirection",
                 "WindSpeedMS",
+                "TotalCloudCover",
                 "LowCloudCover",
+                "MediumCloudCover",
+                "HighCloudCover",
                 "MiddleAndLowCloudCover",
                 "Temperature",
                 "DewPoint",
@@ -651,8 +655,25 @@ async function fetchFmiForecasts(coordinates) {
 
     const middleCloudCoverForecasts = parseTimeSeries(
         forecastXml,
-        // "mts-1-1-MiddleCloudCover",
         "mts-1-1-MiddleAndLowCloudCover",
+        -1,
+    );
+
+    const middleOnlyCloudCoverForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-MediumCloudCover",
+        -1,
+    );
+
+    const highCloudCoverForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-HighCloudCover",
+        -1,
+    );
+
+    const totalCloudCoverForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-TotalCloudCover",
         -1,
     );
 
@@ -673,6 +694,9 @@ async function fetchFmiForecasts(coordinates) {
             time: gust.time,
             lowCloudCover: cloudCoverForecasts[i]?.value,
             middleCloudCover: middleCloudCoverForecasts[i]?.value,
+            middleOnlyCloudCover: middleOnlyCloudCoverForecasts[i]?.value,
+            highCloudCover: highCloudCoverForecasts[i]?.value,
+            totalCloudCover: totalCloudCoverForecasts[i]?.value,
             rain: popForecasts[i]?.value,
             temperature: temperatureForecasts[i]?.value,
             dewPoint: dewPointForecasts[i]?.value,
