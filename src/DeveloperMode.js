@@ -2,12 +2,14 @@
 import { h, html } from "htm/preact";
 import { useRef, useState } from "preact/hooks";
 import { Dialog } from "./components.js";
+import { getMapWindData } from "./DropzoneMap.js";
 import { css, useScope } from "./useScope.js";
 import {
     DEV_ACTIVE,
     QUERY_PARAMS,
     OBSERVATIONS,
     LATEST_OBSERVATION,
+    METARS,
     parseGroundObservations,
     navigateQs,
     parseMetarMessages,
@@ -25,6 +27,27 @@ const FIELDS = [
     { key: "DEV_map_speed", label: "Kartan tuulen nopeus (m/s)" },
     { key: "DEV_map_direction", label: "Kartan tuulen suunta (°)", max: 360 },
 ];
+
+/** @param {DeveloperObservation[]} observations */
+function toObservationInputs(observations) {
+    return observations.map(({ gust, speed, direction, age }) => ({
+        gust: gust !== undefined && gust >= 0 ? gust.toString() : "",
+        speed: speed !== undefined && speed >= 0 ? speed.toString() : "",
+        direction: direction?.toString() ?? "",
+        age,
+    }));
+}
+
+/** @param {DeveloperObservationInput[]} observations */
+function serializeObservations(observations) {
+    return (
+        observations
+            .map(({ gust, speed, direction, age }) =>
+                [gust.trim(), speed.trim(), direction.trim(), age].join(","),
+            )
+            .join(";") || undefined
+    );
+}
 
 function clearOverrides() {
     navigateQs(
@@ -143,6 +166,8 @@ export function DeveloperMode() {
     const dialogRef = useRef(null);
     const [values, setValues] = useState(/** @type {QueryParams} */ ({}));
     const [error, setError] = useState("");
+    const [status, setStatus] = useState("");
+    const [copyUrl, setCopyUrl] = useState("");
     const [observations, setObservations] = useState(
         /** @type {DeveloperObservationInput[]} */ ([]),
     );
@@ -151,6 +176,8 @@ export function DeveloperMode() {
     function open() {
         setValues({ ...QUERY_PARAMS.value });
         setError("");
+        setStatus("");
+        setCopyUrl("");
         const now = Date.now();
         const saved = parseGroundObservations(
             QUERY_PARAMS.value.DEV_ground_obs,
@@ -177,15 +204,7 @@ export function DeveloperMode() {
                 age: index * 10,
             }));
         }
-        setObservations(
-            recent.map(({ gust, speed, direction, age }) => ({
-                gust: gust !== undefined && gust >= 0 ? gust.toString() : "",
-                speed:
-                    speed !== undefined && speed >= 0 ? speed.toString() : "",
-                direction: direction?.toString() ?? "",
-                age,
-            })),
-        );
+        setObservations(toObservationInputs(recent));
         setObservationsEdited(false);
         dialogRef.current?.showModal();
     }
@@ -204,11 +223,69 @@ export function DeveloperMode() {
         );
         setObservationsEdited(true);
         setError("");
+        setStatus("");
+        setCopyUrl("");
+    }
+
+    function captureCurrentValues() {
+        const now = Date.now();
+        let recent = OBSERVATIONS.value
+            .filter((observation) => {
+                const age = now - observation.time.getTime();
+                return age >= 0 && age <= 60 * 60 * 1000;
+            })
+            .map((observation) => ({
+                ...observation,
+                age: Math.round((now - observation.time.getTime()) / 6000) / 10,
+            }));
+        if (!recent.length && LATEST_OBSERVATION.value) {
+            recent = [{ ...LATEST_OBSERVATION.value, age: 0 }];
+        }
+        const inputs = toObservationInputs(recent);
+        const { averageWind } = getMapWindData(now);
+        const captured = {
+            DEV_ground_obs: serializeObservations(inputs),
+            DEV_metar: METARS.value?.[0]?.metar,
+            DEV_map_speed: averageWind.speed?.toString(),
+            DEV_map_direction: averageWind.direction?.toString(),
+            DEV_ground_gust: undefined,
+            DEV_ground_avg: undefined,
+            DEV_ground_direction: undefined,
+        };
+        navigateQs(captured);
+        setValues({ ...QUERY_PARAMS.value });
+        setObservations(inputs);
+        setObservationsEdited(false);
+        setError("");
+        setCopyUrl("");
+        setStatus("Nykyiset arvot tallennettu osoitteeseen.");
+    }
+
+    async function copyCurrentUrl() {
+        if (
+            !dialogRef.current?.querySelector("form")?.reportValidity() ||
+            !applyValues()
+        )
+            return;
+        try {
+            await navigator.clipboard.writeText(location.href);
+            setCopyUrl("");
+            setStatus("Osoite kopioitu.");
+        } catch {
+            setCopyUrl(location.href);
+            setStatus(
+                "Kopiointi ei onnistunut. Kopioi osoite alla olevasta kentästä.",
+            );
+        }
     }
 
     /** @param {SubmitEvent} event */
     function save(event) {
         event.preventDefault();
+        if (applyValues()) dialogRef.current?.close();
+    }
+
+    function applyValues() {
         const metar = values.DEV_metar?.trim();
         if (metar) {
             try {
@@ -220,24 +297,18 @@ export function DeveloperMode() {
                 setError(
                     "METAR-tekstin lukeminen epäonnistui. Tarkista teksti.",
                 );
-                return;
+                return false;
             }
         }
         const groundObservations = observationsEdited
-            ? observations
-                  .map(({ gust, speed, direction, age }) =>
-                      [gust.trim(), speed.trim(), direction.trim(), age].join(
-                          ",",
-                      ),
-                  )
-                  .join(";")
+            ? serializeObservations(observations)
             : values.DEV_ground_obs;
         if (
             groundObservations &&
             !parseGroundObservations(groundObservations)
         ) {
             setError("Tarkista havaintojen tuuliarvot ja suunnat.");
-            return;
+            return false;
         }
         navigateQs({
             ...Object.fromEntries(
@@ -251,7 +322,8 @@ export function DeveloperMode() {
             DEV_ground_avg: undefined,
             DEV_ground_direction: undefined,
         });
-        dialogRef.current?.close();
+        setError("");
+        return true;
     }
 
     return html`
@@ -284,6 +356,35 @@ export function DeveloperMode() {
                     Kartan arvot korvaavat vapaapudotuksen keskituulen ja
                     animaation.
                 </p>
+                <div class="developer-actions">
+                    <button type="button" onClick=${captureCurrentValues}>
+                        Tallenna nykyiset arvot testiarvoiksi
+                    </button>
+                    <button type="button" onClick=${copyCurrentUrl}>
+                        Kopioi URL
+                    </button>
+                </div>
+                <p>Osoitteen kopiointi tallentaa myös dialogin muokkaukset.</p>
+                ${
+                    status &&
+                    html`
+                        <p role="status">${status}</p>
+                    `
+                }
+                ${
+                    copyUrl &&
+                    html`
+                        <label>
+                            Jaettava osoite
+                            <input
+                                type="text"
+                                readonly
+                                value=${copyUrl}
+                                onFocus=${/** @param {FocusEvent & { currentTarget: HTMLInputElement }} event */ (event) => event.currentTarget.select()}
+                            />
+                        </label>
+                    `
+                }
                 <form onSubmit=${save}>
                     <div class="developer-fields">
                         ${FIELDS.map(({ key, label, max, checkbox }) => {
@@ -301,6 +402,8 @@ export function DeveloperMode() {
                                             : event.currentTarget.value,
                                 }));
                                 setError("");
+                                setStatus("");
+                                setCopyUrl("");
                             };
                             if (checkbox) {
                                 return html`

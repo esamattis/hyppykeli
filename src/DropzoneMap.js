@@ -25,6 +25,60 @@ const LEVELS = [
     { level: "1000", height: 110 },
 ];
 
+/** @param {number} [now] */
+export function getMapWindData(now = Date.now()) {
+    const data = OM_DATA.value;
+    const index =
+        data?.hourly.time.findIndex((time) => {
+            const start = forecastTime(time, data.utc_offset_seconds).getTime();
+            return start <= now && now < start + 60 * 60 * 1000;
+        }) ?? -1;
+    const time = index >= 0 ? data?.hourly.time[index] : undefined;
+    const ground = OBSERVATIONS.value
+        .filter(
+            (obs) =>
+                obs.source === "fmi" ||
+                obs.source === "roads" ||
+                obs.source === "mock",
+        )
+        .reduce(
+            (latest, obs) => (!latest || obs.time > latest.time ? obs : latest),
+            /** @type {WeatherData | undefined} */ (undefined),
+        );
+    /** @type {MapWindLevel[]} */
+    const winds = LEVELS.map(({ level, height }) => ({
+        label: `≈ ${height} m`,
+        speed:
+            index >= 0
+                ? (data?.hourly[`windspeed_${level}hPa`][index] ?? null)
+                : null,
+        direction:
+            index >= 0
+                ? (data?.hourly[`winddirection_${level}hPa`][index] ?? null)
+                : null,
+    })).map((wind) => ({
+        ...wind,
+        speed: wind.speed === null ? null : wind.speed / 3.6,
+    }));
+    const averageWind = averageFreeFallWind(
+        winds.filter((_, i) => {
+            const height = LEVELS[i]?.height;
+            return height !== undefined && height >= 800 && height <= 4200;
+        }),
+    );
+    averageWind.speed = getDevNumber("DEV_map_speed") ?? averageWind.speed;
+    averageWind.direction =
+        getDevNumber("DEV_map_direction") ?? averageWind.direction;
+    winds.unshift(averageWind);
+    winds.push({
+        label: "Maanpinta",
+        speed: ground?.speed ?? null,
+        direction: ground?.direction ?? null,
+    });
+
+    return { data, time, winds, averageWind, ground };
+}
+
 /**
  * Open-Meteo returns offset-free timestamps in the response's timezone.
  * @param {string} time
@@ -342,54 +396,7 @@ export function DropzoneMap() {
         };
     }, [coordinates, name]);
 
-    const data = OM_DATA.value;
-    const index =
-        data?.hourly.time.findIndex((time) => {
-            const start = forecastTime(time, data.utc_offset_seconds).getTime();
-            return start <= now && now < start + 60 * 60 * 1000;
-        }) ?? -1;
-    const time = index >= 0 ? data?.hourly.time[index] : undefined;
-    const ground = OBSERVATIONS.value
-        .filter(
-            (obs) =>
-                obs.source === "fmi" ||
-                obs.source === "roads" ||
-                obs.source === "mock",
-        )
-        .reduce(
-            (latest, obs) => (!latest || obs.time > latest.time ? obs : latest),
-            /** @type {WeatherData | undefined} */ (undefined),
-        );
-    /** @type {MapWindLevel[]} */
-    const winds = LEVELS.map(({ level, height }) => ({
-        label: `≈ ${height} m`,
-        speed:
-            index >= 0
-                ? (data?.hourly[`windspeed_${level}hPa`][index] ?? null)
-                : null,
-        direction:
-            index >= 0
-                ? (data?.hourly[`winddirection_${level}hPa`][index] ?? null)
-                : null,
-    })).map((wind) => ({
-        ...wind,
-        speed: wind.speed === null ? null : wind.speed / 3.6,
-    }));
-    const averageWind = averageFreeFallWind(
-        winds.filter((_, i) => {
-            const height = LEVELS[i]?.height;
-            return height !== undefined && height >= 800 && height <= 4200;
-        }),
-    );
-    averageWind.speed = getDevNumber("DEV_map_speed") ?? averageWind.speed;
-    averageWind.direction =
-        getDevNumber("DEV_map_direction") ?? averageWind.direction;
-    winds.unshift(averageWind);
-    winds.push({
-        label: "Maanpinta",
-        speed: ground?.speed ?? null,
-        direction: ground?.direction ?? null,
-    });
+    const { data, time, winds, averageWind, ground } = getMapWindData(now);
 
     return html`
         <section
