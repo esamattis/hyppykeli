@@ -367,6 +367,11 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
         }
 
         .wind-direction {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.2em;
+            font-size: 0.8em;
             color: var(--color-muted);
         }
 
@@ -384,16 +389,6 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
 
         :scope.wind-very-high {
             background-color: var(--color-wind-very-high); /* punainen */
-        }
-
-        .wind-direction {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .wind-direction .direction-degrees {
-            font-size: 0.8em;
         }
     `);
     if (!data)
