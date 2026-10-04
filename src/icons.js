@@ -68,6 +68,10 @@ const artwork = {
     menu: html`
         <path d="M4 6h16M4 12h16M4 18h16" />
     `,
+    location: html`
+        <circle cx="12" cy="12" r="4" />
+        <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+    `,
     lightning: html`
         <path d="m13 2-9 12h7l-1 8 10-13h-7z" fill="currentColor" />
     `,

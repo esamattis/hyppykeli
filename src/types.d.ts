@@ -536,6 +536,7 @@ interface IconProps {
         | "undo"
         | "trash"
         | "menu"
+        | "location"
         | "lightning"
         | "storm"
         | "arrow"
