@@ -95,11 +95,11 @@ export function DeveloperBanner() {
     `;
 }
 
-export function DeveloperMode() {
+/** @param {{ onOpen: () => void }} props */
+export function DeveloperMode(props) {
     const scope = useScope(css`
-        :scope:is(footer) {
-            grid-area: developer-controls;
-            text-align: center;
+        :scope.developer-controls {
+            margin-top: 20px;
         }
         :scope:is(dialog) {
             width: 520px;
@@ -207,6 +207,7 @@ export function DeveloperMode() {
         setObservations(toObservationInputs(recent));
         setObservationsEdited(false);
         dialogRef.current?.showModal();
+        props.onOpen();
     }
 
     /**
@@ -216,15 +217,14 @@ export function DeveloperMode() {
      */
     function editObservation(index, key, event) {
         const value = event.currentTarget.value;
-        setObservations((previous) =>
-            previous.map((row, rowIndex) =>
-                rowIndex === index ? { ...row, [key]: value } : row,
-            ),
+        const edited = observations.map((row, rowIndex) =>
+            rowIndex === index ? { ...row, [key]: value } : row,
         );
+        setObservations(edited);
         setObservationsEdited(true);
-        setError("");
         setStatus("");
         setCopyUrl("");
+        applyValues(values, edited, true);
     }
 
     function captureCurrentValues() {
@@ -279,14 +279,21 @@ export function DeveloperMode() {
         }
     }
 
-    /** @param {SubmitEvent} event */
-    function save(event) {
-        event.preventDefault();
-        if (applyValues()) dialogRef.current?.close();
-    }
-
-    function applyValues() {
-        const metar = values.DEV_metar?.trim();
+    /**
+     * @param {QueryParams} [editedValues]
+     * @param {DeveloperObservationInput[]} [editedObservations]
+     * @param {boolean} [groundEdited]
+     */
+    function applyValues(
+        editedValues = values,
+        editedObservations = observations,
+        groundEdited = observationsEdited,
+    ) {
+        if (!dialogRef.current?.querySelector("form")?.checkValidity()) {
+            setError("Tarkista tuuliarvojen ja suuntien sallitut rajat.");
+            return false;
+        }
+        const metar = editedValues.DEV_metar?.trim();
         if (metar) {
             try {
                 const parsed = parseMetarMessages([metar])[0];
@@ -300,9 +307,9 @@ export function DeveloperMode() {
                 return false;
             }
         }
-        const groundObservations = observationsEdited
-            ? serializeObservations(observations)
-            : values.DEV_ground_obs;
+        const groundObservations = groundEdited
+            ? serializeObservations(editedObservations)
+            : editedValues.DEV_ground_obs;
         if (
             groundObservations &&
             !parseGroundObservations(groundObservations)
@@ -310,24 +317,33 @@ export function DeveloperMode() {
             setError("Tarkista havaintojen tuuliarvot ja suunnat.");
             return false;
         }
-        navigateQs({
+        const params = {
             ...Object.fromEntries(
                 FIELDS.map(({ key }) => [
                     key,
-                    values[key]?.trim() || undefined,
+                    editedValues[key]?.trim() || undefined,
                 ]),
             ),
             DEV_ground_obs: groundObservations,
             DEV_ground_gust: undefined,
             DEV_ground_avg: undefined,
             DEV_ground_direction: undefined,
-        });
+        };
+        if (
+            Object.entries(params).some(
+                ([key, value]) =>
+                    QUERY_PARAMS.value[/** @type {DeveloperKey} */ (key)] !==
+                    value,
+            )
+        ) {
+            navigateQs(params, { replace: true });
+        }
         setError("");
         return true;
     }
 
     return html`
-        <footer class="developer-controls">
+        <div class="developer-controls">
             ${scope.style}
             <button
                 type="button"
@@ -337,7 +353,7 @@ export function DeveloperMode() {
             >
                 Kehittäjätila
             </button>
-        </footer>
+        </div>
         ${h(
             Dialog,
             {
@@ -364,7 +380,10 @@ export function DeveloperMode() {
                         Kopioi URL
                     </button>
                 </div>
-                <p>Osoitteen kopiointi tallentaa myös dialogin muokkaukset.</p>
+                <p>
+                    Muokkaukset tulevat voimaan heti ja tallentuvat
+                    osoitteeseen.
+                </p>
                 ${
                     status &&
                     html`
@@ -385,13 +404,15 @@ export function DeveloperMode() {
                         </label>
                     `
                 }
-                <form onSubmit=${save}>
+                <form
+                    onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
+                >
                     <div class="developer-fields">
                         ${FIELDS.map(({ key, label, max, checkbox }) => {
                             /** @param {Event & { currentTarget: HTMLInputElement | HTMLTextAreaElement }} event */
                             const onInput = (event) => {
-                                setValues((previous) => ({
-                                    ...previous,
+                                const editedValues = {
+                                    ...values,
                                     [key]:
                                         checkbox &&
                                         event.currentTarget instanceof
@@ -400,10 +421,11 @@ export function DeveloperMode() {
                                                 ? "1"
                                                 : undefined
                                             : event.currentTarget.value,
-                                }));
-                                setError("");
+                                };
+                                setValues(editedValues);
                                 setStatus("");
                                 setCopyUrl("");
+                                applyValues(editedValues);
                             };
                             if (checkbox) {
                                 return html`
@@ -510,7 +532,6 @@ export function DeveloperMode() {
                             : null
                     }
                     <div class="developer-actions">
-                        <button type="submit">Käytä testiarvoja</button>
                         <button
                             type="button"
                             onClick=${() => {
@@ -519,12 +540,6 @@ export function DeveloperMode() {
                             }}
                         >
                             Tyhjennä testiarvot
-                        </button>
-                        <button
-                            type="button"
-                            onClick=${() => dialogRef.current?.close()}
-                        >
-                            Peruuta
                         </button>
                     </div>
                 </form>

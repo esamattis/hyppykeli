@@ -1386,6 +1386,11 @@ export function SideMenu() {
             <p>
                 Tietoja palvelusta: Katso <a href="/?no_redirect=1">etusivu</a>.
             </p>
+            ${h(DeveloperMode, {
+                onOpen: () => {
+                    MENU_OPEN.value = false;
+                },
+            })}
         </div>
     `;
 }
@@ -1749,8 +1754,7 @@ export function Root() {
                 "forecasts-graph forecasts-graph"
                 "dropzone-map dropzone-map"
                 "high-winds-details high-winds-details"
-                "high-winds-today high-winds-today"
-                "developer-controls developer-controls";
+                "high-winds-today high-winds-today";
         }
         @media (min-width: 900px) {
             :scope {
@@ -1763,8 +1767,7 @@ export function Root() {
                     "observations-graph forecasts-graph"
                     "dropzone-map dropzone-map"
                     "high-winds-today high-winds-today"
-                    "high-winds-details high-winds-details"
-                    "developer-controls developer-controls";
+                    "high-winds-details high-winds-details";
             }
         }
         :scope
@@ -1984,7 +1987,6 @@ export function Root() {
             ${h(DropzoneMap, {})}
 
             <${HighWinds} />
-            <${DeveloperMode} />
         </div>
         <${SideMenu} />
         <${StickyFooter} />
