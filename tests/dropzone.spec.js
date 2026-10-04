@@ -13,7 +13,7 @@ async function setUniformFreefallWind(page) {
             time: [new Date().toISOString().slice(0, 13) + ":00"],
         };
         for (const level of ["600", "700", "850", "925", "1000"]) {
-            hourly[`windspeed_${level}hPa`] = [36];
+            hourly[`windspeed_${level}hPa`] = [10];
             hourly[`winddirection_${level}hPa`] = [0];
         }
         OM_DATA.value = { utc_offset_seconds: 0, hourly };
@@ -40,7 +40,13 @@ function openMeteoResponse() {
         cloud_cover_low: time.map(() => 20),
         cloud_cover_mid: time.map(() => 30),
     };
+    const hourly_units = {
+        time: "iso8601",
+        wind_speed_10m: "m/s",
+        wind_gusts_10m: "m/s",
+    };
     for (const level of ["600", "700", "850", "925", "1000"]) {
+        hourly_units[`windspeed_${level}hPa`] = "m/s";
         hourly[`windspeed_${level}hPa`] = time.map(() => 12);
         hourly[`winddirection_${level}hPa`] = time.map(() => 200);
         hourly[`cloud_cover_${level}hPa`] = time.map(() => 40);
@@ -51,7 +57,7 @@ function openMeteoResponse() {
                 ],
         );
     }
-    return { utc_offset_seconds: 0, hourly };
+    return { utc_offset_seconds: 0, hourly, hourly_units };
 }
 
 test.beforeEach(async ({ page, baseURL }) => {
@@ -257,6 +263,94 @@ test("coordinate-only dropzone uses Open-Meteo without an observations card or M
         page.locator("#compass .compass-observations-gust"),
     ).toHaveText("9 m/s");
     await expect(page.locator("#errors")).toHaveCount(0);
+});
+
+test("Open-Meteo m/s winds keep their strength in the table and jump-run calculations", async ({
+    page,
+}) => {
+    const response = openMeteoResponse();
+    for (const level of ["600", "700", "850", "925", "1000"]) {
+        response.hourly[`windspeed_${level}hPa`] = response.hourly.time.map(
+            () => 10,
+        );
+        response.hourly[`winddirection_${level}hPa`] = response.hourly.time.map(
+            () => 270,
+        );
+    }
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: response }),
+    );
+    const requestPromise = page.waitForRequest("https://api.open-meteo.com/**");
+    await page.goto("/dz/?name=Wind+DZ&lat=40.7&lon=-74");
+    const request = await requestPromise;
+    expect(new URL(request.url()).searchParams.get("wind_speed_unit")).toBe(
+        "ms",
+    );
+    await expect(
+        page
+            .locator("#dropzone-map")
+            .getByRole("button", { name: /^≈ 4200 m/ }),
+    ).toContainText("10 m/s 270°");
+    await expect(
+        page.locator(".upperwinds-compact .wind-speed").first(),
+    ).toHaveText("10 m/s");
+    const result = await page.evaluate(async () => {
+        const { getMapWindData } = await import("/src/DropzoneMap.js");
+        const { getFreefallDrift, getJumpRunVelocity } =
+            await import("/src/freefall.js");
+        const winds = getMapWindData().freefallWinds;
+        const velocity = getJumpRunVelocity(winds, {
+            exitHeight: 4000,
+            direction: 0,
+            speedKmh: 120,
+            separationSeconds: 5,
+        });
+        return {
+            speeds: winds.map((wind) => wind.speed),
+            windOnly: getFreefallDrift(winds).at(-1),
+            velocity,
+            jump: getFreefallDrift(winds, 4000, 180, 800, velocity.air).at(-1),
+        };
+    });
+    expect(result.speeds).toEqual([10, 10, 10, 10]);
+    // 3200 m / 50 m/s = 64 s of wind drift at 10 m/s.
+    expect(result.windOnly.east).toBeCloseTo(640);
+    expect(result.windOnly.north).toBeCloseTo(0);
+    expect(result.velocity.air.east).toBeCloseTo(-10);
+    expect(result.velocity.ground.north).toBeCloseTo(
+        Math.sqrt((120 / 3.6) ** 2 - 10 ** 2),
+    );
+    // The exit takes time to accelerate downwind, but it must not use 10/3.6 m/s.
+    expect(result.jump.east).toBeGreaterThan(600);
+    expect(result.jump.east).toBeLessThan(640);
+});
+
+test("Open-Meteo refreshes cached winds with incompatible units", async ({
+    page,
+}) => {
+    const cached = openMeteoResponse();
+    for (const level of ["600", "700", "850", "925", "1000"])
+        cached.hourly_units[`windspeed_${level}hPa`] = "km/h";
+    await page.addInitScript((cached) => {
+        localStorage.setItem("ECMWFWindAloft", JSON.stringify(cached));
+        localStorage.setItem("ECMWFWindAloftTime", String(Date.now()));
+        localStorage.setItem("ECMWFWindAloftCoordinates", "40.7,-74");
+    }, cached);
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: openMeteoResponse() }),
+    );
+    const requestPromise = page.waitForRequest("https://api.open-meteo.com/**");
+    await page.goto("/dz/?name=Wind+DZ&lat=40.7&lon=-74");
+    await requestPromise;
+    await expect(
+        page
+            .locator("#dropzone-map")
+            .getByRole("button", { name: /^≈ 4200 m/ }),
+    ).toContainText("12 m/s 200°");
+    const units = await page.evaluate(
+        () => JSON.parse(localStorage.getItem("ECMWFWindAloft")).hourly_units,
+    );
+    expect(units.windspeed_600hPa).toBe("m/s");
 });
 
 test("METAR supplies the compass when no station source is configured", async ({
@@ -957,7 +1051,7 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
             "925",
             "1000",
         ].entries()) {
-            hourly[`windspeed_${level}hPa`] = [(index + 1) * 3.6];
+            hourly[`windspeed_${level}hPa`] = [index + 1];
             hourly[`winddirection_${level}hPa`] = [index * 90];
         }
         OM_DATA.value = { utc_offset_seconds: 0, hourly };
@@ -1061,6 +1155,300 @@ test("freefall drift integrates altitude winds from 4000 to 800 metres", async (
         -(3555 ** 2 - 1200 ** 2) / (200 * (240 / 3.6)),
     );
     expect(result.invalid).toBeNull();
+});
+
+test("jump run converts true airspeed using interpolated exit wind and ground track", async ({
+    page,
+}) => {
+    const result = await page.evaluate(async () => {
+        const { getJumpRunVelocity, getWindAtHeight } =
+            await import("/src/freefall.js");
+        const { jumpRunCoordinates } = await import("/src/DropzoneMap.js");
+        const { latLng } = await import("leaflet");
+        const winds = [4200, 3000, 1500, 800].map((height) => ({
+            height,
+            label: "",
+            speed: 10,
+            direction: 0,
+        }));
+        const settings = {
+            exitHeight: 4000,
+            direction: 0,
+            speedKmh: 120,
+            separationSeconds: 5,
+        };
+        const start = latLng(62.4, 25.6);
+        const cases = [0, 180, 90].map((direction) => {
+            const run = { ...settings, direction };
+            const velocity = getJumpRunVelocity(winds, run);
+            return {
+                ...velocity,
+                distance: start.distanceTo(
+                    latLng(jumpRunCoordinates(start, run, 1, velocity.ground)),
+                ),
+            };
+        });
+        const shear = winds.map((wind, index) => ({
+            ...wind,
+            speed: index === 0 ? 20 : 8,
+        }));
+        const wrap = winds.map((wind, index) => ({
+            ...wind,
+            direction: index === 0 ? 350 : 10,
+        }));
+        const missing = winds.map((wind, index) => ({
+            ...wind,
+            speed: index === 0 ? null : 10,
+        }));
+        return {
+            cases,
+            shear: getJumpRunVelocity(shear, settings),
+            wrap: getWindAtHeight(wrap, 3600),
+            exact: getWindAtHeight(missing, 3000),
+            missing: getJumpRunVelocity(missing, settings),
+            outside: getJumpRunVelocity(winds, {
+                ...settings,
+                exitHeight: 5000,
+            }),
+            crosswindTooStrong: getJumpRunVelocity(winds, {
+                ...settings,
+                direction: 90,
+                speedKmh: 18,
+            }),
+            headwindTooStrong: getJumpRunVelocity(winds, {
+                ...settings,
+                speedKmh: 18,
+            }),
+        };
+    });
+    expect(result.cases[0].distance).toBeCloseTo((120 / 3.6 - 10) * 5);
+    expect(result.cases[1].distance).toBeCloseTo((120 / 3.6 + 10) * 5);
+    expect(result.cases[2].distance).toBeCloseTo(
+        Math.sqrt((120 / 3.6) ** 2 - 100) * 5,
+    );
+    expect(result.cases[2].ground.north).toBeCloseTo(0);
+    expect(result.cases[2].air.north).toBeCloseTo(10);
+    for (const velocity of result.cases)
+        expect(Math.hypot(velocity.air.east, velocity.air.north)).toBeCloseTo(
+            120 / 3.6,
+        );
+    expect(result.shear.ground.north).toBeCloseTo(120 / 3.6 - 18);
+    expect(result.wrap.east).toBeCloseTo(0);
+    expect(result.wrap.north).toBeCloseTo(-10 * Math.cos((10 * Math.PI) / 180));
+    expect(result.exact.north).toBeCloseTo(-10);
+    expect(result.missing).toBeNull();
+    expect(result.outside).toBeNull();
+    expect(result.crosswindTooStrong).toBeNull();
+    expect(result.headwindTooStrong).toBeNull();
+});
+
+test("jump-run forward throw decays with drag without counting exit wind twice", async ({
+    page,
+}) => {
+    const result = await page.evaluate(async () => {
+        const { getJumpRunVelocity, getFreefallDrift } =
+            await import("/src/freefall.js");
+        const winds = [4200, 3000, 1500, 800].map((height) => ({
+            height,
+            label: "",
+            speed: 10,
+            direction: 0,
+        }));
+        const settings = {
+            exitHeight: 4000,
+            direction: 90,
+            speedKmh: 120,
+            separationSeconds: 5,
+        };
+        const velocity = getJumpRunVelocity(winds, settings);
+        const path = getFreefallDrift(winds, 4000, 180, 800, velocity.air);
+        const headwind = getJumpRunVelocity(winds, {
+            ...settings,
+            direction: 0,
+        });
+        const calm = winds.map((wind) => ({ ...wind, speed: 0 }));
+        return {
+            path,
+            air: velocity.air,
+            ground: velocity.ground,
+            headwind: getFreefallDrift(winds, 4000, 180, 800, headwind.air).at(
+                -1,
+            ),
+            calm: getFreefallDrift(calm, 4000, 180, 800, headwind.air).at(-1),
+            windOnly: getFreefallDrift(winds).at(-1),
+            short: getFreefallDrift(
+                winds,
+                4000,
+                180,
+                4000 - 0.5 * 9.80665 * 0.001 ** 2,
+                velocity.air,
+            ).at(-1),
+            invalid: getFreefallDrift(winds, 4000, 180, 800, {
+                east: NaN,
+                north: 0,
+            }),
+        };
+    });
+    // Independently integrate coupled horizontal/vertical motion using Euler
+    // steps, stopping at opening altitude instead of assuming terminal speed.
+    let forwardSpeed = 120 / 3.6;
+    let downSpeed = 0;
+    let distance = 0;
+    let height = 4000;
+    let elapsed = 0;
+    const step = 0.0001;
+    while (height > 800) {
+        const resistance =
+            (9.80665 / 2500) * Math.hypot(forwardSpeed, downSpeed);
+        const seconds = downSpeed
+            ? Math.min(step, (height - 800) / downSpeed)
+            : step;
+        distance += forwardSpeed * seconds;
+        height -= downSpeed * seconds;
+        forwardSpeed -= resistance * forwardSpeed * seconds;
+        downSpeed += (9.80665 - resistance * downSpeed) * seconds;
+        elapsed += seconds;
+    }
+    const end = result.path.at(-1);
+    expect(end.height).toBe(800);
+    expect(end.east).toBeCloseTo((distance * result.air.east) / (120 / 3.6), 1);
+    expect(end.north).toBeCloseTo(
+        -10 * elapsed + (distance * result.air.north) / (120 / 3.6),
+        1,
+    );
+    expect(result.headwind.north).toBeCloseTo(
+        result.calm.north - 10 * elapsed,
+        1,
+    );
+    expect(result.calm.north).toBeGreaterThan(170);
+    expect(result.calm.north).toBeLessThan(230);
+    expect(result.windOnly.north).toBeCloseTo(-640);
+    expect(result.short.east / 0.001).toBeCloseTo(result.ground.east, 1);
+    expect(result.short.north / 0.001).toBeCloseTo(result.ground.north, 1);
+    // The first quarter-second retains most of the initial ground velocity and
+    // falls only about 30 cm, rather than instantly descending at 50 m/s.
+    expect(result.path[1].east).toBeGreaterThan(
+        result.ground.east * 0.25 * 0.97,
+    );
+    expect(result.path[1].north).toBeLessThan(0);
+    expect(result.path[1].north).toBeGreaterThan(-0.1);
+    expect(4000 - result.path[1].height).toBeGreaterThan(0.25);
+    expect(4000 - result.path[1].height).toBeLessThan(0.35);
+    const offsets = result.path.map((point) => point.east);
+    expect(offsets).toEqual([...offsets].sort((a, b) => a - b));
+    const increments = offsets
+        .slice(1)
+        .map((value, index) => value - offsets[index]);
+    expect(increments[0]).toBeGreaterThan(increments.at(-1));
+    expect(result.invalid).toBeNull();
+});
+
+test("jump exit retains forward speed and responds gradually to changing wind", async ({
+    page,
+}) => {
+    const result = await page.evaluate(async () => {
+        const { getFreefallDrift } = await import("/src/freefall.js");
+        const calm = [4200, 3000, 1500, 800].map((height) => ({
+            height,
+            label: "",
+            speed: 0,
+            direction: 0,
+        }));
+        const air = { east: 157 / 3.6, north: 0 };
+        const full = getFreefallDrift(calm, 4000, 180, 800, air);
+        const accelerated = full.at(-1);
+        const shallow = getFreefallDrift(calm, 4000, 180, 3999, air);
+        const shear = calm.map((wind) => ({
+            ...wind,
+            speed: wind.height <= 3000 ? 10 : 0,
+            direction: 0,
+        }));
+        const sheared = getFreefallDrift(shear, 4000, 180, 800, air);
+        const slower = getFreefallDrift(calm, 4000, 180, 800, {
+            east: 120 / 3.6,
+            north: 0,
+        });
+        const faster = getFreefallDrift(calm, 4000, 180, 800, {
+            east: 193 / 3.6,
+            north: 0,
+        });
+        return {
+            accelerated,
+            shallow: shallow.at(-1),
+            sheared: sheared.at(-1),
+            slower: slower.at(-1),
+            faster: faster.at(-1),
+            zeroAir: getFreefallDrift(calm, 4000, 180, 800, {
+                east: 0,
+                north: 0,
+            }).at(-1),
+            windOnlyShear: getFreefallDrift(shear).at(-1),
+        };
+    });
+    // One metre of descent takes about 0.46 s from a level exit. At 157 km/h
+    // most forward speed remains, giving approximately 19 metres of carry.
+    expect(result.shallow.east).toBeGreaterThan(18);
+    expect(result.shallow.east).toBeLessThan(21);
+    expect(result.accelerated.east).toBeGreaterThan(210);
+    expect(result.accelerated.north).toBe(0);
+    expect(result.faster.east).toBeGreaterThan(result.accelerated.east);
+    expect(result.accelerated.east).toBeGreaterThan(result.slower.east);
+    expect(result.sheared.north).toBeLessThan(0);
+    // Unlike instantaneous entrainment, finite drag delays the response to a
+    // strengthening wind. Constant terminal speed remains the standalone model.
+    expect(result.sheared.north).toBeGreaterThan(result.windOnlyShear.north);
+    expect(result.zeroAir).toEqual({ height: 800, east: 0, north: 0 });
+});
+
+test("jump-run positions react to forecast changes and recover from missing or infeasible wind", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+    await page
+        .getByRole("button", { name: "Sijoita hyppylinja automaattisesti" })
+        .click();
+    const jumpers = page.locator(".jump-run-jumper");
+    const arrows = page.locator(".freefall-drift-line");
+    const unavailable = page.locator(".jump-run-unavailable");
+    await expect(jumpers).toHaveCount(14);
+    const second = await jumpers.nth(1).getAttribute("d");
+    const start = new URL(page.url()).searchParams.get("map_run_start");
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("/src/om.js");
+        const data = structuredClone(OM_DATA.value);
+        for (const level of ["600", "700", "850", "925"])
+            data.hourly[`windspeed_${level}hPa`] = [20];
+        OM_DATA.value = data;
+    });
+    await expect(jumpers.nth(1)).not.toHaveAttribute("d", second);
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("/src/om.js");
+        const data = structuredClone(OM_DATA.value);
+        data.hourly.windspeed_600hPa = [null];
+        OM_DATA.value = data;
+    });
+    await expect(unavailable).toBeVisible();
+    await expect(jumpers).toHaveCount(0);
+    await expect(arrows).toHaveCount(0);
+    await setUniformFreefallWind(page);
+    await expect(jumpers).toHaveCount(14);
+    await expect(unavailable).toHaveCount(0);
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    await page
+        .getByRole("dialog")
+        .getByRole("spinbutton", { name: "Todellinen ilmanopeus (km/h)" })
+        .fill("18");
+    await page.keyboard.press("Escape");
+    await expect(unavailable).toBeVisible();
+    await expect(jumpers).toHaveCount(0);
+    await page
+        .getByRole("button", { name: "Sijoita hyppylinja automaattisesti" })
+        .click();
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
 });
 
 test("freefall arrows retain settings, evict the oldest at ten, and clear together", async ({
@@ -1207,7 +1595,7 @@ test.describe("upper wind forecast timezones", () => {
                 const hourly = { time };
                 for (const level of ["600", "700", "850", "925", "1000"]) {
                     hourly[`windspeed_${level}hPa`] = time.map(
-                        (_, index) => (11 + index) * 3.6,
+                        (_, index) => 11 + index,
                     );
                     hourly[`winddirection_${level}hPa`] = time.map(
                         (_, index) => 234 + index,
@@ -1275,7 +1663,7 @@ test("upper wind forecast omits empty time columns and day headings", async ({
         const time = ["2026-07-04T12:00"];
         const hourly = { time };
         for (const level of ["600", "700", "850", "925", "1000"]) {
-            hourly[`windspeed_${level}hPa`] = [10.8];
+            hourly[`windspeed_${level}hPa`] = [3];
             hourly[`winddirection_${level}hPa`] = [225];
         }
         OM_DATA.value = { utc_offset_seconds: 0, hourly };
@@ -1306,7 +1694,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     const summary = page.locator(".toolbar-summary");
     await expect(summary).not.toContainText("Hyppylinja");
     await toggle.click();
-    await expect(summary).toContainText(/Hyppylinja\s*120 km\/h/);
+    await expect(summary).toContainText(/Hyppylinja\s*157 km\/h/);
     const place = async (x = 100, y = 160) => {
         await map.scrollIntoViewIfNeeded();
         if (isMobile) await map.tap({ position: { x, y } });
@@ -1382,10 +1770,10 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     const runPath = await run.getAttribute("d");
     const secondStart = await jumpers.nth(1).getAttribute("d");
     const speed = settings.getByRole("spinbutton", {
-        name: "Hyppylinjan nopeus (km/h)",
+        name: "Todellinen ilmanopeus (km/h)",
     });
     await speed.fill("0");
-    await expect(summary).toContainText(/Hyppylinja\s*120 km\/h/);
+    await expect(summary).toContainText(/Hyppylinja\s*157 km\/h/);
     await expect(run).toHaveAttribute("d", runPath);
     await speed.fill("180");
     await expect(summary).toContainText(/Hyppylinja\s*180 km\/h/);
@@ -1465,14 +1853,28 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(map.locator(".leaflet-tooltip")).toHaveCount(0);
     const distances = await page.evaluate(async () => {
         const { jumpRunCoordinates } = await import("/src/DropzoneMap.js");
+        const { getJumpRunVelocity } = await import("/src/freefall.js");
         const { latLng } = await import("leaflet");
         const start = latLng(62.4, 25.6);
+        const winds = [4200, 3000, 1500, 800].map((height) => ({
+            height,
+            label: "",
+            speed: 0,
+            direction: 0,
+        }));
         return [0, 90, 180, 270].map((direction) => {
+            const settings = {
+                direction,
+                speedKmh: 180,
+                separationSeconds: 10,
+                exitHeight: 4000,
+            };
             const end = latLng(
                 jumpRunCoordinates(
                     start,
-                    { direction, speedKmh: 180, separationSeconds: 10 },
+                    settings,
                     2,
+                    getJumpRunVelocity(winds, settings).ground,
                 ),
             );
             return {
@@ -1599,7 +2001,7 @@ for (const jumperCount of [1, 13, 14]) {
         const result = await page.evaluate(async () => {
             const { getMapWindData, jumpRunCoordinates } =
                 await import("/src/DropzoneMap.js");
-            const { getFreefallDrift, driftCoordinates } =
+            const { getFreefallDrift, driftCoordinates, getJumpRunVelocity } =
                 await import("/src/freefall.js");
             const { latLng } = await import("leaflet");
             const params = new URL(location.href).searchParams;
@@ -1610,18 +2012,23 @@ for (const jumperCount of [1, 13, 14]) {
                 lat: Number(params.get("map_center_lat")),
                 lng: Number(params.get("map_center_lon")),
             };
+            const winds = getMapWindData().freefallWinds;
+            const velocity = getJumpRunVelocity(winds, settings);
             const middleIndex = (jumpers.length - 1) / 2;
             const openings = [
                 Math.floor(middleIndex),
                 Math.ceil(middleIndex),
             ].map((index) => {
-                const exit = latLng(jumpRunCoordinates(start, settings, index));
+                const exit = latLng(
+                    jumpRunCoordinates(start, settings, index, velocity.ground),
+                );
                 const jumper = jumpers[index];
                 const path = getFreefallDrift(
-                    getMapWindData().freefallWinds,
+                    winds,
                     settings.exitHeight,
                     jumper.speedKmh,
                     jumper.openingHeight,
+                    velocity.air,
                 );
                 return latLng(driftCoordinates(exit, path[path.length - 1]));
             });

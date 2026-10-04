@@ -34,6 +34,8 @@ interface OpenMeteoWeatherData {
 
 interface OpenMeteoHourlyUnits {
     time: string;
+    wind_speed_10m: string;
+    wind_gusts_10m: string;
     windspeed_1000hPa: string;
     windspeed_925hPa: string;
     windspeed_850hPa: string;
@@ -58,10 +60,24 @@ interface FreefallWindLevel extends MapWindLevel {
     height: number;
 }
 
-interface FreefallDriftPoint {
-    height: number;
+interface WindVector {
     east: number;
     north: number;
+}
+
+interface JumpRunVelocity {
+    air: WindVector;
+    ground: WindVector;
+}
+
+interface FreefallDriftPoint extends WindVector {
+    height: number;
+}
+
+interface FreefallMotion extends FreefallDriftPoint {
+    eastSpeed: number;
+    northSpeed: number;
+    downSpeed: number;
 }
 
 interface FreefallDriftArrow {

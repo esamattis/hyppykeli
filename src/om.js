@@ -66,6 +66,13 @@ const SURFACE_FIELDS = [
     "cloud_cover_mid",
 ];
 
+// The API, cached forecasts, map calculations and tables all use m/s.
+const WIND_SPEED_FIELDS = [
+    ...PRESSURE_LEVELS_RAW.map(({ key }) => key),
+    "wind_speed_10m",
+    "wind_gusts_10m",
+];
+
 const TIME_SLOTS = [0, 3, 6, 9, 12, 15, 18, 21];
 
 const WIND_SPEED_CLASSES = [
@@ -105,12 +112,19 @@ function isWindForecast(data) {
         !("utc_offset_seconds" in data) ||
         typeof data.utc_offset_seconds !== "number" ||
         !Number.isFinite(data.utc_offset_seconds) ||
+        !("hourly_units" in data) ||
+        !data.hourly_units ||
+        typeof data.hourly_units !== "object" ||
         !("hourly" in data) ||
         !data.hourly ||
         typeof data.hourly !== "object"
     ) {
         return false;
     }
+    const units = /** @type {Record<string, unknown>} */ (data.hourly_units);
+    // Reject old or unexpected units instead of silently changing wind strength.
+    if (!WIND_SPEED_FIELDS.every((field) => units[field] === "m/s"))
+        return false;
     const hourly = /** @type {Record<string, unknown>} */ (data.hourly);
     const times = hourly.time;
     if (
@@ -509,7 +523,7 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
         `;
 
     const { speed, direction } = data;
-    const speedInMS = isNullish(speed) ? null : Math.round(speed / 3.6);
+    const speedInMS = isNullish(speed) ? null : Math.round(speed);
     const roundedDirection = isNullish(direction)
         ? null
         : hourly

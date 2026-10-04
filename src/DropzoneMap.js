@@ -37,7 +37,11 @@ import { Icon, WindArrow } from "./icons.js";
 import { Help } from "./components.js";
 import { DataSource } from "./DataSource.js";
 import { MapWindOverlay } from "./MapWindOverlay.js";
-import { getFreefallDrift, driftCoordinates } from "./freefall.js";
+import {
+    getFreefallDrift,
+    driftCoordinates,
+    getJumpRunVelocity,
+} from "./freefall.js";
 import {
     useMapState,
     isFiniteNumber,
@@ -92,9 +96,6 @@ export function getMapWindData(now = Date.now()) {
             index >= 0
                 ? (data?.hourly[`winddirection_${level}hPa`][index] ?? null)
                 : null,
-    })).map((wind) => ({
-        ...wind,
-        speed: wind.speed === null ? null : wind.speed / 3.6,
     }));
     const freefallWinds = altitudeWinds.slice(0, 4);
     /** @type {MapWindLevel[]} */
@@ -420,7 +421,7 @@ export function DropzoneMap() {
         "map_run_settings",
         /** @type {JumpRunSettings} */ ({
             direction: 0,
-            speedKmh: 120,
+            speedKmh: 157,
             separationSeconds: 5,
             exitHeight: 4000,
         }),
@@ -820,11 +821,20 @@ export function DropzoneMap() {
         speedKmh,
         openingHeight,
     );
-    const jumperStarts = jumpRunStart
-        ? Array.from({ length: jumperCount }, (_, index) =>
-              latLng(jumpRunCoordinates(jumpRunStart, jumpRunSettings, index)),
-          )
-        : [];
+    const jumpRunVelocity = getJumpRunVelocity(freefallWinds, jumpRunSettings);
+    const jumperStarts =
+        jumpRunStart && jumpRunVelocity
+            ? Array.from({ length: jumperCount }, (_, index) =>
+                  latLng(
+                      jumpRunCoordinates(
+                          jumpRunStart,
+                          jumpRunSettings,
+                          index,
+                          jumpRunVelocity.ground,
+                      ),
+                  ),
+              )
+            : [];
     useEffect(() => {
         if (
             !leafletInstance ||
@@ -880,8 +890,17 @@ export function DropzoneMap() {
             leafletInstance.off("moveend zoomend resize", updateLine);
             layers.remove();
         };
-    }, [leafletInstance, jumpRunStart, jumpRunSettings, jumperCount]);
+    }, [
+        leafletInstance,
+        jumpRunStart,
+        jumpRunSettings,
+        jumperCount,
+        data,
+        time,
+        now,
+    ]);
     useEffect(() => {
+        /** @type {Array<FreefallDriftArrow & { exitVelocity?: WindVector }>} */
         const arrows = [
             ...driftArrows,
             ...jumperStarts.map((start, index) => ({
@@ -891,6 +910,7 @@ export function DropzoneMap() {
                     jumpers[index]?.openingHeight ??
                     DEFAULT_JUMPER.openingHeight,
                 speedKmh: jumpers[index]?.speedKmh ?? DEFAULT_JUMPER.speedKmh,
+                exitVelocity: jumpRunVelocity?.air,
             })),
         ];
         if (
@@ -907,6 +927,7 @@ export function DropzoneMap() {
                 settings.exitHeight,
                 settings.speedKmh,
                 settings.openingHeight,
+                settings.exitVelocity,
             );
             if (!path) return [];
             const positions = path.map((offset) =>
@@ -1047,6 +1068,15 @@ export function DropzoneMap() {
                         : null
                 }
                 ${
+                    jumpRunActive && !jumpRunVelocity
+                        ? html`
+                              <p class="jump-run-unavailable" role="status">
+                                  ${t("map.jumpRunUnavailable")}
+                              </p>
+                          `
+                        : null
+                }
+                ${
                     shareError
                         ? html`
                               <p role="status">${shareError}</p>
@@ -1132,6 +1162,11 @@ export function DropzoneMap() {
                                           direction: defaultJumpRunDirection,
                                       };
                                 const winds = getMapWindData(now).freefallWinds;
+                                const velocity = getJumpRunVelocity(
+                                    winds,
+                                    settings,
+                                );
+                                if (!velocity) return;
                                 const openingOffset = middleJumpers.reduce(
                                     (offset, jumper) => {
                                         const path = getFreefallDrift(
@@ -1139,6 +1174,7 @@ export function DropzoneMap() {
                                             settings.exitHeight,
                                             jumper.speedKmh,
                                             jumper.openingHeight,
+                                            velocity.air,
                                         );
                                         const opening = path?.[path.length - 1];
                                         return {
@@ -1168,6 +1204,7 @@ export function DropzoneMap() {
                                             middleExit,
                                             settings,
                                             -middleIndex,
+                                            velocity.ground,
                                         ),
                                     ),
                                 );
@@ -1259,15 +1296,14 @@ export function DropzoneMap() {
  * @param {import('leaflet').LatLngLiteral} start
  * @param {JumpRunSettings} settings
  * @param {number} index
+ * @param {WindVector} groundVelocity Ground velocity in m/s.
  * @returns {[number, number]}
  */
-export function jumpRunCoordinates(start, settings, index) {
-    const distance =
-        (settings.speedKmh / 3.6) * settings.separationSeconds * index;
-    const radians = (settings.direction * Math.PI) / 180;
+export function jumpRunCoordinates(start, settings, index, groundVelocity) {
+    const seconds = settings.separationSeconds * index;
     return driftCoordinates(start, {
         height: 0,
-        east: Math.sin(radians) * distance,
-        north: Math.cos(radians) * distance,
+        east: groundVelocity.east * seconds,
+        north: groundVelocity.north * seconds,
     });
 }

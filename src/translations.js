@@ -209,7 +209,7 @@ export const english = {
     "map.freefallHelp":
         "Tap or click the map to add a drift arrow. Focusing the map with Tab adds an arrow at its centre; Enter adds another after moving the map. The line estimates drift using the selected values. Each arrow keeps its original values. The map holds up to 10 arrows. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
     "map.jumpRunHelp":
-        "The Jump run button changes the map mode. The first click or tap positions the first jumper, and the second locks the direction. Add jumpers with the plus button. Settings control jump-run direction, ground speed, jumper interval, and shared exit altitude.",
+        "The Jump run button changes the map mode. The first click or tap positions the first jumper, and the second locks the direction. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude.",
     "map.legendHelp":
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
@@ -221,6 +221,8 @@ export const english = {
     "map.shareFailed": "Sharing the map failed.",
     "map.driftUnavailable":
         "Drift estimate unavailable: upper-wind data is missing.",
+    "map.jumpRunUnavailable":
+        "Jump-run positions unavailable: exit-altitude wind is missing or the selected track cannot be flown at this airspeed.",
     "map.directionHint":
         "Click or tap to lock the direction; drag on a touch screen.",
     "toolbar.freefallValues": "Freefall values",
@@ -240,7 +242,7 @@ export const english = {
     "settings.exitHeight": "Exit altitude (m)",
     "settings.openingHeight": "Opening altitude (m)",
     "settings.freefallSpeed": "Freefall speed (km/h)",
-    "settings.jumpRunSpeed": "Ground speed (km/h)",
+    "settings.jumpRunSpeed": "True airspeed (km/h)",
     "settings.jumperInterval": "Jumper interval (s)",
     "settings.nextJumper": "Settings for the next jumper",
     "settings.positionJumpRun": "Position jump run automatically",
@@ -249,7 +251,7 @@ export const english = {
     "settings.removeJumper": (/** @type {number} */ number) =>
         `Remove jumper ${number}`,
     "settings.speedExplanation":
-        "The speed is ground speed. Jumper separation is calculated from the speed and the interval between exits.",
+        "Enter true airspeed (TAS), not indicated airspeed (IAS). The direction is the track over the ground. Wind interpolated at exit altitude corrects ground speed for headwind, tailwind and crosswind; ground speed and the exit interval determine jumper spacing. Jump-run drift arrows also include forward throw, estimated from zero vertical speed using gravity and quadratic drag. The selected freefall speed is the terminal vertical speed in this estimate; wind changes act gradually on the jumper. Standalone drift arrows show wind drift only.",
     "settings.exitExplanation": "The exit altitude is shared by all jumpers.",
     "settings.exitSharedHelp":
         "The exit altitude is shared by all jumpers. Change it in the jump-run settings.",
@@ -555,7 +557,7 @@ const finnish = {
     "map.freefallHelp":
         "Napauta tai klikkaa karttaa lisätäksesi uuden ajautumisnuolen. Sarkaimella kartalle siirtyminen lisää nuolen kartan keskikohtaan; Enter lisää uuden nuolen kartan liikuttamisen jälkeen. Ajautumisviiva arvioi vapaapudotuksen valituilla arvoilla. Jokainen nuoli säilyttää lisäyshetken arvot. Kartalla voi olla enintään 10 nuolta. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
     "map.jumpRunHelp":
-        "Hyppylinja-painike vaihtaa kartan hyppylinjatilaan. Ensimmäinen klikkaus tai napautus asettaa ensimmäisen hyppääjän paikan ja toinen lukitsee suunnan. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, maanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta.",
+        "Hyppylinja-painike vaihtaa kartan hyppylinjatilaan. Ensimmäinen klikkaus tai napautus asettaa ensimmäisen hyppääjän paikan ja toinen lukitsee suunnan. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta.",
     "map.legendHelp":
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
@@ -567,6 +569,8 @@ const finnish = {
     "map.shareFailed": "Kartan jakaminen epäonnistui.",
     "map.driftUnavailable":
         "Ajautumisarvio ei saatavilla: ylätuulitietoja puuttuu.",
+    "map.jumpRunUnavailable":
+        "Hyppylinjan paikat eivät ole saatavilla: uloshyppykorkeuden tuulitieto puuttuu tai valittua lentorataa ei voi lentää tällä ilmanopeudella.",
     "map.directionHint":
         "Klikkaa tai napauta lukitaksesi suunta; vedä kosketusnäytöllä.",
     "toolbar.freefallValues": "Vapaapudotuksen arvot",
@@ -586,7 +590,7 @@ const finnish = {
     "settings.exitHeight": "Uloshyppykorkeus (m)",
     "settings.openingHeight": "Avauskorkeus (m)",
     "settings.freefallSpeed": "Vapaapudotusnopeus (km/h)",
-    "settings.jumpRunSpeed": "Hyppylinjan nopeus (km/h)",
+    "settings.jumpRunSpeed": "Todellinen ilmanopeus (km/h)",
     "settings.jumperInterval": "Hyppääjien väli (s)",
     "settings.nextJumper": "Lisättävän hyppääjän asetukset",
     "settings.positionJumpRun": "Sijoita hyppylinja automaattisesti",
@@ -594,7 +598,7 @@ const finnish = {
     "settings.jumper": (number) => `Hyppääjä ${number}`,
     "settings.removeJumper": (number) => `Poista hyppääjä ${number}`,
     "settings.speedExplanation":
-        "Nopeus on maanopeus. Hyppääjien välimatka lasketaan nopeudesta ja uloshyppyjen välisestä ajasta.",
+        "Syötä todellinen ilmanopeus (TAS), ei mittarinopeutta (IAS). Suunta on lentoradan suunta maan suhteen. Uloshyppykorkeudelle interpoloitu tuuli korjaa maanopeutta vasta-, myötä- ja sivutuulen mukaan. Hyppääjien välimatka lasketaan maanopeudesta ja uloshyppyjen välisestä ajasta. Hyppylinjan ajautumisnuolet huomioivat myös lentokoneelta perityn etenemisnopeuden, joka hidastuu neliöllisen ilmanvastuksen arvion mukaan. Pystynopeus alkaa nollasta ja kasvaa painovoiman vaikutuksesta. Valittu vapaapudotusnopeus on arvion pystysuuntainen rajanopeus, ja tuulen muutokset vaikuttavat hyppääjään vähitellen. Erilliset ajautumisnuolet näyttävät vain tuuliajautumisen.",
     "settings.exitExplanation":
         "Uloshyppykorkeus on yhteinen kaikille hyppääjille.",
     "settings.exitSharedHelp":
