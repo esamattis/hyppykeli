@@ -2036,6 +2036,8 @@ function Title() {
         :scope {
             grid-area: title;
             margin: 0;
+            padding-left: 8px;
+            box-sizing: border-box;
             max-width: 100%;
             width: 100%;
             word-break: break-word;
