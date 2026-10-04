@@ -23,6 +23,7 @@ import {
     FORECAST_COORDINATES,
     OBSERVATIONS,
     STATION_NAME,
+    STATION_COORDINATES,
     NAME,
     QUERY_PARAMS,
     getDevNumber,
@@ -210,6 +211,14 @@ function WindLevel({ wind, selected, onSelect }) {
 }
 
 export function DropzoneMap() {
+    const stationScope = useScope(css`
+        .weather-station-callout {
+            background: var(--color-surface);
+            color: var(--color-text);
+            border-color: var(--color-border);
+            font: inherit;
+        }
+    `);
     const scope = useScope(css`
         :scope {
             grid-area: dropzone-map;
@@ -490,6 +499,13 @@ export function DropzoneMap() {
         setCenterLon(value.lng);
     };
     const coordinates = FORECAST_COORDINATES.value;
+    const stationCoordinates = STATION_COORDINATES.value;
+    const stationName = STATION_NAME.value;
+    const { lat: landingLat, lon: landingLon } = QUERY_PARAMS.value;
+    const hasLandingCoordinates =
+        !!landingLat?.trim() &&
+        !!landingLon?.trim() &&
+        isValidPosition({ lat: Number(landingLat), lng: Number(landingLon) });
     const name = NAME.value ?? "DZ";
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -656,6 +672,52 @@ export function DropzoneMap() {
             leafletMap.remove();
         };
     }, [coordinates]);
+
+    useEffect(() => {
+        if (
+            !leafletInstance ||
+            activeLeafletRef.current !== leafletInstance ||
+            !hasLandingCoordinates ||
+            !stationCoordinates ||
+            !stationName
+        )
+            return;
+        const [lat, lng] = stationCoordinates.split(",").map(Number);
+        if (
+            lat === undefined ||
+            lng === undefined ||
+            !isValidPosition({ lat, lng })
+        )
+            return;
+        const theme = getTheme();
+        const label = document.createElement("span");
+        label.textContent = stationName.replace(
+            /\(Digitraffic\)$/,
+            "(Fintraffic)",
+        );
+        const station = circleMarker([lat, lng], {
+            radius: 4,
+            color: theme.primary,
+            fillColor: theme.surface,
+            fillOpacity: 1,
+            weight: 2,
+        })
+            .bindTooltip(label, {
+                permanent: true,
+                direction: "top",
+                offset: point(0, -6),
+                className: "weather-station-callout",
+            })
+            .addTo(leafletInstance);
+        return () => {
+            station.remove();
+        };
+    }, [
+        leafletInstance,
+        hasLandingCoordinates,
+        stationCoordinates,
+        stationName,
+    ]);
 
     useEffect(() => {
         if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
@@ -1243,6 +1305,7 @@ export function DropzoneMap() {
                             role="region"
                             aria-label=${t("map.onMap", name)}
                         >
+                            ${stationScope.style}
                             ${!coordinates ? t("common.waitingCoordinates") : null}
                         </div>
                         ${

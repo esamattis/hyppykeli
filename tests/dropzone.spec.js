@@ -358,6 +358,42 @@ test("FMI takes priority over a configured Fintraffic station and supplies coord
     expect(roadRequests).toBe(0);
 });
 
+test("FMI map callout requires separate landing zone coordinates", async ({
+    page,
+}) => {
+    await page.goto("/dz/?fmisid=137208&lat=62.4&lon=25.6&DEV_mock=1");
+    const callout = page.locator("#dropzone-map .weather-station-callout");
+    await expect(callout).toContainText("(FMI)");
+    const locations = await page.evaluate(async () => {
+        const { FORECAST_COORDINATES, STATION_COORDINATES } =
+            await import("/src/data.js");
+        return {
+            landing: FORECAST_COORDINATES.value,
+            station: STATION_COORDINATES.value,
+        };
+    });
+    expect(locations.landing).toBe("62.4,25.6");
+    expect(locations.station).not.toBe(locations.landing);
+
+    await page.goto("/dz/?fmisid=137208&DEV_mock=1");
+    await expect
+        .poll(() =>
+            page.evaluate(async () => {
+                const { FORECAST_COORDINATES, STATION_COORDINATES } =
+                    await import("/src/data.js");
+                return (
+                    FORECAST_COORDINATES.value !== null &&
+                    FORECAST_COORDINATES.value === STATION_COORDINATES.value
+                );
+            }),
+        )
+        .toBe(true);
+    await expect(page.locator("#dropzone-map .leaflet-container")).toHaveCount(
+        1,
+    );
+    await expect(callout).toHaveCount(0);
+});
+
 test("Fintraffic station supplies observations and fallback coordinates", async ({
     page,
 }) => {
@@ -424,6 +460,20 @@ test("Fintraffic station supplies observations and fallback coordinates", async 
             }),
         )
         .toBe("60.2,24.9");
+    const callout = page.locator("#dropzone-map .weather-station-callout");
+    await expect(callout).toHaveCount(0);
+
+    await page.goto("/dz/?roadsid=5004&lat=60.21&lon=24.91");
+    await expect(callout).toHaveText("Tieasema (Fintraffic)");
+    const locations = await page.evaluate(async () => {
+        const { FORECAST_COORDINATES, STATION_COORDINATES } =
+            await import("/src/data.js");
+        return {
+            landing: FORECAST_COORDINATES.value,
+            station: STATION_COORDINATES.value,
+        };
+    });
+    expect(locations).toEqual({ landing: "60.21,24.91", station: "60.2,24.9" });
 });
 
 test("METAR cloud layers show coverage, heights and conversion help", async ({
