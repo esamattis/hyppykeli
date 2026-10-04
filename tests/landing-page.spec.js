@@ -108,3 +108,23 @@ test("creating a DZ omits empty query parameters", async ({ page }) => {
         lon: "24.25",
     });
 });
+
+test("creating a DZ includes the default jump run direction", async ({
+    page,
+}) => {
+    await page.goto("/?no_redirect");
+
+    await page.getByLabel("Leveysaste").fill("61.5");
+    await page.getByLabel("Pituusaste").fill("24.25");
+    await page.getByLabel("Hyppylinjan oletussuunta").fill("180");
+    await page.getByLabel("Hyppääjien oletusmäärä").fill("12");
+    await page.getByRole("button", { name: "Luo", exact: true }).click();
+    await page.waitForURL(/\/dz\//);
+
+    expect(
+        new URL(page.url()).searchParams.get("default_jump_run_direction"),
+    ).toBe("180");
+    expect(new URL(page.url()).searchParams.get("default_jumper_count")).toBe(
+        "12",
+    );
+});

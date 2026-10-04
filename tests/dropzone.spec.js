@@ -155,7 +155,10 @@ test("redesigned menu lists dropzones and removes obsolete tools", async ({
     await expect(menu.locator(".dz-grid a")).toHaveCount(15);
     await expect(
         menu.getByRole("link", { name: "EFUT", exact: true }),
-    ).toHaveAttribute("href", "/dz/?fmisid=101191&icaocode=EFUT");
+    ).toHaveAttribute(
+        "href",
+        "/dz/?fmisid=101191&icaocode=EFUT&lat=60.89755354967867&lon=26.926031112670902&map_zoom=14&default_jump_run_direction=78&default_jumper_count=16",
+    );
     await expect(menu.getByRole("heading")).toHaveText([
         "EFJY",
         "Ennustepäivä",
@@ -723,12 +726,16 @@ test("developer banner opens the editor and applies METAR changes", async ({
     });
     await expect(editor).toBeVisible();
     const metarInput = editor.getByRole("textbox", { name: "METAR-teksti" });
+    const query = editor.getByRole("region", { name: "Kyselymerkkijono" });
+    await expect(query).toContainText('"fmisid": "137208"');
+    await expect(query).toContainText('"DEV_map_speed": "12.5625"');
     await expect(metarInput).toHaveValue(
         new URL(page.url()).searchParams.get("DEV_metar"),
     );
     const metar =
         "METAR EFJY 041200Z 19007KT 9999 FEW005 SCT015 BKN030CB OVC060 11/08 Q1014=";
     await metarInput.fill(metar);
+    await expect(query).toContainText(metar);
     await expect(page).toHaveURL(
         (url) => url.searchParams.get("DEV_metar") === metar,
     );
@@ -756,10 +763,10 @@ test("map toolbar expands only the map in both modes and restores", async ({
     page,
 }) => {
     const card = page.locator("#dropzone-map");
-    const heading = card.getByRole("heading", { name: "Ylätuulet" });
+    const heading = card.getByRole("heading", { name: "Tuulikartta" });
     const help = card.getByRole("button", { name: "Ohje", exact: true });
     const expand = card.getByRole("button", {
-        name: "Laajenna Ylätuulet koko ikkunaan",
+        name: "Laajenna Tuulikartta koko ikkunaan",
     });
     await expect(heading).toBeVisible();
     await expect(help).toBeVisible();
@@ -778,7 +785,7 @@ test("map toolbar expands only the map in both modes and restores", async ({
     expect(bounds.y).toBe(0);
     expect(bounds.width).toBe(page.viewportSize().width);
     expect(bounds.height).toBe(page.viewportSize().height);
-    const restore = card.getByRole("button", { name: "Palauta Ylätuulet" });
+    const restore = card.getByRole("button", { name: "Palauta Tuulikartta" });
     await expect(restore).toHaveAttribute("aria-pressed", "true");
     await expect(card.locator(".wind-level-button").first()).toBeVisible();
     await restore.click();
@@ -791,6 +798,38 @@ test("map toolbar expands only the map in both modes and restores", async ({
     await expect(expand).toHaveAttribute("aria-pressed", "false");
     await expect(heading).toBeVisible();
     await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+});
+
+test("map help separates instructions and explains forecast limitations", async ({
+    page,
+}) => {
+    const card = page.locator("#dropzone-map");
+    await card.getByRole("button", { name: "Ohje", exact: true }).click();
+
+    const help = card.getByRole("dialog");
+    await expect(help).toBeVisible();
+    await expect(
+        help.getByRole("heading", {
+            name: "Tuulitiedot ja niiden rajoitukset",
+        }),
+    ).toBeVisible();
+    await expect(
+        help.getByRole("heading", { name: "Kartan käyttäminen" }),
+    ).toBeVisible();
+    await expect(
+        help.getByRole("heading", { name: "Vapaapudotusajautuminen" }),
+    ).toBeVisible();
+    await expect(
+        help.getByRole("heading", { name: "Hyppylinja" }),
+    ).toBeVisible();
+    await expect(help).toContainText(
+        "eivät ole hyppypaikalla mitattuja arvoja",
+    );
+    await expect(help).toContainText("säämallin tuntiennusteita");
+    await expect(help).toContainText(
+        "todellinen tuuli voi poiketa ennusteesta",
+    );
+    await expect(help).toContainText("äläkä tee operatiivisia päätöksiä");
 });
 
 test("map recreates safely when forecast coordinates change", async ({
@@ -831,6 +870,23 @@ test("map wind profile shows the developer average and ground wind", async ({
     await expect(average).toContainText("13 m/s 246°");
     await expect(ground).toContainText("4 m/s 194°");
     // Individual altitude forecasts are live data, with no DEV_ override.
+});
+
+test("upper-wind forecast help explains how forecast readings are received", async ({
+    page,
+}) => {
+    const section = page.locator("#high-winds-today");
+    await section.getByRole("button", { name: "Ohje", exact: true }).click();
+
+    const help = section.getByRole("dialog");
+    await expect(help).toBeVisible();
+    await expect(help).toContainText(
+        "Nämä ovat ennusteita, eivät mittaushavaintoja",
+    );
+    await expect(help).toContainText("Open-Meteon rajapinnasta");
+    await expect(help).toContainText("painepinnoilta");
+    await expect(help).toContainText("kolmen tunnin jaksot");
+    await expect(help).toContainText("selaimen välimuistissa");
 });
 
 test("wind level selection supports clicks, keyboard and forecast refreshes", async ({
@@ -974,7 +1030,7 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     await expect(line).toHaveCount(1);
     const firstPath = await line.first().getAttribute("d");
     await page
-        .getByRole("button", { name: "Laajenna Ylätuulet koko ikkunaan" })
+        .getByRole("button", { name: "Laajenna Tuulikartta koko ikkunaan" })
         .focus();
     await page.keyboard.press("Tab");
     await expect(map).toBeFocused();
@@ -1293,7 +1349,9 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(run).toHaveCount(1);
     await expect(jumpers).toHaveCount(3);
     await expect(arrows).toHaveCount(3);
-    const direction = page.getByRole("slider", { name: "Hyppylinjan suunta" });
+    const direction = page
+        .locator(".jump-run-controls")
+        .getByRole("slider", { name: "Hyppylinjan suunta" });
     await expect(direction).toHaveCount(0);
     const moved = await run.getAttribute("d");
     const movedStart = await jumpers.first().getAttribute("d");
@@ -1383,6 +1441,122 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(direction).toHaveCount(0);
     await place();
     await expect(arrows).toHaveCount(1);
+});
+
+test("default direction is used only when creating a jump run", async ({
+    page,
+}) => {
+    await page.goto(
+        `${developerPath}&default_jump_run_direction=180&default_jumper_count=6`,
+    );
+    await setUniformFreefallWind(page);
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+    const position = page.getByRole("button", {
+        name: "Sijoita hyppylinja automaattisesti",
+    });
+    await position.click();
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+    expect(
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+            .direction,
+    ).toBe(180);
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+
+    const settings = page.getByRole("dialog", {
+        name: "Hyppylinjan asetukset",
+    });
+    const direction = settings.getByRole("slider", {
+        name: "Hyppylinjan suunta",
+    });
+    const defaultDirection = settings.getByRole("slider", {
+        name: "Hyppylinjan oletussuunta",
+    });
+    await expect(direction).toHaveValue("180");
+    await expect(defaultDirection).toHaveValue("180");
+    await direction.fill("225");
+
+    await expect(settings.locator(".direction-value")).toHaveText("225°");
+    expect(
+        new URL(page.url()).searchParams.get("default_jump_run_direction"),
+    ).toBe("180");
+    expect(
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+            .direction,
+    ).toBe(225);
+
+    await defaultDirection.fill("90");
+    await expect(
+        settings.locator(".default-jump-run-direction-value"),
+    ).toHaveText("90°");
+    expect(
+        new URL(page.url()).searchParams.get("default_jump_run_direction"),
+    ).toBe("90");
+    await page.keyboard.press("Escape");
+    await position.click();
+    expect(
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+            .direction,
+    ).toBe(225);
+});
+
+test("jump run is positioned using defaults around the map-center target", async ({
+    page,
+}) => {
+    const center = { lat: 62.4, lng: 25.6 };
+    await page.goto(
+        `${developerPath}&default_jump_run_direction=90&map_center_lat=${center.lat}&map_center_lon=${center.lng}`,
+    );
+    await setUniformFreefallWind(page);
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+
+    const map = page.locator(".dz-map");
+    await expect(page.locator(".map-viewport .jump-run-target")).toHaveCount(1);
+    await page
+        .getByRole("button", {
+            name: "Sijoita hyppylinja automaattisesti",
+        })
+        .click();
+
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(14);
+    const result = await page.evaluate(async () => {
+        const { getMapWindData, jumpRunCoordinates } =
+            await import("/src/DropzoneMap.js");
+        const { getFreefallDrift, driftCoordinates } =
+            await import("/src/freefall.js");
+        const { latLng } = await import("leaflet");
+        const params = new URL(location.href).searchParams;
+        const settings = JSON.parse(params.get("map_run_settings"));
+        const start = JSON.parse(params.get("map_run_start"));
+        const jumpers = JSON.parse(params.get("map_jumpers"));
+        const target = {
+            lat: Number(params.get("map_center_lat")),
+            lng: Number(params.get("map_center_lon")),
+        };
+        const middleIndex = Math.floor(jumpers.length / 2);
+        const middleExit = latLng(
+            jumpRunCoordinates(start, settings, middleIndex),
+        );
+        const middleJumper = jumpers[middleIndex];
+        const path = getFreefallDrift(
+            getMapWindData().freefallWinds,
+            settings.exitHeight,
+            middleJumper.speedKmh,
+            middleJumper.openingHeight,
+        );
+        const opening = latLng(
+            driftCoordinates(middleExit, path[path.length - 1]),
+        );
+        return {
+            direction: settings.direction,
+            jumperCount: jumpers.length,
+            openingDistance: opening.distanceTo(target),
+        };
+    });
+    expect(result.direction).toBe(90);
+    expect(result.jumperCount).toBe(14);
+    expect(result.openingDistance).toBeLessThan(1);
 });
 
 test("jump run direction follows touch dragging and locks on release", async ({
@@ -1569,9 +1743,12 @@ test("map setup survives URL reload and shares in full-window mode", async ({
     expect(
         JSON.parse(setup.searchParams.get("map_run_settings")),
     ).toHaveProperty("direction");
-    expect(JSON.parse(setup.searchParams.get("map_center"))).toHaveProperty(
-        "lng",
-    );
+    expect(
+        Number.isFinite(Number(setup.searchParams.get("map_center_lat"))),
+    ).toBe(true);
+    expect(
+        Number.isFinite(Number(setup.searchParams.get("map_center_lon"))),
+    ).toBe(true);
     await toolbar.getByRole("button", { name: "Jaa kartta" }).click();
     const shared = await page.evaluate(() => window.sharedMap);
     const sharedURL = new URL(shared.url);
@@ -1582,7 +1759,7 @@ test("map setup survives URL reload and shares in full-window mode", async ({
     await page.goto(shared.url);
     await setUniformFreefallWind(page);
     await expect(
-        toolbar.getByRole("button", { name: "Palauta Ylätuulet" }),
+        toolbar.getByRole("button", { name: "Palauta Tuulikartta" }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(
         toolbar.getByRole("button", { name: "Hyppylinja", exact: true }),
@@ -1616,23 +1793,24 @@ test("map query state handles invalid input and browser history", async ({
             map_jumps: "[null]",
             map_jumpers: "{}",
             map_zoom: "1000",
-            map_center: "{broken",
+            map_center_lat: '"broken"',
+            map_center_lon: "200",
         });
     });
     await setUniformFreefallWind(page);
     const toolbar = page.locator(".freefall-toolbar");
     await expect(
-        toolbar.getByRole("button", { name: "Palauta Ylätuulet" }),
+        toolbar.getByRole("button", { name: "Palauta Tuulikartta" }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".freefall-drift-line")).toHaveCount(0);
     await page.goBack();
     await expect(
         toolbar.getByRole("button", {
-            name: "Laajenna Ylätuulet koko ikkunaan",
+            name: "Laajenna Tuulikartta koko ikkunaan",
         }),
     ).toHaveAttribute("aria-pressed", "false");
     await page.goForward();
     await expect(
-        toolbar.getByRole("button", { name: "Palauta Ylätuulet" }),
+        toolbar.getByRole("button", { name: "Palauta Tuulikartta" }),
     ).toHaveAttribute("aria-pressed", "true");
 });

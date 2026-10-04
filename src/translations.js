@@ -144,12 +144,12 @@ export const english = {
     "cloud.forecastHelp":
         "Hourly forecast of the condensation level and low-cloud coverage below 2 km. Scroll horizontally for more hours.",
     "title.groundTemperature": (/** @type {string} */ value) =>
-        `${value}°C on the ground,`,
+        `${value}°C ground,`,
     "title.altitudeTemperature": (/** @type {string} */ value) =>
         `${value}°C at 4 km`,
     "title.temperatureHelp":
         "Temperature change according to the ICAO standard atmosphere in the troposphere (-6.5°C/km)",
-    "map.title": "Upper winds",
+    "map.title": "Windmap",
     "map.region": "Dropzone map and wind profile",
     "map.onMap": (/** @type {string} */ name) => `${name} on map`,
     "map.ground": "Ground",
@@ -163,19 +163,30 @@ export const english = {
     ) => `${label}: ${speed}, wind from ${direction}°`,
     "map.sourceNoCurrent": "no data for the current hour",
     "map.sourceNoObservation": "no observation",
+    "map.dataHelpTitle": "Wind data and limitations",
+    "map.forecastNatureHelp":
+        "The upper-level winds are not measurements taken at the dropzone. They are hourly weather-model forecasts retrieved from Open-Meteo for the selected forecast coordinates.",
+    "map.forecastLevelsHelp":
+        "Open-Meteo provides wind speed and direction at pressure levels. The app maps them to approximate altitudes of 110, 800, 1,500, 3,000, and 4,200 m above sea level and interpolates between 800 and 4,200 m for the freefall-drift estimate.",
+    "map.forecastImplicationHelp":
+        "Actual winds at the dropzone can differ from the forecast, especially between the modelled levels or when conditions change. Treat the drift arrow and jump-run layout as planning estimates, verify the current conditions with observations and information from the pilot or dropzone, and do not use the map as the sole basis for operational decisions.",
+    "map.groundObservationHelp":
+        "The Ground row is separate from the forecast and shows the latest available measurement from the configured observation station.",
+    "map.usingHelpTitle": "Using the map",
+    "map.freefallHelpTitle": "Freefall drift",
+    "map.jumpRunHelpTitle": "Jump run",
     "map.selectWind": "Select an altitude to show its wind on the map.",
     "map.navigationHelp": "Pan and zoom the map with two fingers.",
     "map.freefallHelp":
         "Tap or click the map to add a drift arrow. Focusing the map with Tab adds an arrow at its centre; Enter adds another after moving the map. The line estimates drift using the selected values. Each arrow keeps its original values. The map holds up to 10 arrows. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
     "map.jumpRunHelp":
-        "The Jump run button changes the map mode. The first click or tap positions the first jumper, and the second locks the direction. Add jumpers with the plus button. Settings control ground speed, jumper interval, and shared exit altitude.",
+        "The Jump run button changes the map mode. The first click or tap positions the first jumper, and the second locks the direction. Add jumpers with the plus button. Settings control jump-run direction, ground speed, jumper interval, and shared exit altitude.",
     "map.legendHelp":
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
         "Moving lines show the selected wind's flow direction. Stronger wind appears as longer, faster-moving lines.",
     "map.directionPrompt":
         "Set jump-run direction: click or drag with your finger.",
-    "map.altitudeNote": "Altitudes are estimates above sea level.",
     "map.averageHelp":
         "Average speed and direction at 800, 1,500, 3,000, and 4,200 m. Direction averaging accounts for crossing north and provides a rough freefall-drift estimate.",
     "map.shareFailed": "Sharing the map failed.",
@@ -188,19 +199,23 @@ export const english = {
     "toolbar.undoArrow": "Remove latest arrow",
     "toolbar.clearArrows": "Clear arrows",
     "toolbar.shareMap": "Share map",
-    "toolbar.restoreMap": "Restore Upper Winds",
-    "toolbar.expandMap": "Expand Upper Winds to full window",
+    "toolbar.restoreMap": "Restore Windmap",
+    "toolbar.expandMap": "Expand Windmap to full window",
     "toolbar.exit": "Exit",
     "toolbar.opening": "Opening",
     "toolbar.speed": "Speed",
     "settings.freefall": "Freefall settings",
     "settings.jumpRun": "Jump run settings",
+    "settings.jumpRunDirection": "Jump run direction",
+    "settings.defaultJumpRunDirection": "Default jump run direction",
+    "settings.defaultJumperCount": "Default jumper count",
     "settings.exitHeight": "Exit altitude (m)",
     "settings.openingHeight": "Opening altitude (m)",
     "settings.freefallSpeed": "Freefall speed (km/h)",
     "settings.jumpRunSpeed": "Ground speed (km/h)",
     "settings.jumperInterval": "Jumper interval (s)",
     "settings.nextJumper": "Settings for the next jumper",
+    "settings.positionJumpRun": "Position jump run automatically",
     "settings.addJumper": "Add jumper",
     "settings.jumper": (/** @type {number} */ number) => `Jumper ${number}`,
     "settings.removeJumper": (/** @type {number} */ number) =>
@@ -214,6 +229,12 @@ export const english = {
     "settings.openingRange":
         "The wind profile covers 800–4,200 m. Opening altitude must be below exit altitude.",
     "highWinds.title": "ECMWF upper-wind forecasts",
+    "highWinds.helpForecast":
+        "These are forecasts, not measurements. The app requests hourly wind speed and direction from Open-Meteo for the forecast coordinates.",
+    "highWinds.helpLevels":
+        "The values come from the 1,000, 925, 850, 700, and 600 hPa pressure levels, shown as approximate altitudes of 110, 800, 1,500, 3,000, and 4,200 m.",
+    "highWinds.helpPeriods":
+        "The summary shows three-hour periods. The current period uses the forecast for the current hour; other periods average three hourly forecasts. Details shows every hour separately. Data for each location is fetched at most once per hour and cached in the browser.",
     "highWinds.showSummary": "Show summary",
     "highWinds.showDetails": "Show details",
     "footer.airfieldElevation": "Airfield elevation above sea level",
@@ -255,6 +276,7 @@ export const english = {
     "developer.groundHelp":
         "The newest row is the current ground wind. Editing the table replaces the last hour of observations. An empty wind value means a missing observation. Direction −1 means variable wind.",
     "developer.meanWind": "Mean wind",
+    "developer.queryString": "Query string",
     "footer.stationDistance": (/** @type {string} */ km) =>
         `Distance to observation station: ${km} km.`,
     "footer.disclaimer":
@@ -282,6 +304,11 @@ export const english = {
     "landing.decimal": "In decimal format.",
     "landing.other": "Other information",
     "landing.name": "Name",
+    "landing.defaultJumpRunDirection": "Default jump run direction",
+    "landing.defaultJumpRunDirectionHelp": "In degrees (0–360).",
+    "landing.defaultJumperCount": "Default jumper count",
+    "landing.defaultJumperCountHelp":
+        "Used when automatically creating a jump run.",
     "landing.fmiHelp": "Find the FMISID of an FMI observation station",
     "landing.here": "here",
     "landing.roadStation": "Fintraffic weather station",
@@ -444,7 +471,7 @@ const finnish = {
     "title.altitudeTemperature": (value) => `${value}°C 4km:ssä`,
     "title.temperatureHelp":
         "ICAO:n ilmakehämallin mukainen lämpötilan muutos troposfäärissä (-6.5°C/km)",
-    "map.title": "Ylätuulet",
+    "map.title": "Tuulikartta",
     "map.region": "Hyppypaikan kartta ja tuuliprofiili",
     "map.onMap": (name) => `${name} kartalla`,
     "map.ground": "Maanpinta",
@@ -454,19 +481,30 @@ const finnish = {
         `${label}: ${speed}, tuuli suunnasta ${direction}°`,
     "map.sourceNoCurrent": "ei nykyisen tunnin tietoja",
     "map.sourceNoObservation": "ei havaintoa",
+    "map.dataHelpTitle": "Tuulitiedot ja niiden rajoitukset",
+    "map.forecastNatureHelp":
+        "Korkeuksien tuulet eivät ole hyppypaikalla mitattuja arvoja. Ne ovat Open-Meteosta valitun ennustesijainnin koordinaateille haettuja säämallin tuntiennusteita.",
+    "map.forecastLevelsHelp":
+        "Open-Meteo antaa tuulen nopeuden ja suunnan painepinnoilla. Sovellus yhdistää ne likimääräisiin korkeuksiin 110, 800, 1 500, 3 000 ja 4 200 m merenpinnasta ja interpoloi vapaapudotusajautumista varten korkeuksien 800 ja 4 200 m väliset tuulet.",
+    "map.forecastImplicationHelp":
+        "Hyppypaikan todellinen tuuli voi poiketa ennusteesta etenkin mallinnettujen korkeuksien välillä tai sään muuttuessa. Käytä ajautumisnuolta ja hyppylinjaa suunnittelun arvioina, varmista vallitsevat olosuhteet havainnoista sekä lentäjältä tai hyppypaikalta äläkä tee operatiivisia päätöksiä pelkän kartan perusteella.",
+    "map.groundObservationHelp":
+        "Maanpinta-rivi on ennusteesta erillinen ja näyttää viimeisimmän saatavilla olevan mittaustuloksen määritetyltä havaintoasemalta.",
+    "map.usingHelpTitle": "Kartan käyttäminen",
+    "map.freefallHelpTitle": "Vapaapudotusajautuminen",
+    "map.jumpRunHelpTitle": "Hyppylinja",
     "map.selectWind": "Valitse korkeus nähdäksesi sen tuulen kartalla.",
     "map.navigationHelp": "Karttaa voi liikuttaa ja zoomata kahdella sormella.",
     "map.freefallHelp":
         "Napauta tai klikkaa karttaa lisätäksesi uuden ajautumisnuolen. Sarkaimella kartalle siirtyminen lisää nuolen kartan keskikohtaan; Enter lisää uuden nuolen kartan liikuttamisen jälkeen. Ajautumisviiva arvioi vapaapudotuksen valituilla arvoilla. Jokainen nuoli säilyttää lisäyshetken arvot. Kartalla voi olla enintään 10 nuolta. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
     "map.jumpRunHelp":
-        "Hyppylinja-painike vaihtaa kartan hyppylinjatilaan. Ensimmäinen klikkaus tai napautus asettaa ensimmäisen hyppääjän paikan ja toinen lukitsee suunnan. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa maanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta.",
+        "Hyppylinja-painike vaihtaa kartan hyppylinjatilaan. Ensimmäinen klikkaus tai napautus asettaa ensimmäisen hyppääjän paikan ja toinen lukitsee suunnan. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, maanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta.",
     "map.legendHelp":
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
         "Kartan liikkuvat viivat näyttävät valitun tuulen virtaussuunnan. Voimakkaampi tuuli näkyy pidempinä ja nopeammin liikkuvina viivoina.",
     "map.directionPrompt":
         "Aseta hyppylinjan suunta: klikkaa tai vedä sormella.",
-    "map.altitudeNote": "Korkeudet ovat arvioita merenpinnasta.",
     "map.averageHelp":
         "Nopeuden ja suunnan keskiarvo korkeuksilta 800, 1500, 3000 ja 4200 m. Suunnan keskiarvo huomioi pohjoissuunnan ylityksen ja antaa karkean arvion vapaapudotusajautumisesta.",
     "map.shareFailed": "Kartan jakaminen epäonnistui.",
@@ -479,19 +517,23 @@ const finnish = {
     "toolbar.undoArrow": "Poista viimeisin nuoli",
     "toolbar.clearArrows": "Tyhjennä nuolet",
     "toolbar.shareMap": "Jaa kartta",
-    "toolbar.restoreMap": "Palauta Ylätuulet",
-    "toolbar.expandMap": "Laajenna Ylätuulet koko ikkunaan",
+    "toolbar.restoreMap": "Palauta Tuulikartta",
+    "toolbar.expandMap": "Laajenna Tuulikartta koko ikkunaan",
     "toolbar.exit": "Uloshyppy",
     "toolbar.opening": "Avaus",
     "toolbar.speed": "Nopeus",
     "settings.freefall": "Vapaapudotuksen asetukset",
     "settings.jumpRun": "Hyppylinjan asetukset",
+    "settings.jumpRunDirection": "Hyppylinjan suunta",
+    "settings.defaultJumpRunDirection": "Hyppylinjan oletussuunta",
+    "settings.defaultJumperCount": "Hyppääjien oletusmäärä",
     "settings.exitHeight": "Uloshyppykorkeus (m)",
     "settings.openingHeight": "Avauskorkeus (m)",
     "settings.freefallSpeed": "Vapaapudotusnopeus (km/h)",
     "settings.jumpRunSpeed": "Hyppylinjan nopeus (km/h)",
     "settings.jumperInterval": "Hyppääjien väli (s)",
     "settings.nextJumper": "Lisättävän hyppääjän asetukset",
+    "settings.positionJumpRun": "Sijoita hyppylinja automaattisesti",
     "settings.addJumper": "Lisää hyppääjä",
     "settings.jumper": (number) => `Hyppääjä ${number}`,
     "settings.removeJumper": (number) => `Poista hyppääjä ${number}`,
@@ -505,6 +547,12 @@ const finnish = {
     "settings.openingRange":
         "Tuuliprofiili kattaa 800–4200 m. Avauskorkeuden tulee olla uloshyppykorkeutta alempana.",
     "highWinds.title": "ECMWF Ylätuuliennusteet",
+    "highWinds.helpForecast":
+        "Nämä ovat ennusteita, eivät mittaushavaintoja. Sovellus pyytää Open-Meteon rajapinnasta tuntikohtaisen tuulen nopeuden ja suunnan ennustesijainnin koordinaateille.",
+    "highWinds.helpLevels":
+        "Arvot tulevat painepinnoilta 1 000, 925, 850, 700 ja 600 hPa, jotka näytetään likimääräisinä korkeuksina 110, 800, 1 500, 3 000 ja 4 200 m.",
+    "highWinds.helpPeriods":
+        "Kooste näyttää kolmen tunnin jaksot. Meneillään oleva jakso käyttää nykyisen tunnin ennustetta, ja muut jaksot ovat kolmen tuntiennusteen keskiarvoja. Tarkat tiedot näyttävät jokaisen tunnin erikseen. Tiedot haetaan kullekin sijainnille enintään kerran tunnissa ja säilytetään selaimen välimuistissa.",
     "highWinds.showSummary": "Näytä kooste",
     "highWinds.showDetails": "Näytä tarkat tiedot",
     "footer.airfieldElevation": "Lentokentän korkeus meren pinnasta",
@@ -548,6 +596,7 @@ const finnish = {
     "developer.groundHelp":
         "Uusin rivi on nykyinen maanpinnan tuuli. Taulukon muokkaus korvaa viimeisen tunnin havainnot. Tyhjä tuuliarvo tarkoittaa puuttuvaa havaintoa. Suunta −1 tarkoittaa vaihtelevaa tuulta.",
     "developer.meanWind": "Keskituuli",
+    "developer.queryString": "Kyselymerkkijono",
     "footer.stationDistance": (km) => `Etäisyys havaintoasemalle ${km} km.`,
     "footer.disclaimer":
         "Tietojen käyttö omalla vastuulla. Ei takeita että tiedot ovat oikein.",
@@ -573,6 +622,11 @@ const finnish = {
     "landing.decimal": "Desimaalimuodossa.",
     "landing.other": "Muut tiedot",
     "landing.name": "Nimi",
+    "landing.defaultJumpRunDirection": "Hyppylinjan oletussuunta",
+    "landing.defaultJumpRunDirectionHelp": "Asteina (0–360).",
+    "landing.defaultJumperCount": "Hyppääjien oletusmäärä",
+    "landing.defaultJumperCountHelp":
+        "Käytetään hyppylinjan automaattisessa luonnissa.",
     "landing.fmiHelp": "Hae Ilmatieteenlaitoksen havaintoaseman FMISID",
     "landing.here": "täältä",
     "landing.roadStation": "Fintraffic sääasema",

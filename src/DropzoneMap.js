@@ -5,6 +5,7 @@ import {
     useEffect,
     useId,
     useLayoutEffect,
+    useMemo,
     useRef,
     useState,
 } from "preact/hooks";
@@ -23,8 +24,10 @@ import {
     OBSERVATIONS,
     STATION_NAME,
     NAME,
+    QUERY_PARAMS,
     getDevNumber,
     getQs,
+    navigateQs,
     weatherSourceLabel,
 } from "./data.js";
 import { OM_DATA, forecastTime } from "./om.js";
@@ -268,6 +271,32 @@ export function DropzoneMap() {
             opacity: 0.55;
             pointer-events: none;
         }
+        .jump-run-target {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            z-index: 500;
+            width: 20px;
+            height: 20px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .jump-run-target::before,
+        .jump-run-target::after {
+            content: "";
+            position: absolute;
+            top: 9px;
+            left: 1px;
+            width: 18px;
+            height: 2px;
+            border-radius: 1px;
+            background: #dc2626;
+            box-shadow: 0 0 0 1px white;
+            transform: rotate(45deg);
+        }
+        .jump-run-target::after {
+            transform: rotate(-45deg);
+        }
         .direction-hint {
             position: absolute;
             top: 12px;
@@ -393,6 +422,26 @@ export function DropzoneMap() {
         }),
         isValidJumpRunSettings,
     );
+    const defaultJumpRunDirectionValue = Number(
+        QUERY_PARAMS.value.default_jump_run_direction,
+    );
+    const defaultJumpRunDirection =
+        QUERY_PARAMS.value.default_jump_run_direction?.trim() &&
+        Number.isFinite(defaultJumpRunDirectionValue) &&
+        defaultJumpRunDirectionValue >= 0 &&
+        defaultJumpRunDirectionValue <= 360
+            ? defaultJumpRunDirectionValue
+            : 0;
+    const defaultJumperCountValue = Number(
+        QUERY_PARAMS.value.default_jumper_count,
+    );
+    const defaultJumperCount =
+        QUERY_PARAMS.value.default_jumper_count?.trim() &&
+        Number.isInteger(defaultJumperCountValue) &&
+        defaultJumperCountValue >= 1 &&
+        defaultJumperCountValue <= 100
+            ? defaultJumperCountValue
+            : 14;
     const [leafletInstance, setLeafletInstance] = useState(
         /** @type {import('leaflet').Map | null} */ (null),
     );
@@ -416,11 +465,30 @@ export function DropzoneMap() {
         14,
         (value) => isFiniteNumber(value) && value >= 0 && value <= 19,
     );
-    const [center, setCenter] = useMapState(
-        "map_center",
-        /** @type {import('leaflet').LatLngLiteral | null} */ (null),
-        (value) => value === null || isValidPosition(value),
+    const [centerLat, setCenterLat] = useMapState(
+        "map_center_lat",
+        /** @type {number | null} */ (null),
+        (value) =>
+            value === null || (isFiniteNumber(value) && Math.abs(value) <= 90),
     );
+    const [centerLon, setCenterLon] = useMapState(
+        "map_center_lon",
+        /** @type {number | null} */ (null),
+        (value) =>
+            value === null || (isFiniteNumber(value) && Math.abs(value) <= 180),
+    );
+    const center = useMemo(
+        () =>
+            centerLat !== null && centerLon !== null
+                ? { lat: centerLat, lng: centerLon }
+                : null,
+        [centerLat, centerLon],
+    );
+    /** @param {import('leaflet').LatLngLiteral} value */
+    const setCenter = (value) => {
+        setCenterLat(value.lat);
+        setCenterLon(value.lng);
+    };
     const coordinates = FORECAST_COORDINATES.value;
     const name = NAME.value ?? "DZ";
     useEffect(() => {
@@ -931,26 +999,37 @@ export function DropzoneMap() {
                 ${t("map.title")}
                 ${h(
                     Help,
-                    { id: "map-wind-help" },
+                    { id: "map-wind-help", wide: true },
                     html`
+                        <h3>${t("map.dataHelpTitle")}</h3>
+                        <p>${t("map.forecastNatureHelp")}</p>
+                        <p>${t("map.forecastLevelsHelp")}</p>
+                        <p>${t("map.forecastImplicationHelp")}</p>
+                        <p>
+                            ${t("map.title")}:
+                            Open-Meteo${time && data ? `, ${t("time.clock", formatClock(forecastTime(time, data.utc_offset_seconds)))}` : ` — ${t("map.sourceNoCurrent")}`}.
+                        </p>
+                        <p>≈ 4200-800 m: ${t("map.averageHelp")}</p>
+                        <p>
+                            ${t("map.groundObservationHelp")}
+                            <br />
+                            ${t("map.ground")}:
+                            ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, ${t("time.clock", formatClock(ground.time))}` : ` — ${t("map.sourceNoObservation")}`}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
+                        </p>
+
+                        <h3>${t("map.usingHelpTitle")}</h3>
                         <p>${t("map.navigationHelp")}</p>
-                        <p>${t("map.freefallHelp")}</p>
-                        <p>${t("map.jumpRunHelp")}</p>
+                        <p>${t("map.selectWind")} ${t("map.flowHelp")}</p>
                         <p>
                             N ${h(Icon, { name: "up" })} ·
                             ${t("map.legendHelp")}
                         </p>
-                        <p>
-                            ${t("map.title")}:
-                            Open-Meteo${time && data ? `, ${t("time.clock", formatClock(forecastTime(time, data.utc_offset_seconds)))}` : ` — ${t("map.sourceNoCurrent")}`}.
-                            ${t("map.altitudeNote")}
-                        </p>
-                        <p>≈ 4200-800 m: ${t("map.averageHelp")}</p>
-                        <p>${t("map.selectWind")} ${t("map.flowHelp")}</p>
-                        <p>
-                            ${t("map.ground")}:
-                            ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, ${t("time.clock", formatClock(ground.time))}` : ` — ${t("map.sourceNoObservation")}`}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
-                        </p>
+
+                        <h3>${t("map.freefallHelpTitle")}</h3>
+                        <p>${t("map.freefallHelp")}</p>
+
+                        <h3>${t("map.jumpRunHelpTitle")}</h3>
+                        <p>${t("map.jumpRunHelp")}</p>
                     `,
                 )}
             </h2>
@@ -1020,11 +1099,91 @@ export function DropzoneMap() {
                         },
                         jumpRun: {
                             settings: jumpRunSettings,
+                            defaultJumpRunDirection,
+                            defaultJumperCount,
                             jumpers,
                             nextJumper,
                             onNextJumperChange: setNextJumper,
                             onJumpersChange: setJumpers,
                             onChange: setJumpRunSettings,
+                            onDefaultJumpRunDirectionChange: (direction) =>
+                                navigateQs(
+                                    {
+                                        default_jump_run_direction:
+                                            String(direction),
+                                    },
+                                    { replace: true },
+                                ),
+                            onDefaultJumperCountChange: (count) =>
+                                navigateQs(
+                                    { default_jumper_count: String(count) },
+                                    { replace: true },
+                                ),
+                            onPosition: () => {
+                                const [latitude, longitude] =
+                                    coordinates?.split(",").map(Number) ?? [];
+                                const initialCenter =
+                                    latitude !== undefined &&
+                                    longitude !== undefined &&
+                                    Number.isFinite(latitude) &&
+                                    Number.isFinite(longitude) &&
+                                    Math.abs(latitude) <= 90 &&
+                                    Math.abs(longitude) <= 180
+                                        ? { lat: latitude, lng: longitude }
+                                        : null;
+                                const target =
+                                    leafletInstance?.getCenter() ??
+                                    center ??
+                                    initialCenter;
+                                if (!target) return;
+                                const positionedJumpers = jumpRunStart
+                                    ? jumpers
+                                    : Array.from(
+                                          { length: defaultJumperCount },
+                                          () => ({ ...nextJumper }),
+                                      );
+                                const middleIndex = Math.floor(
+                                    positionedJumpers.length / 2,
+                                );
+                                const middleJumper =
+                                    positionedJumpers[middleIndex] ??
+                                    nextJumper;
+                                const settings = jumpRunStart
+                                    ? jumpRunSettings
+                                    : {
+                                          ...jumpRunSettings,
+                                          direction: defaultJumpRunDirection,
+                                      };
+                                const path = getFreefallDrift(
+                                    getMapWindData(now).freefallWinds,
+                                    settings.exitHeight,
+                                    middleJumper.speedKmh,
+                                    middleJumper.openingHeight,
+                                );
+                                const openingOffset = path?.[path.length - 1];
+                                const middleExit = latLng(
+                                    openingOffset
+                                        ? driftCoordinates(target, {
+                                              height: 0,
+                                              east: -openingOffset.east,
+                                              north: -openingOffset.north,
+                                          })
+                                        : target,
+                                );
+                                setJumpRunSettings(settings);
+                                setJumpRunStart(
+                                    latLng(
+                                        jumpRunCoordinates(
+                                            middleExit,
+                                            settings,
+                                            -middleIndex,
+                                        ),
+                                    ),
+                                );
+                                if (!jumpRunStart)
+                                    setJumpers(positionedJumpers);
+                                setPlacingJumpRunDirection(false);
+                            },
                             onAdd: () =>
                                 setJumpers((current) => [
                                     ...current,
@@ -1086,6 +1245,16 @@ export function DropzoneMap() {
                         >
                             ${!coordinates ? t("common.waitingCoordinates") : null}
                         </div>
+                        ${
+                            jumpRunActive
+                                ? html`
+                                      <span
+                                          class="jump-run-target"
+                                          aria-hidden="true"
+                                      ></span>
+                                  `
+                                : null
+                        }
                         ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
                     </div>
                 </div>

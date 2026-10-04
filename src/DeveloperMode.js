@@ -66,6 +66,24 @@ function clearOverrides() {
     );
 }
 
+/** @param {QueryParams} params */
+function formatQueryParams(params) {
+    return JSON.stringify(
+        Object.fromEntries(
+            Object.entries(params).map(([key, value]) => {
+                if (key.startsWith("map_") && value) {
+                    try {
+                        return [key, JSON.parse(value)];
+                    } catch {}
+                }
+                return [key, value];
+            }),
+        ),
+        null,
+        2,
+    );
+}
+
 /** @param {{ onEdit: () => void }} props */
 export function DeveloperBanner({ onEdit }) {
     const scope = useScope(css`
@@ -182,6 +200,22 @@ export function DeveloperMode(props) {
         }
         .developer-error {
             color: var(--color-danger);
+        }
+        .developer-query {
+            margin-top: 24px;
+        }
+        .developer-query pre {
+            max-height: 320px;
+            margin-bottom: 0;
+            padding: 12px;
+            overflow: auto;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface-soft);
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
         }
     `);
     /** @type {import("preact").RefObject<HTMLDialogElement>} */
@@ -558,6 +592,15 @@ export function DeveloperMode(props) {
                         </button>
                     </div>
                 </form>
+                <section
+                    class="developer-query"
+                    aria-labelledby="developer-query-title"
+                >
+                    <h3 id="developer-query-title">
+                        ${t("developer.queryString")}
+                    </h3>
+                    <pre>${formatQueryParams(QUERY_PARAMS.value)}</pre>
+                </section>
             `,
         )}
     `;

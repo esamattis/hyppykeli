@@ -14,6 +14,7 @@ import { t } from "./translations.js";
  * @param {Object} props
  * @param {import('preact').RefObject<HTMLDialogElement>} props.dialogRef
  * @param {string} [props.id]
+ * @param {string} [props.className]
  * @param {string} [props.labelledBy]
  * @param {import('preact').ComponentChildren} [props.children]
  */
@@ -89,7 +90,12 @@ export function Dialog(props) {
     }, [ref]);
 
     return html`
-        <dialog ref=${ref} id=${props.id} aria-labelledby=${props.labelledBy}>
+        <dialog
+            ref=${ref}
+            id=${props.id}
+            class=${props.className}
+            aria-labelledby=${props.labelledBy}
+        >
             ${scope.style}
             <div class="dialog-controls">
                 <button
@@ -112,6 +118,7 @@ export function Dialog(props) {
  * @param {import('preact').ComponentChildren} [props.children]
  * @param {string} [props.label]
  * @param {string} [props.id]
+ * @param {boolean} [props.wide]
  */
 export function Help(props) {
     const scope = useScope(css`
@@ -140,6 +147,11 @@ export function Help(props) {
             font-weight: normal;
             width: clamp(300px, 400px, 95vw);
             white-space: wrap;
+        }
+        @media (min-width: 700px) {
+            :scope:is(dialog).help-dialog-wide {
+                width: min(720px, 90vw);
+            }
         }
         .help-content {
             font-size: initial;
@@ -171,7 +183,10 @@ export function Help(props) {
         </button>
         ${h(
             Dialog,
-            { dialogRef: ref },
+            {
+                dialogRef: ref,
+                className: props.wide ? "help-dialog-wide" : undefined,
+            },
             html`
                 ${scope.style}
                 <div class=${`help-content ${scope.end}`}>

@@ -1741,7 +1741,18 @@ function HighWinds() {
 
     return html`
         <div id="high-winds-today">
-            <h2>${t("highWinds.title")}</h2>
+            <h2 class="h2-with-icon">
+                ${t("highWinds.title")}
+                ${h(
+                    Help,
+                    {},
+                    html`
+                        <p>${t("highWinds.helpForecast")}</p>
+                        <p>${t("highWinds.helpLevels")}</p>
+                        <p>${t("highWinds.helpPeriods")}</p>
+                    `,
+                )}
+            </h2>
             <small class="source-note">${t("common.source")}: Open-Meteo</small>
 
             <p>

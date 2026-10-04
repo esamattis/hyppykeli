@@ -276,6 +276,9 @@ function DropzoneCoordinateMap({ lat, lon, onSelect }) {
  *   label: string,
  *   placeholder: string,
  *   value: string,
+ *   type?: "text" | "number",
+ *   min?: number,
+ *   max?: number,
  *   onInput: (event: import("preact").JSX.TargetedEvent<HTMLInputElement>) => void,
  *   onClear: () => void,
  *   onPaste?: (event: import("preact").JSX.TargetedClipboardEvent<HTMLInputElement>) => void,
@@ -286,6 +289,9 @@ function ClearableInput({
     label,
     placeholder,
     value,
+    type = "text",
+    min,
+    max,
     onInput,
     onClear,
     onPaste,
@@ -296,7 +302,7 @@ function ClearableInput({
             display: inline-flex;
             max-width: 100%;
         }
-        input[type="text"] {
+        input {
             box-sizing: border-box;
             width: 22ch;
             padding: 8px 38px 8px 10px;
@@ -329,9 +335,11 @@ function ClearableInput({
             <input
                 ref=${inputRef}
                 id=${name}
-                type="text"
+                type=${type}
                 name=${name}
                 placeholder=${placeholder}
+                min=${min}
+                max=${max}
                 value=${value}
                 onInput=${onInput}
                 onPaste=${onPaste}
@@ -424,6 +432,8 @@ export function CreateDropzoneForm() {
         icaocode: "",
         lat: "",
         lon: "",
+        default_jump_run_direction: "",
+        default_jumper_count: "",
     });
     /** @param {import("preact").JSX.TargetedEvent<HTMLInputElement>} event */
     function updateField(event) {
@@ -557,6 +567,44 @@ export function CreateDropzoneForm() {
                     })}
                 </div>
                 <div class="desc"></div>
+
+                <div class="field">
+                    <label for="default_jump_run_direction">
+                        ${t("landing.defaultJumpRunDirection")}
+                    </label>
+                    ${h(ClearableInput, {
+                        name: "default_jump_run_direction",
+                        placeholder: "180",
+                        value: fields.default_jump_run_direction,
+                        label: t("landing.defaultJumpRunDirection"),
+                        type: "number",
+                        min: 0,
+                        max: 360,
+                        onInput: updateField,
+                        onClear: () => clearField("default_jump_run_direction"),
+                    })}
+                </div>
+                <div class="desc">
+                    ${t("landing.defaultJumpRunDirectionHelp")}
+                </div>
+
+                <div class="field">
+                    <label for="default_jumper_count">
+                        ${t("landing.defaultJumperCount")}
+                    </label>
+                    ${h(ClearableInput, {
+                        name: "default_jumper_count",
+                        placeholder: "14",
+                        value: fields.default_jumper_count,
+                        label: t("landing.defaultJumperCount"),
+                        type: "number",
+                        min: 1,
+                        max: 100,
+                        onInput: updateField,
+                        onClear: () => clearField("default_jumper_count"),
+                    })}
+                </div>
+                <div class="desc">${t("landing.defaultJumperCountHelp")}</div>
 
                 <div class="field">
                     <label for="fmisid">FMISID</label>

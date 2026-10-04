@@ -13,11 +13,16 @@ import { t } from "./translations.js";
 /** @param {JumpRunControlsProps} props */
 export function JumpRunControls({
     settings,
+    defaultJumpRunDirection,
+    defaultJumperCount,
     jumpers,
     nextJumper,
     onNextJumperChange,
     onChange,
+    onDefaultJumpRunDirectionChange,
+    onDefaultJumperCountChange,
     onJumpersChange,
+    onPosition,
     onAdd,
 }) {
     const scope = useScope(css`
@@ -33,6 +38,9 @@ export function JumpRunControls({
             margin-top: 20px;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
+        }
+        .direction-value {
+            font-variant-numeric: tabular-nums;
         }
         .add-jumper,
         .remove-jumper {
@@ -121,6 +129,11 @@ export function JumpRunControls({
                 onClick: open,
             })}
             ${h(ToolbarButton, {
+                label: t("settings.positionJumpRun"),
+                icon: "location",
+                onClick: onPosition,
+            })}
+            ${h(ToolbarButton, {
                 label: t("settings.addJumper"),
                 icon: "plus",
                 onClick: onAdd,
@@ -135,6 +148,75 @@ export function JumpRunControls({
                 <form
                     onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
                 >
+                    <label>
+                        ${t("settings.jumpRunDirection")}
+                        <input
+                            type="range"
+                            min="0"
+                            max="360"
+                            step="1"
+                            value=${settings.direction}
+                            onInput=${
+                                /** @param {Event} event */ (event) =>
+                                    onChange({
+                                        ...settings,
+                                        direction: Number(
+                                            /** @type {HTMLInputElement} */ (
+                                                event.currentTarget
+                                            ).value,
+                                        ),
+                                    })
+                            }
+                        />
+                        <output class="direction-value">
+                            ${settings.direction}°
+                        </output>
+                    </label>
+                    <label>
+                        ${t("settings.defaultJumpRunDirection")}
+                        <input
+                            type="range"
+                            min="0"
+                            max="360"
+                            step="1"
+                            value=${defaultJumpRunDirection}
+                            onInput=${
+                                /** @param {Event} event */ (event) =>
+                                    onDefaultJumpRunDirectionChange(
+                                        Number(
+                                            /** @type {HTMLInputElement} */ (
+                                                event.currentTarget
+                                            ).value,
+                                        ),
+                                    )
+                            }
+                        />
+                        <output class="default-jump-run-direction-value">
+                            ${defaultJumpRunDirection}°
+                        </output>
+                    </label>
+                    <label>
+                        ${t("settings.defaultJumperCount")}
+                        <input
+                            type="number"
+                            min="1"
+                            max="100"
+                            step="1"
+                            value=${defaultJumperCount}
+                            onInput=${
+                                /** @param {Event} event */ (event) => {
+                                    const input =
+                                        /** @type {HTMLInputElement} */ (
+                                            event.currentTarget
+                                        );
+                                    if (input.checkValidity())
+                                        onDefaultJumperCountChange(
+                                            Number(input.value),
+                                        );
+                                }
+                            }
+                        />
+                    </label>
                     <label>
                         ${t("settings.exitHeight")}
                         <input

@@ -1265,7 +1265,10 @@ computed(() =>
     JSON.stringify(
         Object.fromEntries(
             Object.entries(QUERY_PARAMS.value).filter(
-                ([key]) => !key.startsWith("map_"),
+                ([key]) =>
+                    !key.startsWith("map_") &&
+                    key !== "default_jump_run_direction" &&
+                    key !== "default_jumper_count",
             ),
         ),
     ),

@@ -5,12 +5,13 @@ import { t } from "./translations.js";
 export const completeDropzones = [
     {
         name: "EFJY",
-        href: "/dz/?fmisid=137208&icaocode=EFJY",
+        href: "/dz/?fmisid=137208&icaocode=EFJY&default_jumper_count=4&default_jump_run_direction=315&direction=331&&lat=62.40711121411343&lon=25.664491653442386",
+        // https://hyppykeli.lab.esamatti.fi/dz/?fmisid=137208&icaocode=EFJY&default_jumper_count=4&default_jump_run_direction=331&map_center_lat=62.40711121411343&map_center_lon=25.664491653442386&map_zoom=14&map_run_active=true
         description: "– Tikkakoski, Jyväskylä",
     },
     {
         name: "EFUT",
-        href: "/dz/?fmisid=101191&icaocode=EFUT",
+        href: "/dz/?fmisid=101191&icaocode=EFUT&lat=60.89755354967867&lon=26.926031112670902&map_zoom=14&default_jump_run_direction=78&default_jumper_count=16",
         description: "– Utti, Kouvola",
     },
     {

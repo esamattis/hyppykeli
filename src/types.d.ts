@@ -103,6 +103,8 @@ interface JumpRunSettings {
 
 interface JumpRunControlsProps {
     settings: JumpRunSettings;
+    defaultJumpRunDirection: number;
+    defaultJumperCount: number;
     jumpers: JumpRunJumper[];
     nextJumper: JumpRunJumper;
     onNextJumperChange: (
@@ -110,6 +112,9 @@ interface JumpRunControlsProps {
     ) => void;
     onJumpersChange: (jumpers: JumpRunJumper[]) => void;
     onChange: (settings: JumpRunSettings) => void;
+    onDefaultJumpRunDirectionChange: (direction: number) => void;
+    onDefaultJumperCountChange: (count: number) => void;
+    onPosition: () => void;
     onAdd: () => void;
 }
 
@@ -252,7 +257,8 @@ type MapQueryKey = Extract<keyof QueryParams, `map_${string}`>;
 
 interface QueryParams {
     map_zoom?: string;
-    map_center?: string;
+    map_center_lat?: string;
+    map_center_lon?: string;
     map_full_window?: string;
     map_wind?: string;
     map_exit_height?: string;
@@ -282,6 +288,8 @@ interface QueryParams {
     icaocode?: string;
     lat?: string;
     lon?: string;
+    default_jump_run_direction?: string;
+    default_jumper_count?: string;
     name?: string;
     observation_range?: string;
     forecast_day?: string;
