@@ -323,7 +323,7 @@ interface QueryParams {
     lat?: string;
     lon?: string;
     default_jump_run_direction?: string;
-    default_jumper_count?: string;
+    default_jump_group_count?: string;
     name?: string;
     observation_range?: string;
     forecast_day?: string;

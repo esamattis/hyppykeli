@@ -438,15 +438,15 @@ export function DropzoneMap() {
             ? defaultJumpRunDirectionValue
             : 0;
     const defaultJumperCountValue = Number(
-        QUERY_PARAMS.value.default_jumper_count,
+        QUERY_PARAMS.value.default_jump_group_count,
     );
     const defaultJumperCount =
-        QUERY_PARAMS.value.default_jumper_count?.trim() &&
+        QUERY_PARAMS.value.default_jump_group_count?.trim() &&
         Number.isInteger(defaultJumperCountValue) &&
         defaultJumperCountValue >= 1 &&
         defaultJumperCountValue <= 100
             ? defaultJumperCountValue
-            : 14;
+            : 6;
     const [leafletInstance, setLeafletInstance] = useState(
         /** @type {import('leaflet').Map | null} */ (null),
     );
@@ -497,6 +497,11 @@ export function DropzoneMap() {
     const coordinates = FORECAST_COORDINATES.value;
     const stationCoordinates = STATION_COORDINATES.value;
     const stationName = STATION_NAME.value;
+    const stationLabel = t(
+        stationName?.endsWith("(Digitraffic)")
+            ? "map.fintrafficStation"
+            : "map.fmiStation",
+    );
     const { lat: landingLat, lon: landingLon } = QUERY_PARAMS.value;
     const hasLandingCoordinates =
         !!landingLat?.trim() &&
@@ -610,10 +615,7 @@ export function DropzoneMap() {
             return;
         const theme = getTheme();
         const label = document.createElement("span");
-        label.textContent = stationName.replace(
-            /\(Digitraffic\)$/,
-            "(Fintraffic)",
-        );
+        label.textContent = stationLabel;
         const station = circleMarker([lat, lng], {
             radius: 4,
             color: theme.primary,
@@ -636,6 +638,7 @@ export function DropzoneMap() {
         hasLandingCoordinates,
         stationCoordinates,
         stationName,
+        stationLabel,
     ]);
 
     useEffect(() => {
@@ -1119,7 +1122,7 @@ export function DropzoneMap() {
                             onChange: setJumpRunSettings,
                             onDefaultJumperCountChange: (count) =>
                                 navigateQs(
-                                    { default_jumper_count: String(count) },
+                                    { default_jump_group_count: String(count) },
                                     { replace: true },
                                 ),
                             onPosition: () => {

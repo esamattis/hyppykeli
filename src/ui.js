@@ -526,7 +526,7 @@ function CloudForecastTable(props) {
                         <tr class="forecast-group-start">
                             <th scope="row">
                                 <span class="forecast-source-label">FMI</span>
-                                ${t("weather.condensationLevel")}
+                                ${t("weather.condensationLevelShort")}
                                 ${h(
                                     Help,
                                     {
@@ -1246,7 +1246,7 @@ function CloudSummary() {
         .cloud-forecast-detail-table tr > :first-child {
             background: var(--color-surface-soft);
             text-align: left;
-            padding-left: 12px;
+            padding-inline: 8px;
         }
         .cloud-forecast-table td {
             min-width: 7ch;
@@ -1262,8 +1262,7 @@ function CloudSummary() {
             align-items: center;
         }
         .cloud-forecast-detail-table tbody th {
-            min-width: 14ch;
-            padding-left: 12px;
+            min-width: 10ch;
         }
         .cloud-forecast-detail-table tr > :not(:first-child) {
             width: 3.25rem;

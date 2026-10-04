@@ -1292,7 +1292,7 @@ computed(() =>
                 ([key]) =>
                     !key.startsWith("map_") &&
                     key !== "default_jump_run_direction" &&
-                    key !== "default_jumper_count",
+                    key !== "default_jump_group_count",
             ),
         ),
     ),

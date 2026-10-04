@@ -170,7 +170,7 @@ test("redesigned menu lists dropzones and removes obsolete tools", async ({
         menu.getByRole("link", { name: "EFUT", exact: true }),
     ).toHaveAttribute(
         "href",
-        "/dz/?fmisid=101191&icaocode=EFUT&lat=60.89755354967867&lon=26.926031112670902&map_zoom=14&default_jump_run_direction=78&default_jumper_count=16",
+        "/dz/?fmisid=101191&icaocode=EFUT&lat=60.89755354967867&lon=26.926031112670902&map_zoom=14&default_jump_run_direction=78&default_jump_group_count=16",
     );
     await expect(menu.getByRole("heading")).toHaveText([
         "EFJY",
@@ -459,7 +459,7 @@ test("FMI map callout requires separate landing zone coordinates", async ({
 }) => {
     await page.goto("/dz/?fmisid=137208&lat=62.4&lon=25.6&DEV_mock=1");
     const callout = page.locator("#dropzone-map .weather-station-callout");
-    await expect(callout).toContainText("(FMI)");
+    await expect(callout).toHaveText("FMI sääasema");
     const locations = await page.evaluate(async () => {
         const { FORECAST_COORDINATES, STATION_COORDINATES } =
             await import("/src/data.js");
@@ -560,7 +560,7 @@ test("Fintraffic station supplies observations and fallback coordinates", async 
     await expect(callout).toHaveCount(0);
 
     await page.goto("/dz/?roadsid=5004&lat=60.21&lon=24.91");
-    await expect(callout).toHaveText("Tieasema (Fintraffic)");
+    await expect(callout).toHaveText("Fintraffic sääasema");
     const locations = await page.evaluate(async () => {
         const { FORECAST_COORDINATES, STATION_COORDINATES } =
             await import("/src/data.js");
@@ -1411,7 +1411,7 @@ test("jump-run positions react to forecast changes and recover from missing or i
     const jumpers = page.locator(".jump-run-jumper");
     const arrows = page.locator(".freefall-drift-line");
     const unavailable = page.locator(".jump-run-unavailable");
-    await expect(jumpers).toHaveCount(14);
+    await expect(jumpers).toHaveCount(6);
     const second = await jumpers.nth(1).getAttribute("d");
     const start = new URL(page.url()).searchParams.get("map_run_start");
     await page.evaluate(async () => {
@@ -1433,7 +1433,7 @@ test("jump-run positions react to forecast changes and recover from missing or i
     await expect(jumpers).toHaveCount(0);
     await expect(arrows).toHaveCount(0);
     await setUniformFreefallWind(page);
-    await expect(jumpers).toHaveCount(14);
+    await expect(jumpers).toHaveCount(6);
     await expect(unavailable).toHaveCount(0);
     await page
         .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
@@ -1926,9 +1926,7 @@ test("jump run heading displays whole degrees without changing its precision", a
 test("default direction is used only when creating a jump run", async ({
     page,
 }) => {
-    await page.goto(
-        `${developerPath}&default_jump_run_direction=180&default_jumper_count=6`,
-    );
+    await page.goto(`${developerPath}&default_jump_run_direction=180`);
     await setUniformFreefallWind(page);
     await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
     const position = page.getByRole("button", {
@@ -1980,7 +1978,7 @@ for (const jumperCount of [1, 13, 14]) {
     }) => {
         const center = { lat: 62.4, lng: 25.6 };
         await page.goto(
-            `${developerPath}&default_jumper_count=${jumperCount}&default_jump_run_direction=90&map_center_lat=${center.lat}&map_center_lon=${center.lng}`,
+            `${developerPath}&default_jump_group_count=${jumperCount}&default_jump_run_direction=90&map_center_lat=${center.lat}&map_center_lon=${center.lng}`,
         );
         await setUniformFreefallWind(page);
         await page

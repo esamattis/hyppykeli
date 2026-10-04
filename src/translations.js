@@ -182,6 +182,8 @@ export const english = {
     "map.region": "Dropzone map and wind profile",
     "map.onMap": (/** @type {string} */ name) => `${name} on map`,
     "map.ground": "Ground",
+    "map.fmiStation": "FMI weather station",
+    "map.fintrafficStation": "Fintraffic weather station",
     "map.windLabelCalm": (/** @type {string} */ label) => `${label}: calm`,
     "map.windLabelMissing": (/** @type {string} */ label) =>
         `${label}: no data`,
@@ -238,7 +240,7 @@ export const english = {
     "settings.freefall": "Freefall settings",
     "settings.jumpRun": "Jump run settings",
     "settings.jumpRunDirection": "Jump run direction",
-    "settings.defaultJumperCount": "Default jumper count",
+    "settings.defaultJumperCount": "Default jump group count",
     "settings.exitHeight": "Exit altitude (m)",
     "settings.openingHeight": "Opening altitude (m)",
     "settings.freefallSpeed": "Freefall speed (km/h)",
@@ -336,7 +338,7 @@ export const english = {
     "landing.name": "Name",
     "landing.defaultJumpRunDirection": "Default jump run direction",
     "landing.defaultJumpRunDirectionHelp": "In degrees (0–360).",
-    "landing.defaultJumperCount": "Default jumper count",
+    "landing.defaultJumperCount": "Default jump group count",
     "landing.defaultJumperCountHelp":
         "Used when automatically creating a jump run.",
     "landing.fmiHelp": "Find the FMISID of an FMI observation station",
@@ -534,6 +536,8 @@ const finnish = {
     "map.region": "Hyppypaikan kartta ja tuuliprofiili",
     "map.onMap": (name) => `${name} kartalla`,
     "map.ground": "Maanpinta",
+    "map.fmiStation": "FMI sääasema",
+    "map.fintrafficStation": "Fintraffic sääasema",
     "map.windLabelCalm": (label) => `${label}: tyyntä`,
     "map.windLabelMissing": (label) => `${label}: ei tietoa`,
     "map.windLabel": (label, speed, direction) =>
@@ -586,7 +590,7 @@ const finnish = {
     "settings.freefall": "Vapaapudotuksen asetukset",
     "settings.jumpRun": "Hyppylinjan asetukset",
     "settings.jumpRunDirection": "Hyppylinjan suunta",
-    "settings.defaultJumperCount": "Hyppääjien oletusmäärä",
+    "settings.defaultJumperCount": "Hyppyryhmien oletusmäärä",
     "settings.exitHeight": "Uloshyppykorkeus (m)",
     "settings.openingHeight": "Avauskorkeus (m)",
     "settings.freefallSpeed": "Vapaapudotusnopeus (km/h)",
@@ -684,7 +688,7 @@ const finnish = {
     "landing.name": "Nimi",
     "landing.defaultJumpRunDirection": "Hyppylinjan oletussuunta",
     "landing.defaultJumpRunDirectionHelp": "Asteina (0–360).",
-    "landing.defaultJumperCount": "Hyppääjien oletusmäärä",
+    "landing.defaultJumperCount": "Hyppyryhmien oletusmäärä",
     "landing.defaultJumperCountHelp":
         "Käytetään hyppylinjan automaattisessa luonnissa.",
     "landing.fmiHelp": "Hae Ilmatieteenlaitoksen havaintoaseman FMISID",

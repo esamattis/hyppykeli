@@ -433,7 +433,7 @@ export function CreateDropzoneForm() {
         lat: "",
         lon: "",
         default_jump_run_direction: "",
-        default_jumper_count: "",
+        default_jump_group_count: "",
     });
     /** @param {import("preact").JSX.TargetedEvent<HTMLInputElement>} event */
     function updateField(event) {
@@ -589,19 +589,19 @@ export function CreateDropzoneForm() {
                 </div>
 
                 <div class="field">
-                    <label for="default_jumper_count">
+                    <label for="default_jump_group_count">
                         ${t("landing.defaultJumperCount")}
                     </label>
                     ${h(ClearableInput, {
-                        name: "default_jumper_count",
-                        placeholder: "14",
-                        value: fields.default_jumper_count,
+                        name: "default_jump_group_count",
+                        placeholder: "6",
+                        value: fields.default_jump_group_count,
                         label: t("landing.defaultJumperCount"),
                         type: "number",
                         min: 1,
                         max: 100,
                         onInput: updateField,
-                        onClear: () => clearField("default_jumper_count"),
+                        onClear: () => clearField("default_jump_group_count"),
                     })}
                 </div>
                 <div class="desc">${t("landing.defaultJumperCountHelp")}</div>
