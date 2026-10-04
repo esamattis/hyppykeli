@@ -321,6 +321,8 @@ export function DropzoneMap() {
     `);
     /** @type {import('preact').RefObject<HTMLDivElement>} */
     const mapRef = useRef(null);
+    /** @type {import('preact').RefObject<import('leaflet').Map | null>} */
+    const activeLeafletRef = useRef(null);
     const arrowId = `freefall-arrow-${useId()}`;
     const [shareError, setShareError] = useState("");
     const [now, setNow] = useState(Date.now());
@@ -455,6 +457,7 @@ export function DropzoneMap() {
             zoomSnap: 0,
             tapHold: false,
         }).setView(center ?? [lat, lon], zoom);
+        activeLeafletRef.current = leafletMap;
         setLeafletInstance(leafletMap);
         setPlacingJumpRunDirection(false);
 
@@ -565,6 +568,8 @@ export function DropzoneMap() {
         );
         observer.observe(mapRef.current);
         return () => {
+            if (activeLeafletRef.current === leafletMap)
+                activeLeafletRef.current = null;
             observer.disconnect();
             container.removeEventListener("pointerdown", selectDragging, true);
             container.removeEventListener("touchstart", startGesture);
@@ -573,10 +578,11 @@ export function DropzoneMap() {
             container.removeEventListener("touchcancel", endGesture);
             leafletMap.remove();
         };
-    }, [coordinates, name]);
+    }, [coordinates]);
 
     useEffect(() => {
-        if (!leafletInstance) return;
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
+            return;
         const [lat, lng] = coordinates?.split(",").map(Number) ?? [];
         const target =
             center ??
@@ -591,7 +597,8 @@ export function DropzoneMap() {
     }, [leafletInstance, center, zoom, coordinates]);
 
     useEffect(() => {
-        if (!leafletInstance) return;
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
+            return;
         const container = leafletInstance.getContainer();
         let pointerFocus = false;
         const usePointer = () => {
@@ -762,7 +769,12 @@ export function DropzoneMap() {
           )
         : [];
     useEffect(() => {
-        if (!leafletInstance || !jumpRunStart) return;
+        if (
+            !leafletInstance ||
+            activeLeafletRef.current !== leafletInstance ||
+            !jumpRunStart
+        )
+            return;
         const layers = layerGroup().addTo(leafletInstance);
         const line = polyline([], {
             color: "#2563eb",
@@ -824,7 +836,12 @@ export function DropzoneMap() {
                 speedKmh: jumpers[index]?.speedKmh ?? DEFAULT_JUMPER.speedKmh,
             })),
         ];
-        if (!leafletInstance || !arrows.length) return;
+        if (
+            !leafletInstance ||
+            activeLeafletRef.current !== leafletInstance ||
+            !arrows.length
+        )
+            return;
         const layers = layerGroup().addTo(leafletInstance);
         const forecastWinds = getMapWindData(now).freefallWinds;
         const lines = arrows.flatMap((settings) => {

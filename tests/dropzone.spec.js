@@ -732,6 +732,31 @@ test("map toolbar expands only the map in both modes and restores", async ({
     await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
 });
 
+test("map recreates safely when forecast coordinates change", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    const map = page.locator(".dz-map");
+    await expect(map.getByRole("button", { name: "Zoom in" })).toBeVisible();
+
+    await page.evaluate(async () => {
+        const { FORECAST_COORDINATES } = await import("/src/data.js");
+        FORECAST_COORDINATES.value = "62.5,25.7";
+        await new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve)),
+        );
+    });
+
+    await expect(map.getByRole("button", { name: "Zoom in" })).toBeVisible();
+    await map.getByRole("button", { name: "Zoom in" }).click();
+    await expect
+        .poll(() => new URL(page.url()).searchParams.get("map_zoom"))
+        .toBe("15");
+    expect(errors).toEqual([]);
+});
+
 test("map wind profile shows the developer average and ground wind", async ({
     page,
 }) => {
