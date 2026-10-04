@@ -12,7 +12,6 @@ import { effect, signal } from "@preact/signals";
 import { useId, useRef, useState } from "preact/hooks";
 import { h, html } from "htm/preact";
 import {
-    clearOMCache,
     OpenMeteoTool,
     OpenMeteoRaw,
     OM_DATA,
@@ -28,16 +27,12 @@ import {
     METARS,
     STATION_NAME,
     ERRORS,
-    updateWeatherData,
-    LOADING,
     addError,
-    FORECAST_DAY,
     FORECAST_DATE,
     STALE_FORECASTS,
     FORECAST_LOCATION_NAME,
     QUERY_PARAMS,
     navigateQs,
-    getQs,
     LATEST_OBSERVATION,
     SAVED_DZs,
     saveCurrentDz,
@@ -57,7 +52,6 @@ import { CloudCoverIcon, Icon, WindArrow, PieChart } from "./icons.js";
 import { Compass } from "./compass.js";
 import {
     getLiftedCondensationLevel,
-    dateOffset,
     formatClock,
     formatDate,
     humanDayText,
@@ -1495,23 +1489,6 @@ function CloudSummary() {
     `;
 }
 
-function UpdateButton() {
-    return html`
-        <button
-            disabled=${LOADING.value > 0}
-            onClick=${() => {
-                MENU_OPEN.value = false;
-                clearOMCache();
-                updateWeatherData();
-            }}
-        >
-            ${t("update.button")}
-        </button>
-        <br />
-        <small>${t("update.automatic")}</small>
-    `;
-}
-
 /**
  * @type {Signal<boolean>}
  */
@@ -1536,52 +1513,6 @@ document.addEventListener("click", (e) => {
 const OTHER_DZs = [...completeDropzones, ...partialDropzones].sort((a, b) =>
     a.name.localeCompare(b.name),
 );
-
-/**
- * Navigate to a link without reloading while updating the QUERY_PARAMS signal
- *
- * @param {MouseEvent} e
- */
-function asInPageNavigation(e) {
-    if (!(e.target instanceof HTMLAnchorElement)) {
-        return;
-    }
-
-    if (e.target.target === "_blank") {
-        return;
-    }
-
-    if (e.metaKey || e.ctrlKey) {
-        return;
-    }
-
-    if (e.button !== 0) {
-        return;
-    }
-
-    e.preventDefault();
-
-    const target = new URL(e.target.href);
-    const params = Object.fromEntries(target.searchParams);
-    navigateQs(params, { mode: "replace", replace: true });
-}
-
-/**
- * @param {Event} e
- */
-function handleForecastDayChange(e) {
-    if (!(e.target instanceof HTMLInputElement)) {
-        return;
-    }
-
-    const value = new Date(e.target.value);
-    const dayDiff =
-        Math.floor(
-            (value.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24),
-        ) + 1;
-
-    navigateQs({ forecast_day: dayDiff.toString() });
-}
 
 /**
  * @param {MouseEvent} e
@@ -1686,56 +1617,12 @@ export function SideMenu({ developerEditorRef }) {
             font-size: 1rem;
         }
 
-        .forecast-days {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 4px;
-            padding: 4px;
-            margin-bottom: 16px;
-            background: var(--color-surface-soft);
-            border: 1px solid var(--color-border);
-            border-radius: 12px;
-        }
-
-        .forecast-days a {
-            padding: 8px;
-            border-radius: var(--radius-sm);
-            text-align: center;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .forecast-days a[aria-current="date"] {
-            background: var(--color-primary);
-            color: var(--color-surface);
-        }
-
         label,
         .saved-label {
             display: block;
             margin-bottom: 6px;
             color: var(--color-muted);
             font-size: 0.8rem;
-        }
-
-        input[type="date"] {
-            width: 100%;
-            min-width: 0;
-        }
-
-        .refresh {
-            display: grid;
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .refresh br {
-            display: none;
-        }
-
-        small {
-            color: var(--color-muted);
-            font-size: 0.75rem;
         }
 
         .dz-grid {
@@ -1831,39 +1718,6 @@ export function SideMenu({ developerEditorRef }) {
             </header>
 
             <div class="menu-content">
-                <section class="menu-section" aria-labelledby="menu-forecast">
-                    <h2 id="menu-forecast">${t("menu.forecastDay")}</h2>
-                    <div class="forecast-days">
-                        <a
-                            onClick=${asInPageNavigation}
-                            href=${getQs({ forecast_day: undefined })}
-                            aria-current=${FORECAST_DAY.value === 0 ? "date" : undefined}
-                        >
-                            ${t("common.today")}
-                        </a>
-                        <a
-                            onClick=${asInPageNavigation}
-                            href=${getQs({ forecast_day: "1" })}
-                            aria-current=${FORECAST_DAY.value === 1 ? "date" : undefined}
-                        >
-                            ${t("common.tomorrow")}
-                        </a>
-                    </div>
-                    <label for="menu-forecast-date">
-                        ${t("menu.selectDay")}
-                    </label>
-                    <input
-                        id="menu-forecast-date"
-                        type="date"
-                        name="forecast_date"
-                        min=${new Date().toISOString().split("T")[0]}
-                        max=${dateOffset(9).toISOString().split("T")[0]}
-                        onInput=${handleForecastDayChange}
-                        value=${FORECAST_DATE.value.toISOString().split("T")[0]}
-                    />
-                    <div class="refresh"><${UpdateButton} /></div>
-                </section>
-
                 <section class="menu-section" aria-labelledby="menu-dropzones">
                     <h2 id="menu-dropzones">${t("menu.dropzones")}</h2>
                     ${

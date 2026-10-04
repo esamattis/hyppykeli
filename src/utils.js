@@ -20,15 +20,6 @@ export function formatDate(date) {
 }
 
 /**
- * @param {number} offset
- */
-export function dateOffset(offset) {
-    const date = new Date();
-    date.setDate(date.getDate() + offset);
-    return date;
-}
-
-/**
  * @param {Date} date
  */
 export function humanDayText(date) {

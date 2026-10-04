@@ -92,7 +92,7 @@ test("language can be changed live and persists", async ({ page }) => {
 
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(
-        page.getByRole("heading", { name: "Forecast day" }),
+        page.getByRole("heading", { name: "Dropzones" }),
     ).toBeVisible();
     await expect(
         page.getByRole("heading", { name: "Winds", exact: true }),
@@ -168,7 +168,6 @@ test("redesigned menu lists dropzones and removes obsolete tools", async ({
     );
     await expect(menu.getByRole("heading")).toHaveText([
         "EFJY",
-        "Ennustepäivä",
         "Hyppypaikat",
         "Kieli",
     ]);
@@ -182,26 +181,6 @@ test("redesigned menu lists dropzones and removes obsolete tools", async ({
     await menu.getByRole("button", { name: "Sulje valikko" }).click();
     await expect(menu).not.toBeInViewport();
     await expect(menu).toHaveAttribute("inert", "");
-});
-
-test("forecast shortcut selects tomorrow without losing weather settings", async ({
-    page,
-}) => {
-    const toggle = page.getByRole("button", { name: "Valikko", exact: true });
-    await toggle.click();
-    await page
-        .locator(".side-menu")
-        .getByRole("link", { name: "Huomenna", exact: true })
-        .click();
-    await expect(page).toHaveURL(/forecast_day=1/);
-    expect(new URL(page.url()).searchParams.get("fmisid")).toBe("137208");
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await toggle.click();
-    await expect(
-        page
-            .locator(".side-menu")
-            .getByRole("link", { name: "Huomenna", exact: true }),
-    ).toHaveAttribute("aria-current", "date");
 });
 
 test("ground wind shows the developer readings and hourly ranges", async ({
