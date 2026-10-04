@@ -9,7 +9,7 @@ import {
     QUERY_PARAMS,
 } from "./data.js";
 import { isNullish, hasValidWindData } from "./utils.js";
-import { Help } from "./components.js";
+import { Help, FromNow } from "./components.js";
 
 // Constants for needle length calculation
 const MIN_NEEDLE_LENGTH = 30;
@@ -122,10 +122,22 @@ export function Compass({ floating = false } = {}) {
             display: none;
         }
 
-        :scope > .help {
-            position: absolute;
-            right: 0;
-            bottom: 0;
+        .compass-controls {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 4px;
+            margin-top: 12px;
+        }
+
+        .compass-controls > .help {
+            margin: 0;
+        }
+
+        .compass-controls .summary-time {
+            text-align: center;
+            color: var(--color-muted);
+            font-size: 0.85rem;
         }
 
         .compass-animation-toggle {
@@ -199,6 +211,7 @@ export function Compass({ floating = false } = {}) {
             </svg>
 
             ${!floating && html`
+                <div class="compass-controls">
                 <label class="compass-animation-toggle">
                     <input
                         type="checkbox"
@@ -211,16 +224,26 @@ export function Compass({ floating = false } = {}) {
                     />
                     Animaatio
                 </label>
-            `}
 
-            ${!floating && h(Help, {}, html`
+                <div class="summary-time">
+                    ${observation && h(FromNow, { date: observation.time })}
+                </div>
+
+                ${h(Help, {}, html`
+                <p>
+                    Tuulilukemien alla näkyvät vaihteluvälit kertovat puuskan,
+                    keskituulen ja suunnan pienimmän ja suurimman havaitun arvon
+                    viimeisen tunnin ajalta. Arvot on pyöristetty kokonaisluvuiksi.
+                </p>
                 <p>
                     Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Oranssi
                     ympyrä on oppilasraja (8 m/s) ja musta ympyrä on kelppariraja (11 m/s).
                     Animaatio toistaa viimeisen tunnin havainnot aikajärjestyksessä.
                     Kun animaatio on pois päältä, nuoli näyttää uusimman havainnon.
                 </p>
-            `)}
+                `)}
+                </div>
+            `}
         </div>
     `;
 }

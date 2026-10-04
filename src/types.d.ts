@@ -1,6 +1,11 @@
 type Signal<T> = import("@preact/signals").Signal<T>;
 type ReadonlySignal<T> = import("@preact/signals").ReadonlySignal<T>;
 
+interface WindRange {
+    min: number;
+    max: number;
+}
+
 interface CompassWindSample {
     time: Date;
     gust: number;

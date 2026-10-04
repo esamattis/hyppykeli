@@ -50,6 +50,7 @@ import {
     humanDayText,
     isNullish,
     hasValidWindData,
+    getHourlyWindRange,
     removeNullish,
     saveTextToFile,
     formatCloudBase,
@@ -544,8 +545,14 @@ function WindSummary() {
             display: flex;
             align-items: baseline;
             gap: 3px;
-            font-size: clamp(1rem, 2.5vw, 1.5rem);
+            font-size: clamp(1.25rem, 3vw, 1.75rem);
             white-space: nowrap;
+        }
+        .wind-metrics .hourly-range {
+            margin-top: 4px;
+            color: var(--color-muted);
+            font-size: 0.8rem;
+            font-weight: normal;
         }
         .latest-value .direction-value {
             width: auto;
@@ -569,6 +576,21 @@ function WindSummary() {
         `;
     }
 
+    const observations = OBSERVATIONS.value.includes(obs)
+        ? OBSERVATIONS.value
+        : [obs, ...OBSERVATIONS.value];
+    const now = Date.now();
+    /** @param {"gust" | "speed" | "direction"} key */
+    function hourlyRange(key) {
+        const range = getHourlyWindRange(observations, key, now);
+        const unit = key === "direction" ? "°" : " m/s";
+        return html`
+            <dd class="hourly-range">
+                ${range ? `${range.min}–${range.max}${unit}` : "?"}
+            </dd>
+        `;
+    }
+
     return html`
         <div class="wind-summary">
             ${scope.style}
@@ -578,25 +600,27 @@ function WindSummary() {
                     <dd
                         class=${"latest-value latest-gust " + getWarningLevel(obs.gust ?? 0)}
                     >
-                        ${obs.gust?.toFixed(1) ?? "?"}
+                        ${obs.gust?.toFixed(0) ?? "?"}
                         <span class="unit">m/s</span>
                     </dd>
+                    ${hourlyRange("gust")}
                 </div>
                 <div class="latest-wind-cell">
                     <dt>Keskituuli</dt>
                     <dd class="latest-value latest-wind">
-                        ${obs.speed?.toFixed(1) ?? "?"}
+                        ${obs.speed?.toFixed(0) ?? "?"}
                         <span class="unit">m/s</span>
                     </dd>
+                    ${hourlyRange("speed")}
                 </div>
                 <div class="latest-wind-cell">
                     <dt>Suunta</dt>
                     <dd class="latest-value latest-wind">
                         ${h(WindDirection, { direction: obs.direction, value: true })}
                     </dd>
+                    ${hourlyRange("direction")}
                 </div>
             </dl>
-            <div class="summary-time">${h(FromNow, { date: obs.time })}</div>
         </div>
     `;
 }

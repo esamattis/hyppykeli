@@ -201,6 +201,37 @@ export function hasValidWindData(obs) {
 }
 
 /**
+ * Minimum and maximum observed during the last hour.
+ * @param {WeatherData[]} observations
+ * @param {"gust" | "speed" | "direction"} key
+ * @param {number} [now]
+ * @returns {WindRange | undefined}
+ */
+export function getHourlyWindRange(observations, key, now = Date.now()) {
+    const values = observations.flatMap((observation) => {
+        const age = now - observation.time.getTime();
+        const value = observation[key];
+        if (
+            age < 0 ||
+            age > 60 * 60 * 1000 ||
+            value === undefined ||
+            !Number.isFinite(value) ||
+            value < 0
+        ) {
+            return [];
+        }
+        return [value];
+    });
+
+    if (!values.length) return;
+
+    return {
+        min: Math.round(Math.min(...values)),
+        max: Math.round(Math.max(...values)),
+    };
+}
+
+/**
  * Zero is falsy in JavaScript, so when checking for undefined or null,
  * we need to check explicitly for them instead of just using `if (!value)`.
  *
