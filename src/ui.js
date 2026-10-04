@@ -1481,10 +1481,6 @@ function HighWinds() {
                     ${showDetails ? h(OpenMeteoRaw, {}) : h(OpenMeteoTool, {})}
                 </${ErrorBoundary}>
             </div>
-
-            <p>
-                Lähde <a href="https://open-meteo.com/">Open-Meteo</a> API.
-            </p>
         </div>
     `;
 }
@@ -1506,7 +1502,7 @@ function Info() {
     const metar = METARS.value?.[0];
 
     return html`
-        <div id="info">
+        <footer id="info">
             ${scope.style}
             ${
                 STATION_NAME.value
@@ -1543,16 +1539,20 @@ function Info() {
                     return `Etäisyys havaintoasemalle ${km}km.`;
                 },
             )}
+            <div>
+                Lähteet: <a href="https://www.ilmatieteenlaitos.fi/">FMI</a>,${" "}
+                <a href="https://flyk.com/">Flyk</a> ja${" "}
+                <a href="https://open-meteo.com/">Open-Meteo</a>.
+            </div>
             <div class="disclaimer">
                 ${" "}Tietojen käyttö omalla vastuulla. Ei takeita että tiedot
                 ovat oikein.
             </div>
             <small>
-                Psst, onko tarvetta hyppypäiväkirjalle? Tsekkaa
-                <a href="https://loki.hyppykeli.fi/">Loki</a>
-                . Koodi HYPPYKELI2026
+                Psst, onko tarvetta hyppypäiväkirjalle? Tsekkaa${" "}
+                <a href="https://loki.hyppykeli.fi/">Loki</a>. Koodi HYPPYKELI2026
             </small>
-        </div>
+        </footer>
     `;
 }
 
@@ -1560,6 +1560,7 @@ function Title() {
     const scope = useScope(css`
         :scope {
             grid-area: title;
+            margin: 0;
             max-width: 100%;
             width: 100%;
             word-break: break-word;
@@ -1644,36 +1645,36 @@ export function Root() {
     const scope = useScope(css`
         :scope {
             display: grid;
-            margin: 20px;
+            margin: 16px;
             margin-bottom: 100px;
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: 16px;
 
             /** MOBILE **/
             grid-template-areas:
-                "errors errors"
+                ${ERRORS.value.length > 0 ? '"errors errors"' : ""}
                 "title title"
-                "info info"
                 "clouds clouds"
                 "winds winds"
                 "observations-graph observations-graph"
                 "forecasts-graph forecasts-graph"
                 "dropzone-map dropzone-map"
                 "high-winds-details high-winds-details"
-                "high-winds-today high-winds-today";
+                "high-winds-today high-winds-today"
+                "info info";
         }
         @media (min-width: 900px) {
             :scope {
                 grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr);
                 grid-template-areas:
-                    "errors errors"
+                    ${ERRORS.value.length > 0 ? '"errors errors"' : ""}
                     "title title"
-                    "info info"
                     "clouds winds"
                     "observations-graph forecasts-graph"
                     "dropzone-map dropzone-map"
                     "high-winds-today high-winds-today"
-                    "high-winds-details high-winds-details";
+                    "high-winds-details high-winds-details"
+                    "info info";
             }
         }
         :scope
@@ -1687,7 +1688,7 @@ export function Root() {
                 #high-winds-details
             ) {
             min-width: 0;
-            padding: 20px;
+            padding: 16px;
             background: var(--color-surface);
             border: 1px solid var(--color-border);
             border-radius: var(--radius-panel);
@@ -1710,7 +1711,7 @@ export function Root() {
                     #high-winds-today,
                     #high-winds-details
                 ) {
-                padding: 14px;
+                padding: 12px;
             }
         }
 
@@ -1810,8 +1811,6 @@ export function Root() {
 
             <${Title} />
 
-            <${Info} />
-
             <div class="clouds" id="clouds">
                 <h2 class="h2-with-icon">
                     Pilvet
@@ -1873,6 +1872,7 @@ export function Root() {
             ${h(DropzoneMap, {})}
 
             <${HighWinds} />
+            <${Info} />
         </div>
         <${SideMenu} />
         <${FloatingMenuButton} />
