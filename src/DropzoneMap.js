@@ -83,7 +83,7 @@ export function getMapWindData(now = Date.now()) {
 /** @param {MapWindLevel[]} winds @returns {MapWindLevel} */
 function averageFreeFallWind(winds) {
     const average = {
-        label: "4200-800 m",
+        label: "≈ 4200-800 m",
         speed: /** @type {number | null} */ (null),
         direction: /** @type {number | null} */ (null),
     };
@@ -118,8 +118,8 @@ function averageFreeFallWind(winds) {
     return average;
 }
 
-/** @param {{ wind: MapWindLevel }} props */
-function WindLevel({ wind }) {
+/** @param {{ wind: MapWindLevel, selected: boolean, onSelect: () => void }} props */
+function WindLevel({ wind, selected, onSelect }) {
     const validSpeed =
         wind.speed !== null && Number.isFinite(wind.speed) && wind.speed >= 0;
     const validDirection =
@@ -132,33 +132,40 @@ function WindLevel({ wind }) {
         : "Ei tietoa";
     return html`
         <li class="wind-level">
-            <div>
-                <strong>${wind.label}</strong>
+            <button
+                type="button"
+                class="wind-level-button"
+                aria-pressed=${selected}
+                onClick=${onSelect}
+            >
                 <div>
-                    ${label}${validSpeed && direction !== null ? ` ${Math.round(direction) % 360}°` : ""}
+                    <strong>${wind.label}</strong>
+                    <div>
+                        ${label}${validSpeed && direction !== null ? ` ${Math.round(direction) % 360}°` : ""}
+                    </div>
                 </div>
-            </div>
-            <span class="wind-level-arrow">
-                ${
-                    validSpeed && wind.speed === 0
-                        ? h(Icon, {
-                              name: "calm",
-                              size: 20,
-                              label: `${wind.label}: tyyntä`,
-                          })
-                        : validSpeed && direction !== null
-                          ? h(WindArrow, {
-                                direction,
-                                size: 20,
-                                label: `${wind.label}: ${label}, tuuli suunnasta ${direction}°`,
-                            })
-                          : h(Icon, {
-                                name: "missing",
-                                size: 20,
-                                label: `${wind.label}: ei tietoa`,
-                            })
-                }
-            </span>
+                <span class="wind-level-arrow">
+                    ${
+                        validSpeed && wind.speed === 0
+                            ? h(Icon, {
+                                  name: "calm",
+                                  size: 20,
+                                  label: `${wind.label}: tyyntä`,
+                              })
+                            : validSpeed && direction !== null
+                              ? h(WindArrow, {
+                                    direction,
+                                    size: 20,
+                                    label: `${wind.label}: ${label}, tuuli suunnasta ${direction}°`,
+                                })
+                              : h(Icon, {
+                                    name: "missing",
+                                    size: 20,
+                                    label: `${wind.label}: ei tietoa`,
+                                })
+                    }
+                </span>
+            </button>
         </li>
     `;
 }
@@ -206,12 +213,25 @@ export function DropzoneMap() {
             padding: 0;
             margin: 0;
         }
-        .wind-level {
+        .wind-level-button {
             display: flex;
             align-items: center;
             gap: 4px;
             font-size: 0.8rem;
-            padding: 4px 0;
+            padding: 8px;
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: inherit;
+            text-align: left;
+            font-weight: 400;
+        }
+        .wind-level-button:hover,
+        .wind-level-button[aria-pressed="true"] {
+            background: var(--color-surface-hover);
+        }
+        .wind-level-button[aria-pressed="true"] {
+            border-color: var(--color-primary);
         }
         .wind-level svg {
             flex-shrink: 0;
@@ -223,6 +243,7 @@ export function DropzoneMap() {
     /** @type {import('preact').RefObject<HTMLDivElement>} */
     const mapRef = useRef(null);
     const [now, setNow] = useState(Date.now());
+    const [selectedLabel, setSelectedLabel] = useState("≈ 4200-800 m");
     const coordinates = FORECAST_COORDINATES.value;
     const name = NAME.value ?? "DZ";
     useEffect(() => {
@@ -363,6 +384,8 @@ export function DropzoneMap() {
     }, [coordinates, name]);
 
     const { data, time, winds, averageWind, ground } = getMapWindData(now);
+    const selectedWind =
+        winds.find((wind) => wind.label === selectedLabel) ?? averageWind;
 
     return html`
         <section
@@ -390,16 +413,16 @@ export function DropzoneMap() {
                             Korkeudet ovat arvioita merenpinnasta.
                         </p>
                         <p>
-                            4200-800 m: nopeuden ja suunnan keskiarvo
+                            ≈ 4200-800 m: nopeuden ja suunnan keskiarvo
                             korkeuksilta 800, 1500, 3000 ja 4200 m. Suunnan
                             keskiarvo huomioi pohjoissuunnan ylityksen. Antaa
                             karkean arvion ajautumisesta vapaapudotuksessa.
                         </p>
                         <p>
-                            Kartan liikkuvat viivat näyttävät 4200-800 m
-                            keskimääräisen tuulen virtaussuunnan. Voimakkaampi
-                            tuuli näkyy pidempinä ja nopeammin liikkuvina
-                            viivoina.
+                            Valitse korkeus nähdäksesi sen tuulen kartalla.
+                            Kartan liikkuvat viivat näyttävät valitun tuulen
+                            virtaussuunnan. Voimakkaampi tuuli näkyy pidempinä
+                            ja nopeammin liikkuvina viivoina.
                         </p>
                         <p>
                             Maanpinta:
@@ -411,7 +434,14 @@ export function DropzoneMap() {
             <div class="map-layout">
                 <aside class="wind-profile">
                     <ul>
-                        ${winds.map((wind) => h(WindLevel, { key: wind.label, wind }))}
+                        ${winds.map((wind) =>
+                            h(WindLevel, {
+                                key: wind.label,
+                                wind,
+                                selected: wind.label === selectedWind.label,
+                                onSelect: () => setSelectedLabel(wind.label),
+                            }),
+                        )}
                     </ul>
                 </aside>
                 <div class="map-frame">
@@ -424,7 +454,7 @@ export function DropzoneMap() {
                     >
                         ${!coordinates ? "Odotetaan koordinaatteja…" : null}
                     </div>
-                    ${coordinates ? h(MapWindOverlay, { wind: averageWind }) : null}
+                    ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
                 </div>
             </div>
         </section>

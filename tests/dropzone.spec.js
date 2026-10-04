@@ -435,7 +435,7 @@ test("map wind profile shows the developer average and ground wind", async ({
 }) => {
     const profile = page.locator("#dropzone-map .wind-level");
     const average = profile.filter({
-        has: page.getByText("4200-800 m", { exact: true }),
+        has: page.getByText("≈ 4200-800 m", { exact: true }),
     });
     const ground = profile.filter({
         has: page.getByText("Maanpinta", { exact: true }),
@@ -443,6 +443,106 @@ test("map wind profile shows the developer average and ground wind", async ({
     await expect(average).toContainText("13 m/s 246°");
     await expect(ground).toContainText("4 m/s 194°");
     // Individual altitude forecasts are live data, with no DEV_ override.
+});
+
+test("selecting a wind level changes the map's wind motion", async ({
+    page,
+}) => {
+    const profile = page.locator("#dropzone-map");
+    await page.evaluate(async () => {
+        const { FORECAST_COORDINATES } = await import("/src/data.js");
+        FORECAST_COORDINATES.value = "62.4,25.6";
+    });
+    await expect(profile.locator("canvas")).toBeAttached();
+    await profile.scrollIntoViewIfNeeded();
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("/src/om.js");
+        const hourly = {
+            time: [new Date().toISOString().slice(0, 13) + ":00"],
+        };
+        for (const [index, level] of [
+            "600",
+            "700",
+            "850",
+            "925",
+            "1000",
+        ].entries()) {
+            hourly[`windspeed_${level}hPa`] = [(index + 1) * 3.6];
+            hourly[`winddirection_${level}hPa`] = [index * 90];
+        }
+        OM_DATA.value = { utc_offset_seconds: 0, hourly };
+        // Observe the actual drawn streak, including its direction and length.
+        const canvas = document.querySelector(".map-wind-overlay canvas");
+        const context = canvas.getContext("2d");
+        const moveTo = context.moveTo.bind(context);
+        const lineTo = context.lineTo.bind(context);
+        let tail = [0, 0];
+        context.moveTo = (x, y) => {
+            tail = [x, y];
+            moveTo(x, y);
+        };
+        context.lineTo = (x, y) => {
+            canvas.dataset.vector = JSON.stringify([x - tail[0], y - tail[1]]);
+            lineTo(x, y);
+        };
+    });
+
+    const average = profile.getByRole("button", { name: /^≈ 4200-800 m/ });
+    await expect(average).toHaveAttribute("aria-pressed", "true");
+    for (const [label, speed, direction] of [
+        ["≈ 4200 m", 1, 0],
+        ["≈ 3000 m", 2, 90],
+        ["≈ 1500 m", 3, 180],
+        ["≈ 800 m", 4, 270],
+        ["≈ 110 m", 5, 360],
+        ["Maanpinta", 3.5, 194],
+        ["≈ 4200-800 m", 12.5625, 246.25350981256466],
+    ]) {
+        const button = profile.getByRole("button", {
+            name: new RegExp(`^${label}`),
+        });
+        await button.click();
+        await expect(button).toHaveAttribute("aria-pressed", "true");
+        await expect(
+            profile.locator('.wind-level-button[aria-pressed="true"]'),
+        ).toHaveCount(1);
+        const radians = (direction * Math.PI) / 180;
+        const length = 6 + speed * 2;
+        await expect
+            .poll(async () => {
+                const vector = await profile
+                    .locator("canvas")
+                    .getAttribute("data-vector");
+                if (!vector) return false;
+                const [x, y] = JSON.parse(vector);
+                return (
+                    Math.abs(x + Math.sin(radians) * length) < 0.001 &&
+                    Math.abs(y - Math.cos(radians) * length) < 0.001
+                );
+            })
+            .toBe(true);
+    }
+    const altitude = profile.getByRole("button", { name: /^≈ 4200 m/ });
+    await altitude.focus();
+    await page.keyboard.press("Enter");
+    await expect(altitude).toHaveAttribute("aria-pressed", "true");
+    // A forecast refresh updates the selected level instead of resetting it.
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("/src/om.js");
+        OM_DATA.value = null;
+    });
+    await expect(altitude).toContainText("Ei tietoa");
+    await expect(altitude).toHaveAttribute("aria-pressed", "true");
+    await expect
+        .poll(() =>
+            profile.locator("canvas").evaluate((canvas) => {
+                const pixels = canvas
+                    .getContext("2d")
+                    .getImageData(0, 0, canvas.width, canvas.height).data;
+                return pixels.every((value) => value === 0);
+            }),
+        )
+        .toBe(true);
 });
 
 test.describe("upper wind forecast timezones", () => {
