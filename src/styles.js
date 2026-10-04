@@ -157,3 +157,22 @@ export const summaryStyles = css`
         font-size: 0.85rem;
     }
 `;
+
+export const settingsDialogStyles = css`
+    :scope:is(dialog) {
+        width: 420px;
+        box-sizing: border-box;
+    }
+    h2 {
+        margin-top: 0;
+    }
+    form label {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+    }
+    input[type="number"] {
+        width: 100%;
+        box-sizing: border-box;
+    }
+`;

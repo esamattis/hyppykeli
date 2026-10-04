@@ -3,6 +3,23 @@ import { test, expect } from "@playwright/test";
 const developerPath =
     "/dz/?fmisid=137208&icaocode=EFJY&DEV_ground_obs=6.4%2C3.5%2C194%2C4.8%3B6.2%2C3.7%2C193%2C14.8%3B6.1%2C4%2C194%2C24.8%3B4%2C2.8%2C200%2C34.8%3B4.4%2C2.6%2C201%2C44.8%3B4.7%2C2.9%2C199%2C54.8&DEV_metar=METAR+EFJY+040720Z+AUTO+19007KT+160V220+9999+-SHRA+OVC005+%2F%2F%2F%2F%2F%2FCB+11%2F11+Q1014%3D&DEV_map_speed=12.5625&DEV_map_direction=246.25350981256466";
 
+/** @param {import("@playwright/test").Page} page */
+async function setUniformFreefallWind(page) {
+    await page.evaluate(async () => {
+        const { FORECAST_COORDINATES } = await import("/src/data.js");
+        const { OM_DATA } = await import("/src/om.js");
+        FORECAST_COORDINATES.value = "62.4,25.6";
+        const hourly = {
+            time: [new Date().toISOString().slice(0, 13) + ":00"],
+        };
+        for (const level of ["600", "700", "850", "925", "1000"]) {
+            hourly[`windspeed_${level}hPa`] = [36];
+            hourly[`winddirection_${level}hPa`] = [0];
+        }
+        OM_DATA.value = { utc_offset_seconds: 0, hourly };
+    });
+}
+
 test.beforeEach(async ({ page, baseURL }) => {
     // These tests use DEV_ values only; live weather, tiles and analytics
     // must not make their results depend on external services.
@@ -585,19 +602,7 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     page,
     isMobile,
 }) => {
-    await page.evaluate(async () => {
-        const { FORECAST_COORDINATES } = await import("/src/data.js");
-        const { OM_DATA } = await import("/src/om.js");
-        FORECAST_COORDINATES.value = "62.4,25.6";
-        const hourly = {
-            time: [new Date().toISOString().slice(0, 13) + ":00"],
-        };
-        for (const level of ["600", "700", "850", "925", "1000"]) {
-            hourly[`windspeed_${level}hPa`] = [36];
-            hourly[`winddirection_${level}hPa`] = [0];
-        }
-        OM_DATA.value = { utc_offset_seconds: 0, hourly };
-    });
+    await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
     const line = map.locator(".freefall-drift-line");
     const undo = page.getByRole("button", { name: "Poista viimeisin nuoli" });
@@ -790,19 +795,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     page,
     isMobile,
 }) => {
-    await page.evaluate(async () => {
-        const { FORECAST_COORDINATES } = await import("/src/data.js");
-        const { OM_DATA } = await import("/src/om.js");
-        FORECAST_COORDINATES.value = "62.4,25.6";
-        const hourly = {
-            time: [new Date().toISOString().slice(0, 13) + ":00"],
-        };
-        for (const level of ["600", "700", "850", "925", "1000"]) {
-            hourly[`windspeed_${level}hPa`] = [36];
-            hourly[`winddirection_${level}hPa`] = [0];
-        }
-        OM_DATA.value = { utc_offset_seconds: 0, hourly };
-    });
+    await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
     const toggle = page.getByRole("button", {
         name: "Hyppylinja",
@@ -961,19 +954,7 @@ test("jump run adds jumpers using immediately applied template settings", async 
     page,
     isMobile,
 }) => {
-    await page.evaluate(async () => {
-        const { FORECAST_COORDINATES } = await import("/src/data.js");
-        const { OM_DATA } = await import("/src/om.js");
-        FORECAST_COORDINATES.value = "62.4,25.6";
-        const hourly = {
-            time: [new Date().toISOString().slice(0, 13) + ":00"],
-        };
-        for (const level of ["600", "700", "850", "925", "1000"]) {
-            hourly[`windspeed_${level}hPa`] = [36];
-            hourly[`winddirection_${level}hPa`] = [0];
-        }
-        OM_DATA.value = { utc_offset_seconds: 0, hourly };
-    });
+    await setUniformFreefallWind(page);
     await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
     const template = page.getByRole("button", {
         name: "Muokkaa: Lisättävän hyppääjän asetukset",

@@ -1,6 +1,8 @@
 // @ts-check
 import { h, html } from "htm/preact";
 import { useId, useRef, useState } from "preact/hooks";
+import { FreefallFields } from "./FreefallFields.js";
+import { settingsDialogStyles } from "./styles.js";
 import { Dialog } from "./components.js";
 import { Icon } from "./icons.js";
 import { css, useScope } from "./useScope.js";
@@ -50,22 +52,7 @@ export function EditableSettings({
             color: var(--color-primary);
             flex-shrink: 0;
         }
-        :scope:is(dialog) {
-            width: 420px;
-            box-sizing: border-box;
-        }
-        h2 {
-            margin-top: 0;
-        }
-        label {
-            display: grid;
-            gap: 8px;
-            margin-top: 14px;
-        }
-        input {
-            width: 100%;
-            box-sizing: border-box;
-        }
+        ${settingsDialogStyles}
         .presets {
             display: flex;
             flex-wrap: wrap;
@@ -107,18 +94,12 @@ export function EditableSettings({
         inputRef.current?.focus();
         inputRef.current?.select();
     };
-    /** @param {"exit" | "opening" | "speed"} field @param {Event} event */
-    const update = (field, event) => {
+    /** @param {Event} event */
+    const updateExit = (event) => {
         const input = /** @type {HTMLInputElement} */ (event.currentTarget);
-        const value = input.value;
-        if (field === "exit") setExitDraft(value);
-        else if (field === "opening") setOpeningDraft(value);
-        else setSpeedDraft(value);
-        if (!input.checkValidity()) return;
-        if (field === "exit") onAltitudeChange(Number(value), openingHeight);
-        else if (field === "opening")
-            onAltitudeChange(exitHeight, Number(value));
-        else onSpeedChange(Number(value));
+        setExitDraft(input.value);
+        if (input.checkValidity())
+            onAltitudeChange(Number(input.value), openingHeight);
     };
     return html`
         <button
@@ -174,51 +155,48 @@ export function EditableSettings({
                                           max="4200"
                                           step="1"
                                           value=${exitDraft}
-                                          onInput=${/** @param {Event} event */ (event) => update("exit", event)}
+                                          onInput=${updateExit}
                                       />
                                   </label>
                               `
                             : null
                     }
-                    <label>
-                        Avauskorkeus (m)
-                        <input
-                            type="number"
-                            required
-                            min="800"
-                            max=${exitHeight - 1}
-                            step="1"
-                            ref=${exitReadOnly ? inputRef : undefined}
-                            value=${openingDraft}
-                            onInput=${/** @param {Event} event */ (event) => update("opening", event)}
-                        />
-                    </label>
-                    ${
-                        exitReadOnly
-                            ? html`
-                                  <p>
-                                      Uloshyppykorkeus on yhteinen kaikille
-                                      hyppääjille. Muuta sitä hyppylinjan
-                                      asetuksista.
-                                  </p>
-                              `
-                            : null
-                    }
-                    <p>
-                        Tuuliprofiili kattaa 800–4200 m. Avauskorkeuden tulee
-                        olla uloshyppykorkeutta alempana.
-                    </p>
-                    <label>
-                        Vapaapudotusnopeus (km/h)
-                        <input
-                            type="number"
-                            required
-                            min="1"
-                            step="1"
-                            value=${speedDraft}
-                            onInput=${/** @param {Event} event */ (event) => update("speed", event)}
-                        />
-                    </label>
+                    ${h(
+                        FreefallFields,
+                        {
+                            exitHeight,
+                            openingDraft,
+                            speedDraft,
+                            openingRef: exitReadOnly ? inputRef : undefined,
+                            onDraftChange: (field, value) => {
+                                if (field === "openingHeight")
+                                    setOpeningDraft(value);
+                                else setSpeedDraft(value);
+                            },
+                            onChange: (field, value) => {
+                                if (field === "openingHeight")
+                                    onAltitudeChange(exitHeight, value);
+                                else onSpeedChange(value);
+                            },
+                        },
+                        html`
+                            ${
+                                exitReadOnly
+                                    ? html`
+                                          <p>
+                                              Uloshyppykorkeus on yhteinen
+                                              kaikille hyppääjille. Muuta sitä
+                                              hyppylinjan asetuksista.
+                                          </p>
+                                      `
+                                    : null
+                            }
+                            <p>
+                                Tuuliprofiili kattaa 800–4200 m. Avauskorkeuden
+                                tulee olla uloshyppykorkeutta alempana.
+                            </p>
+                        `,
+                    )}
                     <div class="presets">
                         ${presets.map(
                             (preset) => html`

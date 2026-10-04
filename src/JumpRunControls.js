@@ -1,6 +1,8 @@
 // @ts-check
 import { h, html } from "htm/preact";
 import { useId, useRef, useState } from "preact/hooks";
+import { FreefallFields } from "./FreefallFields.js";
+import { settingsDialogStyles } from "./styles.js";
 import { EditableSettings } from "./FreefallSettings.js";
 import { Dialog } from "./components.js";
 import { Icon } from "./icons.js";
@@ -36,10 +38,7 @@ export function JumpRunControls({
             min-width: 4ch;
             font-variant-numeric: tabular-nums;
         }
-        :scope:is(dialog) {
-            width: 420px;
-            box-sizing: border-box;
-        }
+        ${settingsDialogStyles}
         fieldset {
             margin-top: 20px;
             border: 1px solid var(--color-border);
@@ -54,18 +53,6 @@ export function JumpRunControls({
             color: var(--color-text);
             box-shadow: none;
         }
-        h2 {
-            margin-top: 0;
-        }
-        form label {
-            display: grid;
-            gap: 8px;
-            margin-top: 14px;
-        }
-        input[type="number"] {
-            width: 100%;
-            box-sizing: border-box;
-        }
     `);
     const titleId = useId();
     /** @type {import('preact').RefObject<HTMLDialogElement>} */
@@ -78,22 +65,13 @@ export function JumpRunControls({
     const [jumperDrafts, setJumperDrafts] = useState(
         /** @type {JumpRunJumperDraft[]} */ ([]),
     );
-    /** @param {number} index @param {keyof JumpRunJumperDraft} key @param {Event} event */
-    const updateJumper = (index, key, event) => {
-        const input = /** @type {HTMLInputElement} */ (event.currentTarget);
-        const value = input.value;
-        setJumperDrafts((drafts) =>
-            drafts.map((draft, i) =>
-                i === index ? { ...draft, [key]: value } : draft,
+    /** @param {number} index @param {keyof JumpRunJumper} key @param {number} value */
+    const updateJumper = (index, key, value) => {
+        onJumpersChange(
+            jumpers.map((jumper, i) =>
+                i === index ? { ...jumper, [key]: value } : jumper,
             ),
         );
-        if (input.checkValidity()) {
-            onJumpersChange(
-                jumpers.map((jumper, i) =>
-                    i === index ? { ...jumper, [key]: Number(value) } : jumper,
-                ),
-            );
-        }
     };
     /** @param {number} index */
     const removeJumper = (index) => {
@@ -229,29 +207,22 @@ export function JumpRunControls({
                         (jumper, index) => html`
                             <fieldset>
                                 <legend>Hyppääjä ${index + 1}</legend>
-                                <label>
-                                    Vapaapudotusnopeus (km/h)
-                                    <input
-                                        type="number"
-                                        required
-                                        min="1"
-                                        step="1"
-                                        value=${jumper.speedKmh}
-                                        onInput=${/** @param {Event} event */ (event) => updateJumper(index, "speedKmh", event)}
-                                    />
-                                </label>
-                                <label>
-                                    Avauskorkeus (m)
-                                    <input
-                                        type="number"
-                                        required
-                                        min="800"
-                                        max=${settings.exitHeight - 1}
-                                        step="1"
-                                        value=${jumper.openingHeight}
-                                        onInput=${/** @param {Event} event */ (event) => updateJumper(index, "openingHeight", event)}
-                                    />
-                                </label>
+                                ${h(FreefallFields, {
+                                    exitHeight: settings.exitHeight,
+                                    openingDraft: jumper.openingHeight,
+                                    speedDraft: jumper.speedKmh,
+                                    speedFirst: true,
+                                    onDraftChange: (key, value) =>
+                                        setJumperDrafts((drafts) =>
+                                            drafts.map((draft, i) =>
+                                                i === index
+                                                    ? { ...draft, [key]: value }
+                                                    : draft,
+                                            ),
+                                        ),
+                                    onChange: (key, value) =>
+                                        updateJumper(index, key, value),
+                                })}
                                 <button
                                     type="button"
                                     class="remove-jumper"

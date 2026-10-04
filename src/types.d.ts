@@ -542,3 +542,14 @@ interface CloudTypeDetails {
 interface DeveloperModeHandle {
     open: () => void;
 }
+
+interface FreefallFieldsProps {
+    children?: import("preact").ComponentChildren;
+    exitHeight: number;
+    openingDraft: string;
+    speedDraft: string;
+    openingRef?: import("preact").RefObject<HTMLInputElement>;
+    speedFirst?: boolean;
+    onDraftChange: (field: keyof JumpRunJumper, value: string) => void;
+    onChange: (field: keyof JumpRunJumper, value: number) => void;
+}

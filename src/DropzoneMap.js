@@ -33,6 +33,9 @@ import { MapWindOverlay } from "./MapWindOverlay.js";
 import { getFreefallDrift, driftCoordinates } from "./freefall.js";
 import { FreefallToolbar } from "./FreefallToolbar.js";
 
+/** @type {Readonly<JumpRunJumper>} */
+const DEFAULT_JUMPER = { speedKmh: 180, openingHeight: 800 };
+
 /** @type {Array<{ level: OpenMeteoPressureLevel, height: number }>} */
 const LEVELS = [
     { level: "600", height: 4200 },
@@ -311,19 +314,19 @@ export function DropzoneMap() {
     const [fullWindow, setFullWindow] = useState(false);
     const [selectedLabel, setSelectedLabel] = useState("≈ 4200-800 m");
     const [exitHeight, setExitHeight] = useState(4000);
-    const [openingHeight, setOpeningHeight] = useState(800);
-    const [speedKmh, setSpeedKmh] = useState(180);
+    const [openingHeight, setOpeningHeight] = useState(
+        DEFAULT_JUMPER.openingHeight,
+    );
+    const [speedKmh, setSpeedKmh] = useState(DEFAULT_JUMPER.speedKmh);
     const [jumpRunActive, setJumpRunActive] = useState(false);
     const [jumpRunStart, setJumpRunStart] = useState(
         /** @type {import('leaflet').LatLng | null} */ (null),
     );
     const [jumpers, setJumpers] = useState(
-        /** @type {JumpRunJumper[]} */ ([
-            { speedKmh: 180, openingHeight: 800 },
-        ]),
+        /** @type {JumpRunJumper[]} */ ([{ ...DEFAULT_JUMPER }]),
     );
     const [nextJumper, setNextJumper] = useState(
-        /** @type {JumpRunJumper} */ ({ speedKmh: 180, openingHeight: 800 }),
+        /** @type {JumpRunJumper} */ ({ ...DEFAULT_JUMPER }),
     );
     const jumperCount = jumpers.length;
     const [jumpRunSettings, setJumpRunSettings] = useState(
@@ -598,8 +601,10 @@ export function DropzoneMap() {
             ...jumperStarts.map((start, index) => ({
                 start,
                 exitHeight: jumpRunSettings.exitHeight,
-                openingHeight: jumpers[index]?.openingHeight ?? 800,
-                speedKmh: jumpers[index]?.speedKmh ?? 180,
+                openingHeight:
+                    jumpers[index]?.openingHeight ??
+                    DEFAULT_JUMPER.openingHeight,
+                speedKmh: jumpers[index]?.speedKmh ?? DEFAULT_JUMPER.speedKmh,
             })),
         ];
         if (!leafletInstance || !arrows.length) return;
@@ -820,9 +825,7 @@ export function DropzoneMap() {
                         onClear: () => {
                             if (jumpRunActive) {
                                 setJumpRunStart(null);
-                                setJumpers([
-                                    { speedKmh: 180, openingHeight: 800 },
-                                ]);
+                                setJumpers([{ ...DEFAULT_JUMPER }]);
                             } else setDriftArrows([]);
                         },
                         onUndo: () => {
