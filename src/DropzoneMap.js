@@ -400,7 +400,7 @@ export function DropzoneMap() {
                 Ylätuulet
                 ${h(
                     Help,
-                    { label: "?", id: "map-wind-help" },
+                    { id: "map-wind-help" },
                     html`
                         <p>
                             Karttaa voi liikuttaa ja zoomata kahdella sormella.

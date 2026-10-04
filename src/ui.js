@@ -89,16 +89,27 @@ function ObservationTHead() {
             <th>Tuuli</th>
             <th>Suunta</th>
             <th>
-            TK
-            <${Help} label="?">
-                <p>
-                Tiivistymiskorkeus.${" "}
-                <a href="#" onClick=${(/** @type {any} */ e) => {
-                    e.preventDefault();
-                    document.getElementById("dewpoint")?.click();
-                }}>Lue lisää</a>
-                </p>
-            </${Help}>
+                TK
+                ${h(
+                    Help,
+                    {},
+                    html`
+                        <p>
+                            Tiivistymiskorkeus.${" "}
+                            <a
+                                href="#"
+                                onClick=${(/** @type {any} */ e) => {
+                                    e.preventDefault();
+                                    document
+                                        .getElementById("dewpoint")
+                                        ?.click();
+                                }}
+                            >
+                                Lue lisää
+                            </a>
+                        </p>
+                    `,
+                )}
             </th>
             <th>Lämpötila</th>
         </tr>
@@ -140,51 +151,79 @@ function ObservationRows(props) {
 }
 
 function ForecastTHead() {
-    return html`<tr>
-        <th>Kello</th>
-        <th>Puuska</th>
-        <th>Tuuli</th>
-        <th>Suunta</th>
-        <th class="cloud-low-heading">
-            Pilvet L
-            <${Help} label="?">
-                <p>
-                    Matalakerroksen (Low) pilvien peittävyys jotka sijaitsevat yleensä alle 2 kilometrin (noin 6 500 jalan) korkeudella merenpinnasta.
-                </p>
-            </${Help}>
-        </th>
-        <th class="cloud-middle-heading">
-            Pilvet ML
-            <${Help} label="?">
-                <p>
-                    Matalan ja keskikerroksen (MiddleAndLow) pilvien peittävyys jotka sijaitsevat yleensä 2-7 kilometrin (noin 6 500-23 000 jalan) korkeudella merenpinnasta.
-                </p>
-            </${Help}>
-        </th>
+    return html`
+        <tr>
+            <th>Kello</th>
+            <th>Puuska</th>
+            <th>Tuuli</th>
+            <th>Suunta</th>
+            <th class="cloud-low-heading">
+                Pilvet L
+                ${h(
+                    Help,
+                    {},
+                    html`
+                        <p>
+                            Matalakerroksen (Low) pilvien peittävyys jotka
+                            sijaitsevat yleensä alle 2 kilometrin (noin 6 500
+                            jalan) korkeudella merenpinnasta.
+                        </p>
+                    `,
+                )}
+            </th>
+            <th class="cloud-middle-heading">
+                Pilvet ML
+                ${h(
+                    Help,
+                    {},
+                    html`
+                        <p>
+                            Matalan ja keskikerroksen (MiddleAndLow) pilvien
+                            peittävyys jotka sijaitsevat yleensä 2-7 kilometrin
+                            (noin 6 500-23 000 jalan) korkeudella merenpinnasta.
+                        </p>
+                    `,
+                )}
+            </th>
 
-        <th>
-            TK
-            <${Help} label="?">
-                <p>
-                Tiivistymiskorkeus.${" "}
-                <a href="#" onClick=${(/** @type {any} */ e) => {
-                    e.preventDefault();
-                    document.getElementById("dewpoint")?.click();
-                }}>Lue lisää</a>
-                </p>
-            </${Help}>
-        </th>
+            <th>
+                TK
+                ${h(
+                    Help,
+                    {},
+                    html`
+                        <p>
+                            Tiivistymiskorkeus.${" "}
+                            <a
+                                href="#"
+                                onClick=${(/** @type {any} */ e) => {
+                                    e.preventDefault();
+                                    document
+                                        .getElementById("dewpoint")
+                                        ?.click();
+                                }}
+                            >
+                                Lue lisää
+                            </a>
+                        </p>
+                    `,
+                )}
+            </th>
 
-        <th>
-            Sade
-            <${Help} label="?">
-                <p>Sateen todenäköisyys prosentteina.</p>
-            </${Help}>
-        </th>
+            <th>
+                Sade
+                ${h(
+                    Help,
+                    {},
+                    html`
+                        <p>Sateen todenäköisyys prosentteina.</p>
+                    `,
+                )}
+            </th>
 
-        <th>Lämpötila</th>
-
-    </tr>`;
+            <th>Lämpötila</th>
+        </tr>
+    `;
 }
 
 /**
@@ -602,7 +641,7 @@ function CloudLayer({ cloud }) {
         <b>${formatCloudBase(cloud.base, cloud.unit)}</b>
         ${h(
             Help,
-            { label: "?" },
+            {},
             html`
                 <p class="metar">
                     ${scope.style}
@@ -799,7 +838,7 @@ function CloudSummary() {
                                 <b>${getLiftedCondensationLevel(temp, dew)}M</b>
                                 ${h(
                                     Help,
-                                    { label: "?", id: "dewpoint" },
+                                    { id: "dewpoint" },
                                     html`
                                         <!-- prettier-ignore -->
                                         <p>
@@ -840,7 +879,7 @@ function CloudSummary() {
                                   <h3>Ennuste · 12 tuntia</h3>
                                   ${h(
                                       Help,
-                                      { label: "?", id: "cloudforecast" },
+                                      { id: "cloudforecast" },
                                       html`
                                           <p>
                                               Tiivistymiskorkeuden ja matalien
@@ -1659,7 +1698,7 @@ function Title() {
                               </span>
                               ${h(
                                   Help,
-                                  { label: "?" },
+                                  {},
                                   html`
                                       <p>
                                           ICAO:n${" "}

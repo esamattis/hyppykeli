@@ -185,12 +185,12 @@ export function Compass({ floating = false } = {}) {
 
             </svg>
 
-            ${!floating && html`<${Help}>
+            ${!floating && h(Help, {}, html`
                 <p>
                     Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Oranssi
                     ympyrä on oppilasraja (8 m/s) ja musta ympyrä on kelppariraja (11 m/s).
                 </p>
-            </${Help}>`}
+            `)}
         </div>
     `;
 }

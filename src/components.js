@@ -17,10 +17,13 @@ import { formatClock } from "./utils.js";
  */
 export function Dialog(props) {
     const scope = useScope(css`
+        :scope {
+            padding-inline-end: 56px;
+        }
         :scope > .dialog-controls {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 12px;
+            position: absolute;
+            top: 8px;
+            right: 8px;
         }
         :scope > .dialog-controls > .dialog-close {
             display: inline-flex;
@@ -31,11 +34,12 @@ export function Dialog(props) {
             padding: 8px;
             background: transparent;
             border: none;
-            border-radius: 0;
+            border-radius: 50%;
             box-shadow: none;
             color: var(--color-text);
         }
         :scope > .dialog-controls > .dialog-close:hover {
+            background-color: var(--color-surface-hover);
             color: var(--color-primary-hover);
         }
     `);
@@ -109,18 +113,30 @@ export function Dialog(props) {
 
 /**
  * @param {Object} props
- * @param {any} [props.children]
- * @param {any} props.label
+ * @param {import('preact').ComponentChildren} [props.children]
+ * @param {string} [props.label]
  * @param {string} [props.id]
  */
 export function Help(props) {
     const scope = useScope(css`
         :scope.help {
-            margin: 0;
-            padding: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            vertical-align: middle;
+            margin: 0 4px;
+            padding: 4px;
             background-color: transparent;
             color: var(--color-primary);
             border: none;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        :scope.help:hover {
+            background-color: var(--color-surface-hover);
+            color: var(--color-primary-hover);
         }
         :scope:is(dialog) {
             margin: 0 auto;
@@ -146,8 +162,38 @@ export function Help(props) {
     };
 
     return html`
-        <button class="help" type="button" onClick=${open} id=${props.id}>
-            ${scope.style} ${props.label ?? "Ohje"}
+        <button
+            class="help"
+            type="button"
+            onClick=${open}
+            id=${props.id}
+            aria-label=${props.label ?? "Ohje"}
+            title=${props.label ?? "Ohje"}
+            aria-haspopup="dialog"
+        >
+            ${scope.style}
+            <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+                focusable="false"
+            >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 3.5" />
+                <circle
+                    cx="12"
+                    cy="16"
+                    r="0.9"
+                    fill="currentColor"
+                    stroke="none"
+                />
+            </svg>
         </button>
         ${h(
             Dialog,
