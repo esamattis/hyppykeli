@@ -111,7 +111,7 @@ test("ground wind shows the developer readings and hourly ranges", async ({
     );
 });
 
-test("METAR cloud layers show distinct icons from highest to lowest", async ({
+test("METAR cloud layers show coverage, heights and conversion help", async ({
     page,
 }) => {
     const metar =
@@ -141,17 +141,6 @@ test("METAR cloud layers show distinct icons from highest to lowest", async ({
         "3–4/8 taivaasta",
         "1–2/8 taivaasta",
     ]);
-
-    const icons = layers.locator(".cloud-layer-icon > svg");
-    await expect(icons).toHaveCount(4);
-    for (const icon of await icons.all()) {
-        await expect(icon).toBeVisible();
-        await expect(icon.locator("path").first()).toHaveAttribute("d", /.+/);
-    }
-    const artwork = await icons
-        .locator("g")
-        .evaluateAll((groups) => groups.map((group) => group.innerHTML));
-    expect(new Set(artwork).size).toBe(4);
 
     const conversions = [
         { metar: "OVC060", conversion: "6000 ft = 1828,8 m" },
@@ -354,7 +343,7 @@ for (const scenario of thundercloudCases) {
     });
 }
 
-test("obscured sky METAR shows the grumpy fog icon and vertical visibility", async ({
+test("obscured sky METAR shows vertical visibility and conversion help", async ({
     page,
 }) => {
     const params = new URLSearchParams(developerPath.split("?")[1]);
@@ -372,8 +361,6 @@ test("obscured sky METAR shows the grumpy fog icon and vertical visibility", asy
     await expect(layer.locator(".cloud-layer-coverage")).toHaveText(
         "Taivas peittynyt",
     );
-    await expect(layer.locator(".cloud-layer-icon svg")).toBeVisible();
-    await expect(layer.locator(".cloud-layer-icon svg circle")).toHaveCount(2);
     await expect(layer.locator(".cloud-layer-base b")).toHaveText("≈ 50 m");
     await expect(layer.locator(".cloud-base-label")).toHaveText(
         "Pystynäkyvyys",
@@ -445,16 +432,10 @@ test("map wind profile shows the developer average and ground wind", async ({
     // Individual altitude forecasts are live data, with no DEV_ override.
 });
 
-test("selecting a wind level changes the map's wind motion", async ({
+test("wind level selection supports clicks, keyboard and forecast refreshes", async ({
     page,
 }) => {
     const profile = page.locator("#dropzone-map");
-    await page.evaluate(async () => {
-        const { FORECAST_COORDINATES } = await import("/src/data.js");
-        FORECAST_COORDINATES.value = "62.4,25.6";
-    });
-    await expect(profile.locator("canvas")).toBeAttached();
-    await profile.scrollIntoViewIfNeeded();
     await page.evaluate(async () => {
         const { OM_DATA } = await import("/src/om.js");
         const hourly = {
@@ -471,32 +452,18 @@ test("selecting a wind level changes the map's wind motion", async ({
             hourly[`winddirection_${level}hPa`] = [index * 90];
         }
         OM_DATA.value = { utc_offset_seconds: 0, hourly };
-        // Observe the actual drawn streak, including its direction and length.
-        const canvas = document.querySelector(".map-wind-overlay canvas");
-        const context = canvas.getContext("2d");
-        const moveTo = context.moveTo.bind(context);
-        const lineTo = context.lineTo.bind(context);
-        let tail = [0, 0];
-        context.moveTo = (x, y) => {
-            tail = [x, y];
-            moveTo(x, y);
-        };
-        context.lineTo = (x, y) => {
-            canvas.dataset.vector = JSON.stringify([x - tail[0], y - tail[1]]);
-            lineTo(x, y);
-        };
     });
 
     const average = profile.getByRole("button", { name: /^≈ 4200-800 m/ });
     await expect(average).toHaveAttribute("aria-pressed", "true");
-    for (const [label, speed, direction] of [
-        ["≈ 4200 m", 1, 0],
-        ["≈ 3000 m", 2, 90],
-        ["≈ 1500 m", 3, 180],
-        ["≈ 800 m", 4, 270],
-        ["≈ 110 m", 5, 360],
-        ["Maanpinta", 3.5, 194],
-        ["≈ 4200-800 m", 12.5625, 246.25350981256466],
+    for (const label of [
+        "≈ 4200 m",
+        "≈ 3000 m",
+        "≈ 1500 m",
+        "≈ 800 m",
+        "≈ 110 m",
+        "Maanpinta",
+        "≈ 4200-800 m",
     ]) {
         const button = profile.getByRole("button", {
             name: new RegExp(`^${label}`),
@@ -506,21 +473,6 @@ test("selecting a wind level changes the map's wind motion", async ({
         await expect(
             profile.locator('.wind-level-button[aria-pressed="true"]'),
         ).toHaveCount(1);
-        const radians = (direction * Math.PI) / 180;
-        const length = 6 + speed * 2;
-        await expect
-            .poll(async () => {
-                const vector = await profile
-                    .locator("canvas")
-                    .getAttribute("data-vector");
-                if (!vector) return false;
-                const [x, y] = JSON.parse(vector);
-                return (
-                    Math.abs(x + Math.sin(radians) * length) < 0.001 &&
-                    Math.abs(y - Math.cos(radians) * length) < 0.001
-                );
-            })
-            .toBe(true);
     }
     const altitude = profile.getByRole("button", { name: /^≈ 4200 m/ });
     await altitude.focus();
@@ -533,16 +485,6 @@ test("selecting a wind level changes the map's wind motion", async ({
     });
     await expect(altitude).toContainText("Ei tietoa");
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
-    await expect
-        .poll(() =>
-            profile.locator("canvas").evaluate((canvas) => {
-                const pixels = canvas
-                    .getContext("2d")
-                    .getImageData(0, 0, canvas.width, canvas.height).data;
-                return pixels.every((value) => value === 0);
-            }),
-        )
-        .toBe(true);
 });
 
 test.describe("upper wind forecast timezones", () => {

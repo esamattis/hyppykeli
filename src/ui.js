@@ -1899,6 +1899,7 @@ export function Root() {
     );
     const scope = useScope(css`
         :scope {
+            --panel-padding: 16px;
             display: grid;
             margin: 16px;
             margin-bottom: 100px;
@@ -1943,7 +1944,7 @@ export function Root() {
                 #high-winds-details
             ) {
             min-width: 0;
-            padding: 16px;
+            padding: var(--panel-padding);
             background: var(--color-surface);
             border: 1px solid var(--color-border);
             border-radius: var(--radius-panel);
@@ -1952,21 +1953,10 @@ export function Root() {
 
         @media (max-width: 550px) {
             :scope {
+                --panel-padding: 12px;
                 margin: 12px;
                 margin-bottom: 100px;
                 gap: 12px;
-            }
-            :scope
-                > :is(
-                    #clouds,
-                    #winds,
-                    #observations-graph,
-                    #forecasts-graph,
-                    #dropzone-map,
-                    #high-winds-today,
-                    #high-winds-details
-                ) {
-                padding: 12px;
             }
         }
 

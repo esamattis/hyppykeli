@@ -8,7 +8,10 @@ The project uses TypeScript through JSDoc comments in `.js` files, with strict
 mode enabled. Always check TypeScript diagnostics after code changes by running
 `mise exec -- pnpm run tsc`.
 
-Always run the headless Playwright tests after changes with `pn test`
+Purely visual changes do not need tests unless explicitly asked. Do not add or
+run tests solely to verify styling, layout, or artwork for those changes.
+
+For other changes, run the headless Playwright tests with `pn test`
 (`mise exec -- pnpm test` when invoking through mise). The tests start their own
 HTTP server and cover desktop and mobile views. Install Chromium if needed with
 `mise exec -- pnpm exec playwright install chromium`.

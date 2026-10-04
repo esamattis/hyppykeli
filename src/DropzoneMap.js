@@ -176,14 +176,6 @@ export function DropzoneMap() {
             grid-area: dropzone-map;
             min-width: 0;
         }
-        :scope {
-            --map-card-padding: 20px;
-        }
-        @media (max-width: 550px) {
-            :scope {
-                --map-card-padding: 14px;
-            }
-        }
         .map-layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr);
@@ -191,9 +183,9 @@ export function DropzoneMap() {
         }
         .map-frame {
             position: relative;
-            width: calc(100% + 2 * var(--map-card-padding));
-            margin: 0 calc(-1 * var(--map-card-padding))
-                calc(-1 * var(--map-card-padding));
+            width: calc(100% + 2 * var(--panel-padding));
+            margin: 0 calc(-1 * var(--panel-padding))
+                calc(-1 * var(--panel-padding));
             isolation: isolate;
             border-radius: 0 0 var(--radius-panel) var(--radius-panel);
             overflow: hidden;
