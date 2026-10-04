@@ -43,6 +43,13 @@ function openMeteoResponse() {
     for (const level of ["600", "700", "850", "925", "1000"]) {
         hourly[`windspeed_${level}hPa`] = time.map(() => 12);
         hourly[`winddirection_${level}hPa`] = time.map(() => 200);
+        hourly[`cloud_cover_${level}hPa`] = time.map(() => 40);
+        hourly[`geopotential_height_${level}hPa`] = time.map(
+            () =>
+                ({ 1000: 110, 925: 800, 850: 1500, 700: 3000, 600: 4200 })[
+                    level
+                ],
+        );
     }
     return { utc_offset_seconds: 0, hourly };
 }
@@ -242,7 +249,23 @@ test("coordinate-only dropzone uses Open-Meteo without an observations card or M
     await page.route("https://api.open-meteo.com/**", (route) =>
         route.fulfill({ json: openMeteoResponse() }),
     );
+    const requestPromise = page.waitForRequest("https://api.open-meteo.com/**");
     await page.goto("/dz/?name=World+DZ&lat=40.7&lon=-74");
+    const request = await requestPromise;
+    const fields = new URL(request.url()).searchParams.get("hourly").split(",");
+    for (const level of ["1000", "925", "850", "700", "600"]) {
+        expect(fields).toContain(`cloud_cover_${level}hPa`);
+        expect(fields).toContain(`geopotential_height_${level}hPa`);
+    }
+    const clouds = page.locator("#clouds");
+    await expect(clouds.getByRole("tablist")).toHaveCount(0);
+    await expect(clouds.locator(".cloud-profile-layer")).toHaveCount(5);
+    await expect(clouds.locator(".cloud-profile-layer").first()).toContainText(
+        "4200 m",
+    );
+    await expect(clouds.locator(".cloud-profile-layer").first()).toContainText(
+        "40 %",
+    );
 
     await expect(page.locator("#winds .source-note")).toHaveText(
         "Lähde: Open-Meteo (mallinnettu)",
@@ -1967,4 +1990,86 @@ test("map query state handles invalid input and browser history", async ({
     await expect(
         toolbar.getByRole("button", { name: "Palauta Tuulikartta" }),
     ).toHaveAttribute("aria-pressed", "true");
+});
+
+test("cloud source tabs switch between METAR and the current Open-Meteo profile", async ({
+    page,
+}) => {
+    const response = openMeteoResponse();
+    response.elevation = 68;
+    // The preceding and future hours differ, so selecting the current hour matters.
+    response.hourly.cloud_cover_700hPa = response.hourly.time.map((_, index) =>
+        index === 1 ? 75 : 5,
+    );
+    response.hourly.cloud_cover_850hPa = response.hourly.time.map(() => null);
+    response.hourly.geopotential_height_1000hPa = response.hourly.time.map(
+        () => 20,
+    );
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: response }),
+    );
+    const params = new URLSearchParams({
+        name: "Cloud DZ",
+        lat: "40.7",
+        lon: "-74",
+        icaocode: "KJFK",
+        DEV_metar: "METAR KJFK 041200Z 18010KT 9999 FEW020 10/05 Q1014=",
+    });
+    await page.goto(`/dz/?${params}`);
+    const card = page.locator("#clouds");
+    const metarTab = card.getByRole("tab", { name: "METAR", exact: true });
+    const modelTab = card.getByRole("tab", { name: "Open-Meteo", exact: true });
+    await expect(metarTab).toHaveAttribute("aria-selected", "true");
+    await expect(card.locator(".cloud-layer")).toHaveCount(1);
+    await modelTab.click();
+    await expect(modelTab).toHaveAttribute("aria-selected", "true");
+    await expect(card.locator(".cloud-layer a")).toHaveCount(0);
+    const rows = card.getByRole("tabpanel").locator(".cloud-profile-layer");
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(1)).toContainText("3000 m");
+    await expect(rows.nth(1)).toContainText("75 %");
+    await rows
+        .nth(1)
+        .getByRole("button", { name: "Ohje", exact: true })
+        .click();
+    await expect(page.getByRole("dialog")).toContainText("700 hPa");
+    await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "Sulje", exact: true })
+        .click();
+    await modelTab.press("ArrowLeft");
+    await expect(metarTab).toBeFocused();
+    await expect(metarTab).toHaveAttribute("aria-selected", "true");
+    await expect(card.locator(".cloud-layer")).toHaveCount(1);
+    await metarTab.press("End");
+    await expect(modelTab).toBeFocused();
+    await expect(rows).toHaveCount(3);
+    // Losing METAR must also remove the tabs and leave the model visible.
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("/src/data.js");
+        navigateQs({ icaocode: undefined, DEV_metar: undefined });
+    });
+    await expect(card.getByRole("tablist")).toHaveCount(0);
+    await expect(card.locator(".cloud-profile-layer")).toHaveCount(3);
+});
+
+test("missing current Open-Meteo cloud data shows an unavailable message", async ({
+    page,
+}) => {
+    const response = openMeteoResponse();
+    for (const level of ["1000", "925", "850", "700", "600"]) {
+        response.hourly[`cloud_cover_${level}hPa`] = response.hourly.time.map(
+            () => null,
+        );
+    }
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: response }),
+    );
+    await page.goto("/dz/?name=Cloud+DZ&lat=40.7&lon=-74");
+    const card = page.locator("#clouds");
+    await expect(card.getByRole("tablist")).toHaveCount(0);
+    await expect(card.locator(".open-meteo-clouds")).toContainText(
+        "Nykyisen tunnin pilviennuste ei ole saatavilla.",
+    );
+    await expect(card.locator(".cloud-profile-layers")).toHaveCount(0);
 });

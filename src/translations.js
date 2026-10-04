@@ -123,6 +123,16 @@ export const english = {
     "cloud.cavokMessage": "No clouds below 1500M (CAVOK)",
     "cloud.observation": "Cloud observation",
     "cloud.observedLayers": "Observed cloud layers",
+    "cloud.source": "Cloud data source",
+    "cloud.modelledLayers": "Modelled clouds · current hour",
+    "cloud.altitudeSeaLevel": "Altitude above sea level",
+    "cloud.modelUnavailable": "Current cloud forecast unavailable.",
+    "cloud.modelledMeaning":
+        "Modelled means a computer weather model estimates the clouds using weather observations and calculations of how the atmosphere changes. This is the model's estimate for the current hour near the selected coordinates, rather than a direct cloud observation. Actual cloud cover and heights may differ.",
+    "cloud.modelledCoverage":
+        "The percentage estimates the part of the model's area covered by clouds at this altitude. It is not the probability of clouds. The sampled altitude is not a cloud base or top, and clouds between the sampled levels may be missed.",
+    "cloud.modelHelp":
+        "Modelled cloud cover at sampled altitudes, not live observations or cloud bases. Clouds between levels may be missed.",
     "cloud.forecast": "Cloud forecast",
     "cloud.forecast12h": "Forecast · 12 hours",
     "cloud.hourlyForecast": "Hourly cloud forecast, scroll horizontally",
@@ -450,6 +460,16 @@ const finnish = {
     "cloud.cavokMessage": "Ei pilviä alle 1500M (CAVOK)",
     "cloud.observation": "Pilvihavainto",
     "cloud.observedLayers": "Havaitut pilvikerrokset",
+    "cloud.source": "Pilvitietojen lähde",
+    "cloud.modelledLayers": "Mallinnetut pilvet · nykyinen tunti",
+    "cloud.altitudeSeaLevel": "Korkeus merenpinnasta",
+    "cloud.modelUnavailable": "Nykyisen tunnin pilviennuste ei ole saatavilla.",
+    "cloud.modelledMeaning":
+        "Mallinnettu tarkoittaa, että tietokoneen säämalli arvioi pilviä säähavaintojen ja ilmakehän muutoksia kuvaavien laskelmien avulla. Tämä on mallin arvio nykyiselle tunnille valittujen koordinaattien lähellä, ei suora pilvihavainto. Todellinen pilvipeitto ja pilvien korkeudet voivat poiketa arviosta.",
+    "cloud.modelledCoverage":
+        "Prosenttiluku arvioi, kuinka suuri osa mallin alueesta on pilvien peitossa tällä korkeudella. Se ei tarkoita pilvien todennäköisyyttä. Näytetty korkeus ei ole pilven ala- tai yläraja, ja tasojen välissä olevat pilvet voivat jäädä näkymättä.",
+    "cloud.modelHelp":
+        "Mallinnettu pilvipeitto eri korkeuksilla, ei reaaliaikainen havainto tai pilven alaraja. Tasojen välissä olevat pilvet voivat jäädä näkymättä.",
     "cloud.forecast": "Pilvien ennuste",
     "cloud.forecast12h": "Ennuste · 12 tuntia",
     "cloud.hourlyForecast": "Pilvien tuntiennuste, vieritä sivulle",

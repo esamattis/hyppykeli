@@ -193,3 +193,67 @@ export const cardHeadingStyles = css`
         text-align: right;
     }
 `;
+
+export const cloudLayerStyles = css`
+    :scope {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 0;
+    }
+    .cloud-layer-icon {
+        position: relative;
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: var(--color-surface-hover);
+        color: var(--color-primary);
+    }
+    .cloud-lightning {
+        position: absolute;
+        right: -3px;
+        bottom: -2px;
+        display: grid;
+        place-items: center;
+        width: 22px;
+        height: 24px;
+        color: var(--color-danger);
+    }
+    .cloud-layer-name {
+        font-weight: 600;
+        line-height: 1.3;
+    }
+    .cloud-layer-coverage,
+    .cloud-base-label {
+        display: block;
+        color: var(--color-muted);
+        font-size: 0.75rem;
+        margin-top: 3px;
+    }
+    .cloud-layer-base {
+        text-align: right;
+        white-space: nowrap;
+    }
+    .cloud-layer-base b {
+        font-size: 1.35rem;
+        font-weight: 650;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.025em;
+    }
+    @media (max-width: 380px) {
+        :scope {
+            gap: 8px;
+            grid-template-columns: 36px minmax(0, 1fr) auto auto;
+        }
+        .cloud-layer-icon {
+            width: 36px;
+            height: 40px;
+        }
+        .cloud-layer-base b {
+            font-size: 1.15rem;
+        }
+    }
+`;

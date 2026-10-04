@@ -48,6 +48,13 @@ const PRESSURE_LEVELS_RAW = [
     },
 ];
 
+/** @type {OpenMeteoPressureLevel[]} */
+const CLOUD_PRESSURE_LEVELS = ["1000", "925", "850", "700", "600"];
+const CLOUD_FIELDS = CLOUD_PRESSURE_LEVELS.flatMap((level) => [
+    `cloud_cover_${level}hPa`,
+    `geopotential_height_${level}hPa`,
+]);
+
 const SURFACE_FIELDS = [
     "wind_speed_10m",
     "wind_gusts_10m",
@@ -121,6 +128,7 @@ function isWindForecast(data) {
             directionKey,
         ]),
         ...SURFACE_FIELDS,
+        ...CLOUD_FIELDS,
     ].every((field) => {
         const values = hourly[field];
         return (
@@ -149,6 +157,7 @@ async function fetchDataWithCoordinates(coordinates) {
             directionKey,
         ]),
         ...SURFACE_FIELDS,
+        ...CLOUD_FIELDS,
     ].join(",");
     const params = new URLSearchParams({
         latitude: latitude.toString(),
@@ -232,6 +241,48 @@ export async function fetchHighWinds(coordinates) {
 
     OM_DATA.value = newData;
     return newData;
+}
+
+/**
+ * Return the current forecast hour, using its actual pressure-level heights.
+ * @param {OpenMeteoWeatherData | null} data
+ * @param {Date} [now]
+ * @returns {OpenMeteoCloudProfile | null}
+ */
+export function getOpenMeteoCloudProfile(data, now = new Date()) {
+    if (!data) return null;
+    const index = data.hourly.time.findIndex((time) => {
+        const age =
+            now.getTime() -
+            forecastTime(time, data.utc_offset_seconds).getTime();
+        return age >= 0 && age < 60 * 60 * 1000;
+    });
+    if (index < 0) return null;
+    const layers = CLOUD_PRESSURE_LEVELS.flatMap((pressure) => {
+        const cover = data.hourly[`cloud_cover_${pressure}hPa`]?.[index];
+        const height =
+            data.hourly[`geopotential_height_${pressure}hPa`]?.[index];
+        if (
+            isNullish(cover) ||
+            isNullish(height) ||
+            !Number.isFinite(cover) ||
+            !Number.isFinite(height) ||
+            cover < 0 ||
+            cover > 100 ||
+            height < Math.max(0, data.elevation ?? 0)
+        )
+            return [];
+        return [{ pressure, cover, height }];
+    }).toSorted((a, b) => b.height - a.height);
+    return layers.length
+        ? {
+              time: forecastTime(
+                  data.hourly.time[index] ?? "",
+                  data.utc_offset_seconds,
+              ),
+              layers,
+          }
+        : null;
 }
 
 /**

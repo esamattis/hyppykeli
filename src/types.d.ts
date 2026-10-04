@@ -149,7 +149,24 @@ interface MapWindParticle {
     lifetime: number;
 }
 
-interface OpenMeteoHourlyData {
+interface OpenMeteoCloudProfile {
+    time: Date;
+    layers: {
+        pressure: OpenMeteoPressureLevel;
+        cover: number;
+        height: number;
+    }[];
+}
+
+type OpenMeteoCloudHourlyData = {
+    [
+        Field in
+            | `cloud_cover_${OpenMeteoPressureLevel}hPa`
+            | `geopotential_height_${OpenMeteoPressureLevel}hPa`
+    ]: (number | null)[];
+};
+
+interface OpenMeteoHourlyData extends OpenMeteoCloudHourlyData {
     time: string[];
     windspeed_1000hPa: number[];
     windspeed_925hPa: number[];
