@@ -234,8 +234,37 @@ export function DropzoneMap() {
             position: relative;
         }
         .dz-map {
+            position: relative;
             min-height: 440px;
             background: var(--color-surface-hover);
+        }
+        .direction-setting .dz-map {
+            cursor: crosshair;
+        }
+        .direction-setting .dz-map::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 350;
+            background: var(--color-surface);
+            opacity: 0.55;
+            pointer-events: none;
+        }
+        .direction-hint {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 600;
+            max-width: calc(100% - 100px);
+            padding: 8px 12px;
+            border: 1px solid var(--color-primary);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface);
+            color: var(--color-text);
+            text-align: center;
+            font-size: 0.8rem;
+            pointer-events: none;
         }
         .wind-profile {
             min-width: 0;
@@ -290,6 +319,8 @@ export function DropzoneMap() {
     const [jumpRunStart, setJumpRunStart] = useState(
         /** @type {import('leaflet').LatLng | null} */ (null),
     );
+    const [placingJumpRunDirection, setPlacingJumpRunDirection] =
+        useState(false);
     const [jumpers, setJumpers] = useState(
         /** @type {JumpRunJumper[]} */ ([{ ...DEFAULT_JUMPER }]),
     );
@@ -359,6 +390,7 @@ export function DropzoneMap() {
         setLeafletInstance(leafletMap);
         setDriftArrows([]);
         setJumpRunStart(null);
+        setPlacingJumpRunDirection(false);
 
         // Let one finger scroll the page. Handle two-finger pan/pinch ourselves
         // so Leaflet's single-touch dragging cannot capture the gesture.
@@ -478,10 +510,94 @@ export function DropzoneMap() {
         const useKeyboard = () => {
             pointerFocus = false;
         };
+        /** @param {import('leaflet').LatLng} target */
+        const updateJumpRunDirection = (target) => {
+            if (!jumpRunStart) return;
+            const offset = leafletInstance
+                .project(target)
+                .subtract(leafletInstance.project(jumpRunStart));
+            if (offset.x === 0 && offset.y === 0) return;
+            const direction =
+                ((Math.atan2(offset.x, -offset.y) * 180) / Math.PI + 360) % 360;
+            setJumpRunSettings((settings) => ({ ...settings, direction }));
+        };
+        /** @param {import('leaflet').LeafletMouseEvent} event */
+        const followPointer = (event) => {
+            if (jumpRunActive && placingJumpRunDirection)
+                updateJumpRunDirection(event.latlng);
+        };
+        /** @type {import('leaflet').Point | null} */
+        let touchStart = null;
+        let touchDragged = false;
+        /** @param {TouchEvent} event */
+        const startDirectionTouch = (event) => {
+            touchStart = null;
+            touchDragged = false;
+            if (
+                !jumpRunActive ||
+                !placingJumpRunDirection ||
+                event.touches.length !== 1
+            )
+                return;
+            if (
+                event.target instanceof Element &&
+                event.target.closest(".leaflet-control")
+            )
+                return;
+            const touch = event.touches[0];
+            if (touch) touchStart = point(touch.clientX, touch.clientY);
+        };
+        /** @param {TouchEvent} event */
+        const followTouch = (event) => {
+            if (event.touches.length !== 1) {
+                touchStart = null;
+                touchDragged = false;
+                return;
+            }
+            const touch = event.touches[0];
+            if (!touchStart || !touch) return;
+            event.preventDefault();
+            if (
+                touchStart.distanceTo(point(touch.clientX, touch.clientY)) <
+                    5 &&
+                !touchDragged
+            )
+                return;
+            touchDragged = true;
+            const bounds = container.getBoundingClientRect();
+            updateJumpRunDirection(
+                leafletInstance.containerPointToLatLng(
+                    point(
+                        touch.clientX - bounds.left,
+                        touch.clientY - bounds.top,
+                    ),
+                ),
+            );
+        };
+        /** @param {TouchEvent} event */
+        const finishDirectionTouch = (event) => {
+            if (touchDragged) {
+                // Prevent a synthetic click from starting another placement.
+                event.preventDefault();
+                setPlacingJumpRunDirection(false);
+            }
+            touchStart = null;
+            touchDragged = false;
+        };
+        const cancelDirectionTouch = () => {
+            touchStart = null;
+            touchDragged = false;
+        };
         /** @param {import('leaflet').LatLng} start */
         const addArrow = (start) => {
             if (jumpRunActive) {
-                setJumpRunStart(start);
+                if (placingJumpRunDirection) {
+                    updateJumpRunDirection(start);
+                    setPlacingJumpRunDirection(false);
+                } else {
+                    setJumpRunStart(start);
+                    setPlacingJumpRunDirection(true);
+                }
                 return;
             }
             setDriftArrows((arrows) => [
@@ -509,16 +625,38 @@ export function DropzoneMap() {
         container.addEventListener("pointerdown", usePointer, true);
         document.addEventListener("keydown", useKeyboard, true);
         leafletInstance.on("click", selectPoint);
+        leafletInstance.on("mousemove", followPointer);
+        container.addEventListener("touchstart", startDirectionTouch);
+        container.addEventListener("touchmove", followTouch, {
+            passive: false,
+        });
+        container.addEventListener("touchend", finishDirectionTouch, {
+            passive: false,
+        });
+        container.addEventListener("touchcancel", cancelDirectionTouch);
         container.addEventListener("focus", selectCenter);
         container.addEventListener("keydown", selectWithKeyboard);
         return () => {
             container.removeEventListener("pointerdown", usePointer, true);
             document.removeEventListener("keydown", useKeyboard, true);
             leafletInstance.off("click", selectPoint);
+            leafletInstance.off("mousemove", followPointer);
+            container.removeEventListener("touchstart", startDirectionTouch);
+            container.removeEventListener("touchmove", followTouch);
+            container.removeEventListener("touchend", finishDirectionTouch);
+            container.removeEventListener("touchcancel", cancelDirectionTouch);
             container.removeEventListener("focus", selectCenter);
             container.removeEventListener("keydown", selectWithKeyboard);
         };
-    }, [leafletInstance, exitHeight, openingHeight, speedKmh, jumpRunActive]);
+    }, [
+        leafletInstance,
+        exitHeight,
+        openingHeight,
+        speedKmh,
+        jumpRunActive,
+        jumpRunStart,
+        placingJumpRunDirection,
+    ]);
 
     const { data, time, winds, averageWind, ground, freefallWinds } =
         getMapWindData(now);
@@ -704,14 +842,17 @@ export function DropzoneMap() {
                         </p>
                         <p>
                             Hyppylinja-painike vaihtaa kartan hyppylinjatilaan.
-                            Klikkaus asettaa ensimmäisen hyppääjän paikan;
-                            seuraava klikkaus siirtää koko linjan ja säilyttää
-                            hyppääjät. Suunta on asteina pohjoisesta
-                            myötäpäivään. Lisää hyppääjä pluspainikkeesta.
-                            Hyppylinjan asetuksista voit muuttaa maanopeutta ja
-                            hyppääjien aikaväliä sekä yhteistä
-                            uloshyppykorkeutta. Jokaiselle hyppääjälle voi
-                            asettaa oman vapaapudotusnopeuden ja avauskorkeuden.
+                            Ensimmäinen klikkaus tai napautus asettaa
+                            ensimmäisen hyppääjän paikan. Linjan suunta seuraa
+                            hiirtä; toinen klikkaus tai napautus lukitsee
+                            suunnan. Kosketusnäytöllä voit myös vetää suuntaa ja
+                            lukita sen nostamalla sormen. Voit siirtää linjan
+                            samalla tavalla kahdella klikkauksella. Lisää
+                            hyppääjä pluspainikkeesta. Hyppylinjan asetuksista
+                            voit muuttaa maanopeutta ja hyppääjien aikaväliä
+                            sekä yhteistä uloshyppykorkeutta. Jokaiselle
+                            hyppääjälle voi asettaa oman vapaapudotusnopeuden ja
+                            avauskorkeuden.
                         </p>
                         <p>
                             N ${h(Icon, { name: "up" })} · Nuolet näyttävät
@@ -774,8 +915,10 @@ export function DropzoneMap() {
                         onToggleFullWindow: () =>
                             setFullWindow((expanded) => !expanded),
                         jumpRunActive,
-                        onToggleJumpRun: () =>
-                            setJumpRunActive((active) => !active),
+                        onToggleJumpRun: () => {
+                            setJumpRunActive((active) => !active);
+                            setPlacingJumpRunDirection(false);
+                        },
                         jumpRun: {
                             settings: jumpRunSettings,
                             jumpers,
@@ -805,6 +948,7 @@ export function DropzoneMap() {
                         onClear: () => {
                             if (jumpRunActive) {
                                 setJumpRunStart(null);
+                                setPlacingJumpRunDirection(false);
                                 setJumpers([{ ...DEFAULT_JUMPER }]);
                             } else setDriftArrows([]);
                         },
@@ -814,16 +958,31 @@ export function DropzoneMap() {
                                     setJumpers((current) =>
                                         current.slice(0, -1),
                                     );
-                                else setJumpRunStart(null);
+                                else {
+                                    setJumpRunStart(null);
+                                    setPlacingJumpRunDirection(false);
+                                }
                             } else
                                 setDriftArrows((arrows) => arrows.slice(0, -1));
                         },
                     })}
-                    <div class="map-viewport">
+                    <div
+                        class=${`map-viewport${placingJumpRunDirection ? " direction-setting" : ""}`}
+                    >
+                        ${
+                            placingJumpRunDirection
+                                ? html`
+                                      <div class="direction-hint" role="status">
+                                          Aseta hyppylinjan suunta: klikkaa tai
+                                          vedä sormella.
+                                      </div>
+                                  `
+                                : null
+                        }
                         <div
                             class=${`dz-map ${scope.end}`}
                             ref=${mapRef}
-                            style="touch-action: pan-y"
+                            style=${{ touchAction: placingJumpRunDirection ? "none" : "pan-y" }}
                             role="region"
                             aria-label=${`${name} kartalla`}
                         >

@@ -26,18 +26,6 @@ export function JumpRunControls({
             gap: 8px;
             font-size: 0.8rem;
         }
-        .direction {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        input[type="range"] {
-            width: 100px;
-        }
-        output {
-            min-width: 4ch;
-            font-variant-numeric: tabular-nums;
-        }
         ${settingsDialogStyles}
         fieldset {
             margin-top: 20px;
@@ -103,18 +91,6 @@ export function JumpRunControls({
     return html`
         <div class="jump-run-controls">
             ${scope.style}
-            <label class="direction">
-                <input
-                    type="range"
-                    min="0"
-                    max="359"
-                    step="1"
-                    value=${settings.direction}
-                    aria-label="Hyppylinjan suunta"
-                    onInput=${/** @param {Event} event */ (event) => onChange({ ...settings, direction: Number(/** @type {HTMLInputElement} */ (event.currentTarget).value) })}
-                />
-                <output>${settings.direction}°</output>
-            </label>
             ${h(EditableSettings, {
                 title: "Lisättävän hyppääjän asetukset",
                 exitReadOnly: true,

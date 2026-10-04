@@ -826,6 +826,9 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     const jumpers = map.locator(".jump-run-jumper");
     const arrows = map.locator(".freefall-drift-line");
     await expect(jumpers).toHaveCount(1);
+    const firstStart = await jumpers.first().getAttribute("d");
+    await place(100, 80);
+    await expect(jumpers.first()).toHaveAttribute("d", firstStart);
     const lineBounds = await run.boundingBox();
     const mapBounds = await map.boundingBox();
     expect(lineBounds.y).toBeLessThan(mapBounds.y);
@@ -906,10 +909,32 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(jumpers).toHaveCount(3);
     await expect(arrows).toHaveCount(3);
     const direction = page.getByRole("slider", { name: "Hyppylinjan suunta" });
+    await expect(direction).toHaveCount(0);
     const moved = await run.getAttribute("d");
-    await direction.fill("90");
-    await expect(page.locator(".jump-run-controls output")).toHaveText("90°");
+    const movedStart = await jumpers.first().getAttribute("d");
+    if (!isMobile) {
+        const bounds = await map.boundingBox();
+        await page.mouse.move(bounds.x + 250, bounds.y + 200);
+        await expect(run).not.toHaveAttribute("d", moved);
+        await expect(jumpers.first()).toHaveAttribute("d", movedStart);
+    }
+    // The second click/tap sets direction without moving the first jumper.
+    await place(250, 200);
     await expect(run).not.toHaveAttribute("d", moved);
+    await expect(jumpers.first()).toHaveAttribute("d", movedStart);
+    const locked = await run.getAttribute("d");
+    const lockedJumpers = await jumpers.evaluateAll((markers) =>
+        markers.map((marker) => marker.getAttribute("d")),
+    );
+    if (!isMobile) {
+        const bounds = await map.boundingBox();
+        await page.mouse.move(bounds.x + 170, bounds.y + 280);
+        // Wait for a frame so an erroneous mousemove update can render.
+        await page.evaluate(() => new Promise(requestAnimationFrame));
+        await expect(run).toHaveAttribute("d", locked);
+        for (let i = 0; i < 3; i++)
+            await expect(jumpers.nth(i)).toHaveAttribute("d", lockedJumpers[i]);
+    }
     await edit.click();
     await expect(exit).toHaveValue("3500");
     await expect(
@@ -971,6 +996,55 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(direction).toHaveCount(0);
     await place();
     await expect(arrows).toHaveCount(1);
+});
+
+test("jump run direction follows touch dragging and locks on release", async ({
+    page,
+    isMobile,
+}) => {
+    await setUniformFreefallWind(page);
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    if (isMobile) await map.tap({ position: { x: 100, y: 160 } });
+    else await map.click({ position: { x: 100, y: 160 } });
+    const hint = page
+        .getByRole("status")
+        .filter({ hasText: "Aseta hyppylinjan suunta" });
+    await expect(hint).toBeVisible();
+    const run = map.locator(".jump-run-line");
+    const jumper = map.locator(".jump-run-jumper");
+    const originalDirection = await run.getAttribute("d");
+    const firstStart = await jumper.getAttribute("d");
+    const bounds = await map.boundingBox();
+    const scroll = await page.evaluate(() => scrollY);
+    const touch = await page.context().newCDPSession(page);
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x: bounds.x + 100, y: bounds.y + 160 }],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x: bounds.x + 200, y: bounds.y + 230 }],
+    });
+    await expect(run).not.toHaveAttribute("d", originalDirection);
+    await expect(jumper).toHaveAttribute("d", firstStart);
+    await expect(hint).toBeVisible();
+    expect(await page.evaluate(() => scrollY)).toBe(scroll);
+    const preview = await run.getAttribute("d");
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchEnd",
+        touchPoints: [],
+    });
+    await expect(hint).toHaveCount(0);
+    await expect(run).toHaveAttribute("d", preview);
+    await expect(jumper).toHaveAttribute("d", firstStart);
+    // Release must not generate a click that restarts placement.
+    await page.mouse.move(bounds.x + 100, bounds.y + 280);
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    await expect(run).toHaveAttribute("d", preview);
+    await expect(hint).toHaveCount(0);
+    await touch.detach();
 });
 
 test("jump run adds jumpers using immediately applied template settings", async ({
@@ -1050,6 +1124,8 @@ test("jump run adds jumpers using immediately applied template settings", async 
     if (isMobile) await map.tap({ position: { x: 100, y: 160 } });
     else await map.click({ position: { x: 100, y: 160 } });
     await expect(map.locator(".jump-run-jumper")).toHaveCount(3);
+    if (isMobile) await map.tap({ position: { x: 180, y: 160 } });
+    else await map.click({ position: { x: 180, y: 160 } });
     await edit.click();
     await expect(
         second.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
