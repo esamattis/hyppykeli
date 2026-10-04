@@ -158,6 +158,8 @@ export function Help(props) {
             font-family: var(--font-sans);
             font-weight: initial;
             font-style: normal;
+            letter-spacing: normal;
+            line-height: 1.5;
             width: 100%;
         }
     `);
