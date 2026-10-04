@@ -411,7 +411,14 @@ interface IconProps {
         | "storm"
         | "arrow"
         | "calm"
-        | "missing";
+        | "missing"
+        | "cloudClear"
+        | "cloudNsc"
+        | "cloudFew"
+        | "cloudScattered"
+        | "cloudBroken"
+        | "cloudOvercast"
+        | "cloudFog";
     size?: number | string;
     label?: string;
     className?: string;
@@ -422,4 +429,10 @@ interface WindArrowProps {
     direction: number | null | undefined;
     size?: number | string;
     label?: string;
+}
+
+interface CloudTypeDetails {
+    label: string;
+    icon: IconProps["name"];
+    coverage: string;
 }

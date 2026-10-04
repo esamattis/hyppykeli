@@ -577,54 +577,136 @@ function WindSummary() {
     `;
 }
 
-// const CLOUDS = {
-//     NCD: "Ei pilviä",
-//     VV: "SUMUA PERKELE",
-//     NSC: "Yksittäisiä",
-//     FEW: "Muutamia",
-//     SCT: "Hajanaisia",
-//     BKN: "Rakoileva",
-//     OVC: "Täysi pilvikatto",
-// };
-
-/**
- * @type {Record<string, string>}
- */
+/** @type {Record<string, CloudTypeDetails>} */
 const CLOUD_TYPES = {
-    NCD: "Ei pilviä",
-    VV: "SUMUA PERKELE",
-    NSC: "Yksittäisiä",
-    FEW: "Muutamia",
-    SCT: "Hajanaisia",
-    BKN: "Rakoileva",
-    OVC: "Täysi pilvikatto",
+    NCD: {
+        label: "Ei pilviä",
+        icon: "cloudClear",
+        coverage: "Ei havaittuja pilviä",
+    },
+    NSC: {
+        label: "Ei merkittäviä pilviä",
+        icon: "cloudNsc",
+        coverage: "Ei merkittävää pilvisyyttä",
+    },
+    FEW: { label: "Muutamia", icon: "cloudFew", coverage: "1–2/8 taivaasta" },
+    SCT: {
+        label: "Hajanaisia",
+        icon: "cloudScattered",
+        coverage: "3–4/8 taivaasta",
+    },
+    BKN: {
+        label: "Rakoileva",
+        icon: "cloudBroken",
+        coverage: "5–7/8 taivaasta",
+    },
+    OVC: {
+        label: "Täysi pilvikatto",
+        icon: "cloudOvercast",
+        coverage: "8/8 taivaasta",
+    },
+    VV: {
+        label: "Taivas peittynyt",
+        icon: "cloudFog",
+        coverage: "Pystynäkyvyys",
+    },
 };
 
-/**
- * @param {Object} props
- * @param {CloudLayer} props.cloud
- **/
+/** @param {{ cloud: CloudLayer }} props */
 function CloudLayer({ cloud }) {
     const scope = useScope(css`
         :scope {
-            font-size: 120%;
-            font-family: var(--font-mono);
+            display: grid;
+            grid-template-columns: 44px minmax(0, 1fr) auto auto;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 0;
+        }
+        .cloud-layer-icon {
+            display: grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: var(--color-surface-hover);
+            color: var(--color-primary);
+        }
+        .cloud-layer-name {
+            font-weight: 600;
+            line-height: 1.3;
+        }
+        .cloud-layer-coverage,
+        .cloud-base-label {
+            display: block;
+            color: var(--color-muted);
+            font-size: 0.75rem;
+            margin-top: 3px;
+        }
+        .cloud-layer-base {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .cloud-layer-base b {
+            font-size: 1.35rem;
+            font-weight: 650;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -0.025em;
+        }
+        @media (max-width: 380px) {
+            :scope {
+                gap: 8px;
+                grid-template-columns: 36px minmax(0, 1fr) auto auto;
+            }
+            .cloud-layer-icon {
+                width: 36px;
+                height: 40px;
+            }
+            .cloud-layer-base b {
+                font-size: 1.15rem;
+            }
         }
     `);
+    const type = CLOUD_TYPES[cloud.amount];
+    const hasBase =
+        Number.isFinite(cloud.base) && !["NCD", "NSC"].includes(cloud.amount);
     return html`
-        <a href=${cloud.href}>${CLOUD_TYPES[cloud.amount] ?? cloud.amount}</a>
-        ${" "}
-        <b>${formatCloudBase(cloud.base, cloud.unit)}</b>
-        ${h(
-            Help,
-            {},
-            html`
-                <p class="metar">
-                    ${scope.style}
-                    ${cloud.amount}${" "}${cloud.base}${cloud.unit}
-                </p>
-            `,
-        )}
+        <li class="cloud-layer">
+            ${scope.style}
+            <span class="cloud-layer-icon">
+                ${h(Icon, { name: type?.icon ?? "cloudOvercast", size: 30 })}
+            </span>
+            <div>
+                <a class="cloud-layer-name" href=${cloud.href}>
+                    ${type?.label ?? cloud.amount}
+                </a>
+                <span class="cloud-layer-coverage">
+                    ${type?.coverage ?? cloud.amount}
+                </span>
+            </div>
+            <div class="cloud-layer-base">
+                ${
+                    hasBase
+                        ? html`
+                              <b>
+                                  ${formatCloudBase(cloud.base, cloud.unit).replace(/M$/, " m")}
+                              </b>
+                              <span class="cloud-base-label">
+                                  ${cloud.amount === "VV" ? "Pystynäkyvyys" : "Pilven alaraja"}
+                              </span>
+                          `
+                        : null
+                }
+            </div>
+            ${h(
+                Help,
+                {},
+                html`
+                    <p class="metar">
+                        ${cloud.amount}${" "}${cloud.base}${cloud.unit}
+                    </p>
+                `,
+            )}
+        </li>
     `;
 }
 
@@ -638,8 +720,61 @@ function CloudSummary() {
         }
         .cloud-layers {
             display: grid;
-            gap: 8px;
-            font-size: 1.1rem;
+            gap: 0;
+        }
+        .cloud-layer + .cloud-layer {
+            border-top: 1px solid var(--color-border);
+        }
+        .cloud-observation-heading {
+            margin: 0;
+            color: var(--color-muted);
+            font-size: 0.75rem;
+            font-weight: 500;
+            letter-spacing: 0.03em;
+        }
+        .cloud-clear,
+        .cloud-warning {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.9rem;
+        }
+        .cloud-clear {
+            background: var(--color-surface-soft);
+            margin-top: 12px;
+        }
+        .cloud-warning {
+            margin-top: 8px;
+            color: var(--color-danger);
+            background: color-mix(
+                in srgb,
+                var(--color-danger) 8%,
+                var(--color-surface)
+            );
+            font-weight: 600;
+        }
+        .cloud-observation-footer {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            margin-top: 12px;
+            color: var(--color-muted);
+            font-size: 0.75rem;
+        }
+        .cloud-observation-footer .summary-time {
+            margin: 0;
+            font-size: inherit;
+        }
+        .cloud-metar-details {
+            min-width: 0;
+            max-width: 100%;
+        }
+        .cloud-metar-details summary {
+            cursor: pointer;
         }
         .cloud-estimates {
             margin-top: 16px;
@@ -765,48 +900,57 @@ function CloudSummary() {
             ${
                 metar
                     ? html`
-                          <ul class="cloud-list">
-                              <li class="cloud-layers">
-                                  ${
-                                      msg
-                                          ? msg
-                                          : metar?.clouds.map(
-                                                (cloud) => html`
-                                                    <div>
-                                                        ${h(CloudLayer, { cloud })}
-                                                    </div>
-                                                `,
-                                            )
-                                  }
-                                  ${
-                                      metar?.cb
-                                          ? html`
-                                                Ukkospilviä
-                                                ${h(Icon, { name: "lightning" })}
-                                            `
-                                          : null
-                                  }
-                              </li>
-
-                              <li>
-                                  ${
-                                      metar?.metar
-                                          ? html`
-                                                <code
-                                                    class="metar"
-                                                    tabindex="0"
-                                                    aria-label="METAR"
-                                                >
-                                                    ${metar.metar}
-                                                </code>
-                                            `
-                                          : null
-                                  }
-                                  <div class="summary-time">
-                                      ${h(FromNow, { date: time })}
-                                  </div>
-                              </li>
-                          </ul>
+                          <h3 class="cloud-observation-heading">
+                              Havaitut pilvikerrokset
+                          </h3>
+                          ${
+                              msg
+                                  ? html`
+                                        <div class="cloud-clear">
+                                            ${h(Icon, { name: "cloudClear", size: 32 })}
+                                            <span>
+                                                Ei pilviä alle 1500 m
+                                                <small>(CAVOK)</small>
+                                            </span>
+                                        </div>
+                                    `
+                                  : html`
+                                        <ul class="cloud-list cloud-layers">
+                                            ${metar.clouds
+                                                .toSorted(
+                                                    (a, b) => b.base - a.base,
+                                                )
+                                                .map((cloud) =>
+                                                    h(CloudLayer, { cloud }),
+                                                )}
+                                        </ul>
+                                    `
+                          }
+                          ${
+                              metar.cb
+                                  ? html`
+                                        <div class="cloud-warning">
+                                            ${h(Icon, { name: "storm", size: 24 })}
+                                            <span>Ukkospilviä</span>
+                                        </div>
+                                    `
+                                  : null
+                          }
+                          <div class="cloud-observation-footer">
+                              <div class="summary-time">
+                                  ${h(FromNow, { date: time })}
+                              </div>
+                              <details class="cloud-metar-details">
+                                  <summary>METAR</summary>
+                                  <code
+                                      class="metar"
+                                      tabindex="0"
+                                      aria-label="METAR"
+                                  >
+                                      ${metar.metar}
+                                  </code>
+                              </details>
+                          </div>
                       `
                     : null
             }
@@ -1433,16 +1577,6 @@ export function FloatingMenuButton() {
     `;
 }
 
-function Anvil() {
-    if (!METARS.value?.at(-1)?.cb) {
-        return;
-    }
-
-    return html`
-        ${h(Icon, { name: "storm", size: 30, className: "anvil", label: "Ukkospilvi" })}
-    `;
-}
-
 function ForecastLocationInfo() {
     return html`
         Ennuste on tehty alueelle${" "}
@@ -1540,9 +1674,13 @@ function Info() {
                 },
             )}
             <div>
-                Lähteet: <a href="https://www.ilmatieteenlaitos.fi/">FMI</a>,${" "}
-                <a href="https://flyk.com/">Flyk</a> ja${" "}
-                <a href="https://open-meteo.com/">Open-Meteo</a>.
+                Lähteet:
+                <a href="https://www.ilmatieteenlaitos.fi/">FMI</a>
+                ,${" "}
+                <a href="https://flyk.com/">Flyk</a>
+                ja${" "}
+                <a href="https://open-meteo.com/">Open-Meteo</a>
+                .
             </div>
             <div class="disclaimer">
                 ${" "}Tietojen käyttö omalla vastuulla. Ei takeita että tiedot
@@ -1550,7 +1688,8 @@ function Info() {
             </div>
             <small>
                 Psst, onko tarvetta hyppypäiväkirjalle? Tsekkaa${" "}
-                <a href="https://loki.hyppykeli.fi/">Loki</a>. Koodi HYPPYKELI2026
+                <a href="https://loki.hyppykeli.fi/">Loki</a>
+                . Koodi HYPPYKELI2026
             </small>
         </footer>
     `;
@@ -1813,8 +1952,7 @@ export function Root() {
 
             <div class="clouds" id="clouds">
                 <h2 class="h2-with-icon">
-                    Pilvet
-                    <${Anvil} />
+                    Pilvet ${h(Icon, { name: "cloudScattered", size: 28 })}
                 </h2>
 
                 <${CloudSummary} />

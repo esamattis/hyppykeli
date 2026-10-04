@@ -111,6 +111,58 @@ test("ground wind shows the developer readings and hourly ranges", async ({
     );
 });
 
+test("METAR cloud layers show distinct icons from highest to lowest", async ({
+    page,
+}) => {
+    const metar =
+        "METAR EFJY 041200Z 19007KT 9999 FEW005 SCT015 BKN030CB OVC060 11/08 Q1014=";
+    const params = new URLSearchParams(developerPath.split("?")[1]);
+    params.set("DEV_metar", metar);
+    await page.goto(`/dz/?${params}`);
+
+    const card = page.locator("#clouds");
+    const layers = card.locator(".cloud-layer");
+    await expect(layers).toHaveCount(4);
+    await expect(layers.locator(".cloud-layer-name")).toHaveText([
+        "Täysi pilvikatto",
+        "Rakoileva",
+        "Hajanaisia",
+        "Muutamia",
+    ]);
+    await expect(layers.locator(".cloud-layer-base b")).toHaveText([
+        "1829 m",
+        "914 m",
+        "457 m",
+        "152 m",
+    ]);
+    await expect(layers.locator(".cloud-layer-coverage")).toHaveText([
+        "8/8 taivaasta",
+        "5–7/8 taivaasta",
+        "3–4/8 taivaasta",
+        "1–2/8 taivaasta",
+    ]);
+
+    const icons = layers.locator(".cloud-layer-icon svg");
+    await expect(icons).toHaveCount(4);
+    for (const icon of await icons.all()) {
+        await expect(icon).toBeVisible();
+        await expect(icon.locator("path").first()).toHaveAttribute("d", /.+/);
+    }
+    const artwork = await icons
+        .locator("g")
+        .evaluateAll((groups) => groups.map((group) => group.innerHTML));
+    expect(new Set(artwork).size).toBe(4);
+
+    await expect(card.locator(".cloud-warning")).toHaveText("Ukkospilviä", {
+        useInnerText: true,
+    });
+    await expect(card.locator(".cloud-warning svg")).toBeVisible();
+    await card.locator(".cloud-metar-details summary").click();
+    const report = card.getByLabel("METAR", { exact: true });
+    await expect(report).toBeVisible();
+    await expect(report).toHaveText(metar);
+});
+
 test("map wind profile shows the developer average and ground wind", async ({
     page,
 }) => {
