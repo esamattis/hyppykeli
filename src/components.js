@@ -25,7 +25,7 @@ export function Dialog(props) {
         }
         :scope > .dialog-controls {
             position: sticky;
-            top: 8px;
+            top: -16px;
             height: 0;
             margin-top: -16px;
             margin-bottom: 16px;

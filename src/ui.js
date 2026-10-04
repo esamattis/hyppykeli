@@ -431,6 +431,7 @@ function TableDialog(props) {
                 padding: 12px;
             }
             :scope:is(dialog) > .dialog-controls {
+                top: 0;
                 margin-top: 0;
                 margin-bottom: 0;
             }
