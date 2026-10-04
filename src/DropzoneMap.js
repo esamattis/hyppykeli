@@ -328,20 +328,22 @@ export function DropzoneMap() {
         }
         ${cardHeadingStyles}
         ul {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(0, 9rem));
+            gap: 4px 16px;
             list-style: none;
             padding: 0;
             margin: 0;
         }
         .wind-level-button {
             display: flex;
+            width: 100%;
+            height: 100%;
             align-items: center;
             gap: 4px;
             font-size: 0.8rem;
-            padding: 8px;
-            border: 1px solid transparent;
+            padding: 4px 2px 4px 8px;
+            border: 0;
             border-radius: var(--radius-sm);
             background: transparent;
             color: inherit;
@@ -351,9 +353,6 @@ export function DropzoneMap() {
         .wind-level-button:hover,
         .wind-level-button[aria-pressed="true"] {
             background: var(--color-surface-hover);
-        }
-        .wind-level-button[aria-pressed="true"] {
-            border-color: var(--color-primary);
         }
         .wind-level svg {
             flex-shrink: 0;

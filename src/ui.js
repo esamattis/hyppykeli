@@ -370,6 +370,8 @@ function TableDialog(props) {
             width: 40px;
             height: 40px;
             padding: 8px;
+            background: transparent;
+            border: 0;
         }
         :scope:is(dialog) {
             width: 1100px;
