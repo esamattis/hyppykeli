@@ -1609,6 +1609,110 @@ test("jump run is positioned using defaults around the map-center target", async
     expect(result.openingDistance).toBeLessThan(1);
 });
 
+test("two-finger navigation retains loaded tiles and saves the completed view", async ({
+    page,
+    isMobile,
+}) => {
+    test.skip(!isMobile, "Requires mobile touch input");
+    await page.route("https://tile.openstreetmap.org/**", (route) =>
+        route.fulfill({
+            contentType: "image/png",
+            body: Buffer.from(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aShoAAAAASUVORK5CYII=",
+                "base64",
+            ),
+        }),
+    );
+    await page.goto(`${developerPath}&lat=62.4&lon=25.6`);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await expect
+        .poll(() =>
+            map
+                .locator("img.leaflet-tile")
+                .evaluateAll((tiles) =>
+                    tiles.some(
+                        (tile) => tile.complete && tile.naturalWidth > 0,
+                    ),
+                ),
+        )
+        .toBe(true);
+    const tile = await map.locator("img.leaflet-tile").first().elementHandle();
+    const initial = new URL(page.url());
+    const bounds = await map.boundingBox();
+    const scroll = await page.evaluate(() => scrollY);
+    const touch = await page.context().newCDPSession(page);
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [
+            { id: 1, x: bounds.x + 100, y: bounds.y + 160 },
+            { id: 2, x: bounds.x + 200, y: bounds.y + 160 },
+        ],
+    });
+    // Slight changes in finger spacing happen even when intending to pan.
+    for (const offset of [10, 20, 30]) {
+        await touch.send("Input.dispatchTouchEvent", {
+            type: "touchMove",
+            touchPoints: [
+                { id: 1, x: bounds.x + 100 + offset, y: bounds.y + 180 },
+                { id: 2, x: bounds.x + 201 + offset, y: bounds.y + 180 },
+            ],
+        });
+        await page.evaluate(() => new Promise(requestAnimationFrame));
+        expect(await tile.evaluate((element) => element.isConnected)).toBe(
+            true,
+        );
+    }
+    expect(await page.evaluate(() => scrollY)).toBe(scroll);
+    await expect(page).toHaveURL(initial.href);
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchEnd",
+        touchPoints: [],
+    });
+    await expect(page).toHaveURL(
+        (url) =>
+            url.searchParams.get("map_center_lon") !==
+                initial.searchParams.get("map_center_lon") &&
+            Number(url.searchParams.get("map_zoom")) >
+                Number(initial.searchParams.get("map_zoom")),
+    );
+    expect(await tile.evaluate((element) => element.isConnected)).toBe(true);
+    await touch.detach();
+});
+
+test("one finger on the map scrolls the page without changing the map view", async ({
+    page,
+    isMobile,
+}) => {
+    test.skip(!isMobile, "Requires mobile touch input");
+    await page.goto(`${developerPath}&lat=62.4&lon=25.6`);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    const bounds = await map.boundingBox();
+    const initial = page.url();
+    const scroll = await page.evaluate(() => scrollY);
+    const touch = await page.context().newCDPSession(page);
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [{ x: bounds.x + 100, y: bounds.y + 200 }],
+    });
+    for (const offset of [20, 40, 60, 80]) {
+        await touch.send("Input.dispatchTouchEvent", {
+            type: "touchMove",
+            touchPoints: [{ x: bounds.x + 100, y: bounds.y + 200 - offset }],
+        });
+    }
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchEnd",
+        touchPoints: [],
+    });
+    await expect
+        .poll(() => page.evaluate(() => scrollY))
+        .toBeGreaterThan(scroll);
+    await expect(page).toHaveURL(initial);
+    await touch.detach();
+});
+
 test("jump run direction follows touch dragging and locks on release", async ({
     page,
     isMobile,

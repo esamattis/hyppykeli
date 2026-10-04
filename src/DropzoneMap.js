@@ -542,7 +542,8 @@ export function DropzoneMap() {
         const container = mapRef.current;
         const leafletMap = map(container, {
             scrollWheelZoom: false,
-            touchZoom: false,
+            touchZoom: true,
+            bounceAtZoomLimits: false,
             zoomSnap: 0,
             tapHold: false,
         }).setView(center ?? [lat, lon], zoom);
@@ -550,88 +551,14 @@ export function DropzoneMap() {
         setLeafletInstance(leafletMap);
         setPlacingJumpRunDirection(false);
 
-        // Let one finger scroll the page. Handle two-finger pan/pinch ourselves
-        // so Leaflet's single-touch dragging cannot capture the gesture.
+        // Let one finger scroll the page and Leaflet handle two-finger pan/pinch.
+        // Disable single-touch dragging before Leaflet captures the pointer.
         /** @param {PointerEvent} event */
         const selectDragging = (event) => {
             if (event.pointerType === "touch") leafletMap.dragging.disable();
             else leafletMap.dragging.enable();
         };
-        /** @type {{ center: import('leaflet').Point, anchor: import('leaflet').Point, distance: number, zoom: number } | null} */
-        let gesture = null;
-        /** @param {TouchEvent} event */
-        const touchPosition = (event) => {
-            const first = event.touches[0];
-            const second = event.touches[1];
-            if (!first || !second) return null;
-            const rect = container.getBoundingClientRect();
-            return {
-                center: point(
-                    (first.clientX + second.clientX) / 2 - rect.left,
-                    (first.clientY + second.clientY) / 2 - rect.top,
-                ),
-                distance: Math.hypot(
-                    first.clientX - second.clientX,
-                    first.clientY - second.clientY,
-                ),
-            };
-        };
-        /** @param {TouchEvent} event */
-        const startGesture = (event) => {
-            const position = touchPosition(event);
-            if (!position || event.touches.length !== 2) {
-                gesture = null;
-                return;
-            }
-            event.preventDefault();
-            leafletMap.stop();
-            const zoom = leafletMap.getZoom();
-            gesture = {
-                ...position,
-                zoom,
-                anchor: leafletMap.project(
-                    leafletMap.containerPointToLatLng(position.center),
-                    zoom,
-                ),
-            };
-        };
-        /** @param {TouchEvent} event */
-        const moveGesture = (event) => {
-            const position = touchPosition(event);
-            if (!gesture || !position || event.touches.length !== 2) return;
-            event.preventDefault();
-            const zoom = Math.max(
-                leafletMap.getMinZoom(),
-                Math.min(
-                    leafletMap.getMaxZoom(),
-                    gesture.zoom +
-                        Math.log2(
-                            position.distance / Math.max(gesture.distance, 1),
-                        ),
-                ),
-            );
-            const anchor = gesture.anchor.multiplyBy(
-                2 ** (zoom - gesture.zoom),
-            );
-            const center = anchor.subtract(
-                position.center.subtract(leafletMap.getSize().divideBy(2)),
-            );
-            leafletMap.setView(leafletMap.unproject(center, zoom), zoom, {
-                animate: false,
-            });
-        };
-        const endGesture = () => {
-            gesture = null;
-        };
         container.addEventListener("pointerdown", selectDragging, true);
-        container.addEventListener("touchstart", startGesture, {
-            passive: false,
-        });
-        container.addEventListener("touchmove", moveGesture, {
-            passive: false,
-        });
-        container.addEventListener("touchend", endGesture);
-        container.addEventListener("touchcancel", endGesture);
         tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution:
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -661,10 +588,6 @@ export function DropzoneMap() {
                 activeLeafletRef.current = null;
             observer.disconnect();
             container.removeEventListener("pointerdown", selectDragging, true);
-            container.removeEventListener("touchstart", startGesture);
-            container.removeEventListener("touchmove", moveGesture);
-            container.removeEventListener("touchend", endGesture);
-            container.removeEventListener("touchcancel", endGesture);
             leafletMap.remove();
         };
     }, [coordinates]);
