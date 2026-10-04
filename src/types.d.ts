@@ -556,3 +556,18 @@ interface FreefallFieldsProps {
     onDraftChange: (field: keyof JumpRunJumper, value: string) => void;
     onChange: (field: keyof JumpRunJumper, value: number) => void;
 }
+
+interface SpeedPresetsProps {
+    onSelect: (speedKmh: number) => void;
+}
+
+interface ToolbarButtonProps {
+    label: string;
+    icon: IconProps["name"];
+    size?: IconProps["size"];
+    className?: string;
+    pressed?: boolean;
+    disabled?: boolean;
+    hasPopup?: "dialog";
+    onClick: () => void;
+}

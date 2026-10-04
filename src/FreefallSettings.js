@@ -4,14 +4,9 @@ import { useId, useRef, useState } from "preact/hooks";
 import { FreefallFields } from "./FreefallFields.js";
 import { settingsDialogStyles } from "./styles.js";
 import { Dialog } from "./components.js";
-import { Icon } from "./icons.js";
+import { SpeedPresets } from "./SpeedPresets.js";
+import { ToolbarButton } from "./ToolbarButton.js";
 import { css, useScope } from "./useScope.js";
-
-export const FREEFALL_PRESETS = [
-    { label: "FS", value: 180 },
-    { label: "Freefly", value: 240 },
-    { label: "Wingsuit", value: 80 },
-];
 
 /** @param {FreefallSettingsProps} props */
 export function EditableSettings({
@@ -26,25 +21,6 @@ export function EditableSettings({
 }) {
     const scope = useScope(css`
         ${settingsDialogStyles}
-        .presets {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 16px 0;
-        }
-        .presets button {
-            flex: 1;
-            padding: 10px;
-            background: var(--color-surface-hover);
-            color: var(--color-text);
-            box-shadow: none;
-        }
-        .preset-speed {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 400;
-            white-space: nowrap;
-        }
     `);
     /** @type {import('preact').RefObject<HTMLDialogElement>} */
     const dialogRef = useRef(null);
@@ -70,16 +46,13 @@ export function EditableSettings({
             onAltitudeChange(Number(input.value), openingHeight);
     };
     return html`
-        <button
-            type="button"
-            class="arrow-action value-button"
-            aria-label=${title}
-            title=${title}
-            aria-haspopup="dialog"
-            onClick=${open}
-        >
-            ${scope.style} ${h(Icon, { name: "settings", size: 18 })}
-        </button>
+        ${h(ToolbarButton, {
+            label: title,
+            icon: "settings",
+            className: "value-button",
+            hasPopup: "dialog",
+            onClick: open,
+        })}
         ${h(
             Dialog,
             { dialogRef, labelledBy: titleId },
@@ -145,24 +118,12 @@ export function EditableSettings({
                             </p>
                         `,
                     )}
-                    <div class="presets">
-                        ${FREEFALL_PRESETS.map(
-                            (preset) => html`
-                                <button
-                                    type="button"
-                                    onClick=${() => {
-                                        setSpeedDraft(String(preset.value));
-                                        onSpeedChange(preset.value);
-                                    }}
-                                >
-                                    ${preset.label}
-                                    <span class="preset-speed">
-                                        ${preset.value} km/h
-                                    </span>
-                                </button>
-                            `,
-                        )}
-                    </div>
+                    ${h(SpeedPresets, {
+                        onSelect: (speedKmh) => {
+                            setSpeedDraft(String(speedKmh));
+                            onSpeedChange(speedKmh);
+                        },
+                    })}
                 </form>
             `,
         )}

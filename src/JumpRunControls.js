@@ -3,7 +3,8 @@ import { h, html } from "htm/preact";
 import { useId, useRef, useState } from "preact/hooks";
 import { FreefallFields } from "./FreefallFields.js";
 import { settingsDialogStyles } from "./styles.js";
-import { FREEFALL_PRESETS } from "./FreefallSettings.js";
+import { SpeedPresets } from "./SpeedPresets.js";
+import { ToolbarButton } from "./ToolbarButton.js";
 import { Dialog } from "./components.js";
 import { Icon } from "./icons.js";
 import { css, useScope } from "./useScope.js";
@@ -31,24 +32,6 @@ export function JumpRunControls({
             margin-top: 20px;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
-        }
-        .presets {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 16px;
-        }
-        .presets button {
-            flex: 1;
-            background: var(--color-surface-hover);
-            color: var(--color-text);
-            box-shadow: none;
-        }
-        .preset-speed {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 400;
-            white-space: nowrap;
         }
         .remove-jumper {
             display: inline-flex;
@@ -117,25 +100,17 @@ export function JumpRunControls({
     return html`
         <div class="jump-run-controls">
             ${scope.style}
-            <button
-                type="button"
-                class="arrow-action"
-                aria-label="Hyppylinjan asetukset"
-                title="Hyppylinjan asetukset"
-                aria-haspopup="dialog"
-                onClick=${open}
-            >
-                ${h(Icon, { name: "settings", size: 18 })}
-            </button>
-            <button
-                type="button"
-                class="arrow-action"
-                aria-label="Lisää hyppääjä"
-                title="Lisää hyppääjä"
-                onClick=${onAdd}
-            >
-                ${h(Icon, { name: "plus", size: 18 })}
-            </button>
+            ${h(ToolbarButton, {
+                label: "Hyppylinjan asetukset",
+                icon: "settings",
+                hasPopup: "dialog",
+                onClick: open,
+            })}
+            ${h(ToolbarButton, {
+                label: "Lisää hyppääjä",
+                icon: "plus",
+                onClick: onAdd,
+            })}
         </div>
         ${h(
             Dialog,
@@ -207,30 +182,18 @@ export function JumpRunControls({
                                     [key]: value,
                                 })),
                         })}
-                        <div class="presets">
-                            ${FREEFALL_PRESETS.map(
-                                (preset) => html`
-                                    <button
-                                        type="button"
-                                        onClick=${() => {
-                                            setNextDraft((current) => ({
-                                                ...current,
-                                                speedKmh: String(preset.value),
-                                            }));
-                                            onNextJumperChange((current) => ({
-                                                ...current,
-                                                speedKmh: preset.value,
-                                            }));
-                                        }}
-                                    >
-                                        ${preset.label}
-                                        <span class="preset-speed">
-                                            ${preset.value} km/h
-                                        </span>
-                                    </button>
-                                `,
-                            )}
-                        </div>
+                        ${h(SpeedPresets, {
+                            onSelect: (speedKmh) => {
+                                setNextDraft((current) => ({
+                                    ...current,
+                                    speedKmh: String(speedKmh),
+                                }));
+                                onNextJumperChange((current) => ({
+                                    ...current,
+                                    speedKmh,
+                                }));
+                            },
+                        })}
                     </fieldset>
                     ${jumperDrafts.map(
                         (jumper, index) => html`
