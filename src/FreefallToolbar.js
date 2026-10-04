@@ -5,16 +5,13 @@ import { Dialog } from "./components.js";
 import { Icon } from "./icons.js";
 import { css, useScope } from "./useScope.js";
 
-/** @param {FreefallValueProps} props */
-function EditableValue({
-    label,
-    unit,
-    value,
-    min,
-    max,
-    onChange,
-    presets,
+/** @param {FreefallSettingsProps} props */
+function EditableSettings({
+    exitHeight,
     openingHeight,
+    speedKmh,
+    onAltitudeChange,
+    onSpeedChange,
 }) {
     const scope = useScope(css`
         :scope.value-button {
@@ -101,18 +98,20 @@ function EditableValue({
     const dialogRef = useRef(null);
     /** @type {import('preact').RefObject<HTMLInputElement>} */
     const inputRef = useRef(null);
-    const [draft, setDraft] = useState(String(value));
-    const [openingDraft, setOpeningDraft] = useState(
-        String(openingHeight ?? 800),
-    );
-    const title = openingHeight === undefined ? label : "Uloshyppy ja avaus";
-    const titleId =
-        openingHeight === undefined
-            ? "freefall-speed-title"
-            : "freefall-altitudes-title";
+    const [exitDraft, setExitDraft] = useState(String(exitHeight));
+    const [openingDraft, setOpeningDraft] = useState(String(openingHeight));
+    const [speedDraft, setSpeedDraft] = useState(String(speedKmh));
+    const title = "Vapaapudotuksen asetukset";
+    const titleId = "freefall-settings-title";
+    const presets = [
+        { label: "FS", value: 180 },
+        { label: "Freefly", value: 240 },
+        { label: "Wingsuit", value: 80 },
+    ];
     const open = () => {
-        setDraft(String(value));
-        setOpeningDraft(String(openingHeight ?? 800));
+        setExitDraft(String(exitHeight));
+        setOpeningDraft(String(openingHeight));
+        setSpeedDraft(String(speedKmh));
         dialogRef.current?.showModal();
         inputRef.current?.focus();
         inputRef.current?.select();
@@ -121,10 +120,8 @@ function EditableValue({
     const save = (event) => {
         event.preventDefault();
         if (!dialogRef.current?.querySelector("form")?.reportValidity()) return;
-        onChange(
-            Number(draft),
-            openingHeight === undefined ? undefined : Number(openingDraft),
-        );
+        onAltitudeChange(Number(exitDraft), Number(openingDraft));
+        onSpeedChange(Number(speedDraft));
         dialogRef.current?.close();
     };
     return html`
@@ -137,23 +134,17 @@ function EditableValue({
         >
             ${scope.style}
             <span>
-                <span class="value-label">
-                    ${openingHeight === undefined ? "Nopeus" : "Uloshyppy"}
-                </span>
-                <strong class="value-number">${value} ${unit}</strong>
+                <span class="value-label">Uloshyppy</span>
+                <strong class="value-number">${exitHeight} m</strong>
             </span>
-            ${
-                openingHeight !== undefined
-                    ? html`
-                          <span>
-                              <span class="value-label">Avaus</span>
-                              <strong class="value-number">
-                                  ${openingHeight} m
-                              </strong>
-                          </span>
-                      `
-                    : null
-            }
+            <span>
+                <span class="value-label">Avaus</span>
+                <strong class="value-number">${openingHeight} m</strong>
+            </span>
+            <span>
+                <span class="value-label">Nopeus</span>
+                <strong class="value-number">${speedKmh} km/h</strong>
+            </span>
             ${h(Icon, { name: "pen", size: 14 })}
         </button>
         ${h(
@@ -164,66 +155,60 @@ function EditableValue({
                 <h2 id=${titleId}>${title}</h2>
                 <form onSubmit=${save}>
                     <label>
-                        ${label} (${unit})
+                        Uloshyppykorkeus (m)
                         <input
                             ref=${inputRef}
                             type="number"
                             required
-                            min=${openingHeight === undefined ? min : Number(openingDraft) + 1}
-                            max=${max}
+                            min=${Number(openingDraft) + 1}
+                            max="4200"
                             step="1"
-                            value=${draft}
-                            onInput=${/** @param {Event} event */ (event) => setDraft(/** @type {HTMLInputElement} */ (event.currentTarget).value)}
+                            value=${exitDraft}
+                            onInput=${/** @param {Event} event */ (event) => setExitDraft(/** @type {HTMLInputElement} */ (event.currentTarget).value)}
                         />
                     </label>
-                    ${
-                        openingHeight !== undefined
-                            ? html`
-                                  <label>
-                                      Avauskorkeus (m)
-                                      <input
-                                          type="number"
-                                          required
-                                          min="800"
-                                          max=${Number(draft) - 1}
-                                          step="1"
-                                          value=${openingDraft}
-                                          onInput=${/** @param {Event} event */ (event) => setOpeningDraft(/** @type {HTMLInputElement} */ (event.currentTarget).value)}
-                                      />
-                                  </label>
-                                  <p>
-                                      Tuuliprofiili kattaa 800–4200 m.
-                                      Avauskorkeuden tulee olla
-                                      uloshyppykorkeutta alempana.
-                                  </p>
-                              `
-                            : null
-                    }
-                    ${
-                        presets
-                            ? html`
-                                  <div class="presets">
-                                      ${presets.map(
-                                          (preset) => html`
-                                              <button
-                                                  type="button"
-                                                  onClick=${() => {
-                                                      setDraft(
-                                                          String(preset.value),
-                                                      );
-                                                  }}
-                                              >
-                                                  ${preset.label}
-                                                  <span class="preset-speed">
-                                                      ${preset.value} ${unit}
-                                                  </span>
-                                              </button>
-                                          `,
-                                      )}
-                                  </div>
-                              `
-                            : null
-                    }
+                    <label>
+                        Avauskorkeus (m)
+                        <input
+                            type="number"
+                            required
+                            min="800"
+                            max=${Number(exitDraft) - 1}
+                            step="1"
+                            value=${openingDraft}
+                            onInput=${/** @param {Event} event */ (event) => setOpeningDraft(/** @type {HTMLInputElement} */ (event.currentTarget).value)}
+                        />
+                    </label>
+                    <p>
+                        Tuuliprofiili kattaa 800–4200 m. Avauskorkeuden tulee
+                        olla uloshyppykorkeutta alempana.
+                    </p>
+                    <label>
+                        Vapaapudotusnopeus (km/h)
+                        <input
+                            type="number"
+                            required
+                            min="1"
+                            step="1"
+                            value=${speedDraft}
+                            onInput=${/** @param {Event} event */ (event) => setSpeedDraft(/** @type {HTMLInputElement} */ (event.currentTarget).value)}
+                        />
+                    </label>
+                    <div class="presets">
+                        ${presets.map(
+                            (preset) => html`
+                                <button
+                                    type="button"
+                                    onClick=${() => setSpeedDraft(String(preset.value))}
+                                >
+                                    ${preset.label}
+                                    <span class="preset-speed">
+                                        ${preset.value} km/h
+                                    </span>
+                                </button>
+                            `,
+                        )}
+                    </div>
                     <div class="actions">
                         <button
                             type="button"
@@ -295,19 +280,7 @@ export function FreefallToolbar({
             aria-label="Vapaapudotuksen arvot"
         >
             ${scope.style}
-            ${h(EditableValue, { label: "Uloshyppykorkeus", unit: "m", value: exitHeight, min: 801, max: 4200, openingHeight, onChange: (exit, opening) => onAltitudeChange(exit, opening ?? openingHeight) })}
-            ${h(EditableValue, {
-                label: "Vapaapudotusnopeus",
-                unit: "km/h",
-                value: speedKmh,
-                min: 1,
-                onChange: onSpeedChange,
-                presets: [
-                    { label: "FS", value: 180 },
-                    { label: "Freefly", value: 240 },
-                    { label: "Wingsuit", value: 80 },
-                ],
-            })}
+            ${h(EditableSettings, { exitHeight, openingHeight, speedKmh, onAltitudeChange, onSpeedChange })}
             <button
                 type="button"
                 class="arrow-action undo-arrow"

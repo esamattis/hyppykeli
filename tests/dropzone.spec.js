@@ -417,6 +417,33 @@ test("developer banner opens the editor and applies METAR changes", async ({
     await expect(page.locator("#developer-mode")).toHaveCount(1);
 });
 
+test("wind card expands, hides its heading and help, and restores", async ({
+    page,
+}) => {
+    const card = page.locator("#dropzone-map");
+    const heading = card.getByRole("heading", { name: "Ylätuulet" });
+    const help = card.getByRole("button", { name: "Ohje", exact: true });
+    const expand = card.getByRole("button", {
+        name: "Laajenna Ylätuulet koko ikkunaan",
+    });
+    await expect(heading).toBeVisible();
+    await expect(help).toBeVisible();
+    await expand.click();
+    await expect(heading).toBeHidden();
+    await expect(help).toBeHidden();
+    const restore = card.getByRole("button", { name: "Palauta Ylätuulet" });
+    await expect(restore).toHaveAttribute("aria-pressed", "true");
+    await expect(card.locator(".wind-level-button").first()).toBeVisible();
+    await restore.click();
+    await expect(heading).toBeVisible();
+    await expect(help).toBeVisible();
+    await expand.click();
+    await page.keyboard.press("Escape");
+    await expect(expand).toHaveAttribute("aria-pressed", "false");
+    await expect(heading).toBeVisible();
+    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
+});
+
 test("map wind profile shows the developer average and ground wind", async ({
     page,
 }) => {
@@ -598,9 +625,11 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
 
     const toolbar = page.getByRole("group", { name: "Vapaapudotuksen arvot" });
     await toolbar
-        .getByRole("button", { name: "Muokkaa: Uloshyppy ja avaus" })
+        .getByRole("button", { name: "Muokkaa: Vapaapudotuksen asetukset" })
         .click();
-    const altitudes = page.getByRole("dialog", { name: "Uloshyppy ja avaus" });
+    const altitudes = page.getByRole("dialog", {
+        name: "Vapaapudotuksen asetukset",
+    });
     const exit = altitudes.getByRole("spinbutton", {
         name: "Uloshyppykorkeus (m)",
         exact: true,
@@ -611,6 +640,12 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     });
     await expect(exit).toHaveValue("4000");
     await expect(opening).toHaveValue("800");
+    const speed = altitudes.getByRole("spinbutton", {
+        name: "Vapaapudotusnopeus (km/h)",
+        exact: true,
+    });
+    await expect(speed).toHaveValue("180");
+    await speed.fill("200");
     await exit.fill("3000");
     await opening.fill("3200");
     await altitudes.getByRole("button", { name: "Tallenna" }).click();
@@ -620,7 +655,8 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     await expect(altitudes).not.toBeVisible();
     await expect(toolbar).toContainText("3000 m");
     await expect(toolbar).toContainText("1000 m");
-    await expect(toolbar).toContainText("40 s");
+    await expect(toolbar).toContainText("200 km/h");
+    await expect(toolbar).toContainText("36 s");
     await expect(line.first()).toHaveAttribute("d", clickedPath);
     await expect(line.last()).toHaveAttribute("d", centeredPath);
     if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
@@ -638,13 +674,20 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
         ["FS", "180", "40"],
     ]) {
         await toolbar
-            .getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" })
+            .getByRole("button", { name: "Muokkaa: Vapaapudotuksen asetukset" })
             .click();
-        const dialog = page.getByRole("dialog", { name: "Vapaapudotusnopeus" });
+        const dialog = page.getByRole("dialog", {
+            name: "Vapaapudotuksen asetukset",
+        });
         await dialog
             .getByRole("button", { name: new RegExp(`^${preset}`) })
             .click();
-        await expect(dialog.getByRole("spinbutton")).toHaveValue(speed);
+        await expect(
+            dialog.getByRole("spinbutton", {
+                name: "Vapaapudotusnopeus (km/h)",
+                exact: true,
+            }),
+        ).toHaveValue(speed);
         await dialog.getByRole("button", { name: "Tallenna" }).click();
         await expect(toolbar).toContainText(`${speed} km/h`);
         await expect(toolbar).toContainText(`${seconds} s`);
@@ -657,25 +700,46 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
         latestPath = await line.last().getAttribute("d");
     }
     await toolbar
-        .getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" })
+        .getByRole("button", { name: "Muokkaa: Vapaapudotuksen asetukset" })
         .click();
     const speedDialog = page.getByRole("dialog", {
-        name: "Vapaapudotusnopeus",
+        name: "Vapaapudotuksen asetukset",
     });
-    await speedDialog.getByRole("spinbutton").fill("0");
+    await speedDialog
+        .getByRole("spinbutton", {
+            name: "Vapaapudotusnopeus (km/h)",
+            exact: true,
+        })
+        .fill("0");
     await speedDialog.getByRole("button", { name: "Tallenna" }).click();
     await expect(speedDialog).toBeVisible();
-    await speedDialog.getByRole("spinbutton").fill("200");
+    await speedDialog
+        .getByRole("spinbutton", {
+            name: "Vapaapudotusnopeus (km/h)",
+            exact: true,
+        })
+        .fill("200");
+    await exit.fill("3500");
+    await opening.fill("1200");
     await speedDialog.getByRole("button", { name: "Peruuta" }).click();
     await expect(toolbar).toContainText("180 km/h");
     await toolbar
-        .getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" })
+        .getByRole("button", { name: "Muokkaa: Vapaapudotuksen asetukset" })
         .click();
-    await expect(speedDialog.getByRole("spinbutton")).toHaveValue("180");
+    await expect(
+        speedDialog.getByRole("spinbutton", {
+            name: "Vapaapudotusnopeus (km/h)",
+            exact: true,
+        }),
+    ).toHaveValue("180");
+    await expect(exit).toHaveValue("3000");
+    await expect(opening).toHaveValue("1000");
     await page.keyboard.press("Escape");
     await expect(speedDialog).not.toBeVisible();
     await expect(
-        toolbar.getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" }),
+        toolbar.getByRole("button", {
+            name: "Muokkaa: Vapaapudotuksen asetukset",
+        }),
     ).toBeFocused();
     while ((await line.count()) < 10) {
         const count = await line.count();

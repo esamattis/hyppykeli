@@ -63,16 +63,14 @@ interface FreefallDriftArrow {
     speedKmh: number;
 }
 
-interface FreefallValueProps {
-    label: string;
-    unit: string;
-    value: number;
-    min: number;
-    max?: number;
-    openingHeight?: number;
-    onChange: (value: number, openingHeight?: number) => void;
-    presets?: { label: string; value: number }[];
-}
+type FreefallSettingsProps = Pick<
+    FreefallToolbarProps,
+    | "exitHeight"
+    | "openingHeight"
+    | "speedKmh"
+    | "onAltitudeChange"
+    | "onSpeedChange"
+>;
 
 interface FreefallToolbarProps {
     arrowCount: number;
@@ -459,6 +457,8 @@ interface LandingDropzone {
 
 interface IconProps {
     name:
+        | "expand"
+        | "collapse"
         | "close"
         | "help"
         | "table"

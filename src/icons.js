@@ -4,6 +4,12 @@ import { css, useScope } from "./useScope.js";
 
 // All UI icon artwork lives here. Charts and the compass are data visualizations.
 const artwork = {
+    expand: html`
+        <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5" />
+    `,
+    collapse: html`
+        <path d="M3 8h5V3M21 8h-5V3M16 21v-5h5M8 21v-5H3" />
+    `,
     pen: html`
         <path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z" />
     `,

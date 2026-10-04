@@ -1,7 +1,13 @@
 import { getTheme } from "./styles.js";
 // @ts-check
 import { html, h } from "htm/preact";
-import { useEffect, useId, useRef, useState } from "preact/hooks";
+import {
+    useEffect,
+    useId,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from "preact/hooks";
 import {
     map,
     tileLayer,
@@ -183,6 +189,60 @@ export function DropzoneMap() {
         :scope {
             grid-area: dropzone-map;
             min-width: 0;
+            position: relative;
+        }
+        :scope > h2 {
+            padding-right: 48px;
+        }
+        .window-toggle {
+            position: absolute;
+            top: var(--panel-padding);
+            right: var(--panel-padding);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            background: transparent;
+            border: 0;
+        }
+        :scope#dropzone-map.full-window {
+            position: fixed;
+            inset: 0;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            margin: 0;
+            border: 0;
+            border-radius: 0;
+            overflow: auto;
+            background: var(--color-surface);
+        }
+        :scope.full-window > h2 {
+            display: none;
+        }
+        :scope.full-window .wind-profile {
+            padding-right: 48px;
+        }
+        :scope.full-window .map-layout {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        :scope.full-window .map-frame {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-radius: 0;
+        }
+        :scope.full-window .map-viewport {
+            flex: 1;
+            display: flex;
+        }
+        :scope.full-window .dz-map {
+            flex: 1;
+            min-height: 240px;
         }
         .map-layout {
             display: grid;
@@ -247,6 +307,7 @@ export function DropzoneMap() {
     const mapRef = useRef(null);
     const arrowId = `freefall-arrow-${useId()}`;
     const [now, setNow] = useState(Date.now());
+    const [fullWindow, setFullWindow] = useState(false);
     const [selectedLabel, setSelectedLabel] = useState("≈ 4200-800 m");
     const [exitHeight, setExitHeight] = useState(4000);
     const [openingHeight, setOpeningHeight] = useState(800);
@@ -263,6 +324,25 @@ export function DropzoneMap() {
         const timer = setInterval(() => setNow(Date.now()), 60_000);
         return () => clearInterval(timer);
     }, []);
+
+    useLayoutEffect(() => {
+        if (!fullWindow) return;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        /** @param {KeyboardEvent} event */
+        const exit = (event) => {
+            if (
+                event.key === "Escape" &&
+                !document.querySelector("dialog:modal")
+            )
+                setFullWindow(false);
+        };
+        document.addEventListener("keydown", exit);
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            document.removeEventListener("keydown", exit);
+        };
+    }, [fullWindow]);
 
     useEffect(() => {
         if (!mapRef.current || !coordinates) return;
@@ -514,9 +594,20 @@ export function DropzoneMap() {
     return html`
         <section
             id="dropzone-map"
+            class=${fullWindow ? "full-window" : undefined}
             aria-label="Hyppypaikan kartta ja tuuliprofiili"
         >
             ${scope.style}
+            <button
+                type="button"
+                class="window-toggle"
+                aria-label=${fullWindow ? "Palauta Ylätuulet" : "Laajenna Ylätuulet koko ikkunaan"}
+                title=${fullWindow ? "Palauta Ylätuulet" : "Laajenna Ylätuulet koko ikkunaan"}
+                aria-pressed=${fullWindow}
+                onClick=${() => setFullWindow((expanded) => !expanded)}
+            >
+                ${h(Icon, { name: fullWindow ? "collapse" : "expand", size: 20 })}
+            </button>
             <h2>
                 Ylätuulet
                 ${h(
@@ -534,7 +625,7 @@ export function DropzoneMap() {
                             arvioi vapaapudotuksen valitusta
                             uloshyppykorkeudesta valittuun avauskorkeuteen
                             valitulla nopeudella. Voit muuttaa korkeutta ja
-                            nopeutta kartan yläpuolen kynäpainikkeista. Jokainen
+                            nopeutta kartan yläpuolen kynäpainikkeesta. Jokainen
                             nuoli säilyttää lisäyshetken korkeudet ja nopeuden.
                             Kartalla voi olla enintään 10 nuolta; uusi nuoli
                             poistaa tarvittaessa vanhimman. Poista viimeisin
