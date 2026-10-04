@@ -17,23 +17,20 @@
             href="/assets/apple-144x144.png"
         />
         <title>Hyppykeli</title>
-        <script type="module">
-            import { redirectToDz } from "/src/landing-page.js";
-            redirectToDz();
-        </script>
-        <script>
-            function sortPrevious() {
-                const dzList = document.currentScript.previousElementSibling;
-                const children = Array.from(dzList.children);
-                children.sort((a, b) =>
-                    a.textContent.trim().localeCompare(b.textContent.trim()),
-                );
-                dzList.innerHTML = "";
-                for (const child of children) {
-                    dzList.appendChild(child);
+        <script type="importmap">
+            {
+                "imports": {
+                    "preact/hooks": "/vendor/build/preact-hooks.js",
+                    "htm/preact": "/vendor/build/htm.js",
+                    "preact": "/vendor/build/preact.js"
                 }
-                dzList.style.display = "block";
             }
+        </script>
+        <script type="module">
+            import { LandingPage, redirectToDz } from "/src/landing-page.js";
+            import { render, h } from "preact";
+            redirectToDz();
+            render(h(LandingPage), document.getElementById("landing-page"));
         </script>
     </head>
     <body>
@@ -54,21 +51,11 @@
                         p {
                             line-height: 1.5;
                         }
-                        .dz-list p {
-                            padding: 12px 16px;
-                            margin: 8px 0;
-                            background: var(--color-surface-soft);
-                            border: 1px solid var(--color-border);
-                            border-radius: var(--radius-sm);
-                        }
                         @media (max-width: 600px) {
                             :scope {
                                 margin: 12px 12px 80px;
                                 padding: 20px;
                             }
-                        }
-                        .dz-list a {
-                            font-size: 120%;
                         }
                     }
                 }
@@ -100,237 +87,7 @@
                 Lähdekoodit löytyvät GPL-lisenssillä <a href="https://github.com/esamattis/hyppykeli">Githubista.</a>
             </p>
 
-            <h2>Hyppypaikat</h2>
-
-            <!-- prettier-ignore -->
-            <p>
-                Seuraaville hyppypaikoille löytyy kattavat säätiedot:
-            </p>
-
-            <div class="dz-list" style="display: none">
-                <p>
-                    <a href="/dz/?fmisid=137208&icaocode=EFJY">EFJY</a>
-                    – Tikkakoski, Jyväskylä
-                </p>
-
-                <p>
-                    <a href="/dz/?fmisid=101191&icaocode=EFUT">EFUT</a>
-                    – Utti, Kouvola
-                </p>
-
-                <p>
-                    <a href="/dz/?fmisid=101044&icaocode=EFPO">EFPO</a>
-                    – Pori
-                </p>
-
-                <p>
-                    <a href="/dz/?fmisid=101237&icaocode=EFLP">EFLP</a>
-                    – Lappeenranta
-                </p>
-
-                <p>
-                    <a href="/dz/?fmisid=101570&icaocode=EFKU">EFKU</a>
-                    – Rissala, Siilinjärvi
-                </p>
-
-                <p>
-                    <a href="/dz/?fmisid=101786&icaocode=EFOU">EFOU</a>
-                    – Oulunsalo, Oulu
-                </p>
-
-                <p>
-                    <a href="/dz/?name=EFTP&fmisid=101118&icaocode=EFTP">
-                        EFTP
-                    </a>
-                    – Tampere-Pirkkala
-                </p>
-
-                <p>
-                    <a href="/dz/?fmisid=101065&icaocode=EFTU">EFTU</a>
-                    – Turku
-                </p>
-
-                <p>
-                    <a href="/dz/?fmisid=101840&icaocode=EFKE">EFKE</a>
-                    - Lautiosaari, Keminmaa
-                </p>
-
-                <p>
-                    <a href="/dz/?fmisid=101462&icaocode=EFVA">EFVA</a>
-                    - Vaasa
-                </p>
-            </div>
-            <script>
-                sortPrevious();
-            </script>
-
-            <p>Vajaavaiset tiedot löytyvät myös seuraaville paikoille:</p>
-
-            <div class="dz-list" style="display: none">
-                <p>
-                    <!-- prettier-ignore -->
-                    <a href="/dz/?fmisid=101291&lat=61.780727&lon=22.718886&name=EFJM" >EFJM</a>
-                    – Jämijärvi. Ei METAR-sanomia, havaintoasema kaukana.
-                </p>
-
-                <!-- prettier-ignore -->
-                <p>
-                    <a href="/dz/?roadsid=10035&lat=62.5551416&lon=23.571403&name=EFAL" >EFAL</a>
-                    – Alavus. Ei METAR-sanomia, käytetään tieliikenteen säähavaintoasemaa.
-                </p>
-
-                <p>
-                    <!-- prettier-ignore -->
-                    <a href="/dz/?fmisid=104796&icaocode=EFLA&lat=61.146406&lon=25.693366" >EFLA</a>
-                    – Vesivehmaa, Asikkala. Vain METAR-sanomat ja ennusteet
-                </p>
-
-                <p>
-                    <!-- prettier-ignore -->
-                    <a href="/dz/?name=EFIM&roadsid=5004&icaocode=&lat=61.2496030163607&lon=28.90338474282989" >EFIM</a>
-                    – Immola. Ei METAR-sanomia
-                </p>
-
-                <p>
-                    <!-- prettier-ignore -->
-                    <a href="/dz/?icaocode=EFHK&fmisid=100968&name=Meripuisto&lat=60.155125&lon=24.945773" >Meripuisto</a>
-                    – Meripuisto, Helsinki. EFKH:n havainnot ja METAR-sanomat
-                </p>
-            </div>
-            <script>
-                sortPrevious();
-            </script>
-
-            <h2>Luo hyppypaikka</h2>
-
-            <form action="/dz">
-                <style>
-                    @layer components {
-                        @scope {
-                            label {
-                                display: flex;
-                                font-weight: bold;
-                            }
-                            label > span {
-                                width: 200px;
-                                display: flex;
-                            }
-                            .desc {
-                                margin-left: 200px;
-                                font-style: italic;
-                                margin-bottom: 5px;
-                                color: var(--color-muted);
-                                font-size: 80%;
-                            }
-                            input[type="text"] {
-                                display: flex;
-                                width: 20ch;
-                                padding: 8px 10px;
-                            }
-
-                            .create-dz {
-                                margin-top: 10px;
-                            }
-                            @media (max-width: 600px) {
-                                label {
-                                    flex-direction: column;
-                                    gap: 4px;
-                                }
-                                .desc {
-                                    margin-left: 0;
-                                    margin-bottom: 12px;
-                                }
-                            }
-                            label small {
-                                font-weight: normal;
-                                font-size: 75%;
-                            }
-                        }
-                    }
-                </style>
-
-                <fieldset>
-                    <label>
-                        <span>Nimi</span>
-                        <input type="text" name="name" placeholder="My DZ" />
-                    </label>
-                    <div class="desc"></div>
-
-                    <label>
-                        <span>FMISID</span>
-                        <input type="text" name="fmisid" placeholder="123445" />
-                    </label>
-
-                    <div class="desc">
-                        Hae Ilmatieteenlaitoksen havaintoaseman FMISID
-                        <a
-                            href="https://www.ilmatieteenlaitos.fi/havaintoasemat"
-                        >
-                            täältä
-                        </a>
-                    </div>
-
-                    <label>
-                        <span>Fintraffic sääasema</span>
-                        <input
-                            type="text"
-                            name="roadsid"
-                            placeholder="123445"
-                        />
-                    </label>
-
-                    <!-- prettier-ignore -->
-                    <div class="desc">
-                        Jos sopivaa Ilmatieteenlaitoksen havaintoasemaa ei
-                        löydy, voit käyttää vaihtoehtoisesti <a href="https://www.digitraffic.fi/tieliikenne/#ties%C3%A4%C3%A4asemien-ajantasaiset-mittaustiedot">Fintrafficin tieasääsemaa</a>. Hae aseman
-                        ID
-                        <a href="https://tie.digitraffic.fi/api/weather/v1/stations">
-                            täältä
-                        </a>
-                    </div>
-
-                    <label>
-                        <span>ICAO</span>
-                        <input type="text" name="icaocode" placeholder="EFXY" />
-                    </label>
-                    <div class="desc">
-                        Nelikirjaminen lentokentän tunnus, esim. EFUT
-                    </div>
-                </fieldset>
-
-                <fieldset>
-                    <legend>Ennusteen koordinaatit</legend>
-                    <label>
-                        <span>Lattitude</span>
-                        <input type="text" name="lat" placeholder="60.1234" />
-                    </label>
-                    <div class="desc"></div>
-
-                    <label>
-                        <span>Longitude</span>
-                        <input type="text" name="lon" placeholder="24.1234" />
-                    </label>
-                    <div class="desc">
-                        Desimaalimuodossa. Ei pakollinen. Käytetään
-                        havaintoaseman sijaintia jos ei annettu.
-                    </div>
-                    <button id="get-location" type="button">
-                        Käytä nykyistä sijaintiani
-                    </button>
-                    <button id="get-roadsid" type="button">
-                        Hae lähin tieasema
-                    </button>
-                </fieldset>
-
-                <input type="hidden" name="save" value="1" />
-
-                <button class="create-dz">Luo</button>
-            </form>
-
-            <p>
-                Hyppypaikka tallennetaan vain tähän selaimeen. Hyppypaikan voi
-                jakaa muille jakamalla sen linkin.
-            </p>
+            <div id="landing-page" style="display: contents"></div>
 
             <p>
                 Vanha versio löytyy vielä

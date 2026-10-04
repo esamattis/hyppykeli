@@ -1,6 +1,94 @@
 // @ts-check
 
+import { h, html } from "htm/preact";
+import { useState } from "preact/hooks";
+import { css, useScope } from "./useScope.js";
 import { coordinateDistance, fetchJSON } from "./utils.js";
+
+/** @type {LandingDropzone[]} */
+const completeDropzones = [
+    {
+        name: "EFJY",
+        href: "/dz/?fmisid=137208&icaocode=EFJY",
+        description: "– Tikkakoski, Jyväskylä",
+    },
+    {
+        name: "EFUT",
+        href: "/dz/?fmisid=101191&icaocode=EFUT",
+        description: "– Utti, Kouvola",
+    },
+    {
+        name: "EFPO",
+        href: "/dz/?fmisid=101044&icaocode=EFPO",
+        description: "– Pori",
+    },
+    {
+        name: "EFLP",
+        href: "/dz/?fmisid=101237&icaocode=EFLP",
+        description: "– Lappeenranta",
+    },
+    {
+        name: "EFKU",
+        href: "/dz/?fmisid=101570&icaocode=EFKU",
+        description: "– Rissala, Siilinjärvi",
+    },
+    {
+        name: "EFOU",
+        href: "/dz/?fmisid=101786&icaocode=EFOU",
+        description: "– Oulunsalo, Oulu",
+    },
+    {
+        name: "EFTP",
+        href: "/dz/?name=EFTP&fmisid=101118&icaocode=EFTP",
+        description: "– Tampere-Pirkkala",
+    },
+    {
+        name: "EFTU",
+        href: "/dz/?fmisid=101065&icaocode=EFTU",
+        description: "– Turku",
+    },
+    {
+        name: "EFKE",
+        href: "/dz/?fmisid=101840&icaocode=EFKE",
+        description: "- Lautiosaari, Keminmaa",
+    },
+    {
+        name: "EFVA",
+        href: "/dz/?fmisid=101462&icaocode=EFVA",
+        description: "- Vaasa",
+    },
+];
+
+/** @type {LandingDropzone[]} */
+const partialDropzones = [
+    {
+        name: "EFJM",
+        href: "/dz/?fmisid=101291&lat=61.780727&lon=22.718886&name=EFJM",
+        description: "– Jämijärvi. Ei METAR-sanomia, havaintoasema kaukana.",
+    },
+    {
+        name: "EFAL",
+        href: "/dz/?roadsid=10035&lat=62.5551416&lon=23.571403&name=EFAL",
+        description:
+            "– Alavus. Ei METAR-sanomia, käytetään tieliikenteen säähavaintoasemaa.",
+    },
+    {
+        name: "EFLA",
+        href: "/dz/?fmisid=104796&icaocode=EFLA&lat=61.146406&lon=25.693366",
+        description: "– Vesivehmaa, Asikkala. Vain METAR-sanomat ja ennusteet",
+    },
+    {
+        name: "EFIM",
+        href: "/dz/?name=EFIM&roadsid=5004&icaocode=&lat=61.2496030163607&lon=28.90338474282989",
+        description: "– Immola. Ei METAR-sanomia",
+    },
+    {
+        name: "Meripuisto",
+        href: "/dz/?icaocode=EFHK&fmisid=100968&name=Meripuisto&lat=60.155125&lon=24.945773",
+        description:
+            "– Meripuisto, Helsinki. EFKH:n havainnot ja METAR-sanomat",
+    },
+];
 
 /**
  * @param {[number, number]} coordinates
@@ -76,79 +164,304 @@ export function redirectToDz() {
         return;
     }
 
-    const dz = Array.from(document.querySelectorAll(".dz-list a")).find(
-        (a) => a.textContent?.trim() === redirectName,
+    const dz = [...completeDropzones, ...partialDropzones].find(
+        (dz) => dz.name === redirectName,
     );
 
-    if (dz instanceof HTMLAnchorElement) {
+    if (dz) {
         window.location.href = dz.href;
         return;
     }
 }
 
-/**
- * @param {string} name
- * @param {string|number|undefined} value
- */
-function fillInputByName(name, value) {
-    const input = document.querySelector(`input[name="${name}"]`);
-    if (input instanceof HTMLInputElement) {
-        input.value = value?.toString().trim() ?? "";
-    }
+/** @param {{ dropzones: LandingDropzone[] }} props */
+function DropzoneList({ dropzones }) {
+    const scope = useScope(css`
+        :scope p {
+            padding: 12px 16px;
+            margin: 8px 0;
+            background: var(--color-surface-soft);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+        }
+        :scope a {
+            font-size: 120%;
+        }
+    `);
+    return html`
+        <div class="dz-list">
+            ${scope.style}
+            ${[...dropzones]
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(
+                    (dz) => html`
+                        <p key=${dz.name}>
+                            <a href=${dz.href}>${dz.name}</a>
+                            ${" "}${dz.description}
+                        </p>
+                    `,
+                )}
+        </div>
+    `;
 }
 
-/**
- * @param {string} name
- * @returns {HTMLInputElement|null}
- */
-function getInputByName(name) {
-    return document.querySelector(`input[name="${name}"]`);
+export function Dropzones() {
+    return html`
+        <h2>Hyppypaikat</h2>
+        <p>Seuraaville hyppypaikoille löytyy kattavat säätiedot:</p>
+        ${h(DropzoneList, { dropzones: completeDropzones })}
+        <p>Vajaavaiset tiedot löytyvät myös seuraaville paikoille:</p>
+        ${h(DropzoneList, { dropzones: partialDropzones })}
+    `;
 }
 
-document.getElementById("get-location")?.addEventListener("click", (e) => {
-    const el = e.target;
-    if (!(el instanceof HTMLButtonElement)) {
-        return;
-    }
+export function CreateDropzoneForm() {
+    const headingScope = useScope(css`
+        :scope {
+            margin-top: 32px;
+        }
+    `);
+    const scope = useScope(css`
+        label {
+            display: flex;
+            font-weight: bold;
+        }
+        label > span {
+            width: 200px;
+            display: flex;
+        }
+        .desc {
+            margin-left: 200px;
+            font-style: italic;
+            margin-bottom: 5px;
+            color: var(--color-muted);
+            font-size: 80%;
+        }
+        input[type="text"] {
+            display: flex;
+            width: 20ch;
+            padding: 8px 10px;
+        }
 
-    el.disabled = true;
-    navigator.geolocation.getCurrentPosition((position) => {
-        el.disabled = false;
-        fillInputByName("lat", position.coords.latitude);
-        fillInputByName("lon", position.coords.longitude);
+        .create-dz {
+            margin-top: 10px;
+        }
+        @media (max-width: 600px) {
+            label {
+                flex-direction: column;
+                gap: 4px;
+            }
+            .desc {
+                margin-left: 0;
+                margin-bottom: 12px;
+            }
+        }
+        label small {
+            font-weight: normal;
+            font-size: 75%;
+        }
+    `);
+    const [fields, setFields] = useState({
+        name: "",
+        fmisid: "",
+        roadsid: "",
+        icaocode: "",
+        lat: "",
+        lon: "",
     });
-});
+    const [locating, setLocating] = useState(false);
 
-document.getElementById("get-roadsid")?.addEventListener("click", (e) => {
-    const el = e.target;
-    if (!(el instanceof HTMLButtonElement)) {
-        return;
+    /** @param {import("preact").JSX.TargetedEvent<HTMLInputElement>} event */
+    function updateField(event) {
+        const { name, value } = event.currentTarget;
+        setFields((fields) => ({ ...fields, [name]: value }));
     }
 
-    const lat = getInputByName("lat")?.value;
-    const lon = getInputByName("lon")?.value;
-
-    if (!lat || !lon) {
-        alert("Koordinaatit puuttuvat");
-        return;
-    }
-
-    findClosestRoadStation([Number(lat), Number(lon)]).then((station) => {
-        if (!station) {
+    /** @param {import("preact").JSX.TargetedClipboardEvent<HTMLInputElement>} event */
+    function pasteCoordinates(event) {
+        const text = event.clipboardData?.getData("text");
+        if (!text?.includes(",")) {
             return;
         }
-        fillInputByName("name", station.properties.name.replaceAll("_", " "));
-        fillInputByName("roadsid", station.id);
-    });
-});
+        event.preventDefault();
+        const [lat, lon] = text.split(",");
+        setFields((fields) => ({
+            ...fields,
+            lat: lat?.trim() ?? "",
+            lon: lon?.trim() ?? "",
+        }));
+    }
 
-getInputByName("lat")?.addEventListener("paste", (e) => {
-    setTimeout(() => {
-        if (!(e.target instanceof HTMLInputElement)) {
+    function getLocation() {
+        setLocating(true);
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setLocating(false);
+                setFields((fields) => ({
+                    ...fields,
+                    lat: position.coords.latitude.toString(),
+                    lon: position.coords.longitude.toString(),
+                }));
+            },
+            () => setLocating(false),
+        );
+    }
+
+    async function getRoadStation() {
+        if (!fields.lat || !fields.lon) {
+            alert("Koordinaatit puuttuvat");
             return;
         }
-        const [lat, lon] = e.target.value.split(",");
-        fillInputByName("lat", lat);
-        fillInputByName("lon", lon);
-    });
-});
+        const station = await findClosestRoadStation([
+            Number(fields.lat),
+            Number(fields.lon),
+        ]);
+        if (station) {
+            setFields((fields) => ({
+                ...fields,
+                name: station.properties.name.replaceAll("_", " "),
+                roadsid: station.id.toString(),
+            }));
+        }
+    }
+
+    return html`
+        <h2>${headingScope.style}Luo hyppypaikka</h2>
+        <form action="/dz">
+            ${scope.style}
+
+            <fieldset>
+                <label>
+                    <span>Nimi</span>
+                    <input
+                        type="text"
+                        name="name"
+                        placeholder="My DZ"
+                        value=${fields.name}
+                        onInput=${updateField}
+                    />
+                </label>
+                <div class="desc"></div>
+
+                <label>
+                    <span>FMISID</span>
+                    <input
+                        type="text"
+                        name="fmisid"
+                        placeholder="123445"
+                        value=${fields.fmisid}
+                        onInput=${updateField}
+                    />
+                </label>
+
+                <div class="desc">
+                    Hae Ilmatieteenlaitoksen havaintoaseman FMISID${" "}
+                    <a href="https://www.ilmatieteenlaitos.fi/havaintoasemat">
+                        täältä
+                    </a>
+                </div>
+
+                <label>
+                    <span>Fintraffic sääasema</span>
+                    <input
+                        type="text"
+                        name="roadsid"
+                        placeholder="123445"
+                        value=${fields.roadsid}
+                        onInput=${updateField}
+                    />
+                </label>
+                <div class="desc">
+                    Jos sopivaa Ilmatieteenlaitoksen havaintoasemaa ei löydy,
+                    voit käyttää vaihtoehtoisesti${" "}
+                    <a
+                        href="https://www.digitraffic.fi/tieliikenne/#ties%C3%A4%C3%A4asemien-ajantasaiset-mittaustiedot"
+                    >
+                        Fintrafficin tieasääsemaa
+                    </a>
+                    . Hae aseman ID${" "}
+                    <a
+                        href="https://tie.digitraffic.fi/api/weather/v1/stations"
+                    >
+                        täältä
+                    </a>
+                </div>
+
+                <label>
+                    <span>ICAO</span>
+                    <input
+                        type="text"
+                        name="icaocode"
+                        placeholder="EFXY"
+                        value=${fields.icaocode}
+                        onInput=${updateField}
+                    />
+                </label>
+                <div class="desc">
+                    Nelikirjaminen lentokentän tunnus, esim. EFUT
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend>Ennusteen koordinaatit</legend>
+                <label>
+                    <span>Lattitude</span>
+                    <input
+                        type="text"
+                        name="lat"
+                        placeholder="60.1234"
+                        value=${fields.lat}
+                        onInput=${updateField}
+                        onPaste=${pasteCoordinates}
+                    />
+                </label>
+                <div class="desc"></div>
+
+                <label>
+                    <span>Longitude</span>
+                    <input
+                        type="text"
+                        name="lon"
+                        placeholder="24.1234"
+                        value=${fields.lon}
+                        onInput=${updateField}
+                    />
+                </label>
+                <div class="desc">
+                    Desimaalimuodossa. Ei pakollinen. Käytetään havaintoaseman
+                    sijaintia jos ei annettu.
+                </div>
+                <button
+                    id="get-location"
+                    type="button"
+                    disabled=${locating}
+                    onClick=${getLocation}
+                >
+                    Käytä nykyistä sijaintiani
+                </button>
+                ${" "}
+                <button
+                    id="get-roadsid"
+                    type="button"
+                    onClick=${getRoadStation}
+                >
+                    Hae lähin tieasema
+                </button>
+            </fieldset>
+
+            <input type="hidden" name="save" value="1" />
+
+            <button class="create-dz">Luo</button>
+        </form>
+        <p>
+            Hyppypaikka tallennetaan vain tähän selaimeen. Hyppypaikan voi jakaa
+            muille jakamalla sen linkin.
+        </p>
+    `;
+}
+
+export function LandingPage() {
+    return html`
+        ${h(Dropzones, {})}${h(CreateDropzoneForm, {})}
+    `;
+}

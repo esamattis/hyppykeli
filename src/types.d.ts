@@ -365,3 +365,9 @@ interface CSSScope {
     end: string;
     style: import("preact").VNode;
 }
+
+interface LandingDropzone {
+    name: string;
+    href: string;
+    description: string;
+}
