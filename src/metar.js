@@ -333,7 +333,6 @@ class METAR {
     }
 
     parseVisibility() {
-        const re = /^([0-9]+)([A-Z]{1,2})/g;
         this.result.visibility = null;
         this.result.visibilityVariation = null;
         this.result.visibilityVariationDirection = null;
@@ -343,19 +342,13 @@ class METAR {
         if (this.current === "////") return;
         this.result.visibility = asInt(this.current.slice(0, 4));
 
-        // Look for a directional variation report
-        if (this.peek().match(/^[0-9]+[N|E|S|W|NW|NE|SW|SE]/)) {
+        // Look for a minimum visibility report. Automatic stations may omit
+        // the direction, for example `9999 4700`.
+        const variation = /^(\d{4})(N|NE|E|SE|S|SW|W|NW)?$/.exec(this.peek());
+        if (variation) {
             this.next();
-
-            let matches;
-            while ((matches = re.exec(this.current)) != null) {
-                if (matches.index === re.lastIndex) {
-                    re.lastIndex++;
-                }
-
-                this.result.visibilityVariation = matches[1] ?? null;
-                this.result.visibilityVariationDirection = matches[2] ?? null;
-            }
+            this.result.visibilityVariation = variation[1] ?? null;
+            this.result.visibilityVariationDirection = variation[2] ?? null;
         }
     }
 

@@ -147,6 +147,23 @@ test.describe("METAR parser", function () {
             expect(m.visibilityVariationDirection).toEqual("NW");
         });
 
+        test("can parse minimum visibility without a direction", function () {
+            const m = parseMetar(
+                "METAR EFKU 041220Z AUTO 22008KT 9999 4700 SHRA BKN006 //////CB 12/11 Q1011=",
+            );
+
+            expect(m.visibility).toEqual(9999);
+            expect(m.visibilityVariation).toEqual("4700");
+            expect(m.visibilityVariationDirection).toEqual(null);
+            expect(m.clouds).toMatchObject([
+                { metarCode: "BKN006", altitude: 600 },
+            ]);
+            expect(m.cbWithoutLayer).toBe(true);
+            expect(m.temperature).toBe(12);
+            expect(m.dewpoint).toBe(11);
+            expect(m.altimeterInHpa).toBe(1011);
+        });
+
         test("can parse clouds after directional visibility", () => {
             let m = parseMetar(
                 "EFJY 201120Z 30001KT 9999 1500NW -SN SCT002 BKN007 M17/M18 Q1031",
