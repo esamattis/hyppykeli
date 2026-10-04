@@ -56,7 +56,7 @@ export function MapWindOverlay({ wind }) {
         const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
         let width = 0;
         let height = 0;
-        const color = "#eeeeee";
+        const color = "#164e83";
         let frame = 0;
         let lastTime = 0;
         let visible = false;
@@ -105,7 +105,7 @@ export function MapWindOverlay({ wind }) {
                 gradient.addColorStop(0, "transparent");
                 gradient.addColorStop(1, color);
                 context.strokeStyle = gradient;
-                context.globalAlpha = 0.45 * opacity;
+                context.globalAlpha = 0.85 * opacity;
                 context.beginPath();
                 context.moveTo(tailX, tailY);
                 context.lineTo(particle.x, particle.y);
