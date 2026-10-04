@@ -41,12 +41,10 @@ const parachuteColor = computed(() => {
  */
 const rotationAnimation = computed(() => {
     const windVariations = WIND_VARIATIONS.value;
-    if (!windVariations || typeof windVariations !== "object") {
-        console.error("Invalid windVariations object");
+    if (!windVariations) {
         return { angle: 0, duration: 0 };
     }
 
-    // XXX windRef is not in windVariation
     const { variationRange, windRef } = windVariations;
 
     // Calculate rotation angle based on variationRange
@@ -78,12 +76,10 @@ const rotationAnimation = computed(() => {
  */
 const swingAnimation = computed(() => {
     const windVariations = WIND_VARIATIONS.value;
-    if (!windVariations || typeof windVariations !== "object") {
-        console.error("Invalid windVariations object");
+    if (!windVariations) {
         return { angle: 0, duration: 0 };
     }
 
-    // XXX How this can work? windVarions does not return these values
     const { averageSpeed, maxGust, windRef } = windVariations;
     const gustDiff = maxGust - averageSpeed;
 

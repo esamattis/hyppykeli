@@ -63,6 +63,52 @@ const FREE_FALL_HEIGHTS = ["1500", "3000", "4200"];
  */
 export const OM_DATA = signal(null);
 
+/**
+ * Validate the forecast fields used by the map and upper-wind tables.
+ * @param {unknown} data
+ * @returns {data is OpenMeteoWeatherData}
+ */
+function isWindForecast(data) {
+    if (
+        !data ||
+        typeof data !== "object" ||
+        ("error" in data && data.error) ||
+        !("utc_offset_seconds" in data) ||
+        typeof data.utc_offset_seconds !== "number" ||
+        !Number.isFinite(data.utc_offset_seconds) ||
+        !("hourly" in data) ||
+        !data.hourly ||
+        typeof data.hourly !== "object"
+    ) {
+        return false;
+    }
+    const hourly = /** @type {Record<string, unknown>} */ (data.hourly);
+    const times = hourly.time;
+    if (
+        !Array.isArray(times) ||
+        !times.every(
+            (time) =>
+                typeof time === "string" && Number.isFinite(Date.parse(time)),
+        )
+    ) {
+        return false;
+    }
+    return PRESSURE_LEVELS_RAW.every(({ key, directionKey }) =>
+        [key, directionKey].every((field) => {
+            const values = hourly[field];
+            return (
+                Array.isArray(values) &&
+                values.length === times.length &&
+                values.every(
+                    (value) =>
+                        value === null ||
+                        (typeof value === "number" && Number.isFinite(value)),
+                )
+            );
+        }),
+    );
+}
+
 function getTimeRange() {
     const now = new Date();
     const start = now.toISOString();
@@ -85,15 +131,22 @@ async function fetchDataWithCoordinates(coordinates) {
     const { start, end } = getTimeRange();
     const [latitude, longitude] = coordinates.split(",").map(Number);
 
-    const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=windspeed_1000hPa,windspeed_925hPa,windspeed_850hPa,windspeed_700hPa,windspeed_600hPa,winddirection_1000hPa,winddirection_925hPa,winddirection_850hPa,winddirection_700hPa,winddirection_600hPa&start=${start}&end=${end}`,
-    );
-
-    console.log(`Alkupäivämäärä: ${start}`);
-    console.log(`Loppupäivämäärä: ${end}`);
-    console.log(`Leveysaste: ${latitude}, Pituusaste: ${longitude}`);
-
-    return await response.json();
+    try {
+        const response = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=windspeed_1000hPa,windspeed_925hPa,windspeed_850hPa,windspeed_700hPa,windspeed_600hPa,winddirection_1000hPa,winddirection_925hPa,winddirection_850hPa,winddirection_700hPa,winddirection_600hPa&start=${start}&end=${end}`,
+        );
+        if (!response.ok) {
+            throw new Error(`Open-Meteo HTTP ${response.status}`);
+        }
+        const data = await response.json();
+        if (!isWindForecast(data)) {
+            throw new Error("Invalid Open-Meteo wind forecast");
+        }
+        return data;
+    } catch (error) {
+        console.warn("Open-Meteo wind forecast unavailable", error);
+        return null;
+    }
 }
 
 export function clearOMCache() {
@@ -113,7 +166,18 @@ export async function fetchHighWinds(coordinates) {
     const now = new Date();
     const currentHour = now.getHours();
 
-    if (cachedData && cachedTime && cachedCoordinates) {
+    /** @type {unknown} */
+    let cachedForecast = null;
+    if (cachedData) {
+        try {
+            cachedForecast = JSON.parse(cachedData);
+        } catch {
+            // Corrupt cache entries must not prevent fetching a new forecast.
+        }
+        if (!isWindForecast(cachedForecast)) clearOMCache();
+    }
+
+    if (isWindForecast(cachedForecast) && cachedTime && cachedCoordinates) {
         const cachedHour = new Date(Number(cachedTime)).getHours();
 
         if (
@@ -123,7 +187,7 @@ export async function fetchHighWinds(coordinates) {
             now.getTime() - Number(cachedTime) < 60 * 60 * 1000
         ) {
             console.log("Käytetään välimuistissa olevaa dataa");
-            OM_DATA.value = JSON.parse(cachedData);
+            OM_DATA.value = cachedForecast;
             return;
         }
     }

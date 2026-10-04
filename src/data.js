@@ -1094,8 +1094,6 @@ QUERY_PARAMS.subscribe(() => {
 
 // Constants for WIND_VARIATIONS
 const THIRTY_MINUTES_IN_MS = 30 * 60 * 1000;
-const MAX_EXTRA_WIDTH = 30;
-const EXTRA_WIDTH_MULTIPLIER = 3;
 
 /** @type {Record<string, string>} */
 const COLOR_MAPPINGS = {
@@ -1160,24 +1158,6 @@ const DIRECTION_VARIATION_TABLE = [
 ];
 
 // Helper functions for WIND_VARIATIONS
-
-/**
- * @param {number[]} directions
- */
-function calculateAverageDirection(directions) {
-    debug(`calculateAverageDirection: directions = ${directions}`);
-    const sumSin = directions.reduce(
-        (sum, dir) => sum + Math.sin((dir * Math.PI) / 180),
-        0,
-    );
-    const sumCos = directions.reduce(
-        (sum, dir) => sum + Math.cos((dir * Math.PI) / 180),
-        0,
-    );
-    const result = ((Math.atan2(sumSin, sumCos) * 180) / Math.PI + 360) % 360;
-    debug(`calculateAverageDirection: result = ${result}`);
-    return result;
-}
 
 /**
  * @param {number[]} directions
@@ -1296,26 +1276,11 @@ function extractAndFilterData(observations) {
  * @param {number[]} gusts
  */
 function calculateWindData(directions, speeds, gusts) {
-    const averageDirection = calculateAverageDirection(directions);
     const variationRange = calculateVariationRange(directions);
     const averageSpeed =
         speeds.reduce((sum, speed) => sum + speed, 0) / speeds.length;
     const maxGust = Math.max(...gusts);
-    return { averageDirection, variationRange, averageSpeed, maxGust };
-}
-
-/**
- * @param {number} maxGust
- * @param {number} averageSpeed
- */
-function calculateExtraWidth(maxGust, averageSpeed) {
-    return Math.min(
-        Math.max(
-            Math.round((maxGust - averageSpeed) * EXTRA_WIDTH_MULTIPLIER),
-            0,
-        ),
-        MAX_EXTRA_WIDTH,
-    );
+    return { variationRange, averageSpeed, maxGust };
 }
 
 export const WIND_VARIATIONS = computed(() => {
@@ -1351,8 +1316,11 @@ export const WIND_VARIATIONS = computed(() => {
         return undefined;
     }
 
-    const { averageDirection, variationRange, averageSpeed, maxGust } =
-        calculateWindData(directions, speeds, gusts);
+    const { variationRange, averageSpeed, maxGust } = calculateWindData(
+        directions,
+        speeds,
+        gusts,
+    );
 
     const windRefValue = calculateWindRef(
         averageSpeed,
@@ -1370,10 +1338,8 @@ export const WIND_VARIATIONS = computed(() => {
 
     const result = {
         variationRange,
-        averageDirection,
         windRef,
         color: COLOR_MAPPINGS[windRef] ?? "green",
-        extraWidth: calculateExtraWidth(maxGust, averageSpeed),
         averageSpeed,
         maxGust,
     };
