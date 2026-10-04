@@ -1,10 +1,10 @@
 // @ts-check
-import { t } from "../translations.js";
+import { t } from "#app/translations.js";
 import {
     FORECAST_COORDINATES,
     FORECAST_LOCATION_NAME,
     STATION_COORDINATES,
-} from "./state.js";
+} from "#app/weather/state.js";
 import { html } from "htm/preact";
 
 export function ForecastLocationInfo() {

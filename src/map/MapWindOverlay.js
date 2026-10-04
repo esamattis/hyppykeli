@@ -1,5 +1,5 @@
 // @ts-check
-import { css, useScope } from "../useScope.js";
+import { css, useScope } from "#app/useScope.js";
 import { html } from "htm/preact";
 import { useEffect, useRef } from "preact/hooks";
 

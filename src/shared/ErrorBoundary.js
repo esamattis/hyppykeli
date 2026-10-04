@@ -1,5 +1,5 @@
 // @ts-check
-import { t } from "../translations.js";
+import { t } from "#app/translations.js";
 import { Component, html } from "htm/preact";
 
 export class ErrorBoundary extends Component {

@@ -1,7 +1,7 @@
 // @ts-check
-import { completeDropzones, partialDropzones } from "../dropzones.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
+import { completeDropzones, partialDropzones } from "#app/dropzones.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
 
 /** @param {{ dropzones: LandingDropzone[] }} props */

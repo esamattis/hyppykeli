@@ -1,9 +1,9 @@
 // @ts-check
-import { ErrorBoundary } from "../shared/ErrorBoundary.js";
-import { Help } from "../shared/Help.js";
-import { t } from "../translations.js";
-import { DataSource } from "./DataSource.js";
-import { OpenMeteoRaw, OpenMeteoTool } from "./UpperWindTable.js";
+import { ErrorBoundary } from "#app/shared/ErrorBoundary.js";
+import { Help } from "#app/shared/Help.js";
+import { t } from "#app/translations.js";
+import { DataSource } from "#app/weather/DataSource.js";
+import { OpenMeteoRaw, OpenMeteoTool } from "#app/weather/UpperWindTable.js";
 import { h, html } from "htm/preact";
 import { useState } from "preact/hooks";
 

@@ -1,5 +1,5 @@
 // @ts-check
-import { css, useScope } from "../useScope.js";
+import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
 
 // All UI icon artwork lives here. Charts and the compass are data visualizations.

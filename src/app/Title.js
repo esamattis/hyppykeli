@@ -1,13 +1,13 @@
 // @ts-check
-import { Dialog } from "../shared/Dialog.js";
-import { FromNow } from "../shared/FromNow.js";
-import { Help } from "../shared/Help.js";
-import { Icon } from "../shared/icons.js";
-import { isNullish } from "../shared/values.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { LATEST_OBSERVATION, NAME } from "../weather/state.js";
-import { QUERY_PARAMS, navigateQs } from "./settings.js";
+import { Dialog } from "#app/shared/Dialog.js";
+import { FromNow } from "#app/shared/FromNow.js";
+import { Help } from "#app/shared/Help.js";
+import { Icon } from "#app/shared/icons.js";
+import { isNullish } from "#app/shared/values.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { LATEST_OBSERVATION, NAME } from "#app/weather/state.js";
+import { QUERY_PARAMS, navigateQs } from "#app/app/settings.js";
 import { h, html } from "htm/preact";
 import { useId, useRef, useState } from "preact/hooks";
 

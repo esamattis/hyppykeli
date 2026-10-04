@@ -1,5 +1,5 @@
 // @ts-check
-import { t } from "./translations.js";
+import { t } from "#app/translations.js";
 
 /** @type {LandingDropzone[]} */
 export const completeDropzones = [

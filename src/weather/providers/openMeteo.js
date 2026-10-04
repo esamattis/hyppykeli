@@ -1,5 +1,5 @@
 // @ts-check
-import { isNullish } from "../../shared/values.js";
+import { isNullish } from "#app/shared/values.js";
 
 /**
  * @type {Array<{ pressure: string, key: `windspeed_${OpenMeteoPressureLevel}hPa`, directionKey: `winddirection_${OpenMeteoPressureLevel}hPa` }>}

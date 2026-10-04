@@ -13,6 +13,7 @@ test("weather modules stay idle until startup and repeated startup polls only on
                 contentType: "text/html",
                 body: `<!doctype html><script type="importmap">{
                     "imports": {
+                        "#app/": "/src/",
                         "@preact/signals": "/vendor/build/preact-signals.js",
                         "preact": "/vendor/build/preact.js",
                         "preact/hooks": "/vendor/build/preact-hooks.js"
@@ -26,15 +27,15 @@ test("weather modules stay idle until startup and repeated startup polls only on
     });
     await page.goto("/startup-test?lat=62&lon=25&DEV_mock=1");
     await page.evaluate(async () => {
-        await import("/src/weather/state.js");
-        await import("/src/map/windData.js");
-        await import("/src/app/start.js");
+        await import("#app/weather/state.js");
+        await import("#app/map/windData.js");
+        await import("#app/app/start.js");
     });
     await page.clock.runFor(60_000);
     expect(forecastRequests).toBe(0);
 
     await page.evaluate(async () => {
-        const { startApp } = await import("/src/app/start.js");
+        const { startApp } = await import("#app/app/start.js");
         startApp();
         startApp();
     });
@@ -44,7 +45,7 @@ test("weather modules stay idle until startup and repeated startup polls only on
         .poll(() =>
             page.evaluate(async () => {
                 const { LOADING, FORECASTS } =
-                    await import("/src/weather/state.js");
+                    await import("#app/weather/state.js");
                 return LOADING.value === 0 && FORECASTS.value.length > 0;
             }),
         )

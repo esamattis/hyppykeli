@@ -1,5 +1,5 @@
 // @ts-check
-import { fetchJSON } from "../../shared/fetchJSON.js";
+import { fetchJSON } from "#app/shared/fetchJSON.js";
 
 /**
  * Fetches METAR data from the Flyk API for a given ICAO code.

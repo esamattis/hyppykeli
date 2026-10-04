@@ -1,8 +1,8 @@
 // @ts-check
-import { getDevNumber } from "../developer/overrides.js";
-import { t } from "../translations.js";
-import { forecastTime } from "../weather/providers/openMeteo.js";
-import { OBSERVATIONS, OM_DATA } from "../weather/state.js";
+import { getDevNumber } from "#app/developer/overrides.js";
+import { t } from "#app/translations.js";
+import { forecastTime } from "#app/weather/providers/openMeteo.js";
+import { OBSERVATIONS, OM_DATA } from "#app/weather/state.js";
 
 /** @type {Array<{ level: OpenMeteoPressureLevel, height: number }>} */
 const LEVELS = [

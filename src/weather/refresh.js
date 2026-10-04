@@ -1,20 +1,23 @@
 // @ts-check
-import { QUERY_PARAMS } from "../app/settings.js";
-import { t } from "../translations.js";
-import { DEV_MOCK, mockAllEntries } from "../developer/overrides.js";
-import { parseMetarMessages } from "./metarMessages.js";
-import { getObservationStartTime } from "./observationRange.js";
-import { hasValidWindData } from "./calculations.js";
+import { QUERY_PARAMS } from "#app/app/settings.js";
+import { t } from "#app/translations.js";
+import { DEV_MOCK, mockAllEntries } from "#app/developer/overrides.js";
+import { parseMetarMessages } from "#app/weather/metarMessages.js";
+import { getObservationStartTime } from "#app/weather/observationRange.js";
+import { hasValidWindData } from "#app/weather/calculations.js";
 import {
     fetchRoadObservations,
     fetchRoadStationInfo,
-} from "./providers/digitraffic.js";
-import { fetchFlykMetar } from "./providers/flyk.js";
-import { fetchFmiForecasts, fetchFmiObservations } from "./providers/fmi.js";
+} from "#app/weather/providers/digitraffic.js";
+import { fetchFlykMetar } from "#app/weather/providers/flyk.js";
+import {
+    fetchFmiForecasts,
+    fetchFmiObservations,
+} from "#app/weather/providers/fmi.js";
 import {
     fetchHighWinds,
     getOpenMeteoSurfaceWeather,
-} from "./providers/openMeteo.js";
+} from "#app/weather/providers/openMeteo.js";
 import {
     ERRORS,
     FMI_FORECAST_NAME,
@@ -32,7 +35,7 @@ import {
     STATION_COORDINATES,
     STATION_NAME,
     addError,
-} from "./state.js";
+} from "#app/weather/state.js";
 
 /** @param {unknown} error */
 function reportProviderError(error) {

@@ -1,14 +1,14 @@
 // @ts-check
-import { QUERY_PARAMS } from "../app/settings.js";
-import { parseGroundObservations } from "../developer/overrides.js";
-import { isNullish } from "../shared/values.js";
-import { t } from "../translations.js";
+import { QUERY_PARAMS } from "#app/app/settings.js";
+import { parseGroundObservations } from "#app/developer/overrides.js";
+import { isNullish } from "#app/shared/values.js";
+import { t } from "#app/translations.js";
 import {
     hasValidAverageWindData,
     hasValidWindData,
     knotsToMs,
-} from "./calculations.js";
-import { parseMetarMessages } from "./metarMessages.js";
+} from "#app/weather/calculations.js";
+import { parseMetarMessages } from "#app/weather/metarMessages.js";
 import { computed, signal } from "@preact/signals";
 
 /**

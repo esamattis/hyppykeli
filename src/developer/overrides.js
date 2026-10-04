@@ -1,5 +1,5 @@
 // @ts-check
-import { QUERY_PARAMS } from "../app/settings.js";
+import { QUERY_PARAMS } from "#app/app/settings.js";
 import { computed } from "@preact/signals";
 
 export const DEV_DEBUG = computed(() => QUERY_PARAMS.value.DEV_debug === "1");

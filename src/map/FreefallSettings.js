@@ -1,11 +1,11 @@
 // @ts-check
-import { Dialog } from "../shared/Dialog.js";
-import { ToolbarButton } from "../shared/ToolbarButton.js";
-import { settingsDialogStyles } from "../styles.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { FreefallFields } from "./FreefallFields.js";
-import { SpeedPresets } from "./SpeedPresets.js";
+import { Dialog } from "#app/shared/Dialog.js";
+import { ToolbarButton } from "#app/shared/ToolbarButton.js";
+import { settingsDialogStyles } from "#app/styles.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { FreefallFields } from "#app/map/FreefallFields.js";
+import { SpeedPresets } from "#app/map/SpeedPresets.js";
 import { h, html } from "htm/preact";
 import { useId, useRef, useState } from "preact/hooks";
 

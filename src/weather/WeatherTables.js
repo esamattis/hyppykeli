@@ -1,14 +1,14 @@
 // @ts-check
-import { Dialog } from "../shared/Dialog.js";
-import { Help } from "../shared/Help.js";
-import { formatClock } from "../shared/dates.js";
-import { Icon, WindArrow } from "../shared/icons.js";
-import { isNullish } from "../shared/values.js";
-import { windStatusStyles } from "../styles.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { PercentagePie } from "./CloudIndicators.js";
-import { getWarningLevel } from "./calculations.js";
+import { Dialog } from "#app/shared/Dialog.js";
+import { Help } from "#app/shared/Help.js";
+import { formatClock } from "#app/shared/dates.js";
+import { Icon, WindArrow } from "#app/shared/icons.js";
+import { isNullish } from "#app/shared/values.js";
+import { windStatusStyles } from "#app/styles.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { PercentagePie } from "#app/weather/CloudIndicators.js";
+import { getWarningLevel } from "#app/weather/calculations.js";
 import { h, html } from "htm/preact";
 import { useRef } from "preact/hooks";
 

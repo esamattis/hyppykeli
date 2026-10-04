@@ -1,13 +1,13 @@
 // @ts-check
-import { DeveloperMode } from "../developer/DeveloperMode.js";
-import { completeDropzones, partialDropzones } from "../dropzones.js";
-import { Icon } from "../shared/icons.js";
-import { removeNullish } from "../shared/values.js";
-import { LANGUAGE, setLanguage, t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { NAME } from "../weather/state.js";
-import { MENU_OPEN } from "./menuState.js";
-import { SAVED_DZs, removeSavedDz, saveCurrentDz } from "./settings.js";
+import { DeveloperMode } from "#app/developer/DeveloperMode.js";
+import { completeDropzones, partialDropzones } from "#app/dropzones.js";
+import { Icon } from "#app/shared/icons.js";
+import { removeNullish } from "#app/shared/values.js";
+import { LANGUAGE, setLanguage, t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { NAME } from "#app/weather/state.js";
+import { MENU_OPEN } from "#app/app/menuState.js";
+import { SAVED_DZs, removeSavedDz, saveCurrentDz } from "#app/app/settings.js";
 import { h, html } from "htm/preact";
 
 const OTHER_DZs = [...completeDropzones, ...partialDropzones].sort((a, b) =>

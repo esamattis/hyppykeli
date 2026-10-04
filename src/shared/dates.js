@@ -1,5 +1,5 @@
 // @ts-check
-import { getIntlLocale, t } from "../translations.js";
+import { getIntlLocale, t } from "#app/translations.js";
 
 /**
  * @param {Date} date

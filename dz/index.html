@@ -24,6 +24,7 @@
         <script type="importmap">
             {
                 "imports": {
+                    "#app/": "/src/",
                     "@preact/signals": "/vendor/build/preact-signals.js",
                     "preact/hooks": "/vendor/build/preact-hooks.js",
                     "htm/preact": "/vendor/build/htm.js",
@@ -33,20 +34,21 @@
                 }
             }
         </script>
+        <!-- preload to avoid request waterfalls -->
+        <link rel="modulepreload" href="/src/weather/state.js" />
+        <link rel="modulepreload" href="/src/weather/refresh.js" />
+        <link rel="modulepreload" href="/src/shared/dates.js" />
+        <link rel="modulepreload" href="/src/weather/Graph.js" />
+        <link rel="modulepreload" href="/src/weather/Compass.js" />
+        <link rel="modulepreload" href="/vendor/build/htm.js" />
+        <link rel="modulepreload" href="/vendor/build/preact-hooks.js" />
+        <link rel="modulepreload" href="/vendor/build/preact-signals.js" />
+        <link rel="modulepreload" href="/vendor/build/chart.js" />
+        <link rel="modulepreload" href="/vendor/build/leaflet.js" />
         <script type="module">
-            // preload to avoid request waterfalls
-            import "/src/weather/state.js";
-            import "/src/shared/dates.js";
-            import "/src/weather/Graph.js";
-            import "/src/weather/Compass.js";
-            import "htm/preact";
-            import "preact/hooks";
-            import "@preact/signals";
-            import "chart.js";
-
             // init the app
-            import { App } from "/src/app/App.js";
-            import { startApp } from "/src/app/start.js";
+            import { App } from "#app/app/App.js";
+            import { startApp } from "#app/app/start.js";
             import { render, h } from "preact";
             startApp();
             const root = document.getElementById("root");

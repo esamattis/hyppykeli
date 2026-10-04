@@ -1,5 +1,5 @@
 // @ts-check
-import { t } from "../translations.js";
+import { t } from "#app/translations.js";
 import { html } from "htm/preact";
 
 /** Shared opening-height and freefall-speed inputs; parents own their drafts.

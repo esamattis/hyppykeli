@@ -1,14 +1,14 @@
 // @ts-check
-import { summaryStyles, windStatusStyles } from "../styles.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { WindDirection } from "./WeatherTables.js";
+import { summaryStyles, windStatusStyles } from "#app/styles.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { WindDirection } from "#app/weather/WeatherTables.js";
 import {
     getWarningLevel,
     getHourlyWindRange,
     hasValidAverageWindData,
-} from "./calculations.js";
-import { LATEST_OBSERVATION, OBSERVATIONS } from "./state.js";
+} from "#app/weather/calculations.js";
+import { LATEST_OBSERVATION, OBSERVATIONS } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 
 export function WindSummary() {

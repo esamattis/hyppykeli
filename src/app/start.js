@@ -1,8 +1,8 @@
 // @ts-check
-import { updateWeatherData } from "../weather/refresh.js";
-import { HOVERED_OBSERVATION, NAME, addError } from "../weather/state.js";
-import { MENU_OPEN } from "./menuState.js";
-import { QUERY_PARAMS, navigateQs, saveCurrentDz } from "./settings.js";
+import { updateWeatherData } from "#app/weather/refresh.js";
+import { HOVERED_OBSERVATION, NAME, addError } from "#app/weather/state.js";
+import { MENU_OPEN } from "#app/app/menuState.js";
+import { QUERY_PARAMS, navigateQs, saveCurrentDz } from "#app/app/settings.js";
 import { computed, effect } from "@preact/signals";
 
 let started = false;

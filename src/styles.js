@@ -1,5 +1,5 @@
 // @ts-check
-import { css } from "./useScope.js";
+import { css } from "#app/useScope.js";
 
 export const windStatusStyles = css`
     .ok {

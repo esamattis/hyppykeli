@@ -1,16 +1,16 @@
 // @ts-check
-import { coordinateDistance } from "../shared/coordinates.js";
-import { whenAll } from "../shared/values.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { DataSource } from "../weather/DataSource.js";
-import { ForecastLocationInfo } from "../weather/ForecastLocationInfo.js";
+import { coordinateDistance } from "#app/shared/coordinates.js";
+import { whenAll } from "#app/shared/values.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { DataSource } from "#app/weather/DataSource.js";
+import { ForecastLocationInfo } from "#app/weather/ForecastLocationInfo.js";
 import {
     FORECAST_COORDINATES,
     METARS,
     STATION_COORDINATES,
     STATION_NAME,
-} from "../weather/state.js";
+} from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 
 export function Info() {

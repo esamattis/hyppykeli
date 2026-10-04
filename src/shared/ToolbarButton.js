@@ -1,6 +1,6 @@
 // @ts-check
-import { css, useScope } from "../useScope.js";
-import { Icon } from "./icons.js";
+import { css, useScope } from "#app/useScope.js";
+import { Icon } from "#app/shared/icons.js";
 import { h, html } from "htm/preact";
 
 /** @param {ToolbarButtonProps} props */

@@ -1,7 +1,7 @@
 // @ts-check
-import { CloudCoverIcon, PieChart } from "../shared/icons.js";
-import { isNullish } from "../shared/values.js";
-import { css, useScope } from "../useScope.js";
+import { CloudCoverIcon, PieChart } from "#app/shared/icons.js";
+import { isNullish } from "#app/shared/values.js";
+import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
 
 /**

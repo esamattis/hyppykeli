@@ -1,8 +1,8 @@
 // @ts-check
-import { Icon } from "../shared/icons.js";
-import { getTheme } from "../styles.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
+import { Icon } from "#app/shared/icons.js";
+import { getTheme } from "#app/styles.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
 import { circleMarker, map, tileLayer } from "leaflet";
 import { useEffect, useRef, useState } from "preact/hooks";

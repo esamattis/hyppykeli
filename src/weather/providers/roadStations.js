@@ -1,6 +1,6 @@
 // @ts-check
-import { coordinateDistance } from "../../shared/coordinates.js";
-import { fetchJSON } from "../../shared/fetchJSON.js";
+import { coordinateDistance } from "#app/shared/coordinates.js";
+import { fetchJSON } from "#app/shared/fetchJSON.js";
 
 /**
  * @param {[number, number]} coordinates

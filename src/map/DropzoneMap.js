@@ -1,36 +1,36 @@
 // @ts-check
-import { QUERY_PARAMS, getQs, navigateQs } from "../app/settings.js";
-import { Help } from "../shared/Help.js";
-import { formatClock } from "../shared/dates.js";
-import { Icon, WindArrow } from "../shared/icons.js";
-import { cardHeadingStyles, getTheme } from "../styles.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { DataSource } from "../weather/DataSource.js";
-import { forecastTime } from "../weather/providers/openMeteo.js";
+import { QUERY_PARAMS, getQs, navigateQs } from "#app/app/settings.js";
+import { Help } from "#app/shared/Help.js";
+import { formatClock } from "#app/shared/dates.js";
+import { Icon, WindArrow } from "#app/shared/icons.js";
+import { cardHeadingStyles, getTheme } from "#app/styles.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { DataSource } from "#app/weather/DataSource.js";
+import { forecastTime } from "#app/weather/providers/openMeteo.js";
 import {
     FORECAST_COORDINATES,
     NAME,
     STATION_COORDINATES,
     STATION_NAME,
     weatherSourceLabel,
-} from "../weather/state.js";
-import { FreefallToolbar } from "./FreefallToolbar.js";
-import { MapWindOverlay } from "./MapWindOverlay.js";
+} from "#app/weather/state.js";
+import { FreefallToolbar } from "#app/map/FreefallToolbar.js";
+import { MapWindOverlay } from "#app/map/MapWindOverlay.js";
 import {
     driftCoordinates,
     getFreefallDrift,
     getJumpRunVelocity,
     jumpRunCoordinates,
-} from "./freefall.js";
+} from "#app/map/freefall.js";
 import {
     isFiniteNumber,
     isValidJumpRunSettings,
     isValidJumper,
     isValidPosition,
     useMapState,
-} from "./mapState.js";
-import { getMapWindData } from "./windData.js";
+} from "#app/map/mapState.js";
+import { getMapWindData } from "#app/map/windData.js";
 import { h, html } from "htm/preact";
 import {
     circleMarker,

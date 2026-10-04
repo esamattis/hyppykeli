@@ -1,5 +1,5 @@
 // @ts-check
-import { completeDropzones, partialDropzones } from "../dropzones.js";
+import { completeDropzones, partialDropzones } from "#app/dropzones.js";
 
 export function redirectToDz() {
     const params = new URLSearchParams(window.location.search);

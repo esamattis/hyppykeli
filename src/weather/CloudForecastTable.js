@@ -1,12 +1,12 @@
 // @ts-check
-import { Help } from "../shared/Help.js";
-import { formatClock, formatDate } from "../shared/dates.js";
-import { isNullish, whenAll } from "../shared/values.js";
-import { t } from "../translations.js";
-import { CloudCoverSquare } from "./CloudIndicators.js";
-import { getLiftedCondensationLevel } from "./calculations.js";
-import { forecastTime } from "./providers/openMeteo.js";
-import { OM_DATA } from "./state.js";
+import { Help } from "#app/shared/Help.js";
+import { formatClock, formatDate } from "#app/shared/dates.js";
+import { isNullish, whenAll } from "#app/shared/values.js";
+import { t } from "#app/translations.js";
+import { CloudCoverSquare } from "#app/weather/CloudIndicators.js";
+import { getLiftedCondensationLevel } from "#app/weather/calculations.js";
+import { forecastTime } from "#app/weather/providers/openMeteo.js";
+import { OM_DATA } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 
 /** @type {OpenMeteoPressureLevel[]} */

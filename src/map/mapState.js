@@ -1,5 +1,5 @@
 // @ts-check
-import { QUERY_PARAMS, navigateQs } from "../app/settings.js";
+import { QUERY_PARAMS, navigateQs } from "#app/app/settings.js";
 import { computed } from "@preact/signals";
 import { useMemo } from "preact/hooks";
 

@@ -1,9 +1,9 @@
 // @ts-check
-import { ToolbarButton } from "../shared/ToolbarButton.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { FreefallSettings } from "./FreefallSettings.js";
-import { JumpRunControls } from "./JumpRunControls.js";
+import { ToolbarButton } from "#app/shared/ToolbarButton.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { FreefallSettings } from "#app/map/FreefallSettings.js";
+import { JumpRunControls } from "#app/map/JumpRunControls.js";
 import { h, html } from "htm/preact";
 
 /** @param {FreefallToolbarProps} props */

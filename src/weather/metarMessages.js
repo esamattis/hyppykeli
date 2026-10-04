@@ -1,5 +1,5 @@
 // @ts-check
-import { parseMETAR } from "./metar.js";
+import { parseMETAR } from "#app/weather/metar.js";
 
 /** @param {string[]} metars */
 export function parseMetarMessages(metars) {

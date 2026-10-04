@@ -1,5 +1,5 @@
 // @ts-check
-import { fetchJSON } from "../../shared/fetchJSON.js";
+import { fetchJSON } from "#app/shared/fetchJSON.js";
 
 /**
  * @param {string} roadsid

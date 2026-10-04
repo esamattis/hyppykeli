@@ -1,9 +1,9 @@
 // @ts-check
-import { formatClock, formatDate, humanDayText } from "../shared/dates.js";
-import { dateHeadingStyles, freshnessStyles, getTheme } from "../styles.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { DataSource } from "./DataSource.js";
+import { formatClock, formatDate, humanDayText } from "#app/shared/dates.js";
+import { dateHeadingStyles, freshnessStyles, getTheme } from "#app/styles.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { DataSource } from "#app/weather/DataSource.js";
 import {
     FORECASTS,
     FORECAST_DATE,
@@ -13,7 +13,7 @@ import {
     OBSERVATIONS,
     OBSERVATION_SOURCE,
     STALE_FORECASTS,
-} from "./state.js";
+} from "#app/weather/state.js";
 import { effect } from "@preact/signals";
 import { Chart } from "chart.js";
 import { h, html } from "htm/preact";

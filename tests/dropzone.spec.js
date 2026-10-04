@@ -7,7 +7,7 @@ const developerPath =
 async function setUniformFreefallWind(page) {
     await page.evaluate(async () => {
         const { FORECAST_COORDINATES, OM_DATA } =
-            await import("/src/weather/state.js");
+            await import("#app/weather/state.js");
         FORECAST_COORDINATES.value = "62.4,25.6";
         const hourly = {
             time: [new Date().toISOString().slice(0, 13) + ":00"],
@@ -295,9 +295,9 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
         page.locator(".upperwinds-compact .wind-speed").first(),
     ).toHaveText("10 m/s");
     const result = await page.evaluate(async () => {
-        const { getMapWindData } = await import("/src/map/windData.js");
+        const { getMapWindData } = await import("#app/map/windData.js");
         const { getFreefallDrift, getJumpRunVelocity } =
-            await import("/src/map/freefall.js");
+            await import("#app/map/freefall.js");
         const winds = getMapWindData().freefallWinds;
         const velocity = getJumpRunVelocity(winds, {
             exitHeight: 4000,
@@ -447,7 +447,7 @@ test("FMI takes priority over a configured Fintraffic station and supplies coord
         .poll(() =>
             page.evaluate(async () => {
                 const { FORECAST_COORDINATES } =
-                    await import("/src/weather/state.js");
+                    await import("#app/weather/state.js");
                 return FORECAST_COORDINATES.value;
             }),
         )
@@ -463,7 +463,7 @@ test("FMI map callout requires separate landing zone coordinates", async ({
     await expect(callout).toHaveText("FMI sääasema");
     const locations = await page.evaluate(async () => {
         const { FORECAST_COORDINATES, STATION_COORDINATES } =
-            await import("/src/weather/state.js");
+            await import("#app/weather/state.js");
         return {
             landing: FORECAST_COORDINATES.value,
             station: STATION_COORDINATES.value,
@@ -477,7 +477,7 @@ test("FMI map callout requires separate landing zone coordinates", async ({
         .poll(() =>
             page.evaluate(async () => {
                 const { FORECAST_COORDINATES, STATION_COORDINATES } =
-                    await import("/src/weather/state.js");
+                    await import("#app/weather/state.js");
                 return (
                     FORECAST_COORDINATES.value !== null &&
                     FORECAST_COORDINATES.value === STATION_COORDINATES.value
@@ -553,7 +553,7 @@ test("Fintraffic station supplies observations and fallback coordinates", async 
         .poll(() =>
             page.evaluate(async () => {
                 const { FORECAST_COORDINATES } =
-                    await import("/src/weather/state.js");
+                    await import("#app/weather/state.js");
                 return FORECAST_COORDINATES.value;
             }),
         )
@@ -565,7 +565,7 @@ test("Fintraffic station supplies observations and fallback coordinates", async 
     await expect(callout).toHaveText("Fintraffic sääasema");
     const locations = await page.evaluate(async () => {
         const { FORECAST_COORDINATES, STATION_COORDINATES } =
-            await import("/src/weather/state.js");
+            await import("#app/weather/state.js");
         return {
             landing: FORECAST_COORDINATES.value,
             station: STATION_COORDINATES.value,
@@ -990,7 +990,7 @@ test("map recreates safely when forecast coordinates change", async ({
     await expect(map.getByRole("button", { name: "Zoom in" })).toBeVisible();
 
     await page.evaluate(async () => {
-        const { FORECAST_COORDINATES } = await import("/src/weather/state.js");
+        const { FORECAST_COORDINATES } = await import("#app/weather/state.js");
         FORECAST_COORDINATES.value = "62.5,25.7";
         await new Promise((resolve) =>
             requestAnimationFrame(() => requestAnimationFrame(resolve)),
@@ -1042,7 +1042,7 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
 }) => {
     const profile = page.locator("#dropzone-map");
     await page.evaluate(async () => {
-        const { OM_DATA } = await import("/src/weather/state.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
         const hourly = {
             time: [new Date().toISOString().slice(0, 13) + ":00"],
         };
@@ -1085,7 +1085,7 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
     // A forecast refresh updates the selected level instead of resetting it.
     await page.evaluate(async () => {
-        const { OM_DATA } = await import("/src/weather/state.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
         OM_DATA.value = null;
     });
     await expect(altitude).toContainText("Ei tietoa");
@@ -1096,7 +1096,7 @@ test("freefall drift integrates altitude winds from 4000 to 800 metres", async (
     page,
 }) => {
     const result = await page.evaluate(async () => {
-        const { getFreefallDrift } = await import("/src/map/freefall.js");
+        const { getFreefallDrift } = await import("#app/map/freefall.js");
         const winds = [4200, 3000, 1500, 800].map((height) => ({
             height,
             label: "",
@@ -1164,8 +1164,8 @@ test("jump run converts true airspeed using interpolated exit wind and ground tr
 }) => {
     const result = await page.evaluate(async () => {
         const { getJumpRunVelocity, getWindAtHeight } =
-            await import("/src/map/freefall.js");
-        const { jumpRunCoordinates } = await import("/src/map/freefall.js");
+            await import("#app/map/freefall.js");
+        const { jumpRunCoordinates } = await import("#app/map/freefall.js");
         const { latLng } = await import("leaflet");
         const winds = [4200, 3000, 1500, 800].map((height) => ({
             height,
@@ -1249,7 +1249,7 @@ test("jump-run forward throw decays with drag without counting exit wind twice",
 }) => {
     const result = await page.evaluate(async () => {
         const { getJumpRunVelocity, getFreefallDrift } =
-            await import("/src/map/freefall.js");
+            await import("#app/map/freefall.js");
         const winds = [4200, 3000, 1500, 800].map((height) => ({
             height,
             label: "",
@@ -1349,7 +1349,7 @@ test("jump exit retains forward speed and responds gradually to changing wind", 
     page,
 }) => {
     const result = await page.evaluate(async () => {
-        const { getFreefallDrift } = await import("/src/map/freefall.js");
+        const { getFreefallDrift } = await import("#app/map/freefall.js");
         const calm = [4200, 3000, 1500, 800].map((height) => ({
             height,
             label: "",
@@ -1417,7 +1417,7 @@ test("jump-run positions react to forecast changes and recover from missing or i
     const second = await jumpers.nth(1).getAttribute("d");
     const start = new URL(page.url()).searchParams.get("map_run_start");
     await page.evaluate(async () => {
-        const { OM_DATA } = await import("/src/weather/state.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
         const data = structuredClone(OM_DATA.value);
         for (const level of ["600", "700", "850", "925"])
             data.hourly[`windspeed_${level}hPa`] = [20];
@@ -1426,7 +1426,7 @@ test("jump-run positions react to forecast changes and recover from missing or i
     await expect(jumpers.nth(1)).not.toHaveAttribute("d", second);
     expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
     await page.evaluate(async () => {
-        const { OM_DATA } = await import("/src/weather/state.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
         const data = structuredClone(OM_DATA.value);
         data.hourly.windspeed_600hPa = [null];
         OM_DATA.value = data;
@@ -1562,7 +1562,7 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     await place();
     await expect(line).toHaveCount(1);
     await page.evaluate(async () => {
-        const { OM_DATA } = await import("/src/weather/state.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
         OM_DATA.value = {
             ...OM_DATA.value,
             hourly: { ...OM_DATA.value.hourly, windspeed_925hPa: [null] },
@@ -1587,7 +1587,7 @@ test.describe("upper wind forecast timezones", () => {
             });
             await page.reload();
             await page.evaluate(async (offset) => {
-                const { OM_DATA } = await import("/src/weather/state.js");
+                const { OM_DATA } = await import("#app/weather/state.js");
                 const start = Date.parse("2026-07-04T00:00:00Z");
                 const time = Array.from({ length: 48 }, (_, index) =>
                     new Date(start + index * 3600000 + offset * 1000)
@@ -1661,7 +1661,7 @@ test("upper wind forecast omits empty time columns and day headings", async ({
     await page.clock.install({ time: new Date("2026-07-04T08:30:00Z") });
     await page.reload();
     await page.evaluate(async () => {
-        const { OM_DATA } = await import("/src/weather/state.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
         const time = ["2026-07-04T12:00"];
         const hourly = { time };
         for (const level of ["600", "700", "850", "925", "1000"]) {
@@ -1854,8 +1854,8 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(jumpers).toHaveCount(1);
     await expect(map.locator(".leaflet-tooltip")).toHaveCount(0);
     const distances = await page.evaluate(async () => {
-        const { jumpRunCoordinates } = await import("/src/map/freefall.js");
-        const { getJumpRunVelocity } = await import("/src/map/freefall.js");
+        const { jumpRunCoordinates } = await import("#app/map/freefall.js");
+        const { getJumpRunVelocity } = await import("#app/map/freefall.js");
         const { latLng } = await import("leaflet");
         const start = latLng(62.4, 25.6);
         const winds = [4200, 3000, 1500, 800].map((height) => ({
@@ -1999,10 +1999,10 @@ for (const jumperCount of [1, 13, 14]) {
 
         await expect(map.locator(".jump-run-jumper")).toHaveCount(jumperCount);
         const result = await page.evaluate(async () => {
-            const { getMapWindData } = await import("/src/map/windData.js");
-            const { jumpRunCoordinates } = await import("/src/map/freefall.js");
+            const { getMapWindData } = await import("#app/map/windData.js");
+            const { jumpRunCoordinates } = await import("#app/map/freefall.js");
             const { getFreefallDrift, driftCoordinates, getJumpRunVelocity } =
-                await import("/src/map/freefall.js");
+                await import("#app/map/freefall.js");
             const { latLng } = await import("leaflet");
             const params = new URL(location.href).searchParams;
             const settings = JSON.parse(params.get("map_run_settings"));
@@ -2380,7 +2380,7 @@ test("map query state handles invalid input and browser history", async ({
     page,
 }) => {
     await page.evaluate(async () => {
-        const { navigateQs } = await import("/src/app/settings.js");
+        const { navigateQs } = await import("#app/app/settings.js");
         navigateQs({
             map_full_window: "true",
             map_jumps: "[null]",
@@ -2462,7 +2462,7 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
     await expect(rows).toHaveCount(3);
     // Losing METAR must also remove the tabs and leave the model visible.
     await page.evaluate(async () => {
-        const { navigateQs } = await import("/src/app/settings.js");
+        const { navigateQs } = await import("#app/app/settings.js");
         navigateQs({ icaocode: undefined, DEV_metar: undefined });
     });
     await expect(card.getByRole("tablist")).toHaveCount(0);
@@ -2474,8 +2474,8 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
 }) => {
     await page.evaluate(async () => {
         const { FORECASTS, FORECAST_SOURCE } =
-            await import("/src/weather/state.js");
-        const { OM_DATA } = await import("/src/weather/state.js");
+            await import("#app/weather/state.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
         const firstHour = new Date();
         firstHour.setMinutes(0, 0, 0);
         firstHour.setHours(firstHour.getHours() + 1);

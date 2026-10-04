@@ -1,20 +1,20 @@
 // @ts-check
-import { DeveloperBanner } from "../developer/DeveloperMode.js";
-import { DropzoneMap } from "../map/DropzoneMap.js";
-import { formatDate, humanDayText } from "../shared/dates.js";
+import { DeveloperBanner } from "#app/developer/DeveloperMode.js";
+import { DropzoneMap } from "#app/map/DropzoneMap.js";
+import { formatDate, humanDayText } from "#app/shared/dates.js";
 import {
     cardHeadingStyles,
     dateHeadingStyles,
     freshnessStyles,
-} from "../styles.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { CloudSummary } from "../weather/CloudSummary.js";
-import { Compass } from "../weather/Compass.js";
-import { DataSource } from "../weather/DataSource.js";
-import { ForecastLocationInfo } from "../weather/ForecastLocationInfo.js";
-import { Graph } from "../weather/Graph.js";
-import { HighWinds } from "../weather/HighWinds.js";
+} from "#app/styles.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { CloudSummary } from "#app/weather/CloudSummary.js";
+import { Compass } from "#app/weather/Compass.js";
+import { DataSource } from "#app/weather/DataSource.js";
+import { ForecastLocationInfo } from "#app/weather/ForecastLocationInfo.js";
+import { Graph } from "#app/weather/Graph.js";
+import { HighWinds } from "#app/weather/HighWinds.js";
 import {
     DataTable,
     ForecastRows,
@@ -22,8 +22,8 @@ import {
     ObservationRows,
     ObservationTHead,
     TableDialog,
-} from "../weather/WeatherTables.js";
-import { WindSummary } from "../weather/WindSummary.js";
+} from "#app/weather/WeatherTables.js";
+import { WindSummary } from "#app/weather/WindSummary.js";
 import {
     ERRORS,
     FORECASTS,
@@ -31,11 +31,11 @@ import {
     OBSERVATIONS,
     STALE_FORECASTS,
     WIND_SOURCE,
-} from "../weather/state.js";
-import { Info } from "./Info.js";
-import { RenderInjectedCSS } from "./RenderInjectedCSS.js";
-import { FloatingMenuButton, SideMenu } from "./SideMenu.js";
-import { Title } from "./Title.js";
+} from "#app/weather/state.js";
+import { Info } from "#app/app/Info.js";
+import { RenderInjectedCSS } from "#app/app/RenderInjectedCSS.js";
+import { FloatingMenuButton, SideMenu } from "#app/app/SideMenu.js";
+import { Title } from "#app/app/Title.js";
 import { h, html } from "htm/preact";
 import { useRef } from "preact/hooks";
 

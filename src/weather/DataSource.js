@@ -1,6 +1,6 @@
 // @ts-check
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
 import { html } from "htm/preact";
 
 /** @param {DataSourceProps} props */

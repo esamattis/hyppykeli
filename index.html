@@ -21,6 +21,7 @@
         <script type="importmap">
             {
                 "imports": {
+                    "#app/": "/src/",
                     "preact/hooks": "/vendor/build/preact-hooks.js",
                     "htm/preact": "/vendor/build/htm.js",
                     "preact": "/vendor/build/preact.js",
@@ -30,8 +31,8 @@
             }
         </script>
         <script type="module">
-            import { LandingPage } from "/src/landing/LandingPage.js";
-            import { redirectToDz } from "/src/landing/redirect.js";
+            import { LandingPage } from "#app/landing/LandingPage.js";
+            import { redirectToDz } from "#app/landing/redirect.js";
             import { render, h } from "preact";
             redirectToDz();
             render(h(LandingPage), document.getElementById("landing-page"));

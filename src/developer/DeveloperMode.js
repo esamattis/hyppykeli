@@ -1,12 +1,19 @@
 // @ts-check
-import { QUERY_PARAMS, navigateQs } from "../app/settings.js";
-import { getMapWindData } from "../map/windData.js";
-import { Dialog } from "../shared/Dialog.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { parseMetarMessages } from "../weather/metarMessages.js";
-import { LATEST_OBSERVATION, METARS, OBSERVATIONS } from "../weather/state.js";
-import { DEV_ACTIVE, parseGroundObservations } from "./overrides.js";
+import { QUERY_PARAMS, navigateQs } from "#app/app/settings.js";
+import { getMapWindData } from "#app/map/windData.js";
+import { Dialog } from "#app/shared/Dialog.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { parseMetarMessages } from "#app/weather/metarMessages.js";
+import {
+    LATEST_OBSERVATION,
+    METARS,
+    OBSERVATIONS,
+} from "#app/weather/state.js";
+import {
+    DEV_ACTIVE,
+    parseGroundObservations,
+} from "#app/developer/overrides.js";
 import { h, html } from "htm/preact";
 import { useImperativeHandle, useRef, useState } from "preact/hooks";
 

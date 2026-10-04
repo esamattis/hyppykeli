@@ -1,6 +1,6 @@
 // @ts-check
-import { t } from "../translations.js";
-import { formatClock } from "./dates.js";
+import { t } from "#app/translations.js";
+import { formatClock } from "#app/shared/dates.js";
 import { html } from "htm/preact";
 import { useCallback, useEffect, useState } from "preact/hooks";
 

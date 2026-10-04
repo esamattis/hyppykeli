@@ -1,5 +1,5 @@
 // @ts-check
-import { QUERY_PARAMS } from "./settings.js";
+import { QUERY_PARAMS } from "#app/app/settings.js";
 import { html } from "htm/preact";
 
 export function RenderInjectedCSS() {

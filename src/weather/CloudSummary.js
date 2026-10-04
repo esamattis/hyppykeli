@@ -1,18 +1,21 @@
 // @ts-check
-import { FromNow } from "../shared/FromNow.js";
-import { Help } from "../shared/Help.js";
-import { formatClock, formatDate } from "../shared/dates.js";
-import { CloudCoverIcon, Icon } from "../shared/icons.js";
-import { isNullish, whenAll } from "../shared/values.js";
-import { cloudLayerStyles, summaryStyles } from "../styles.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { CloudForecastTable } from "./CloudForecastTable.js";
-import { PercentageCloudCover } from "./CloudIndicators.js";
-import { DataSource } from "./DataSource.js";
-import { TableDialog } from "./WeatherTables.js";
-import { formatCloudBase, getLiftedCondensationLevel } from "./calculations.js";
-import { getOpenMeteoCloudProfile } from "./providers/openMeteo.js";
+import { FromNow } from "#app/shared/FromNow.js";
+import { Help } from "#app/shared/Help.js";
+import { formatClock, formatDate } from "#app/shared/dates.js";
+import { CloudCoverIcon, Icon } from "#app/shared/icons.js";
+import { isNullish, whenAll } from "#app/shared/values.js";
+import { cloudLayerStyles, summaryStyles } from "#app/styles.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { CloudForecastTable } from "#app/weather/CloudForecastTable.js";
+import { PercentageCloudCover } from "#app/weather/CloudIndicators.js";
+import { DataSource } from "#app/weather/DataSource.js";
+import { TableDialog } from "#app/weather/WeatherTables.js";
+import {
+    formatCloudBase,
+    getLiftedCondensationLevel,
+} from "#app/weather/calculations.js";
+import { getOpenMeteoCloudProfile } from "#app/weather/providers/openMeteo.js";
 import {
     FORECAST_SOURCE,
     HOURLY_CLOUD_FORECASTS,
@@ -20,7 +23,7 @@ import {
     METARS,
     OM_DATA,
     weatherSourceLabel,
-} from "./state.js";
+} from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 import { useId, useState } from "preact/hooks";
 

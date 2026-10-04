@@ -1,11 +1,14 @@
 // @ts-check
-import { WindArrow } from "../shared/icons.js";
-import { isNullish } from "../shared/values.js";
-import { upperWindTableStyles } from "../styles.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { PRESSURE_LEVELS_RAW, forecastTime } from "./providers/openMeteo.js";
-import { OM_DATA } from "./state.js";
+import { WindArrow } from "#app/shared/icons.js";
+import { isNullish } from "#app/shared/values.js";
+import { upperWindTableStyles } from "#app/styles.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import {
+    PRESSURE_LEVELS_RAW,
+    forecastTime,
+} from "#app/weather/providers/openMeteo.js";
+import { OM_DATA } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 
 // Vakiot tiedoston alussa

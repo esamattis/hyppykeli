@@ -1,5 +1,5 @@
 // @ts-check
-import { t } from "../../translations.js";
+import { t } from "#app/translations.js";
 
 /**
  * Makes a request to the FMI API with the given options.

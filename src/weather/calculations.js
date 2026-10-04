@@ -1,5 +1,5 @@
 // @ts-check
-import { getIntlLocale } from "../translations.js";
+import { getIntlLocale } from "#app/translations.js";
 
 /**
  * Calculates the difference between two wind directions considering the circular nature of directions.

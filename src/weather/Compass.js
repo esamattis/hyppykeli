@@ -1,16 +1,19 @@
 // @ts-check
-import { QUERY_PARAMS } from "../app/settings.js";
-import { FromNow } from "../shared/FromNow.js";
-import { Help } from "../shared/Help.js";
-import { isNullish } from "../shared/values.js";
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { hasValidAverageWindData, hasValidWindData } from "./calculations.js";
+import { QUERY_PARAMS } from "#app/app/settings.js";
+import { FromNow } from "#app/shared/FromNow.js";
+import { Help } from "#app/shared/Help.js";
+import { isNullish } from "#app/shared/values.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import {
+    hasValidAverageWindData,
+    hasValidWindData,
+} from "#app/weather/calculations.js";
 import {
     HOVERED_OBSERVATION,
     LATEST_OBSERVATION,
     OBSERVATIONS,
-} from "./state.js";
+} from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 import { useState } from "preact/hooks";
 

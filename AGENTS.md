@@ -16,7 +16,8 @@ Group source modules by the feature that owns them:
 - `src/shared`: reusable UI primitives and general-purpose helpers.
 
 Keep component styles with their components. Use PascalCase filenames for
-components and descriptive names for other modules. Import modules directly.
+components and descriptive names for other modules. Import modules directly using
+the `#app/` alias for modules under `src` (for example, `#app/weather/state.js`).
 Shared styles, translations, dropzone listings, and ambient types remain at the
 `src` root. Browser listeners and weather polling start explicitly through
 `src/app/start.js`; importing state or calculation modules must not start polling.

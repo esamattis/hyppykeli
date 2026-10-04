@@ -1,8 +1,8 @@
 // @ts-check
-import { t } from "../translations.js";
-import { css, useScope } from "../useScope.js";
-import { Dialog } from "./Dialog.js";
-import { Icon } from "./icons.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { Dialog } from "#app/shared/Dialog.js";
+import { Icon } from "#app/shared/icons.js";
 import { h, html } from "htm/preact";
 import { useRef } from "preact/hooks";
 
