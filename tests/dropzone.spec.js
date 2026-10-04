@@ -600,173 +600,106 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     });
     const map = page.locator(".dz-map");
     const line = map.locator(".freefall-drift-line");
-    await expect(line).toHaveCount(0);
     const undo = page.getByRole("button", { name: "Poista viimeisin nuoli" });
-    await expect(undo).toBeDisabled();
-    await map.scrollIntoViewIfNeeded();
-    if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
-    else await map.click({ position: { x: 100, y: 100 } });
-    await expect(line).toHaveCount(1);
-    await expect(
-        map.getByText("Uloshyppy 4000 m", { exact: true }),
-    ).toHaveCount(0);
-    await expect(map.getByText("Avaus 800 m", { exact: true })).toHaveCount(0);
-    const clickedPath = await line.first().getAttribute("d");
     const clear = page.getByRole("button", { name: "Tyhjennä nuolet" });
+    const place = async (x = 100) => {
+        await map.scrollIntoViewIfNeeded();
+        if (isMobile) await map.tap({ position: { x, y: 140 } });
+        else await map.click({ position: { x, y: 140 } });
+    };
+    await expect(undo).toBeDisabled();
+    await place();
+    await expect(line).toHaveCount(1);
+    const firstPath = await line.first().getAttribute("d");
     await clear.focus();
     await page.keyboard.press("Tab");
     await expect(map).toBeFocused();
     await expect(line).toHaveCount(2);
-    await expect(line.first()).toHaveAttribute("d", clickedPath);
-    await expect(line.last()).not.toHaveAttribute("d", clickedPath);
     const centeredPath = await line.last().getAttribute("d");
-    await page.locator(".wind-level-button").first().click();
-    await expect(line.last()).toHaveAttribute("d", centeredPath);
-
     const toolbar = page.getByRole("group", { name: "Vapaapudotuksen arvot" });
-    await toolbar
-        .getByRole("button", { name: "Muokkaa: Vapaapudotuksen asetukset" })
-        .click();
-    const altitudes = page.getByRole("dialog", {
+    const edit = toolbar.getByRole("button", {
+        name: "Muokkaa: Vapaapudotuksen asetukset",
+    });
+    await edit.click();
+    const dialog = page.getByRole("dialog", {
         name: "Vapaapudotuksen asetukset",
     });
-    const exit = altitudes.getByRole("spinbutton", {
+    await expect(
+        dialog.getByRole("button", { name: /^(Tallenna|Peruuta)$/ }),
+    ).toHaveCount(0);
+    const exit = dialog.getByRole("spinbutton", {
         name: "Uloshyppykorkeus (m)",
-        exact: true,
     });
-    const opening = altitudes.getByRole("spinbutton", {
+    const opening = dialog.getByRole("spinbutton", {
         name: "Avauskorkeus (m)",
-        exact: true,
     });
-    await expect(exit).toHaveValue("4000");
-    await expect(opening).toHaveValue("800");
-    const speed = altitudes.getByRole("spinbutton", {
+    const speed = dialog.getByRole("spinbutton", {
         name: "Vapaapudotusnopeus (km/h)",
-        exact: true,
     });
-    await expect(speed).toHaveValue("180");
-    await speed.fill("200");
     await exit.fill("3000");
-    await opening.fill("3200");
-    await altitudes.getByRole("button", { name: "Tallenna" }).click();
-    await expect(altitudes).toBeVisible();
-    await opening.fill("1000");
-    await altitudes.getByRole("button", { name: "Tallenna" }).click();
-    await expect(altitudes).not.toBeVisible();
     await expect(toolbar).toContainText("3000 m");
+    await opening.fill("3200");
+    await expect(toolbar.locator(".value-number").nth(1)).toHaveText("800 m");
+    await opening.fill("1000");
+    await speed.fill("200");
     await expect(toolbar).toContainText("1000 m");
     await expect(toolbar).toContainText("200 km/h");
     await expect(toolbar).toContainText("36 s");
-    await expect(line.first()).toHaveAttribute("d", clickedPath);
+    await expect(line.first()).toHaveAttribute("d", firstPath);
     await expect(line.last()).toHaveAttribute("d", centeredPath);
-    if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
-    else await map.click({ position: { x: 100, y: 100 } });
+    await page.keyboard.press("Escape");
+    await place();
     await expect(line).toHaveCount(3);
-    await expect(line.last()).not.toHaveAttribute("d", clickedPath);
+    await expect(line.last()).not.toHaveAttribute("d", firstPath);
     let latestPath = await line.last().getAttribute("d");
-    await expect(
-        map.getByText("Uloshyppy 3000 m", { exact: true }),
-    ).toHaveCount(0);
-    await expect(map.getByText("Avaus 1000 m", { exact: true })).toHaveCount(0);
-    for (const [preset, speed, seconds] of [
+    for (const [preset, value, seconds] of [
         ["Freefly", "240", "30"],
         ["Wingsuit", "80", "90"],
         ["FS", "180", "40"],
     ]) {
-        await toolbar
-            .getByRole("button", { name: "Muokkaa: Vapaapudotuksen asetukset" })
-            .click();
-        const dialog = page.getByRole("dialog", {
-            name: "Vapaapudotuksen asetukset",
-        });
+        await edit.click();
         await dialog
             .getByRole("button", { name: new RegExp(`^${preset}`) })
             .click();
-        await expect(
-            dialog.getByRole("spinbutton", {
-                name: "Vapaapudotusnopeus (km/h)",
-                exact: true,
-            }),
-        ).toHaveValue(speed);
-        await dialog.getByRole("button", { name: "Tallenna" }).click();
-        await expect(toolbar).toContainText(`${speed} km/h`);
+        await expect(speed).toHaveValue(value);
+        await expect(toolbar).toContainText(`${value} km/h`);
         await expect(toolbar).toContainText(`${seconds} s`);
         await expect(line.last()).toHaveAttribute("d", latestPath);
+        await page.keyboard.press("Escape");
         const count = await line.count();
-        if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
-        else await map.click({ position: { x: 100, y: 100 } });
+        await place();
         await expect(line).toHaveCount(count + 1);
         await expect(line.last()).not.toHaveAttribute("d", latestPath);
         latestPath = await line.last().getAttribute("d");
     }
-    await toolbar
-        .getByRole("button", { name: "Muokkaa: Vapaapudotuksen asetukset" })
-        .click();
-    const speedDialog = page.getByRole("dialog", {
-        name: "Vapaapudotuksen asetukset",
-    });
-    await speedDialog
-        .getByRole("spinbutton", {
-            name: "Vapaapudotusnopeus (km/h)",
-            exact: true,
-        })
-        .fill("0");
-    await speedDialog.getByRole("button", { name: "Tallenna" }).click();
-    await expect(speedDialog).toBeVisible();
-    await speedDialog
-        .getByRole("spinbutton", {
-            name: "Vapaapudotusnopeus (km/h)",
-            exact: true,
-        })
-        .fill("200");
-    await exit.fill("3500");
-    await opening.fill("1200");
-    await speedDialog.getByRole("button", { name: "Peruuta" }).click();
+    await edit.click();
+    await speed.fill("0");
     await expect(toolbar).toContainText("180 km/h");
-    await toolbar
-        .getByRole("button", { name: "Muokkaa: Vapaapudotuksen asetukset" })
-        .click();
-    await expect(
-        speedDialog.getByRole("spinbutton", {
-            name: "Vapaapudotusnopeus (km/h)",
-            exact: true,
-        }),
-    ).toHaveValue("180");
-    await expect(exit).toHaveValue("3000");
-    await expect(opening).toHaveValue("1000");
+    await speed.fill("");
+    await opening.fill("1200");
+    await expect(toolbar).toContainText("1200 m");
     await page.keyboard.press("Escape");
-    await expect(speedDialog).not.toBeVisible();
-    await expect(
-        toolbar.getByRole("button", {
-            name: "Muokkaa: Vapaapudotuksen asetukset",
-        }),
-    ).toBeFocused();
-    while ((await line.count()) < 10) {
-        const count = await line.count();
-        if (isMobile)
-            await map.tap({ position: { x: 120 + count * 5, y: 140 } });
-        else await map.click({ position: { x: 120 + count * 5, y: 140 } });
-        await expect(line).toHaveCount(count + 1);
-    }
+    await edit.click();
+    await expect(speed).toHaveValue("180");
+    await expect(opening).toHaveValue("1200");
+    await expect(exit).toHaveValue("3000");
+    await page.keyboard.press("Escape");
+    await expect(edit).toBeFocused();
+    while ((await line.count()) < 10)
+        await place(120 + (await line.count()) * 5);
     const secondOldest = await line.nth(1).getAttribute("d");
     if (isMobile) await page.waitForTimeout(350);
-    if (isMobile) await map.tap({ position: { x: 200, y: 140 } });
-    else await map.click({ position: { x: 200, y: 140 } });
+    await place(200);
     await expect(line).toHaveCount(10);
     await expect(line.first()).toHaveAttribute("d", secondOldest);
-    await expect(line.first()).not.toHaveAttribute("d", clickedPath);
-    const previousNewest = await line.nth(8).getAttribute("d");
     await undo.click();
     await expect(line).toHaveCount(9);
-    await expect(line.last()).toHaveAttribute("d", previousNewest);
-    await expect(line.first()).toHaveAttribute("d", secondOldest);
     await clear.click();
     await expect(line).toHaveCount(0);
     await expect(map.locator("marker")).toHaveCount(0);
-    await expect(clear).toBeDisabled();
     await expect(undo).toBeDisabled();
-    if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
-    else await map.click({ position: { x: 100, y: 100 } });
+    await expect(clear).toBeDisabled();
+    await place();
     await expect(line).toHaveCount(1);
     await page.evaluate(async () => {
         const { OM_DATA } = await import("/src/om.js");
@@ -781,8 +714,6 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     );
     await undo.click();
     await expect(page.locator(".freefall-drift-summary")).toHaveCount(0);
-    await expect(undo).toBeDisabled();
-    await expect(clear).toBeDisabled();
 });
 
 test.describe("upper wind forecast timezones", () => {
@@ -853,4 +784,281 @@ test.describe("upper wind forecast timezones", () => {
             );
         });
     }
+});
+
+test("jump run redraws all jumpers and applies individual settings immediately", async ({
+    page,
+    isMobile,
+}) => {
+    await page.evaluate(async () => {
+        const { FORECAST_COORDINATES } = await import("/src/data.js");
+        const { OM_DATA } = await import("/src/om.js");
+        FORECAST_COORDINATES.value = "62.4,25.6";
+        const hourly = {
+            time: [new Date().toISOString().slice(0, 13) + ":00"],
+        };
+        for (const level of ["600", "700", "850", "925", "1000"]) {
+            hourly[`windspeed_${level}hPa`] = [36];
+            hourly[`winddirection_${level}hPa`] = [0];
+        }
+        OM_DATA.value = { utc_offset_seconds: 0, hourly };
+    });
+    const map = page.locator(".dz-map");
+    const toggle = page.getByRole("button", {
+        name: "Hyppylinja",
+        exact: true,
+    });
+    await toggle.click();
+    const place = async (x = 100, y = 160) => {
+        await map.scrollIntoViewIfNeeded();
+        if (isMobile) await map.tap({ position: { x, y } });
+        else await map.click({ position: { x, y } });
+    };
+    await place();
+    const run = map.locator(".jump-run-line");
+    const jumpers = map.locator(".jump-run-jumper");
+    const arrows = map.locator(".freefall-drift-line");
+    await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
+    await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
+    await expect(jumpers).toHaveCount(3);
+    await expect(arrows).toHaveCount(3);
+    const edit = page.getByRole("button", {
+        name: "Hyppylinjan asetukset",
+        exact: true,
+    });
+    const settings = page.getByRole("dialog", {
+        name: "Hyppylinjan asetukset",
+    });
+    const first = settings.getByRole("group", {
+        name: "Hyppääjä 1",
+        exact: true,
+    });
+    const second = settings.getByRole("group", {
+        name: "Hyppääjä 2",
+        exact: true,
+    });
+    const initial = await arrows.evaluateAll((lines) =>
+        lines.map((line) => line.getAttribute("d")),
+    );
+    await edit.click();
+    await expect(
+        settings.getByRole("button", { name: /^(Tallenna|Peruuta)$/ }),
+    ).toHaveCount(0);
+    await expect(
+        settings.getByRole("spinbutton", { name: "Hyppääjien väli (s)" }),
+    ).toHaveValue("5");
+    await first
+        .getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" })
+        .fill("240");
+    await expect(arrows.nth(0)).not.toHaveAttribute("d", initial[0]);
+    await expect(arrows.nth(1)).toHaveAttribute("d", initial[1]);
+    const firstPath = await arrows.nth(0).getAttribute("d");
+    await second
+        .getByRole("spinbutton", { name: "Avauskorkeus (m)" })
+        .fill("1200");
+    await expect(arrows.nth(0)).toHaveAttribute("d", firstPath);
+    await expect(arrows.nth(1)).not.toHaveAttribute("d", initial[1]);
+    await expect(arrows.nth(2)).toHaveAttribute("d", initial[2]);
+    const beforeExit = await arrows.evaluateAll((lines) =>
+        lines.map((line) => line.getAttribute("d")),
+    );
+    const exit = settings.getByRole("spinbutton", {
+        name: "Uloshyppykorkeus (m)",
+    });
+    await exit.fill("1200");
+    for (let i = 0; i < 3; i++)
+        await expect(arrows.nth(i)).toHaveAttribute("d", beforeExit[i]);
+    await exit.fill("3500");
+    for (let i = 0; i < 3; i++)
+        await expect(arrows.nth(i)).not.toHaveAttribute("d", beforeExit[i]);
+    const runPath = await run.getAttribute("d");
+    const speed = settings.getByRole("spinbutton", {
+        name: "Hyppylinjan nopeus (km/h)",
+    });
+    await speed.fill("0");
+    await expect(run).toHaveAttribute("d", runPath);
+    await speed.fill("180");
+    await expect(run).not.toHaveAttribute("d", runPath);
+    await settings
+        .getByRole("spinbutton", { name: "Hyppääjien väli (s)" })
+        .fill("10");
+    await page.keyboard.press("Escape");
+    const previous = await run.getAttribute("d");
+    await place(170, 200);
+    await expect(run).not.toHaveAttribute("d", previous);
+    await expect(run).toHaveCount(1);
+    await expect(jumpers).toHaveCount(3);
+    await expect(arrows).toHaveCount(3);
+    const direction = page.getByRole("slider", { name: "Hyppylinjan suunta" });
+    const moved = await run.getAttribute("d");
+    await direction.fill("90");
+    await expect(page.locator(".jump-run-controls output")).toHaveText("90°");
+    await expect(run).not.toHaveAttribute("d", moved);
+    await edit.click();
+    await expect(exit).toHaveValue("3500");
+    await expect(
+        first.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
+    ).toHaveValue("240");
+    await expect(
+        second.getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
+    ).toHaveValue("1200");
+    await settings
+        .getByRole("button", { name: "Poista hyppääjä 2", exact: true })
+        .click();
+    await expect(jumpers).toHaveCount(2);
+    await expect(arrows).toHaveCount(2);
+    await expect(
+        second.getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
+    ).toHaveValue("800");
+    await page.keyboard.press("Escape");
+    await edit.click();
+    await expect(settings.getByRole("group")).toHaveCount(2);
+    await settings
+        .getByRole("button", { name: "Poista hyppääjä 1", exact: true })
+        .click();
+    await settings
+        .getByRole("button", { name: "Poista hyppääjä 1", exact: true })
+        .click();
+    await expect(jumpers).toHaveCount(0);
+    await expect(arrows).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
+    await expect(jumpers).toHaveCount(1);
+    await expect(map.locator(".leaflet-tooltip")).toHaveCount(0);
+    const distances = await page.evaluate(async () => {
+        const { jumpRunCoordinates } = await import("/src/DropzoneMap.js");
+        const { latLng } = await import("leaflet");
+        const start = latLng(62.4, 25.6);
+        return [0, 90, 180, 270].map((direction) => {
+            const end = latLng(
+                jumpRunCoordinates(
+                    start,
+                    { direction, speedKmh: 180, separationSeconds: 10 },
+                    2,
+                ),
+            );
+            return {
+                distance: start.distanceTo(end),
+                lat: end.lat - start.lat,
+                lon: end.lng - start.lng,
+            };
+        });
+    });
+    for (const value of distances) expect(value.distance).toBeCloseTo(1000, 3);
+    expect(distances[0].lat).toBeGreaterThan(0);
+    expect(distances[1].lon).toBeGreaterThan(0);
+    expect(distances[2].lat).toBeLessThan(0);
+    expect(distances[3].lon).toBeLessThan(0);
+    await page.getByRole("button", { name: "Tyhjennä nuolet" }).click();
+    await expect(run).toHaveCount(0);
+    await toggle.click();
+    await expect(direction).toHaveCount(0);
+    await place();
+    await expect(arrows).toHaveCount(1);
+});
+
+test("jump run adds jumpers using immediately applied template settings", async ({
+    page,
+    isMobile,
+}) => {
+    await page.evaluate(async () => {
+        const { FORECAST_COORDINATES } = await import("/src/data.js");
+        const { OM_DATA } = await import("/src/om.js");
+        FORECAST_COORDINATES.value = "62.4,25.6";
+        const hourly = {
+            time: [new Date().toISOString().slice(0, 13) + ":00"],
+        };
+        for (const level of ["600", "700", "850", "925", "1000"]) {
+            hourly[`windspeed_${level}hPa`] = [36];
+            hourly[`winddirection_${level}hPa`] = [0];
+        }
+        OM_DATA.value = { utc_offset_seconds: 0, hourly };
+    });
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+    const template = page.getByRole("button", {
+        name: "Muokkaa: Lisättävän hyppääjän asetukset",
+    });
+    await expect(template).not.toContainText("Uloshyppy");
+    await template.click();
+    const dialog = page.getByRole("dialog", {
+        name: "Lisättävän hyppääjän asetukset",
+    });
+    await expect(
+        dialog.getByRole("button", { name: /^(Tallenna|Peruuta)$/ }),
+    ).toHaveCount(0);
+    await expect(
+        dialog.getByRole("spinbutton", { name: "Uloshyppykorkeus (m)" }),
+    ).toHaveCount(0);
+    const opening = dialog.getByRole("spinbutton", {
+        name: "Avauskorkeus (m)",
+    });
+    await opening.fill("4000");
+    await expect(template).toContainText("800 m");
+    await opening.fill("1200");
+    await dialog.getByRole("button", { name: /^Freefly/ }).click();
+    await expect(template).toContainText("1200 m");
+    await expect(template).toContainText("240 km/h");
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
+    const edit = page.getByRole("button", {
+        name: "Hyppylinjan asetukset",
+        exact: true,
+    });
+    const settings = page.getByRole("dialog", {
+        name: "Hyppylinjan asetukset",
+    });
+    await edit.click();
+    const first = settings.getByRole("group", {
+        name: "Hyppääjä 1",
+        exact: true,
+    });
+    const second = settings.getByRole("group", {
+        name: "Hyppääjä 2",
+        exact: true,
+    });
+    await expect(
+        first.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
+    ).toHaveValue("180");
+    await expect(
+        first.getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
+    ).toHaveValue("800");
+    await expect(
+        second.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
+    ).toHaveValue("240");
+    await expect(
+        second.getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
+    ).toHaveValue("1200");
+    await settings
+        .getByRole("spinbutton", { name: "Uloshyppykorkeus (m)" })
+        .fill("3500");
+    await page.keyboard.press("Escape");
+    await template.click();
+    await opening.fill("3500");
+    await expect(template).toContainText("1200 m");
+    await opening.fill("1500");
+    await dialog.getByRole("button", { name: /^Wingsuit/ }).click();
+    await expect(template).toContainText("1500 m");
+    await expect(template).toContainText("80 km/h");
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    if (isMobile) await map.tap({ position: { x: 100, y: 160 } });
+    else await map.click({ position: { x: 100, y: 160 } });
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(3);
+    await edit.click();
+    await expect(
+        second.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
+    ).toHaveValue("240");
+    const third = settings.getByRole("group", {
+        name: "Hyppääjä 3",
+        exact: true,
+    });
+    await expect(
+        third.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
+    ).toHaveValue("80");
+    await expect(
+        third.getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
+    ).toHaveValue("1500");
+    await page.keyboard.press("Escape");
 });

@@ -15,6 +15,7 @@ import {
     point,
     polyline,
     layerGroup,
+    latLng,
 } from "leaflet";
 import { css, useScope } from "./useScope.js";
 import {
@@ -312,6 +313,27 @@ export function DropzoneMap() {
     const [exitHeight, setExitHeight] = useState(4000);
     const [openingHeight, setOpeningHeight] = useState(800);
     const [speedKmh, setSpeedKmh] = useState(180);
+    const [jumpRunActive, setJumpRunActive] = useState(false);
+    const [jumpRunStart, setJumpRunStart] = useState(
+        /** @type {import('leaflet').LatLng | null} */ (null),
+    );
+    const [jumpers, setJumpers] = useState(
+        /** @type {JumpRunJumper[]} */ ([
+            { speedKmh: 180, openingHeight: 800 },
+        ]),
+    );
+    const [nextJumper, setNextJumper] = useState(
+        /** @type {JumpRunJumper} */ ({ speedKmh: 180, openingHeight: 800 }),
+    );
+    const jumperCount = jumpers.length;
+    const [jumpRunSettings, setJumpRunSettings] = useState(
+        /** @type {JumpRunSettings} */ ({
+            direction: 0,
+            speedKmh: 120,
+            separationSeconds: 5,
+            exitHeight: 4000,
+        }),
+    );
     const [leafletInstance, setLeafletInstance] = useState(
         /** @type {import('leaflet').Map | null} */ (null),
     );
@@ -365,6 +387,7 @@ export function DropzoneMap() {
         }).setView([lat, lon], 14);
         setLeafletInstance(leafletMap);
         setDriftArrows([]);
+        setJumpRunStart(null);
 
         // Let one finger scroll the page. Handle two-finger pan/pinch ourselves
         // so Leaflet's single-touch dragging cannot capture the gesture.
@@ -486,6 +509,10 @@ export function DropzoneMap() {
         };
         /** @param {import('leaflet').LatLng} start */
         const addArrow = (start) => {
+            if (jumpRunActive) {
+                setJumpRunStart(start);
+                return;
+            }
             setDriftArrows((arrows) => [
                 ...arrows.slice(-9),
                 { start, exitHeight, openingHeight, speedKmh },
@@ -520,7 +547,7 @@ export function DropzoneMap() {
             container.removeEventListener("focus", selectCenter);
             container.removeEventListener("keydown", selectWithKeyboard);
         };
-    }, [leafletInstance, exitHeight, openingHeight, speedKmh]);
+    }, [leafletInstance, exitHeight, openingHeight, speedKmh, jumpRunActive]);
 
     const { data, time, winds, averageWind, ground, freefallWinds } =
         getMapWindData(now);
@@ -530,11 +557,55 @@ export function DropzoneMap() {
         speedKmh,
         openingHeight,
     );
+    const jumperStarts = jumpRunStart
+        ? Array.from({ length: jumperCount }, (_, index) =>
+              latLng(jumpRunCoordinates(jumpRunStart, jumpRunSettings, index)),
+          )
+        : [];
     useEffect(() => {
-        if (!leafletInstance || !driftArrows.length) return;
+        if (!leafletInstance || !jumpRunStart) return;
+        const layers = layerGroup().addTo(leafletInstance);
+        const end = jumpRunCoordinates(
+            jumpRunStart,
+            jumpRunSettings,
+            Math.max(1, jumperCount - 1),
+        );
+        polyline([jumpRunStart, end], {
+            color: "#2563eb",
+            weight: 3,
+            dashArray: "8 6",
+            interactive: false,
+            className: "jump-run-line",
+        }).addTo(layers);
+        jumperStarts.forEach((start) => {
+            circleMarker(start, {
+                radius: 5,
+                color: "#2563eb",
+                fillColor: "white",
+                fillOpacity: 1,
+                weight: 2,
+                interactive: false,
+                className: "jump-run-jumper",
+            }).addTo(layers);
+        });
+        return () => {
+            layers.remove();
+        };
+    }, [leafletInstance, jumpRunStart, jumpRunSettings, jumperCount]);
+    useEffect(() => {
+        const arrows = [
+            ...driftArrows,
+            ...jumperStarts.map((start, index) => ({
+                start,
+                exitHeight: jumpRunSettings.exitHeight,
+                openingHeight: jumpers[index]?.openingHeight ?? 800,
+                speedKmh: jumpers[index]?.speedKmh ?? 180,
+            })),
+        ];
+        if (!leafletInstance || !arrows.length) return;
         const layers = layerGroup().addTo(leafletInstance);
         const forecastWinds = getMapWindData(now).freefallWinds;
-        const lines = driftArrows.flatMap((settings) => {
+        const lines = arrows.flatMap((settings) => {
             const path = getFreefallDrift(
                 forecastWinds,
                 settings.exitHeight,
@@ -587,7 +658,21 @@ export function DropzoneMap() {
             definitions.remove();
             layers.remove();
         };
-    }, [arrowId, leafletInstance, driftArrows, data, time, now]);
+    }, [
+        arrowId,
+        leafletInstance,
+        driftArrows,
+        jumpers,
+        data,
+        time,
+        now,
+        jumpRunStart,
+        jumpRunSettings,
+        jumperCount,
+        exitHeight,
+        openingHeight,
+        speedKmh,
+    ]);
     const selectedWind =
         winds.find((wind) => wind.label === selectedLabel) ?? averageWind;
 
@@ -636,6 +721,17 @@ export function DropzoneMap() {
                             ajautumisen tuulen mukana ilman omaa vaakaliikettä.
                         </p>
                         <p>
+                            Hyppylinja-painike vaihtaa kartan hyppylinjatilaan.
+                            Klikkaus asettaa ensimmäisen hyppääjän paikan;
+                            seuraava klikkaus siirtää koko linjan ja säilyttää
+                            hyppääjät. Suunta on asteina pohjoisesta
+                            myötäpäivään. Lisää hyppääjä pluspainikkeesta.
+                            Hyppylinjan asetuksista voit muuttaa maanopeutta ja
+                            hyppääjien aikaväliä sekä yhteistä
+                            uloshyppykorkeutta. Jokaiselle hyppääjälle voi
+                            asettaa oman vapaapudotusnopeuden ja avauskorkeuden.
+                        </p>
+                        <p>
                             N ${h(Icon, { name: "up" })} · Nuolet näyttävät
                             virtaussuunnan. Kartan viivojen pituus kuvaa
                             nopeutta.
@@ -678,7 +774,7 @@ export function DropzoneMap() {
                     </ul>
                 </aside>
                 ${
-                    driftArrows.length > 0 && !drift
+                    (driftArrows.length > 0 || jumpRunStart) && !drift
                         ? html`
                               <div
                                   class="freefall-drift-summary"
@@ -692,6 +788,22 @@ export function DropzoneMap() {
                 }
                 <div class="map-frame">
                     ${h(FreefallToolbar, {
+                        jumpRunActive,
+                        onToggleJumpRun: () =>
+                            setJumpRunActive((active) => !active),
+                        jumpRun: {
+                            settings: jumpRunSettings,
+                            jumpers,
+                            nextJumper,
+                            onNextJumperChange: setNextJumper,
+                            onJumpersChange: setJumpers,
+                            onChange: setJumpRunSettings,
+                            onAdd: () =>
+                                setJumpers((current) => [
+                                    ...current,
+                                    { ...nextJumper },
+                                ]),
+                        },
                         exitHeight,
                         openingHeight,
                         speedKmh,
@@ -700,10 +812,29 @@ export function DropzoneMap() {
                             setOpeningHeight(opening);
                         },
                         onSpeedChange: setSpeedKmh,
-                        arrowCount: driftArrows.length,
-                        onClear: () => setDriftArrows([]),
-                        onUndo: () =>
-                            setDriftArrows((arrows) => arrows.slice(0, -1)),
+                        arrowCount: jumpRunActive
+                            ? jumpRunStart
+                                ? Math.max(1, jumperCount)
+                                : 0
+                            : driftArrows.length,
+                        onClear: () => {
+                            if (jumpRunActive) {
+                                setJumpRunStart(null);
+                                setJumpers([
+                                    { speedKmh: 180, openingHeight: 800 },
+                                ]);
+                            } else setDriftArrows([]);
+                        },
+                        onUndo: () => {
+                            if (jumpRunActive) {
+                                if (jumperCount > 1)
+                                    setJumpers((current) =>
+                                        current.slice(0, -1),
+                                    );
+                                else setJumpRunStart(null);
+                            } else
+                                setDriftArrows((arrows) => arrows.slice(0, -1));
+                        },
                     })}
                     <div class="map-viewport">
                         <div
@@ -721,4 +852,21 @@ export function DropzoneMap() {
             </div>
         </section>
     `;
+}
+
+/**
+ * @param {import('leaflet').LatLng} start
+ * @param {JumpRunSettings} settings
+ * @param {number} index
+ * @returns {[number, number]}
+ */
+export function jumpRunCoordinates(start, settings, index) {
+    const distance =
+        (settings.speedKmh / 3.6) * settings.separationSeconds * index;
+    const radians = (settings.direction * Math.PI) / 180;
+    return driftCoordinates(start, {
+        height: 0,
+        east: Math.sin(radians) * distance,
+        north: Math.cos(radians) * distance,
+    });
 }

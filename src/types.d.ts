@@ -70,9 +70,45 @@ type FreefallSettingsProps = Pick<
     | "speedKmh"
     | "onAltitudeChange"
     | "onSpeedChange"
->;
+> & {
+    title?: string;
+    exitReadOnly?: boolean;
+    showExit?: boolean;
+};
+
+interface JumpRunJumper {
+    speedKmh: number;
+    openingHeight: number;
+}
+
+interface JumpRunJumperDraft {
+    speedKmh: string;
+    openingHeight: string;
+}
+
+interface JumpRunSettings {
+    exitHeight: number;
+    direction: number;
+    speedKmh: number;
+    separationSeconds: number;
+}
+
+interface JumpRunControlsProps {
+    settings: JumpRunSettings;
+    jumpers: JumpRunJumper[];
+    nextJumper: JumpRunJumper;
+    onNextJumperChange: (
+        jumper: JumpRunJumper | ((current: JumpRunJumper) => JumpRunJumper),
+    ) => void;
+    onJumpersChange: (jumpers: JumpRunJumper[]) => void;
+    onChange: (settings: JumpRunSettings) => void;
+    onAdd: () => void;
+}
 
 interface FreefallToolbarProps {
+    jumpRunActive: boolean;
+    onToggleJumpRun: () => void;
+    jumpRun: JumpRunControlsProps;
     arrowCount: number;
     onClear: () => void;
     onUndo: () => void;
@@ -457,6 +493,9 @@ interface LandingDropzone {
 
 interface IconProps {
     name:
+        | "plane"
+        | "plus"
+        | "settings"
         | "expand"
         | "collapse"
         | "close"

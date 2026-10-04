@@ -1,0 +1,271 @@
+// @ts-check
+import { h, html } from "htm/preact";
+import { useId, useRef, useState } from "preact/hooks";
+import { EditableSettings } from "./FreefallSettings.js";
+import { Dialog } from "./components.js";
+import { Icon } from "./icons.js";
+import { css, useScope } from "./useScope.js";
+
+/** @param {JumpRunControlsProps} props */
+export function JumpRunControls({
+    settings,
+    jumpers,
+    nextJumper,
+    onNextJumperChange,
+    onChange,
+    onJumpersChange,
+    onAdd,
+}) {
+    const scope = useScope(css`
+        :scope.jump-run-controls {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.8rem;
+        }
+        .direction {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        input[type="range"] {
+            width: 100px;
+        }
+        output {
+            min-width: 4ch;
+            font-variant-numeric: tabular-nums;
+        }
+        :scope:is(dialog) {
+            width: 420px;
+            box-sizing: border-box;
+        }
+        fieldset {
+            margin-top: 20px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+        }
+        .remove-jumper {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 14px;
+            background: var(--color-surface-hover);
+            color: var(--color-text);
+            box-shadow: none;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        form label {
+            display: grid;
+            gap: 8px;
+            margin-top: 14px;
+        }
+        input[type="number"] {
+            width: 100%;
+            box-sizing: border-box;
+        }
+    `);
+    const titleId = useId();
+    /** @type {import('preact').RefObject<HTMLDialogElement>} */
+    const dialogRef = useRef(null);
+    const [speedDraft, setSpeedDraft] = useState(String(settings.speedKmh));
+    const [separationDraft, setSeparationDraft] = useState(
+        String(settings.separationSeconds),
+    );
+    const [exitDraft, setExitDraft] = useState(String(settings.exitHeight));
+    const [jumperDrafts, setJumperDrafts] = useState(
+        /** @type {JumpRunJumperDraft[]} */ ([]),
+    );
+    /** @param {number} index @param {keyof JumpRunJumperDraft} key @param {Event} event */
+    const updateJumper = (index, key, event) => {
+        const input = /** @type {HTMLInputElement} */ (event.currentTarget);
+        const value = input.value;
+        setJumperDrafts((drafts) =>
+            drafts.map((draft, i) =>
+                i === index ? { ...draft, [key]: value } : draft,
+            ),
+        );
+        if (input.checkValidity()) {
+            onJumpersChange(
+                jumpers.map((jumper, i) =>
+                    i === index ? { ...jumper, [key]: Number(value) } : jumper,
+                ),
+            );
+        }
+    };
+    /** @param {number} index */
+    const removeJumper = (index) => {
+        setJumperDrafts((drafts) => drafts.filter((_, i) => i !== index));
+        onJumpersChange(jumpers.filter((_, i) => i !== index));
+    };
+    const open = () => {
+        setExitDraft(String(settings.exitHeight));
+        setJumperDrafts(
+            jumpers.map((jumper) => ({
+                speedKmh: String(jumper.speedKmh),
+                openingHeight: String(jumper.openingHeight),
+            })),
+        );
+        setSpeedDraft(String(settings.speedKmh));
+        setSeparationDraft(String(settings.separationSeconds));
+        dialogRef.current?.showModal();
+    };
+    /** @param {"speedKmh" | "separationSeconds" | "exitHeight"} key @param {Event} event */
+    const updateSettings = (key, event) => {
+        const input = /** @type {HTMLInputElement} */ (event.currentTarget);
+        const value = input.value;
+        if (key === "speedKmh") setSpeedDraft(value);
+        else if (key === "separationSeconds") setSeparationDraft(value);
+        else setExitDraft(value);
+        if (input.checkValidity())
+            onChange({ ...settings, [key]: Number(value) });
+    };
+    return html`
+        <div class="jump-run-controls">
+            ${scope.style}
+            <label class="direction">
+                <input
+                    type="range"
+                    min="0"
+                    max="359"
+                    step="1"
+                    value=${settings.direction}
+                    aria-label="Hyppylinjan suunta"
+                    onInput=${/** @param {Event} event */ (event) => onChange({ ...settings, direction: Number(/** @type {HTMLInputElement} */ (event.currentTarget).value) })}
+                />
+                <output>${settings.direction}°</output>
+            </label>
+            ${h(EditableSettings, {
+                title: "Lisättävän hyppääjän asetukset",
+                exitReadOnly: true,
+                showExit: false,
+                exitHeight: settings.exitHeight,
+                openingHeight: nextJumper.openingHeight,
+                speedKmh: nextJumper.speedKmh,
+                onAltitudeChange: (_exit, openingHeight) =>
+                    onNextJumperChange((current) => ({
+                        ...current,
+                        openingHeight,
+                    })),
+                onSpeedChange: (speedKmh) =>
+                    onNextJumperChange((current) => ({ ...current, speedKmh })),
+            })}
+            <button
+                type="button"
+                class="arrow-action"
+                aria-label="Lisää hyppääjä"
+                title="Lisää hyppääjä"
+                onClick=${onAdd}
+            >
+                ${h(Icon, { name: "plus", size: 18 })}
+            </button>
+            <button
+                type="button"
+                class="arrow-action"
+                aria-label="Hyppylinjan asetukset"
+                title="Hyppylinjan asetukset"
+                aria-haspopup="dialog"
+                onClick=${open}
+            >
+                ${h(Icon, { name: "settings", size: 18 })}
+            </button>
+        </div>
+        ${h(
+            Dialog,
+            { dialogRef, labelledBy: titleId },
+            html`
+                ${scope.style}
+                <h2 id=${titleId}>Hyppylinjan asetukset</h2>
+                <form
+                    onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
+                >
+                    <label>
+                        Uloshyppykorkeus (m)
+                        <input
+                            type="number"
+                            required
+                            min=${Math.max(800, nextJumper.openingHeight, ...jumpers.map((jumper) => jumper.openingHeight)) + 1}
+                            max="4200"
+                            step="1"
+                            value=${exitDraft}
+                            onInput=${/** @param {Event} event */ (event) => updateSettings("exitHeight", event)}
+                        />
+                    </label>
+                    <label>
+                        Hyppylinjan nopeus (km/h)
+                        <input
+                            type="number"
+                            required
+                            min="1"
+                            max="1000"
+                            step="1"
+                            value=${speedDraft}
+                            onInput=${/** @param {Event} event */ (event) => updateSettings("speedKmh", event)}
+                        />
+                    </label>
+                    <label>
+                        Hyppääjien väli (s)
+                        <input
+                            type="number"
+                            required
+                            min="1"
+                            max="120"
+                            step="1"
+                            value=${separationDraft}
+                            onInput=${/** @param {Event} event */ (event) => updateSettings("separationSeconds", event)}
+                        />
+                    </label>
+                    <p>
+                        Nopeus on maanopeus. Hyppääjien välimatka lasketaan
+                        nopeudesta ja uloshyppyjen välisestä ajasta.
+                    </p>
+                    <p>
+                        Uloshyppykorkeus on yhteinen kaikille hyppääjille.
+                        Tuuliprofiili kattaa 800–4200 m.
+                    </p>
+                    ${jumperDrafts.map(
+                        (jumper, index) => html`
+                            <fieldset>
+                                <legend>Hyppääjä ${index + 1}</legend>
+                                <label>
+                                    Vapaapudotusnopeus (km/h)
+                                    <input
+                                        type="number"
+                                        required
+                                        min="1"
+                                        step="1"
+                                        value=${jumper.speedKmh}
+                                        onInput=${/** @param {Event} event */ (event) => updateJumper(index, "speedKmh", event)}
+                                    />
+                                </label>
+                                <label>
+                                    Avauskorkeus (m)
+                                    <input
+                                        type="number"
+                                        required
+                                        min="800"
+                                        max=${settings.exitHeight - 1}
+                                        step="1"
+                                        value=${jumper.openingHeight}
+                                        onInput=${/** @param {Event} event */ (event) => updateJumper(index, "openingHeight", event)}
+                                    />
+                                </label>
+                                <button
+                                    type="button"
+                                    class="remove-jumper"
+                                    aria-label=${`Poista hyppääjä ${index + 1}`}
+                                    onClick=${() => removeJumper(index)}
+                                >
+                                    ${h(Icon, { name: "trash", size: 16 })}
+                                    Poista
+                                </button>
+                            </fieldset>
+                        `,
+                    )}
+                </form>
+            `,
+        )}
+    `;
+}
