@@ -783,16 +783,17 @@ export function DropzoneMap() {
         updateLine();
         leafletInstance.on("moveend zoomend resize", updateLine);
         jumperStarts.forEach((start, index) => {
+            const isEndpoint = index === 0 || index === jumperCount - 1;
             const color =
                 index === 0
-                    ? "#16a34a"
+                    ? "#22c55e"
                     : index === jumperCount - 1
-                      ? "#dc2626"
+                      ? "#ef4444"
                       : "#2563eb";
             circleMarker(start, {
-                radius: 5,
-                color,
-                fillColor: "white",
+                radius: isEndpoint ? 7 : 5,
+                color: isEndpoint ? "white" : color,
+                fillColor: isEndpoint ? color : "white",
                 fillOpacity: 1,
                 weight: 2,
                 interactive: false,

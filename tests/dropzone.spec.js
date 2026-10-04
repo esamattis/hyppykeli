@@ -128,6 +128,24 @@ test("ground wind shows the developer readings and hourly ranges", async ({
     );
 });
 
+test("ground wind omits hourly ranges when rounded endpoints are equal", async ({
+    page,
+}) => {
+    const params = new URLSearchParams(developerPath.split("?")[1]);
+    params.set("DEV_ground_obs", "7.1,5.1,194,5;7.4,5.4,194,15");
+    await page.goto(`/dz/?${params}`);
+
+    const metrics = page.locator("#winds .latest-wind-cell");
+    await expect(metrics.nth(0).locator(".latest-value")).toHaveText(
+        /^7\s*m\/s$/,
+    );
+    await expect(metrics.nth(1).locator(".latest-value")).toHaveText(
+        /^5\s*m\/s$/,
+    );
+    await expect(metrics.nth(2).locator(".direction-value")).toHaveText("194°");
+    await expect(metrics.locator(".hourly-range")).toHaveCount(0);
+});
+
 test("METAR cloud layers show coverage, heights and conversion help", async ({
     page,
 }) => {

@@ -535,6 +535,9 @@ function WindSummary() {
     /** @param {"gust" | "speed" | "direction"} key */
     function hourlyRange(key) {
         const range = getHourlyWindRange(observations, key, now);
+        if (range && range.min === range.max) {
+            return null;
+        }
         const unit = key === "direction" ? "°" : " m/s";
         return html`
             <dd class="hourly-range">
