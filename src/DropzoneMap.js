@@ -1,8 +1,15 @@
 import { getTheme } from "./styles.js";
 // @ts-check
 import { html, h } from "htm/preact";
-import { useEffect, useRef, useState } from "preact/hooks";
-import { map, tileLayer, circleMarker, point } from "leaflet";
+import { useEffect, useId, useRef, useState } from "preact/hooks";
+import {
+    map,
+    tileLayer,
+    circleMarker,
+    point,
+    polyline,
+    layerGroup,
+} from "leaflet";
 import { css, useScope } from "./useScope.js";
 import {
     FORECAST_COORDINATES,
@@ -16,6 +23,8 @@ import { formatClock } from "./utils.js";
 import { Icon, WindArrow } from "./icons.js";
 import { Help } from "./components.js";
 import { MapWindOverlay } from "./MapWindOverlay.js";
+import { getFreefallDrift, driftCoordinates } from "./freefall.js";
+import { FreefallToolbar } from "./FreefallToolbar.js";
 
 /** @type {Array<{ level: OpenMeteoPressureLevel, height: number }>} */
 const LEVELS = [
@@ -46,8 +55,9 @@ export function getMapWindData(now = Date.now()) {
             (latest, obs) => (!latest || obs.time > latest.time ? obs : latest),
             /** @type {WeatherData | undefined} */ (undefined),
         );
-    /** @type {MapWindLevel[]} */
-    const winds = LEVELS.map(({ level, height }) => ({
+    /** @type {FreefallWindLevel[]} */
+    const altitudeWinds = LEVELS.map(({ level, height }) => ({
+        height,
         label: `≈ ${height} m`,
         speed:
             index >= 0
@@ -61,12 +71,10 @@ export function getMapWindData(now = Date.now()) {
         ...wind,
         speed: wind.speed === null ? null : wind.speed / 3.6,
     }));
-    const averageWind = averageFreeFallWind(
-        winds.filter((_, i) => {
-            const height = LEVELS[i]?.height;
-            return height !== undefined && height >= 800 && height <= 4200;
-        }),
-    );
+    const freefallWinds = altitudeWinds.slice(0, 4);
+    /** @type {MapWindLevel[]} */
+    const winds = [...altitudeWinds];
+    const averageWind = averageFreeFallWind(freefallWinds);
     averageWind.speed = getDevNumber("DEV_map_speed") ?? averageWind.speed;
     averageWind.direction =
         getDevNumber("DEV_map_direction") ?? averageWind.direction;
@@ -77,7 +85,7 @@ export function getMapWindData(now = Date.now()) {
         direction: ground?.direction ?? null,
     });
 
-    return { data, time, winds, averageWind, ground };
+    return { data, time, winds, averageWind, ground, freefallWinds };
 }
 
 /** @param {MapWindLevel[]} winds @returns {MapWindLevel} */
@@ -190,6 +198,9 @@ export function DropzoneMap() {
             border-radius: 0 0 var(--radius-panel) var(--radius-panel);
             overflow: hidden;
         }
+        .map-viewport {
+            position: relative;
+        }
         .dz-map {
             min-height: 440px;
             background: var(--color-surface-hover);
@@ -234,8 +245,18 @@ export function DropzoneMap() {
     `);
     /** @type {import('preact').RefObject<HTMLDivElement>} */
     const mapRef = useRef(null);
+    const arrowId = `freefall-arrow-${useId()}`;
     const [now, setNow] = useState(Date.now());
     const [selectedLabel, setSelectedLabel] = useState("≈ 4200-800 m");
+    const [exitHeight, setExitHeight] = useState(4000);
+    const [openingHeight, setOpeningHeight] = useState(800);
+    const [speedKmh, setSpeedKmh] = useState(180);
+    const [leafletInstance, setLeafletInstance] = useState(
+        /** @type {import('leaflet').Map | null} */ (null),
+    );
+    const [driftStart, setDriftStart] = useState(
+        /** @type {import('leaflet').LatLng | null} */ (null),
+    );
     const coordinates = FORECAST_COORDINATES.value;
     const name = NAME.value ?? "DZ";
     useEffect(() => {
@@ -261,7 +282,27 @@ export function DropzoneMap() {
             touchZoom: false,
             zoomSnap: 0,
             tapHold: false,
-        }).setView([lat, lon], 12);
+        }).setView([lat, lon], 14);
+        setLeafletInstance(leafletMap);
+        setDriftStart(null);
+        leafletMap.on("click", (event) => setDriftStart(event.latlng));
+        /** @param {FocusEvent} event */
+        const selectCenter = (event) => {
+            if (event.target === container)
+                setDriftStart(leafletMap.getCenter());
+        };
+        /** @param {KeyboardEvent} event */
+        const selectWithKeyboard = (event) => {
+            if (
+                event.target === container &&
+                (event.key === "Enter" || event.key === " ")
+            ) {
+                event.preventDefault();
+                setDriftStart(leafletMap.getCenter());
+            }
+        };
+        container.addEventListener("focus", selectCenter);
+        container.addEventListener("keydown", selectWithKeyboard);
 
         // Let one finger scroll the page. Handle two-finger pan/pinch ourselves
         // so Leaflet's single-touch dragging cannot capture the gesture.
@@ -350,8 +391,6 @@ export function DropzoneMap() {
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
             maxZoom: 19,
         }).addTo(leafletMap);
-        const markerLabel = document.createElement("span");
-        markerLabel.textContent = name;
         const theme = getTheme();
         circleMarker([lat, lon], {
             radius: 8,
@@ -359,13 +398,13 @@ export function DropzoneMap() {
             fillColor: theme.surface,
             fillOpacity: 1,
             weight: 3,
-        })
-            .addTo(leafletMap)
-            .bindTooltip(markerLabel, { permanent: true, direction: "top" });
+        }).addTo(leafletMap);
         const observer = new ResizeObserver(() => leafletMap.invalidateSize());
         observer.observe(mapRef.current);
         return () => {
             observer.disconnect();
+            container.removeEventListener("focus", selectCenter);
+            container.removeEventListener("keydown", selectWithKeyboard);
             container.removeEventListener("pointerdown", selectDragging, true);
             container.removeEventListener("touchstart", startGesture);
             container.removeEventListener("touchmove", moveGesture);
@@ -375,7 +414,75 @@ export function DropzoneMap() {
         };
     }, [coordinates, name]);
 
-    const { data, time, winds, averageWind, ground } = getMapWindData(now);
+    const { data, time, winds, averageWind, ground, freefallWinds } =
+        getMapWindData(now);
+    const drift = getFreefallDrift(
+        freefallWinds,
+        exitHeight,
+        speedKmh,
+        openingHeight,
+    );
+    useEffect(() => {
+        if (!leafletInstance || !driftStart) return;
+        const path = getFreefallDrift(
+            getMapWindData(now).freefallWinds,
+            exitHeight,
+            speedKmh,
+            openingHeight,
+        );
+        if (!path) return;
+        const layers = layerGroup().addTo(leafletInstance);
+        const positions = path.map((offset) =>
+            driftCoordinates(driftStart, offset),
+        );
+        const line = polyline(positions, {
+            color: "#c2410c",
+            weight: 3,
+            lineCap: "round",
+            interactive: false,
+            className: "freefall-drift-line",
+        }).addTo(layers);
+        // A screen-sized SVG arrowhead follows the final segment at every zoom.
+        const svgNamespace = "http://www.w3.org/2000/svg";
+        const definitions = document.createElementNS(svgNamespace, "defs");
+        const arrow = document.createElementNS(svgNamespace, "marker");
+        arrow.id = arrowId;
+        arrow.setAttribute("viewBox", "0 0 12 12");
+        arrow.setAttribute("refX", "10");
+        arrow.setAttribute("refY", "6");
+        arrow.setAttribute("markerWidth", "16");
+        arrow.setAttribute("markerHeight", "16");
+        arrow.setAttribute("markerUnits", "userSpaceOnUse");
+        arrow.setAttribute("orient", "auto");
+        const tip = document.createElementNS(svgNamespace, "path");
+        tip.setAttribute("d", "M4 2L10 6L4 10");
+        tip.setAttribute("fill", "none");
+        tip.setAttribute("stroke", "#c2410c");
+        tip.setAttribute("stroke-width", "2.25");
+        tip.setAttribute("stroke-linecap", "round");
+        tip.setAttribute("stroke-linejoin", "round");
+        arrow.append(tip);
+        definitions.append(arrow);
+        const element = line.getElement();
+        if (element instanceof SVGPathElement) {
+            element.ownerSVGElement?.prepend(definitions);
+            element.setAttribute("marker-end", `url(#${arrowId})`);
+        }
+        return () => {
+            definitions.remove();
+            layers.remove();
+        };
+    }, [
+        arrowId,
+        leafletInstance,
+        driftStart,
+        data,
+        time,
+        now,
+        exitHeight,
+        speedKmh,
+        openingHeight,
+    ]);
     const selectedWind =
         winds.find((wind) => wind.label === selectedLabel) ?? averageWind;
 
@@ -393,6 +500,19 @@ export function DropzoneMap() {
                     html`
                         <p>
                             Karttaa voi liikuttaa ja zoomata kahdella sormella.
+                        </p>
+                        <p>
+                            Napauta tai klikkaa karttaa valitaksesi
+                            uloshyppypisteen. Sarkaimella kartalle siirtyminen
+                            valitsee kartan keskikohdan; Enter päivittää pisteen
+                            kartan liikuttamisen jälkeen. Ajautumisviiva arvioi
+                            vapaapudotuksen valitusta uloshyppykorkeudesta
+                            valittuun avauskorkeuteen valitulla nopeudella. Voit
+                            muuttaa korkeutta ja nopeutta kartan yläpuolen
+                            kynäpainikkeista. Tuulen nopeus ja virtaussuunta
+                            interpoloidaan korkeuksien 4200, 3000, 1500 ja 800 m
+                            välillä. Arvio olettaa ajautumisen tuulen mukana
+                            ilman omaa vaakaliikettä.
                         </p>
                         <p>
                             N ${h(Icon, { name: "up" })} · Nuolet näyttävät
@@ -436,17 +556,42 @@ export function DropzoneMap() {
                         )}
                     </ul>
                 </aside>
+                ${
+                    driftStart && !drift
+                        ? html`
+                              <div
+                                  class="freefall-drift-summary"
+                                  aria-live="polite"
+                              >
+                                  Ajautumisarvio ei saatavilla: ylätuulitietoja
+                                  puuttuu.
+                              </div>
+                          `
+                        : null
+                }
                 <div class="map-frame">
-                    <div
-                        class=${`dz-map ${scope.end}`}
-                        ref=${mapRef}
-                        style="touch-action: pan-y"
-                        role="region"
-                        aria-label=${`${name} kartalla`}
-                    >
-                        ${!coordinates ? "Odotetaan koordinaatteja…" : null}
+                    ${h(FreefallToolbar, {
+                        exitHeight,
+                        openingHeight,
+                        speedKmh,
+                        onAltitudeChange: (exit, opening) => {
+                            setExitHeight(exit);
+                            setOpeningHeight(opening);
+                        },
+                        onSpeedChange: setSpeedKmh,
+                    })}
+                    <div class="map-viewport">
+                        <div
+                            class=${`dz-map ${scope.end}`}
+                            ref=${mapRef}
+                            style="touch-action: pan-y"
+                            role="region"
+                            aria-label=${`${name} kartalla`}
+                        >
+                            ${!coordinates ? "Odotetaan koordinaatteja…" : null}
+                        </div>
+                        ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
                     </div>
-                    ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
                 </div>
             </div>
         </section>

@@ -46,6 +46,35 @@ interface MapWindLevel {
     direction: number | null;
 }
 
+interface FreefallWindLevel extends MapWindLevel {
+    height: number;
+}
+
+interface FreefallDriftPoint {
+    height: number;
+    east: number;
+    north: number;
+}
+
+interface FreefallValueProps {
+    label: string;
+    unit: string;
+    value: number;
+    min: number;
+    max?: number;
+    openingHeight?: number;
+    onChange: (value: number, openingHeight?: number) => void;
+    presets?: { label: string; value: number }[];
+}
+
+interface FreefallToolbarProps {
+    exitHeight: number;
+    openingHeight: number;
+    speedKmh: number;
+    onAltitudeChange: (exitHeight: number, openingHeight: number) => void;
+    onSpeedChange: (speedKmh: number) => void;
+}
+
 interface MapWindMotion {
     x: number;
     y: number;
@@ -426,6 +455,7 @@ interface IconProps {
         | "up"
         | "chart"
         | "wind"
+        | "pen"
         | "menu"
         | "lightning"
         | "storm"

@@ -487,6 +487,191 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
 });
 
+test("freefall drift integrates altitude winds from 4000 to 800 metres", async ({
+    page,
+}) => {
+    const result = await page.evaluate(async () => {
+        const { getFreefallDrift } = await import("/src/freefall.js");
+        const winds = [4200, 3000, 1500, 800].map((height) => ({
+            height,
+            label: "",
+            speed: 10,
+            direction: 0,
+        }));
+        const north = getFreefallDrift(winds);
+        const east = getFreefallDrift(
+            winds.map((wind) => ({ ...wind, direction: 90 })),
+        );
+        const shear = getFreefallDrift(
+            winds.map((wind) => ({ ...wind, speed: wind.height / 100 })),
+        );
+        const wrap = getFreefallDrift(
+            winds.map((wind, index) => ({
+                ...wind,
+                direction: index % 2 ? 359 : 1,
+            })),
+        );
+        return {
+            custom: getFreefallDrift(winds, 3555, 240, 1200).at(-1),
+            customShear: getFreefallDrift(
+                winds.map((wind) => ({ ...wind, speed: wind.height / 100 })),
+                3555,
+                240,
+                1200,
+            ).at(-1),
+            invalid: getFreefallDrift(winds, 800, 180, 1000),
+            start: north[0],
+            end: north.at(-1),
+            east: east.at(-1),
+            shear: shear.at(-1),
+            wrap: wrap.at(-1),
+            calm: getFreefallDrift(
+                winds.map((wind) => ({ ...wind, speed: 0 })),
+            ).at(-1),
+            missing: getFreefallDrift(
+                winds.map((wind, index) => ({
+                    ...wind,
+                    speed: index === 3 ? null : 10,
+                })),
+            ),
+        };
+    });
+    expect(result.start).toEqual({ height: 4000, east: 0, north: 0 });
+    expect(result.end.height).toBe(800);
+    expect(result.end.north).toBeCloseTo(-640);
+    expect(result.end.east).toBeCloseTo(0);
+    expect(result.east.east).toBeCloseTo(-640);
+    expect(result.east.north).toBeCloseTo(0);
+    expect(result.shear.north).toBeCloseTo(-1536);
+    expect(result.wrap.north).toBeLessThan(-639);
+    expect(result.calm).toEqual({ height: 800, east: 0, north: 0 });
+    expect(result.missing).toBeNull();
+    expect(result.custom.height).toBe(1200);
+    expect(result.custom.north).toBeCloseTo(-353.25);
+    expect(result.customShear.north).toBeCloseTo(
+        -(3555 ** 2 - 1200 ** 2) / (200 * (240 / 3.6)),
+    );
+    expect(result.invalid).toBeNull();
+});
+
+test("map click, tap and tab select a freefall exit and forecasts update the line", async ({
+    page,
+    isMobile,
+}) => {
+    await page.evaluate(async () => {
+        const { FORECAST_COORDINATES } = await import("/src/data.js");
+        const { OM_DATA } = await import("/src/om.js");
+        FORECAST_COORDINATES.value = "62.4,25.6";
+        const hourly = {
+            time: [new Date().toISOString().slice(0, 13) + ":00"],
+        };
+        for (const level of ["600", "700", "850", "925", "1000"]) {
+            hourly[`windspeed_${level}hPa`] = [36];
+            hourly[`winddirection_${level}hPa`] = [0];
+        }
+        OM_DATA.value = { utc_offset_seconds: 0, hourly };
+    });
+    const map = page.locator(".dz-map");
+    const line = map.locator(".freefall-drift-line");
+    await expect(line).toHaveCount(0);
+    await map.scrollIntoViewIfNeeded();
+    if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
+    else await map.click({ position: { x: 100, y: 100 } });
+    await expect(line).toHaveCount(1);
+    await expect(
+        map.getByText("Uloshyppy 4000 m", { exact: true }),
+    ).toHaveCount(0);
+    await expect(map.getByText("Avaus 800 m", { exact: true })).toHaveCount(0);
+    const clickedPath = await line.getAttribute("d");
+    await page.locator(".freefall-toolbar .value-button").last().focus();
+    await page.keyboard.press("Tab");
+    await expect(map).toBeFocused();
+    await expect(line).not.toHaveAttribute("d", clickedPath);
+    const centeredPath = await line.getAttribute("d");
+    await page.locator(".wind-level-button").first().click();
+    await expect(line).toHaveAttribute("d", centeredPath);
+
+    const toolbar = page.getByRole("group", { name: "Vapaapudotuksen arvot" });
+    await toolbar
+        .getByRole("button", { name: "Muokkaa: Uloshyppy ja avaus" })
+        .click();
+    const altitudes = page.getByRole("dialog", { name: "Uloshyppy ja avaus" });
+    const exit = altitudes.getByRole("spinbutton", {
+        name: "Uloshyppykorkeus (m)",
+        exact: true,
+    });
+    const opening = altitudes.getByRole("spinbutton", {
+        name: "Avauskorkeus (m)",
+        exact: true,
+    });
+    await expect(exit).toHaveValue("4000");
+    await expect(opening).toHaveValue("800");
+    await exit.fill("3000");
+    await opening.fill("3200");
+    await altitudes.getByRole("button", { name: "Tallenna" }).click();
+    await expect(altitudes).toBeVisible();
+    await opening.fill("1000");
+    await altitudes.getByRole("button", { name: "Tallenna" }).click();
+    await expect(altitudes).not.toBeVisible();
+    await expect(toolbar).toContainText("3000 m");
+    await expect(toolbar).toContainText("1000 m");
+    await expect(toolbar).toContainText("40 s");
+    await expect(line).not.toHaveAttribute("d", centeredPath);
+    await expect(
+        map.getByText("Uloshyppy 3000 m", { exact: true }),
+    ).toHaveCount(0);
+    await expect(map.getByText("Avaus 1000 m", { exact: true })).toHaveCount(0);
+    for (const [preset, speed, seconds] of [
+        ["Freefly", "240", "30"],
+        ["Wingsuit", "80", "90"],
+        ["FS", "180", "40"],
+    ]) {
+        await toolbar
+            .getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" })
+            .click();
+        const dialog = page.getByRole("dialog", { name: "Vapaapudotusnopeus" });
+        await dialog
+            .getByRole("button", { name: new RegExp(`^${preset}`) })
+            .click();
+        await expect(dialog.getByRole("spinbutton")).toHaveValue(speed);
+        await dialog.getByRole("button", { name: "Tallenna" }).click();
+        await expect(toolbar).toContainText(`${speed} km/h`);
+        await expect(toolbar).toContainText(`${seconds} s`);
+    }
+    await toolbar
+        .getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" })
+        .click();
+    const speedDialog = page.getByRole("dialog", {
+        name: "Vapaapudotusnopeus",
+    });
+    await speedDialog.getByRole("spinbutton").fill("0");
+    await speedDialog.getByRole("button", { name: "Tallenna" }).click();
+    await expect(speedDialog).toBeVisible();
+    await speedDialog.getByRole("spinbutton").fill("200");
+    await speedDialog.getByRole("button", { name: "Peruuta" }).click();
+    await expect(toolbar).toContainText("180 km/h");
+    await toolbar
+        .getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" })
+        .click();
+    await expect(speedDialog.getByRole("spinbutton")).toHaveValue("180");
+    await page.keyboard.press("Escape");
+    await expect(speedDialog).not.toBeVisible();
+    await expect(
+        toolbar.getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" }),
+    ).toBeFocused();
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("/src/om.js");
+        OM_DATA.value = {
+            ...OM_DATA.value,
+            hourly: { ...OM_DATA.value.hourly, windspeed_925hPa: [null] },
+        };
+    });
+    await expect(line).toHaveCount(0);
+    await expect(page.locator(".freefall-drift-summary")).toContainText(
+        "ylätuulitietoja puuttuu",
+    );
+});
+
 test.describe("upper wind forecast timezones", () => {
     test.use({ timezoneId: "Europe/Helsinki" });
     for (const offset of [0, 3 * 60 * 60]) {
