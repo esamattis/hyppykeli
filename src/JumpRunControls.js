@@ -3,7 +3,7 @@ import { h, html } from "htm/preact";
 import { useId, useRef, useState } from "preact/hooks";
 import { FreefallFields } from "./FreefallFields.js";
 import { settingsDialogStyles } from "./styles.js";
-import { EditableSettings } from "./FreefallSettings.js";
+import { FREEFALL_PRESETS } from "./FreefallSettings.js";
 import { Dialog } from "./components.js";
 import { Icon } from "./icons.js";
 import { css, useScope } from "./useScope.js";
@@ -23,7 +23,7 @@ export function JumpRunControls({
             display: flex;
             align-items: center;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 4px;
             font-size: 0.8rem;
         }
         ${settingsDialogStyles}
@@ -31,6 +31,24 @@ export function JumpRunControls({
             margin-top: 20px;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
+        }
+        .presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        .presets button {
+            flex: 1;
+            background: var(--color-surface-hover);
+            color: var(--color-text);
+            box-shadow: none;
+        }
+        .preset-speed {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 400;
+            white-space: nowrap;
         }
         .remove-jumper {
             display: inline-flex;
@@ -50,6 +68,10 @@ export function JumpRunControls({
         String(settings.separationSeconds),
     );
     const [exitDraft, setExitDraft] = useState(String(settings.exitHeight));
+    const [nextDraft, setNextDraft] = useState({
+        openingHeight: String(nextJumper.openingHeight),
+        speedKmh: String(nextJumper.speedKmh),
+    });
     const [jumperDrafts, setJumperDrafts] = useState(
         /** @type {JumpRunJumperDraft[]} */ ([]),
     );
@@ -67,6 +89,10 @@ export function JumpRunControls({
         onJumpersChange(jumpers.filter((_, i) => i !== index));
     };
     const open = () => {
+        setNextDraft({
+            openingHeight: String(nextJumper.openingHeight),
+            speedKmh: String(nextJumper.speedKmh),
+        });
         setExitDraft(String(settings.exitHeight));
         setJumperDrafts(
             jumpers.map((jumper) => ({
@@ -91,30 +117,6 @@ export function JumpRunControls({
     return html`
         <div class="jump-run-controls">
             ${scope.style}
-            ${h(EditableSettings, {
-                title: "Lisättävän hyppääjän asetukset",
-                exitReadOnly: true,
-                showExit: false,
-                exitHeight: settings.exitHeight,
-                openingHeight: nextJumper.openingHeight,
-                speedKmh: nextJumper.speedKmh,
-                onAltitudeChange: (_exit, openingHeight) =>
-                    onNextJumperChange((current) => ({
-                        ...current,
-                        openingHeight,
-                    })),
-                onSpeedChange: (speedKmh) =>
-                    onNextJumperChange((current) => ({ ...current, speedKmh })),
-            })}
-            <button
-                type="button"
-                class="arrow-action"
-                aria-label="Lisää hyppääjä"
-                title="Lisää hyppääjä"
-                onClick=${onAdd}
-            >
-                ${h(Icon, { name: "plus", size: 18 })}
-            </button>
             <button
                 type="button"
                 class="arrow-action"
@@ -124,6 +126,15 @@ export function JumpRunControls({
                 onClick=${open}
             >
                 ${h(Icon, { name: "settings", size: 18 })}
+            </button>
+            <button
+                type="button"
+                class="arrow-action"
+                aria-label="Lisää hyppääjä"
+                title="Lisää hyppääjä"
+                onClick=${onAdd}
+            >
+                ${h(Icon, { name: "plus", size: 18 })}
             </button>
         </div>
         ${h(
@@ -179,6 +190,48 @@ export function JumpRunControls({
                         Uloshyppykorkeus on yhteinen kaikille hyppääjille.
                         Tuuliprofiili kattaa 800–4200 m.
                     </p>
+                    <fieldset>
+                        <legend>Lisättävän hyppääjän asetukset</legend>
+                        ${h(FreefallFields, {
+                            exitHeight: settings.exitHeight,
+                            openingDraft: nextDraft.openingHeight,
+                            speedDraft: nextDraft.speedKmh,
+                            onDraftChange: (key, value) =>
+                                setNextDraft((current) => ({
+                                    ...current,
+                                    [key]: value,
+                                })),
+                            onChange: (key, value) =>
+                                onNextJumperChange((current) => ({
+                                    ...current,
+                                    [key]: value,
+                                })),
+                        })}
+                        <div class="presets">
+                            ${FREEFALL_PRESETS.map(
+                                (preset) => html`
+                                    <button
+                                        type="button"
+                                        onClick=${() => {
+                                            setNextDraft((current) => ({
+                                                ...current,
+                                                speedKmh: String(preset.value),
+                                            }));
+                                            onNextJumperChange((current) => ({
+                                                ...current,
+                                                speedKmh: preset.value,
+                                            }));
+                                        }}
+                                    >
+                                        ${preset.label}
+                                        <span class="preset-speed">
+                                            ${preset.value} km/h
+                                        </span>
+                                    </button>
+                                `,
+                            )}
+                        </div>
+                    </fieldset>
                     ${jumperDrafts.map(
                         (jumper, index) => html`
                             <fieldset>

@@ -7,6 +7,12 @@ import { Dialog } from "./components.js";
 import { Icon } from "./icons.js";
 import { css, useScope } from "./useScope.js";
 
+export const FREEFALL_PRESETS = [
+    { label: "FS", value: 180 },
+    { label: "Freefly", value: 240 },
+    { label: "Wingsuit", value: 80 },
+];
+
 /** @param {FreefallSettingsProps} props */
 export function EditableSettings({
     exitHeight,
@@ -19,39 +25,6 @@ export function EditableSettings({
     showExit = true,
 }) {
     const scope = useScope(css`
-        :scope.value-button {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-height: 36px;
-            padding: 3px 7px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            background: transparent;
-            color: var(--color-text);
-            text-align: left;
-            box-shadow: none;
-        }
-        :scope.value-button:hover {
-            background: var(--color-surface-hover);
-        }
-        .value-label {
-            display: block;
-            font-size: 0.65rem;
-            line-height: 1.2;
-            font-weight: 400;
-            color: var(--color-muted);
-        }
-        .value-number {
-            display: block;
-            font-size: 0.8rem;
-            line-height: 1.3;
-            font-variant-numeric: tabular-nums;
-        }
-        svg {
-            color: var(--color-primary);
-            flex-shrink: 0;
-        }
         ${settingsDialogStyles}
         .presets {
             display: flex;
@@ -81,11 +54,6 @@ export function EditableSettings({
     const [openingDraft, setOpeningDraft] = useState(String(openingHeight));
     const [speedDraft, setSpeedDraft] = useState(String(speedKmh));
     const titleId = useId();
-    const presets = [
-        { label: "FS", value: 180 },
-        { label: "Freefly", value: 240 },
-        { label: "Wingsuit", value: 80 },
-    ];
     const open = () => {
         setExitDraft(String(exitHeight));
         setOpeningDraft(String(openingHeight));
@@ -104,33 +72,13 @@ export function EditableSettings({
     return html`
         <button
             type="button"
-            class="value-button"
-            aria-label=${`Muokkaa: ${title}`}
+            class="arrow-action value-button"
+            aria-label=${title}
+            title=${title}
             aria-haspopup="dialog"
             onClick=${open}
         >
-            ${scope.style}
-            ${
-                showExit
-                    ? html`
-                          <span>
-                              <span class="value-label">Uloshyppy</span>
-                              <strong class="value-number">
-                                  ${exitHeight} m
-                              </strong>
-                          </span>
-                      `
-                    : null
-            }
-            <span>
-                <span class="value-label">Avaus</span>
-                <strong class="value-number">${openingHeight} m</strong>
-            </span>
-            <span>
-                <span class="value-label">Nopeus</span>
-                <strong class="value-number">${speedKmh} km/h</strong>
-            </span>
-            ${h(Icon, { name: "pen", size: 14 })}
+            ${scope.style} ${h(Icon, { name: "settings", size: 18 })}
         </button>
         ${h(
             Dialog,
@@ -198,7 +146,7 @@ export function EditableSettings({
                         `,
                     )}
                     <div class="presets">
-                        ${presets.map(
+                        ${FREEFALL_PRESETS.map(
                             (preset) => html`
                                 <button
                                     type="button"

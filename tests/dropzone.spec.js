@@ -639,7 +639,7 @@ test("freefall arrows retain settings, evict the oldest at ten, and clear togeth
     const centeredPath = await line.last().getAttribute("d");
     const toolbar = page.getByRole("group", { name: "Vapaapudotuksen arvot" });
     const edit = toolbar.getByRole("button", {
-        name: "Muokkaa: Vapaapudotuksen asetukset",
+        name: "Vapaapudotuksen asetukset",
     });
     await edit.click();
     const dialog = page.getByRole("dialog", {
@@ -953,7 +953,9 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     ).toHaveValue("800");
     await page.keyboard.press("Escape");
     await edit.click();
-    await expect(settings.getByRole("group")).toHaveCount(2);
+    await expect(
+        settings.getByRole("group", { name: /^Hyppääjä \d+$/ }),
+    ).toHaveCount(2);
     await settings
         .getByRole("button", { name: "Poista hyppääjä 1", exact: true })
         .click();
@@ -1053,16 +1055,22 @@ test("jump run adds jumpers using immediately applied template settings", async 
 }) => {
     await setUniformFreefallWind(page);
     await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
-    const template = page.getByRole("button", {
-        name: "Muokkaa: Lisättävän hyppääjän asetukset",
+    const template = page.locator(".toolbar-summary");
+    const edit = page.getByRole("button", {
+        name: "Hyppylinjan asetukset",
+        exact: true,
     });
-    await expect(template).not.toContainText("Uloshyppy");
-    await template.click();
-    const dialog = page.getByRole("dialog", {
+    await expect(page.getByRole("button", { name: /Muokkaa:/ })).toHaveCount(0);
+    await expect(template).toContainText("4000 m");
+    await edit.click();
+    const settings = page.getByRole("dialog", {
+        name: "Hyppylinjan asetukset",
+    });
+    const dialog = settings.getByRole("group", {
         name: "Lisättävän hyppääjän asetukset",
     });
     await expect(
-        dialog.getByRole("button", { name: /^(Tallenna|Peruuta)$/ }),
+        settings.getByRole("button", { name: /^(Tallenna|Peruuta)$/ }),
     ).toHaveCount(0);
     await expect(
         dialog.getByRole("spinbutton", { name: "Uloshyppykorkeus (m)" }),
@@ -1078,13 +1086,6 @@ test("jump run adds jumpers using immediately applied template settings", async 
     await expect(template).toContainText("240 km/h");
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
-    const edit = page.getByRole("button", {
-        name: "Hyppylinjan asetukset",
-        exact: true,
-    });
-    const settings = page.getByRole("dialog", {
-        name: "Hyppylinjan asetukset",
-    });
     await edit.click();
     const first = settings.getByRole("group", {
         name: "Hyppääjä 1",
@@ -1110,7 +1111,7 @@ test("jump run adds jumpers using immediately applied template settings", async 
         .getByRole("spinbutton", { name: "Uloshyppykorkeus (m)" })
         .fill("3500");
     await page.keyboard.press("Escape");
-    await template.click();
+    await edit.click();
     await opening.fill("3500");
     await expect(template).toContainText("1200 m");
     await opening.fill("1500");
