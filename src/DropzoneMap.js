@@ -254,8 +254,8 @@ export function DropzoneMap() {
     const [leafletInstance, setLeafletInstance] = useState(
         /** @type {import('leaflet').Map | null} */ (null),
     );
-    const [driftStart, setDriftStart] = useState(
-        /** @type {import('leaflet').LatLng | null} */ (null),
+    const [driftArrows, setDriftArrows] = useState(
+        /** @type {FreefallDriftArrow[]} */ ([]),
     );
     const coordinates = FORECAST_COORDINATES.value;
     const name = NAME.value ?? "DZ";
@@ -284,25 +284,7 @@ export function DropzoneMap() {
             tapHold: false,
         }).setView([lat, lon], 14);
         setLeafletInstance(leafletMap);
-        setDriftStart(null);
-        leafletMap.on("click", (event) => setDriftStart(event.latlng));
-        /** @param {FocusEvent} event */
-        const selectCenter = (event) => {
-            if (event.target === container)
-                setDriftStart(leafletMap.getCenter());
-        };
-        /** @param {KeyboardEvent} event */
-        const selectWithKeyboard = (event) => {
-            if (
-                event.target === container &&
-                (event.key === "Enter" || event.key === " ")
-            ) {
-                event.preventDefault();
-                setDriftStart(leafletMap.getCenter());
-            }
-        };
-        container.addEventListener("focus", selectCenter);
-        container.addEventListener("keydown", selectWithKeyboard);
+        setDriftArrows([]);
 
         // Let one finger scroll the page. Handle two-finger pan/pinch ourselves
         // so Leaflet's single-touch dragging cannot capture the gesture.
@@ -403,8 +385,6 @@ export function DropzoneMap() {
         observer.observe(mapRef.current);
         return () => {
             observer.disconnect();
-            container.removeEventListener("focus", selectCenter);
-            container.removeEventListener("keydown", selectWithKeyboard);
             container.removeEventListener("pointerdown", selectDragging, true);
             container.removeEventListener("touchstart", startGesture);
             container.removeEventListener("touchmove", moveGesture);
@@ -413,6 +393,54 @@ export function DropzoneMap() {
             leafletMap.remove();
         };
     }, [coordinates, name]);
+
+    useEffect(() => {
+        if (!leafletInstance) return;
+        const container = leafletInstance.getContainer();
+        let pointerFocus = false;
+        const usePointer = () => {
+            pointerFocus = true;
+        };
+        const useKeyboard = () => {
+            pointerFocus = false;
+        };
+        /** @param {import('leaflet').LatLng} start */
+        const addArrow = (start) => {
+            setDriftArrows((arrows) => [
+                ...arrows.slice(-9),
+                { start, exitHeight, openingHeight, speedKmh },
+            ]);
+        };
+        /** @param {import('leaflet').LeafletMouseEvent} event */
+        const selectPoint = (event) => addArrow(event.latlng);
+        /** @param {FocusEvent} event */
+        const selectCenter = (event) => {
+            if (event.target === container && !pointerFocus)
+                addArrow(leafletInstance.getCenter());
+        };
+        /** @param {KeyboardEvent} event */
+        const selectWithKeyboard = (event) => {
+            if (
+                event.target === container &&
+                (event.key === "Enter" || event.key === " ")
+            ) {
+                event.preventDefault();
+                addArrow(leafletInstance.getCenter());
+            }
+        };
+        container.addEventListener("pointerdown", usePointer, true);
+        document.addEventListener("keydown", useKeyboard, true);
+        leafletInstance.on("click", selectPoint);
+        container.addEventListener("focus", selectCenter);
+        container.addEventListener("keydown", selectWithKeyboard);
+        return () => {
+            container.removeEventListener("pointerdown", usePointer, true);
+            document.removeEventListener("keydown", useKeyboard, true);
+            leafletInstance.off("click", selectPoint);
+            container.removeEventListener("focus", selectCenter);
+            container.removeEventListener("keydown", selectWithKeyboard);
+        };
+    }, [leafletInstance, exitHeight, openingHeight, speedKmh]);
 
     const { data, time, winds, averageWind, ground, freefallWinds } =
         getMapWindData(now);
@@ -423,25 +451,30 @@ export function DropzoneMap() {
         openingHeight,
     );
     useEffect(() => {
-        if (!leafletInstance || !driftStart) return;
-        const path = getFreefallDrift(
-            getMapWindData(now).freefallWinds,
-            exitHeight,
-            speedKmh,
-            openingHeight,
-        );
-        if (!path) return;
+        if (!leafletInstance || !driftArrows.length) return;
         const layers = layerGroup().addTo(leafletInstance);
-        const positions = path.map((offset) =>
-            driftCoordinates(driftStart, offset),
-        );
-        const line = polyline(positions, {
-            color: "#c2410c",
-            weight: 3,
-            lineCap: "round",
-            interactive: false,
-            className: "freefall-drift-line",
-        }).addTo(layers);
+        const forecastWinds = getMapWindData(now).freefallWinds;
+        const lines = driftArrows.flatMap((settings) => {
+            const path = getFreefallDrift(
+                forecastWinds,
+                settings.exitHeight,
+                settings.speedKmh,
+                settings.openingHeight,
+            );
+            if (!path) return [];
+            const positions = path.map((offset) =>
+                driftCoordinates(settings.start, offset),
+            );
+            return [
+                polyline(positions, {
+                    color: "#c2410c",
+                    weight: 3,
+                    lineCap: "round",
+                    interactive: false,
+                    className: "freefall-drift-line",
+                }).addTo(layers),
+            ];
+        });
         // A screen-sized SVG arrowhead follows the final segment at every zoom.
         const svgNamespace = "http://www.w3.org/2000/svg";
         const definitions = document.createElementNS(svgNamespace, "defs");
@@ -463,26 +496,18 @@ export function DropzoneMap() {
         tip.setAttribute("stroke-linejoin", "round");
         arrow.append(tip);
         definitions.append(arrow);
-        const element = line.getElement();
+        const element = lines[0]?.getElement();
         if (element instanceof SVGPathElement) {
             element.ownerSVGElement?.prepend(definitions);
-            element.setAttribute("marker-end", `url(#${arrowId})`);
+        }
+        for (const line of lines) {
+            line.getElement()?.setAttribute("marker-end", `url(#${arrowId})`);
         }
         return () => {
             definitions.remove();
             layers.remove();
         };
-    }, [
-        arrowId,
-        leafletInstance,
-        driftStart,
-        data,
-        time,
-        now,
-        exitHeight,
-        speedKmh,
-        openingHeight,
-    ]);
+    }, [arrowId, leafletInstance, driftArrows, data, time, now]);
     const selectedWind =
         winds.find((wind) => wind.label === selectedLabel) ?? averageWind;
 
@@ -502,17 +527,22 @@ export function DropzoneMap() {
                             Karttaa voi liikuttaa ja zoomata kahdella sormella.
                         </p>
                         <p>
-                            Napauta tai klikkaa karttaa valitaksesi
-                            uloshyppypisteen. Sarkaimella kartalle siirtyminen
-                            valitsee kartan keskikohdan; Enter päivittää pisteen
-                            kartan liikuttamisen jälkeen. Ajautumisviiva arvioi
-                            vapaapudotuksen valitusta uloshyppykorkeudesta
-                            valittuun avauskorkeuteen valitulla nopeudella. Voit
-                            muuttaa korkeutta ja nopeutta kartan yläpuolen
-                            kynäpainikkeista. Tuulen nopeus ja virtaussuunta
-                            interpoloidaan korkeuksien 4200, 3000, 1500 ja 800 m
-                            välillä. Arvio olettaa ajautumisen tuulen mukana
-                            ilman omaa vaakaliikettä.
+                            Napauta tai klikkaa karttaa lisätäksesi uuden
+                            ajautumisnuolen. Sarkaimella kartalle siirtyminen
+                            lisää nuolen kartan keskikohtaan; Enter lisää uuden
+                            nuolen kartan liikuttamisen jälkeen. Ajautumisviiva
+                            arvioi vapaapudotuksen valitusta
+                            uloshyppykorkeudesta valittuun avauskorkeuteen
+                            valitulla nopeudella. Voit muuttaa korkeutta ja
+                            nopeutta kartan yläpuolen kynäpainikkeista. Jokainen
+                            nuoli säilyttää lisäyshetken korkeudet ja nopeuden.
+                            Kartalla voi olla enintään 10 nuolta; uusi nuoli
+                            poistaa tarvittaessa vanhimman. Poista viimeisin
+                            nuoli -painike poistaa uusimman nuolen. Tyhjennä
+                            nuolet -painike poistaa kaikki nuolet. Tuulen nopeus
+                            ja virtaussuunta interpoloidaan korkeuksien 4200,
+                            3000, 1500 ja 800 m välillä. Arvio olettaa
+                            ajautumisen tuulen mukana ilman omaa vaakaliikettä.
                         </p>
                         <p>
                             N ${h(Icon, { name: "up" })} · Nuolet näyttävät
@@ -557,7 +587,7 @@ export function DropzoneMap() {
                     </ul>
                 </aside>
                 ${
-                    driftStart && !drift
+                    driftArrows.length > 0 && !drift
                         ? html`
                               <div
                                   class="freefall-drift-summary"
@@ -579,6 +609,10 @@ export function DropzoneMap() {
                             setOpeningHeight(opening);
                         },
                         onSpeedChange: setSpeedKmh,
+                        arrowCount: driftArrows.length,
+                        onClear: () => setDriftArrows([]),
+                        onUndo: () =>
+                            setDriftArrows((arrows) => arrows.slice(0, -1)),
                     })}
                     <div class="map-viewport">
                         <div

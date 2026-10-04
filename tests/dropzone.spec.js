@@ -554,7 +554,7 @@ test("freefall drift integrates altitude winds from 4000 to 800 metres", async (
     expect(result.invalid).toBeNull();
 });
 
-test("map click, tap and tab select a freefall exit and forecasts update the line", async ({
+test("freefall arrows retain settings, evict the oldest at ten, and clear together", async ({
     page,
     isMobile,
 }) => {
@@ -574,6 +574,8 @@ test("map click, tap and tab select a freefall exit and forecasts update the lin
     const map = page.locator(".dz-map");
     const line = map.locator(".freefall-drift-line");
     await expect(line).toHaveCount(0);
+    const undo = page.getByRole("button", { name: "Poista viimeisin nuoli" });
+    await expect(undo).toBeDisabled();
     await map.scrollIntoViewIfNeeded();
     if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
     else await map.click({ position: { x: 100, y: 100 } });
@@ -582,14 +584,17 @@ test("map click, tap and tab select a freefall exit and forecasts update the lin
         map.getByText("Uloshyppy 4000 m", { exact: true }),
     ).toHaveCount(0);
     await expect(map.getByText("Avaus 800 m", { exact: true })).toHaveCount(0);
-    const clickedPath = await line.getAttribute("d");
-    await page.locator(".freefall-toolbar .value-button").last().focus();
+    const clickedPath = await line.first().getAttribute("d");
+    const clear = page.getByRole("button", { name: "Tyhjennä nuolet" });
+    await clear.focus();
     await page.keyboard.press("Tab");
     await expect(map).toBeFocused();
-    await expect(line).not.toHaveAttribute("d", clickedPath);
-    const centeredPath = await line.getAttribute("d");
+    await expect(line).toHaveCount(2);
+    await expect(line.first()).toHaveAttribute("d", clickedPath);
+    await expect(line.last()).not.toHaveAttribute("d", clickedPath);
+    const centeredPath = await line.last().getAttribute("d");
     await page.locator(".wind-level-button").first().click();
-    await expect(line).toHaveAttribute("d", centeredPath);
+    await expect(line.last()).toHaveAttribute("d", centeredPath);
 
     const toolbar = page.getByRole("group", { name: "Vapaapudotuksen arvot" });
     await toolbar
@@ -616,7 +621,13 @@ test("map click, tap and tab select a freefall exit and forecasts update the lin
     await expect(toolbar).toContainText("3000 m");
     await expect(toolbar).toContainText("1000 m");
     await expect(toolbar).toContainText("40 s");
-    await expect(line).not.toHaveAttribute("d", centeredPath);
+    await expect(line.first()).toHaveAttribute("d", clickedPath);
+    await expect(line.last()).toHaveAttribute("d", centeredPath);
+    if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
+    else await map.click({ position: { x: 100, y: 100 } });
+    await expect(line).toHaveCount(3);
+    await expect(line.last()).not.toHaveAttribute("d", clickedPath);
+    let latestPath = await line.last().getAttribute("d");
     await expect(
         map.getByText("Uloshyppy 3000 m", { exact: true }),
     ).toHaveCount(0);
@@ -637,6 +648,13 @@ test("map click, tap and tab select a freefall exit and forecasts update the lin
         await dialog.getByRole("button", { name: "Tallenna" }).click();
         await expect(toolbar).toContainText(`${speed} km/h`);
         await expect(toolbar).toContainText(`${seconds} s`);
+        await expect(line.last()).toHaveAttribute("d", latestPath);
+        const count = await line.count();
+        if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
+        else await map.click({ position: { x: 100, y: 100 } });
+        await expect(line).toHaveCount(count + 1);
+        await expect(line.last()).not.toHaveAttribute("d", latestPath);
+        latestPath = await line.last().getAttribute("d");
     }
     await toolbar
         .getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" })
@@ -659,6 +677,33 @@ test("map click, tap and tab select a freefall exit and forecasts update the lin
     await expect(
         toolbar.getByRole("button", { name: "Muokkaa: Vapaapudotusnopeus" }),
     ).toBeFocused();
+    while ((await line.count()) < 10) {
+        const count = await line.count();
+        if (isMobile)
+            await map.tap({ position: { x: 120 + count * 5, y: 140 } });
+        else await map.click({ position: { x: 120 + count * 5, y: 140 } });
+        await expect(line).toHaveCount(count + 1);
+    }
+    const secondOldest = await line.nth(1).getAttribute("d");
+    if (isMobile) await page.waitForTimeout(350);
+    if (isMobile) await map.tap({ position: { x: 200, y: 140 } });
+    else await map.click({ position: { x: 200, y: 140 } });
+    await expect(line).toHaveCount(10);
+    await expect(line.first()).toHaveAttribute("d", secondOldest);
+    await expect(line.first()).not.toHaveAttribute("d", clickedPath);
+    const previousNewest = await line.nth(8).getAttribute("d");
+    await undo.click();
+    await expect(line).toHaveCount(9);
+    await expect(line.last()).toHaveAttribute("d", previousNewest);
+    await expect(line.first()).toHaveAttribute("d", secondOldest);
+    await clear.click();
+    await expect(line).toHaveCount(0);
+    await expect(map.locator("marker")).toHaveCount(0);
+    await expect(clear).toBeDisabled();
+    await expect(undo).toBeDisabled();
+    if (isMobile) await map.tap({ position: { x: 100, y: 100 } });
+    else await map.click({ position: { x: 100, y: 100 } });
+    await expect(line).toHaveCount(1);
     await page.evaluate(async () => {
         const { OM_DATA } = await import("/src/om.js");
         OM_DATA.value = {
@@ -670,6 +715,10 @@ test("map click, tap and tab select a freefall exit and forecasts update the lin
     await expect(page.locator(".freefall-drift-summary")).toContainText(
         "ylätuulitietoja puuttuu",
     );
+    await undo.click();
+    await expect(page.locator(".freefall-drift-summary")).toHaveCount(0);
+    await expect(undo).toBeDisabled();
+    await expect(clear).toBeDisabled();
 });
 
 test.describe("upper wind forecast timezones", () => {

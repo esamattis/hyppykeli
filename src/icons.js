@@ -7,6 +7,12 @@ const artwork = {
     pen: html`
         <path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15z" />
     `,
+    undo: html`
+        <path d="M9 4 4 9l5 5M4 9h10a6 6 0 0 1 0 12h-3" />
+    `,
+    trash: html`
+        <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+    `,
     close: html`
         <path d="M6 6l12 12M18 6L6 18" />
     `,

@@ -56,6 +56,13 @@ interface FreefallDriftPoint {
     north: number;
 }
 
+interface FreefallDriftArrow {
+    start: import("leaflet").LatLng;
+    exitHeight: number;
+    openingHeight: number;
+    speedKmh: number;
+}
+
 interface FreefallValueProps {
     label: string;
     unit: string;
@@ -68,6 +75,9 @@ interface FreefallValueProps {
 }
 
 interface FreefallToolbarProps {
+    arrowCount: number;
+    onClear: () => void;
+    onUndo: () => void;
     exitHeight: number;
     openingHeight: number;
     speedKmh: number;
@@ -456,6 +466,8 @@ interface IconProps {
         | "chart"
         | "wind"
         | "pen"
+        | "undo"
+        | "trash"
         | "menu"
         | "lightning"
         | "storm"

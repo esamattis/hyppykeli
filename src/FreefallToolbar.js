@@ -247,6 +247,9 @@ export function FreefallToolbar({
     speedKmh,
     onAltitudeChange,
     onSpeedChange,
+    arrowCount,
+    onClear,
+    onUndo,
 }) {
     const scope = useScope(css`
         :scope {
@@ -257,6 +260,24 @@ export function FreefallToolbar({
             padding: 3px 8px;
             border-bottom: 1px solid var(--color-border);
             background: var(--color-surface-soft);
+        }
+        .arrow-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            background: transparent;
+            color: var(--color-text);
+            box-shadow: none;
+            font-size: 0.75rem;
+        }
+        .arrow-action:hover {
+            background: var(--color-surface-hover);
+        }
+        .arrow-action:disabled {
+            opacity: 0.5;
         }
         .flight-details {
             margin-left: auto;
@@ -287,6 +308,26 @@ export function FreefallToolbar({
                     { label: "Wingsuit", value: 80 },
                 ],
             })}
+            <button
+                type="button"
+                class="arrow-action undo-arrow"
+                aria-label="Poista viimeisin nuoli"
+                title="Poista viimeisin nuoli"
+                disabled=${arrowCount === 0}
+                onClick=${onUndo}
+            >
+                ${h(Icon, { name: "undo", size: 18 })}
+            </button>
+            <button
+                type="button"
+                class="arrow-action clear-arrows"
+                aria-label="Tyhjennä nuolet"
+                title="Tyhjennä nuolet"
+                disabled=${arrowCount === 0}
+                onClick=${onClear}
+            >
+                ${h(Icon, { name: "trash", size: 18 })}
+            </button>
             <span class="flight-details" title="Vapaapudotuksen kesto">
                 ${seconds} s
             </span>
