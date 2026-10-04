@@ -1535,8 +1535,6 @@ function Anvil() {
     `;
 }
 
-import { DynamicParachute } from "./DynamicParachute.js";
-
 function ForecastLocationInfo() {
     return html`
         Ennuste on tehty alueelle${" "}
@@ -1824,17 +1822,6 @@ export function Root() {
             justify-content: space-between;
         }
 
-        .wind-heading-icon {
-            width: 40px;
-            height: 36px;
-            position: relative;
-        }
-
-        #winds .wind-heading-icon .rotate-container {
-            width: 36px;
-            height: 36px;
-        }
-
         #observations-graph {
             grid-area: observations-graph;
         }
@@ -1927,20 +1914,12 @@ export function Root() {
             </div>
 
             <div id="winds">
-                <h2 class="h2-with-icon">
-                    Tuulet
-                    <span class="wind-heading-icon">
-                        <${ErrorBoundary}>
-                            <${DynamicParachute} />
-                        </${ErrorBoundary}>
-                    </span>
-                </h2>
+                <h2 class="h2-with-icon">Tuulet</h2>
                 <${WindSummary} />
                 ${h(Compass, { floating: false })}
             </div>
 
             ${h(Compass, { floating: true })}
-
             ${h(Graph, {
                 observationsTable: h(TableDialog, {
                     id: "observations-table",
@@ -1983,7 +1962,6 @@ export function Root() {
                     `,
                 }),
             })}
-
             ${h(DropzoneMap, {})}
 
             <${HighWinds} />
