@@ -9,10 +9,10 @@
     },
     "scripts": {
         "dev": "python3 -m http.server",
-        "oxfmt-check": "oxfmt --check index.html src/ *.css",
-        "oxfmt": "oxfmt --write index.html src/ *.css",
+        "oxfmt-check": "oxfmt --check .",
+        "oxfmt": "oxfmt --write .",
         "tsc": "tsc",
-        "test": "playwright test",
+        "test": "pnpm run oxfmt && playwright test",
         "test:e2e": "playwright test",
         "build": "./build.sh"
     },
