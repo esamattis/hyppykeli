@@ -268,7 +268,7 @@ function HistoryNeedles() {
                 h(NeedlePolygon, {
                     direction: obs.direction,
                     gust: obs.gust,
-                    color: "rgba(0, 0, 0, 0.01)",
+                    color: "rgba(0, 0, 0, 0.1)",
                 }),
             )}
         </g>
