@@ -130,10 +130,10 @@ test("METAR cloud layers show distinct icons from highest to lowest", async ({
         "Muutamia",
     ]);
     await expect(layers.locator(".cloud-layer-base b")).toHaveText([
-        "1829 m",
-        "914 m",
-        "457 m",
-        "152 m",
+        "≈ 1850 m",
+        "≈ 900 m",
+        "≈ 450 m",
+        "≈ 150 m",
     ]);
     await expect(layers.locator(".cloud-layer-coverage")).toHaveText([
         "8/8 taivaasta",
@@ -153,6 +153,24 @@ test("METAR cloud layers show distinct icons from highest to lowest", async ({
         .evaluateAll((groups) => groups.map((group) => group.innerHTML));
     expect(new Set(artwork).size).toBe(4);
 
+    const conversions = [
+        { metar: "OVC 6000ft", conversion: "6000 ft = 1828,8 m" },
+        { metar: "BKN 3000ft", conversion: "3000 ft = 914,4 m" },
+        { metar: "SCT 1500ft", conversion: "1500 ft = 457,2 m" },
+        { metar: "FEW 500ft", conversion: "500 ft = 152,4 m" },
+    ];
+    for (const [index, expected] of conversions.entries()) {
+        const layer = layers.nth(index);
+        await layer.getByRole("button", { name: "Ohje", exact: true }).click();
+        const help = layer.getByRole("dialog");
+        await expect(help).toBeVisible();
+        await expect(help.locator(".metar")).toHaveText(expected.metar);
+        await expect(help.locator(".cloud-base-conversion")).toHaveText(
+            expected.conversion,
+        );
+        await help.getByRole("button", { name: "Sulje", exact: true }).click();
+    }
+
     await expect(card.locator(".cloud-warning")).toHaveText("Ukkospilviä", {
         useInnerText: true,
     });
@@ -161,6 +179,49 @@ test("METAR cloud layers show distinct icons from highest to lowest", async ({
     const report = card.getByLabel("METAR", { exact: true });
     await expect(report).toBeVisible();
     await expect(report).toHaveText(metar);
+});
+
+test("developer banner opens the editor and applies METAR changes", async ({
+    page,
+}) => {
+    const banner = page.locator(".developer-banner");
+    const edit = banner.getByRole("button", { name: "Muokkaa", exact: true });
+    await expect(edit).toHaveAttribute("aria-controls", "developer-mode");
+    await edit.click();
+
+    const editor = page.getByRole("dialog", {
+        name: "Kehittäjätila",
+        exact: true,
+    });
+    await expect(editor).toBeVisible();
+    const metarInput = editor.getByRole("textbox", { name: "METAR-teksti" });
+    await expect(metarInput).toHaveValue(
+        new URL(page.url()).searchParams.get("DEV_metar"),
+    );
+    const metar =
+        "METAR EFJY 041200Z 19007KT 9999 FEW005 SCT015 BKN030CB OVC060 11/08 Q1014=";
+    await metarInput.fill(metar);
+    await expect(page).toHaveURL(
+        (url) => url.searchParams.get("DEV_metar") === metar,
+    );
+    await expect(page.locator("#clouds .cloud-layer-base b")).toHaveText([
+        "≈ 1850 m",
+        "≈ 900 m",
+        "≈ 450 m",
+        "≈ 150 m",
+    ]);
+    await editor.getByRole("button", { name: "Sulje", exact: true }).click();
+    await expect(editor).not.toBeVisible();
+    await expect(edit).toBeFocused();
+
+    await page.getByRole("button", { name: "Valikko", exact: true }).click();
+    await page
+        .locator(".side-menu")
+        .getByRole("button", { name: "Kehittäjätila", exact: true })
+        .click();
+    await expect(editor).toBeVisible();
+    await expect(metarInput).toHaveValue(metar);
+    await expect(page.locator("#developer-mode")).toHaveCount(1);
 });
 
 test("map wind profile shows the developer average and ground wind", async ({

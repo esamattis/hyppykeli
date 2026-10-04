@@ -436,3 +436,7 @@ interface CloudTypeDetails {
     icon: IconProps["name"];
     coverage: string;
 }
+
+interface DeveloperModeHandle {
+    open: () => void;
+}

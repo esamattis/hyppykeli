@@ -1,6 +1,6 @@
 // @ts-check
 import { h, html } from "htm/preact";
-import { useRef, useState } from "preact/hooks";
+import { useImperativeHandle, useRef, useState } from "preact/hooks";
 import { Dialog } from "./components.js";
 import { getMapWindData } from "./DropzoneMap.js";
 import { css, useScope } from "./useScope.js";
@@ -60,7 +60,8 @@ function clearOverrides() {
     );
 }
 
-export function DeveloperBanner() {
+/** @param {{ onEdit: () => void }} props */
+export function DeveloperBanner({ onEdit }) {
     const scope = useScope(css`
         :scope {
             margin: 20px 20px 0;
@@ -73,6 +74,11 @@ export function DeveloperBanner() {
             justify-content: space-between;
             flex-wrap: wrap;
             gap: 12px;
+        }
+        .developer-banner-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
         }
         @media (max-width: 550px) {
             :scope {
@@ -88,14 +94,24 @@ export function DeveloperBanner() {
                 <strong>Kehittäjätila käytössä.</strong>
                 ${" "} Käytössä on testiasetuksia.
             </span>
-            <button type="button" onClick=${clearOverrides}>
-                Palauta oikeat tiedot
-            </button>
+            <div class="developer-banner-actions">
+                <button
+                    type="button"
+                    aria-haspopup="dialog"
+                    aria-controls="developer-mode"
+                    onClick=${onEdit}
+                >
+                    Muokkaa
+                </button>
+                <button type="button" onClick=${clearOverrides}>
+                    Palauta oikeat tiedot
+                </button>
+            </div>
         </aside>
     `;
 }
 
-/** @param {{ onOpen: () => void }} props */
+/** @param {{ onOpen: () => void, editorRef: import('preact').RefObject<DeveloperModeHandle> }} props */
 export function DeveloperMode(props) {
     const scope = useScope(css`
         :scope.developer-controls {
@@ -209,6 +225,8 @@ export function DeveloperMode(props) {
         dialogRef.current?.showModal();
         props.onOpen();
     }
+
+    useImperativeHandle(props.editorRef, () => ({ open }));
 
     /**
      * @param {number} index

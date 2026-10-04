@@ -688,7 +688,7 @@ function CloudLayer({ cloud }) {
                     hasBase
                         ? html`
                               <b>
-                                  ${formatCloudBase(cloud.base, cloud.unit).replace(/M$/, " m")}
+                                  ${formatCloudBase(cloud.base, cloud.unit, { approximate: true })}
                               </b>
                               <span class="cloud-base-label">
                                   ${cloud.amount === "VV" ? "Pystynäkyvyys" : "Pilven alaraja"}
@@ -704,6 +704,15 @@ function CloudLayer({ cloud }) {
                     <p class="metar">
                         ${cloud.amount}${" "}${cloud.base}${cloud.unit}
                     </p>
+                    ${
+                        hasBase
+                            ? html`
+                                  <p class="cloud-base-conversion">
+                                      ${`${cloud.base} ${cloud.unit} = ${formatCloudBase(cloud.base, cloud.unit)}`}
+                                  </p>
+                              `
+                            : null
+                    }
                 `,
             )}
         </li>
@@ -1183,7 +1192,8 @@ function savePreviousDz(e) {
     }
 }
 
-export function SideMenu() {
+/** @param {{ developerEditorRef: import('preact').RefObject<DeveloperModeHandle> }} props */
+export function SideMenu({ developerEditorRef }) {
     const scope = useScope(css`
         :scope {
             position: fixed;
@@ -1514,6 +1524,7 @@ export function SideMenu() {
                 <footer class="menu-section menu-footer">
                     <a href="/?no_redirect=1">Etusivulle</a>
                     ${h(DeveloperMode, {
+                        editorRef: developerEditorRef,
                         onOpen: () => {
                             MENU_OPEN.value = false;
                         },
@@ -1741,11 +1752,11 @@ function Title() {
                     ? html`
                           <span class="title-temp">
                               <span class="nowrap">
-                                  ${temperature?.toFixed(1)}°C maassa,
+                                  ${temperature?.toFixed(0)}°C maassa,
                               </span>
                               ${" "}
                               <span class="nowrap">
-                                  ${temps[4].toFixed(1)}°C 4km:ssä
+                                  ${temps[4].toFixed(0)}°C 4km:ssä
                               </span>
                               ${h(
                                   Help,
@@ -1781,6 +1792,9 @@ function Title() {
 }
 
 export function Root() {
+    const developerEditorRef = useRef(
+        /** @type {DeveloperModeHandle | null} */ (null),
+    );
     const scope = useScope(css`
         :scope {
             display: grid;
@@ -1931,7 +1945,7 @@ export function Root() {
     `);
 
     return html`
-        <${DeveloperBanner} />
+        ${h(DeveloperBanner, { onEdit: () => developerEditorRef.current?.open() })}
         <div class="content grid">
             ${scope.style}
             ${
@@ -2012,7 +2026,7 @@ export function Root() {
             <${HighWinds} />
             <${Info} />
         </div>
-        <${SideMenu} />
+        ${h(SideMenu, { developerEditorRef })}
         <${FloatingMenuButton} />
 
         <${RenderInjectedCSS} />
