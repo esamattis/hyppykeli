@@ -1,4 +1,4 @@
-import { getTheme } from "./styles.js";
+import { cardHeadingStyles, getTheme } from "./styles.js";
 // @ts-check
 import { html, h } from "htm/preact";
 import {
@@ -35,6 +35,7 @@ import { OM_DATA, forecastTime } from "./om.js";
 import { formatClock } from "./utils.js";
 import { Icon, WindArrow } from "./icons.js";
 import { Help } from "./components.js";
+import { DataSource } from "./DataSource.js";
 import { MapWindOverlay } from "./MapWindOverlay.js";
 import { getFreefallDrift, driftCoordinates } from "./freefall.js";
 import {
@@ -325,12 +326,7 @@ export function DropzoneMap() {
         .wind-profile {
             min-width: 0;
         }
-        .source-note {
-            display: block;
-            margin: -0.5rem 0 1rem;
-            color: var(--color-muted);
-            font-size: 0.8rem;
-        }
+        ${cardHeadingStyles}
         ul {
             display: flex;
             flex-wrap: wrap;
@@ -1057,50 +1053,52 @@ export function DropzoneMap() {
     return html`
         <section id="dropzone-map" aria-label=${t("map.region")}>
             ${scope.style}
-            <h2>
-                ${t("map.title")}
-                ${h(
-                    Help,
-                    { id: "map-wind-help", wide: true },
-                    html`
-                        <h3>${t("map.dataHelpTitle")}</h3>
-                        <p>${t("map.forecastNatureHelp")}</p>
-                        <p>${t("map.forecastLevelsHelp")}</p>
-                        <p>${t("map.forecastImplicationHelp")}</p>
-                        <p>
-                            ${t("map.title")}:
-                            Open-Meteo${time && data ? `, ${t("time.clock", formatClock(forecastTime(time, data.utc_offset_seconds)))}` : ` — ${t("map.sourceNoCurrent")}`}.
-                        </p>
-                        <p>≈ 4200-800 m: ${t("map.averageHelp")}</p>
-                        <p>
-                            ${t("map.groundObservationHelp")}
-                            <br />
-                            ${t("map.ground")}:
-                            ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, ${t("time.clock", formatClock(ground.time))}` : ` — ${t("map.sourceNoObservation")}`}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
-                        </p>
+            <div class="card-heading">
+                <h2>
+                    ${t("map.title")}
+                    ${h(
+                        Help,
+                        { id: "map-wind-help", wide: true },
+                        html`
+                            <h3>${t("map.dataHelpTitle")}</h3>
+                            <p>${t("map.forecastNatureHelp")}</p>
+                            <p>${t("map.forecastLevelsHelp")}</p>
+                            <p>${t("map.forecastImplicationHelp")}</p>
+                            <p>
+                                ${t("map.title")}:
+                                Open-Meteo${time && data ? `, ${t("time.clock", formatClock(forecastTime(time, data.utc_offset_seconds)))}` : ` — ${t("map.sourceNoCurrent")}`}.
+                            </p>
+                            <p>≈ 4200-800 m: ${t("map.averageHelp")}</p>
+                            <p>
+                                ${t("map.groundObservationHelp")}
+                                <br />
+                                ${t("map.ground")}:
+                                ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, ${t("time.clock", formatClock(ground.time))}` : ` — ${t("map.sourceNoObservation")}`}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
+                            </p>
 
-                        <h3>${t("map.usingHelpTitle")}</h3>
-                        <p>${t("map.navigationHelp")}</p>
-                        <p>${t("map.selectWind")} ${t("map.flowHelp")}</p>
-                        <p>
-                            N ${h(Icon, { name: "up" })} ·
-                            ${t("map.legendHelp")}
-                        </p>
+                            <h3>${t("map.usingHelpTitle")}</h3>
+                            <p>${t("map.navigationHelp")}</p>
+                            <p>${t("map.selectWind")} ${t("map.flowHelp")}</p>
+                            <p>
+                                N ${h(Icon, { name: "up" })} ·
+                                ${t("map.legendHelp")}
+                            </p>
 
-                        <h3>${t("map.freefallHelpTitle")}</h3>
-                        <p>${t("map.freefallHelp")}</p>
+                            <h3>${t("map.freefallHelpTitle")}</h3>
+                            <p>${t("map.freefallHelp")}</p>
 
-                        <h3>${t("map.jumpRunHelpTitle")}</h3>
-                        <p>${t("map.jumpRunHelp")}</p>
-                    `,
-                )}
-            </h2>
-            <small class="source-note">
-                ${t("common.source")}:
-                Open-Meteo${
-                    ground ? `, ${weatherSourceLabel(ground.source)}` : ""
-                }
-            </small>
+                            <h3>${t("map.jumpRunHelpTitle")}</h3>
+                            <p>${t("map.jumpRunHelp")}</p>
+                        `,
+                    )}
+                </h2>
+                ${h(DataSource, {
+                    sources: [
+                        "Open-Meteo",
+                        ground ? weatherSourceLabel(ground.source) : null,
+                    ],
+                })}
+            </div>
             <div class="map-layout">
                 <aside class="wind-profile">
                     <ul>

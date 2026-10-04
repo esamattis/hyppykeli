@@ -176,3 +176,20 @@ export const settingsDialogStyles = css`
         box-sizing: border-box;
     }
 `;
+
+export const cardHeadingStyles = css`
+    .card-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 1rem;
+    }
+    .card-heading h2 {
+        margin: 0;
+    }
+    .card-heading .source-note {
+        margin: 0;
+        text-align: right;
+    }
+`;

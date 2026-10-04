@@ -5,6 +5,7 @@ import {
     dateHeadingStyles,
     freshnessStyles,
     summaryStyles,
+    cardHeadingStyles,
 } from "./styles.js";
 import { effect, signal } from "@preact/signals";
 import { useId, useRef, useState } from "preact/hooks";
@@ -42,6 +43,7 @@ import { completeDropzones, partialDropzones } from "./dropzones.js";
 import { DeveloperBanner, DeveloperMode } from "./DeveloperMode.js";
 
 import { Graph } from "./graph.js";
+import { DataSource } from "./DataSource.js";
 import { DropzoneMap } from "./DropzoneMap.js";
 import { CloudCoverIcon, Icon, WindArrow, PieChart } from "./icons.js";
 import { Compass } from "./compass.js";
@@ -511,19 +513,6 @@ function TableDialog(props) {
     `;
 }
 
-/** @param {{ sources: Array<string | null | undefined> }} props */
-function SourceNote({ sources }) {
-    const unique = sources.filter(
-        (source, index) => source && sources.indexOf(source) === index,
-    );
-    if (!unique.length) return null;
-    return html`
-        <small class="source-note">
-            ${t("common.source")}: ${unique.join(", ")}
-        </small>
-    `;
-}
-
 function WindSummary() {
     const scope = useScope(css`
         ${summaryStyles}
@@ -823,6 +812,24 @@ function CloudLayer({ cloud }) {
 function CloudSummary() {
     const scope = useScope(css`
         ${summaryStyles}
+        .source-note {
+            margin: 0;
+            text-align: right;
+        }
+        .cloud-observation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+        }
+        .summary-metrics .condensation {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 4px 16px;
+        }
+        .condensation > .source-note {
+            grid-column: 1 / -1;
+        }
         .cloud-list {
             list-style: none;
             padding: 0;
@@ -926,7 +933,7 @@ function CloudSummary() {
             font-weight: 650;
         }
         .forecast-heading h3 {
-            margin: 0;
+            margin: 0 auto 0 0;
             font: inherit;
             letter-spacing: normal;
         }
@@ -1015,9 +1022,12 @@ function CloudSummary() {
             ${
                 metar
                     ? html`
-                          <h3 class="cloud-observation-heading">
-                              ${t("cloud.observedLayers")}
-                          </h3>
+                          <div class="cloud-observation-header">
+                              <h3 class="cloud-observation-heading">
+                                  ${t("cloud.observedLayers")}
+                              </h3>
+                              ${h(DataSource, { sources: ["METAR"] })}
+                          </div>
                           ${
                               msg
                                   ? html`
@@ -1100,6 +1110,9 @@ function CloudSummary() {
                     [latest?.temperature, latest?.dewPoint],
                     (temp, dew) => html`
                         <div class="condensation">
+                            ${h(DataSource, {
+                                sources: [weatherSourceLabel(latest?.source)],
+                            })}
                             <dt>${t("weather.condensationLevel")}</dt>
                             <dd class="cloud-list-item-alt">
                                 <b>${getLiftedCondensationLevel(temp, dew)}M</b>
@@ -1128,6 +1141,9 @@ function CloudSummary() {
                           >
                               <div class="forecast-heading">
                                   <h3>${t("cloud.forecast12h")}</h3>
+                                  ${h(DataSource, {
+                                      sources: [FORECAST_SOURCE.value],
+                                  })}
                                   ${h(
                                       Help,
                                       { id: "cloudforecast" },
@@ -1741,6 +1757,7 @@ function HighWinds() {
 
     return html`
         <div id="high-winds-today">
+            <div class="card-heading">
             <h2 class="h2-with-icon">
                 ${t("highWinds.title")}
                 ${h(
@@ -1753,7 +1770,8 @@ function HighWinds() {
                     `,
                 )}
             </h2>
-            <small class="source-note">${t("common.source")}: Open-Meteo</small>
+            ${h(DataSource, { sources: ["Open-Meteo"] })}
+            </div>
 
             <p>
                 <button
@@ -1830,15 +1848,18 @@ function Info() {
                     return t("footer.stationDistance", km);
                 },
             )}
-            <div>
-                ${t("common.sources")}: ${" "}
-                <a href="https://www.ilmatieteenlaitos.fi/">FMI</a>
-                ,${" "}
-                <a href="https://flyk.com/">Flyk</a>
-                ${" "} ${t("footer.and")}${" "}
-                <a href="https://open-meteo.com/">Open-Meteo</a>
-                .
-            </div>
+            ${h(
+                DataSource,
+                { plural: true },
+                html`
+                    <a href="https://www.ilmatieteenlaitos.fi/">FMI</a>
+                    ,${" "}
+                    <a href="https://flyk.com/">Flyk</a>
+                    ${" "} ${t("footer.and")}${" "}
+                    <a href="https://open-meteo.com/">Open-Meteo</a>
+                    .
+                `,
+            )}
             <div class="disclaimer">${t("footer.disclaimer")}</div>
             <small>
                 ${t("footer.logbook")}${" "}
@@ -2174,12 +2195,7 @@ export function Root() {
             align-items: center;
         }
 
-        .source-note {
-            display: block;
-            margin: -0.5rem 0 1rem;
-            color: var(--color-muted);
-            font-size: 0.8rem;
-        }
+        ${cardHeadingStyles}
 
         .heading-spacer {
             width: 1ch;
@@ -2220,20 +2236,14 @@ export function Root() {
 
             <div class="clouds" id="clouds">
                 <h2 class="h2-with-icon">${t("weather.clouds")}</h2>
-                ${h(SourceNote, {
-                    sources: [
-                        METARS.value ? "METAR" : null,
-                        weatherSourceLabel(LATEST_OBSERVATION.value?.source),
-                        FORECAST_SOURCE.value,
-                    ],
-                })}
-
                 <${CloudSummary} />
             </div>
 
             <div id="winds">
-                <h2 class="h2-with-icon">${t("weather.winds")}</h2>
-                ${h(SourceNote, { sources: [WIND_SOURCE.value] })}
+                <div class="card-heading">
+                    <h2 class="h2-with-icon">${t("weather.winds")}</h2>
+                    ${h(DataSource, { sources: [WIND_SOURCE.value] })}
+                </div>
                 <${WindSummary} />
                 ${h(Compass, { floating: false })}
             </div>

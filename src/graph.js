@@ -3,7 +3,8 @@ import { css, useScope } from "./useScope.js";
 import { dateHeadingStyles, freshnessStyles, getTheme } from "./styles.js";
 import { useEffect, useRef } from "preact/hooks";
 import { effect } from "@preact/signals";
-import { html } from "htm/preact";
+import { h, html } from "htm/preact";
+import { DataSource } from "./DataSource.js";
 import { Chart } from "chart.js";
 
 import {
@@ -154,8 +155,6 @@ export function Graph(props) {
         }
         .source-note {
             margin-left: auto;
-            color: var(--color-muted);
-            font-size: 0.8rem;
         }
         .source-note + button {
             margin-left: 0;
@@ -221,9 +220,7 @@ export function Graph(props) {
                                       ${formatDate(new Date())}
                                   </span>
                               </h2>
-                              <small class="source-note">
-                                  ${t("common.source")}: ${OBSERVATION_SOURCE}
-                              </small>
+                              ${h(DataSource, { sources: [OBSERVATION_SOURCE.value] })}
                               ${props.observationsTable}
                           </div>
                           <div class="chart" onMouseLeave=${onMouseLeaveObs}>
@@ -247,9 +244,7 @@ export function Graph(props) {
                         ${humanDayText(FORECAST_DATE.value)}
                     </span>
                 </h2>
-                <small class="source-note">
-                    ${t("common.source")}: ${FORECAST_SOURCE}
-                </small>
+                ${h(DataSource, { sources: [FORECAST_SOURCE.value] })}
                 ${props.forecastsTable}
             </div>
 

@@ -613,3 +613,9 @@ interface ToolbarButtonProps {
     hasPopup?: "dialog";
     onClick: () => void;
 }
+
+interface DataSourceProps {
+    sources?: Array<string | null | undefined>;
+    children?: import("preact").ComponentChildren;
+    plural?: boolean;
+}
