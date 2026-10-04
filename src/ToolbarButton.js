@@ -22,15 +22,14 @@ export function ToolbarButton({
             width: 36px;
             height: 36px;
             padding: 0;
+            border: none;
             background: transparent;
             color: var(--color-text);
             box-shadow: none;
             font-size: 0.75rem;
         }
         :scope[aria-pressed="true"] {
-            background: var(--color-surface-hover);
             color: var(--color-primary);
-            outline: 1px solid var(--color-primary);
         }
         :scope:hover {
             background: var(--color-surface-hover);
