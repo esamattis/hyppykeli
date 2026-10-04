@@ -22,18 +22,24 @@ export function Dialog(props) {
             padding-inline-end: 56px;
         }
         :scope > .dialog-controls {
-            position: absolute;
+            position: sticky;
             top: 8px;
-            right: 8px;
+            height: 0;
+            margin-top: -16px;
+            margin-bottom: 16px;
+            z-index: 1;
         }
         :scope > .dialog-controls > .dialog-close {
+            position: absolute;
+            top: 0;
+            right: -48px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             width: 40px;
             height: 40px;
             padding: 8px;
-            background: transparent;
+            background: var(--color-surface);
             border: none;
             border-radius: 50%;
             box-shadow: none;
