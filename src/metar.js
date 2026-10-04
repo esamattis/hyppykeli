@@ -390,7 +390,7 @@ class METAR {
                 continue;
             }
             const match =
-                /^(NCD|SKC|CLR|NSC|FEW|SCT|BKN|OVC|VV)(\d{3}|\/{3})?(CB|TCU)?$/.exec(
+                /^(NCD|SKC|CLR|NSC|FEW|SCT|BKN|OVC|VV)(\d{3}|\/{3})?(CB|TCU|\/{3})?$/.exec(
                     token,
                 );
             if (!match) return;

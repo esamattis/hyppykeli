@@ -894,24 +894,26 @@ function CloudSummary() {
             flex: 1;
         }
         .cloud-observation-footer {
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 8px 16px;
+            position: relative;
             margin-top: 12px;
             color: var(--color-muted);
             font-size: 0.75rem;
         }
         .cloud-observation-footer .summary-time {
+            position: absolute;
+            inset-block-start: 0;
+            inset-inline-start: 0;
             margin: 0;
             font-size: inherit;
         }
         .cloud-metar-details {
+            width: 100%;
             min-width: 0;
             max-width: 100%;
         }
         .cloud-metar-details summary {
+            width: max-content;
+            margin-inline-start: auto;
             cursor: pointer;
         }
         .cloud-estimates {
@@ -1013,8 +1015,8 @@ function CloudSummary() {
             min-width: 0;
             margin-top: 8px;
             padding-bottom: 4px;
-            overflow-x: auto;
-            white-space: nowrap;
+            overflow-wrap: anywhere;
+            white-space: normal;
             font-family: var(--font-mono);
             font-size: 0.8rem;
             color: var(--color-muted);

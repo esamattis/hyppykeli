@@ -502,6 +502,21 @@ test.describe("cloud parsing extensions", () => {
         });
     }
 
+    test("parses known cloud heights with unavailable cloud types", () => {
+        const m = parseMetar(
+            "METAR EFLA 041150Z AUTO 22005KT 200V260 9999 -RA SCT007/// BKN009/// OVC014/// 12/11 Q1014 RERA=",
+        );
+
+        expect(m.clouds).toMatchObject([
+            { metarCode: "SCT007///", altitude: 700 },
+            { metarCode: "BKN009///", altitude: 900 },
+            { metarCode: "OVC014///", altitude: 1400 },
+        ]);
+        expect(m.temperature).toBe(12);
+        expect(m.dewpoint).toBe(11);
+        expect(m.altimeterInHpa).toBe(1014);
+    });
+
     test("consumes unavailable cloud data without losing temperature or pressure", () => {
         const m = parseMetar("EFJY 040720Z 19007KT 9999 ////// 11/09 Q1014");
         expect(m.clouds).toBeNull();

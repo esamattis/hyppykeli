@@ -378,6 +378,29 @@ test("METAR cloud layers show coverage, heights and conversion help", async ({
     await expect(report).toHaveText(metar);
 });
 
+test("METAR cloud layers render when cloud types are unavailable", async ({
+    page,
+}) => {
+    const metar =
+        "METAR EFLA 041150Z AUTO 22005KT 200V260 9999 -RA SCT007/// BKN009/// OVC014/// 12/11 Q1014 RERA=";
+    const params = new URLSearchParams(developerPath.split("?")[1]);
+    params.set("DEV_metar", metar);
+    await page.goto(`/dz/?${params}`);
+
+    const layers = page.locator("#clouds .cloud-layer");
+    await expect(layers).toHaveCount(3);
+    await expect(layers.locator(".cloud-layer-name")).toHaveText([
+        "Täysi pilvikatto",
+        "Rakoileva",
+        "Hajanaisia",
+    ]);
+    await expect(layers.locator(".cloud-layer-base b")).toHaveText([
+        "≈ 450 m",
+        "≈ 250 m",
+        "≈ 200 m",
+    ]);
+});
+
 test("unlocated thunderclouds show a separate warning with wind-change help", async ({
     page,
 }) => {
