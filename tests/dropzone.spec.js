@@ -44,17 +44,50 @@ test("menu closes when clicking outside", async ({ page }) => {
     await expect(page.locator(".side-menu")).not.toBeInViewport();
 });
 
-test("menu closes when selecting a section", async ({ page }) => {
+test("redesigned menu lists dropzones and removes obsolete tools", async ({
+    page,
+}) => {
+    await page.getByRole("button", { name: "Valikko", exact: true }).click();
+    const menu = page.locator(".side-menu");
+    await expect(menu.locator(".dz-grid a")).toHaveCount(15);
+    await expect(
+        menu.getByRole("link", { name: "EFUT", exact: true }),
+    ).toHaveAttribute("href", "/dz/?fmisid=101191&icaocode=EFUT");
+    await expect(menu.getByRole("heading")).toHaveText([
+        "EFJY",
+        "Ennustepäivä",
+        "Hyppypaikat",
+    ]);
+    await expect(
+        menu.locator('select[name="storedQuery"], .css-editor'),
+    ).toHaveCount(0);
+    await expect(
+        menu.getByRole("button", { name: /^(Lataa|Jaa)$/ }),
+    ).toHaveCount(0);
+
+    await menu.getByRole("button", { name: "Sulje valikko" }).click();
+    await expect(menu).not.toBeInViewport();
+    await expect(menu).toHaveAttribute("inert", "");
+});
+
+test("forecast shortcut selects tomorrow without losing weather settings", async ({
+    page,
+}) => {
     const toggle = page.getByRole("button", { name: "Valikko", exact: true });
     await toggle.click();
     await page
         .locator(".side-menu")
-        .getByRole("link", { name: "Havainnot", exact: true })
+        .getByRole("link", { name: "Huomenna", exact: true })
         .click();
-
-    await expect(page).toHaveURL(/#observations-graph$/);
+    await expect(page).toHaveURL(/forecast_day=1/);
+    expect(new URL(page.url()).searchParams.get("fmisid")).toBe("137208");
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await expect(page.locator(".side-menu")).not.toBeInViewport();
+    await toggle.click();
+    await expect(
+        page
+            .locator(".side-menu")
+            .getByRole("link", { name: "Huomenna", exact: true }),
+    ).toHaveAttribute("aria-current", "date");
 });
 
 test("ground wind shows the developer readings and hourly ranges", async ({

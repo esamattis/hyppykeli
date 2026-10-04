@@ -22,7 +22,6 @@ import {
     updateWeatherData,
     LOADING,
     addError,
-    RAW_DATA,
     FORECAST_DAY,
     FORECAST_DATE,
     STALE_FORECASTS,
@@ -36,6 +35,7 @@ import {
     removeSavedDz,
     HOURLY_CLOUD_FORECASTS,
 } from "./data.js";
+import { completeDropzones, partialDropzones } from "./dropzones.js";
 import { DeveloperBanner, DeveloperMode } from "./DeveloperMode.js";
 
 import { Graph } from "./graph.js";
@@ -45,7 +45,6 @@ import { Compass } from "./compass.js";
 import {
     getLiftedCondensationLevel,
     dateOffset,
-    EXAMPLE_CSS,
     formatClock,
     formatDate,
     humanDayText,
@@ -53,7 +52,6 @@ import {
     hasValidWindData,
     getHourlyWindRange,
     removeNullish,
-    saveTextToFile,
     formatCloudBase,
     whenAll,
     coordinateDistance,
@@ -974,7 +972,7 @@ document.addEventListener("click", (e) => {
 
     if (
         e.target instanceof Element &&
-        e.target.closest(".side-menu,.sticky-footer")
+        e.target.closest(".side-menu,.menu-burger")
     ) {
         return;
     }
@@ -982,115 +980,9 @@ document.addEventListener("click", (e) => {
     MENU_OPEN.value = false;
 });
 
-/**
- * @type {Signal<{title: string, href: string}[]>}
- */
-export const OTHER_DZs = signal([]);
-
-// Load DZ list when the menu is opened
-effect(() => {
-    if (!MENU_OPEN.value) {
-        return;
-    }
-
-    // load only once
-    if (OTHER_DZs.value.length > 0) {
-        return;
-    }
-
-    fetch("/").then(async (res) => {
-        if (!res.ok || res.status !== 200) {
-            addError("Virhe haettaessa muita DZ:ta");
-            return;
-        }
-
-        const html = await res.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        const dzs = Array.from(doc.querySelectorAll(".dz-list a")).flatMap(
-            (a) => {
-                if (!(a instanceof HTMLAnchorElement)) {
-                    return [];
-                }
-
-                const title = a.textContent;
-                const href = a.href;
-
-                if (!title || !href) {
-                    return [];
-                }
-
-                const url = new URL(href);
-
-                return { title, href: `${url.pathname}${url.search}` };
-            },
-        );
-
-        dzs.sort((a, b) => a.title.trim().localeCompare(b.title.trim()));
-
-        OTHER_DZs.value = dzs;
-    });
-});
-
-/**
- * @param {SubmitEvent} e
- */
-function downloadDataDump(e) {
-    e.preventDefault();
-    let mode = "download";
-    if (e.submitter instanceof HTMLButtonElement) {
-        mode = e.submitter.value;
-    }
-
-    if (!(e.target instanceof HTMLFormElement)) {
-        return;
-    }
-
-    const formData = new FormData(e.target);
-
-    const storedQuery = /** @type {StoredQuery | null} */ (
-        formData.get("storedQuery")?.toString() ?? null
-    );
-
-    if (!storedQuery) {
-        return;
-    }
-
-    const raw = RAW_DATA.value[storedQuery];
-
-    if (!raw) {
-        return;
-    }
-
-    const date = new Date().toISOString().split("T")[0]?.replaceAll("-", "");
-    const clock = formatClock(new Date()).replace(":", "");
-
-    const name = storedQuery.replaceAll("::", "_");
-    const filename = `hyppykeli_${date}-${clock}_${name}.xml`;
-
-    if (mode === "download") {
-        saveTextToFile(filename, raw);
-    } else {
-        const file = new File([raw], filename, {
-            type: "application/xml",
-        });
-
-        /**
-         * @type {ShareData}
-         */
-        const share = {
-            title: "Hyppykeli datadump " + storedQuery,
-            text: `Hyppykeli datadump ${storedQuery} ${date} ${clock}`,
-            files: [file],
-        };
-
-        if (navigator.canShare(share)) {
-            alert("Jakaminen ei ole tuettu tässä selaimessa.");
-        } else {
-            navigator.share(share);
-        }
-    }
-}
+const OTHER_DZs = [...completeDropzones, ...partialDropzones].sort((a, b) =>
+    a.name.localeCompare(b.name),
+);
 
 /**
  * Navigate to a link without reloading while updating the QUERY_PARAMS signal
@@ -1152,268 +1044,339 @@ export function SideMenu() {
         :scope {
             position: fixed;
             z-index: 200;
-            background-color: var(--color-surface);
-            right: -100%;
             top: 0;
-            bottom: 0px;
-            width: clamp(250px, 300px, 70vw);
-            overflow-y: auto;
-            background-color: var(--color-surface);
+            bottom: 0;
+            right: 0;
+            width: min(360px, calc(100vw - 48px));
+            background: var(--color-surface);
+            border-left: 1px solid var(--color-border);
             box-shadow: var(--shadow-floating);
-            transition: right 0.3s ease;
-            padding: 40px;
-            padding-bottom: 100px;
-        }
-
-        :scope select {
-            width: 100%;
-            margin-bottom: 5px;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            transform: translateX(100%);
+            visibility: hidden;
+            transition:
+                transform 0.25s ease,
+                visibility 0.25s;
         }
 
         :scope.open {
-            right: 0;
+            transform: translateX(0);
+            visibility: visible;
         }
-        .hide {
+
+        .menu-header {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 24px;
+            background: var(--color-surface);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .menu-brand {
+            color: var(--color-primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 4px 0 0;
+            font-size: 1.4rem;
+            overflow-wrap: anywhere;
+        }
+
+        .menu-close {
+            display: grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            flex-shrink: 0;
+            background: var(--color-surface-soft);
+            border-radius: 50%;
+        }
+
+        .menu-content {
+            padding: 16px 24px calc(96px + env(safe-area-inset-bottom));
+        }
+
+        a {
+            text-decoration: none;
+        }
+
+        .dzs a:hover {
+            background: var(--color-surface-hover);
+        }
+
+        .menu-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .menu-section:first-child {
+            margin-top: 0;
+            padding-top: 0;
+            border-top: none;
+        }
+
+        h2 {
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+
+        .forecast-days {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            padding: 4px;
+            margin-bottom: 16px;
+            background: var(--color-surface-soft);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+        }
+
+        .forecast-days a {
+            padding: 8px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .forecast-days a[aria-current="date"] {
+            background: var(--color-primary);
+            color: var(--color-surface);
+        }
+
+        label,
+        .saved-label {
+            display: block;
+            margin-bottom: 6px;
+            color: var(--color-muted);
+            font-size: 0.8rem;
+        }
+
+        input[type="date"] {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .refresh {
+            display: grid;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .refresh br {
             display: none;
         }
 
-        button[value="share"] {
-            margin-left: 1ch;
+        small {
+            color: var(--color-muted);
+            font-size: 0.75rem;
         }
 
         .dz-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 2px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px;
+            margin-top: 16px;
         }
-        .dzs button {
-            margin-left: 1ch;
-            font-size: 50%;
+
+        .dzs a {
+            display: block;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            background: var(--color-surface-soft);
+            font-size: 0.85rem;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+        .saved-dz {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+        }
+
+        .saved-dz a {
+            flex: 1;
+        }
+
+        .saved-dz button {
+            display: grid;
+            place-items: center;
+            padding: 8px;
+            background: transparent;
+            border-color: transparent;
+        }
+
+        .save-dz {
+            width: 100%;
+            margin-top: 6px;
+            background: transparent;
+            font-size: 0.85rem;
+        }
+
+        .menu-footer {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-size: 0.8rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            :scope {
+                transition: none;
+            }
         }
     `);
 
-    /**
-     * @param {MouseEvent} e
-     */
+    /** @param {MouseEvent} e */
     const closeMenuOnLinkClick = (e) => {
-        if (!(e.target instanceof Element)) {
-            return;
-        }
-
-        if (e.target instanceof HTMLAnchorElement || e.target?.closest("a")) {
+        if (e.target instanceof Element && e.target.closest("a")) {
             MENU_OPEN.value = false;
         }
     };
 
     return html`
-        <div
+        <aside
+            id="side-menu"
+            aria-label="Valikko"
+            inert=${!MENU_OPEN.value}
             class="${MENU_OPEN.value ? "side-menu open" : "side-menu"}"
             onClick=${closeMenuOnLinkClick}
         >
             ${scope.style}
-            <h1>${NAME.value}</h1>
-
-            <a href="/?no_redirect">Etusivulle</a>
-
-            <h2>Ennuste</h2>
-
-            <p>
-                ${
-                    FORECAST_DAY.value === 0
-                        ? html`
-                              <a
-                                  onClick=${asInPageNavigation}
-                                  href="${getQs({ forecast_day: "1" })}"
-                              >
-                                  Näytä huomisen ennuste
-                              </a>
-                          `
-                        : html`
-                              <a
-                                  onClick=${asInPageNavigation}
-                                  href="${getQs({ forecast_day: undefined })}"
-                              >
-                                  Näytä tämän päivän ennuste
-                              </a>
-                          `
-                }
-            </p>
-
-            <form>
-                Hae ennuste päivälle:${" "}
-                <input
-                    type="date"
-                    name="forecast_date"
-                    min=${new Date().toISOString().split("T")[0]}
-                    max=${dateOffset(9).toISOString().split("T")[0]}
-                    onInput=${handleForecastDayChange}
-                    value=${FORECAST_DATE.value.toISOString().split("T")[0]}
-                />
-            </form>
-
-            <h2>Päivitä sisältö</h2>
-
-            <p>
-                <${UpdateButton} />
-            </p>
-
-            <h2>Osiot</h2>
-
-            <p>
-                <a href="#observations-graph">
-                    Havainnot ${h(Icon, { name: "chart" })}
-                </a>
-            </p>
-            <p>
-                <a href="#forecasts-graph">
-                    Ennusteet ${h(Icon, { name: "chart" })}
-                </a>
-            </p>
-            <p><a href="#high-winds-today">Ylätuuliennusteet</a></p>
-
-            <h2>Hyppypaikat</h2>
-
-            <h3>Tallennetut</h3>
-
-            <div class="dzs" onClick=${savePreviousDz}>
-                ${SAVED_DZs.value.flatMap((dz) => {
-                    const name = dz.name;
-                    if (!name) {
-                        return [];
-                    }
-
-                    const qs =
-                        "?" + new URLSearchParams(removeNullish(dz)).toString();
-
-                    return html`
-                        <p>
-                            <a href=${qs}>${name}</a>
-                            <button
-                                type="button"
-                                onClick=${() => {
-                                    if (
-                                        confirm(
-                                            "Haluatko varmasti poistaa tallennetun DZ:n?",
-                                        )
-                                    ) {
-                                        // Remove after timeout so the button is still present
-                                        // whent the outside click detection is triggered
-                                        // or otherwise the menu is unintentionally closed
-                                        setTimeout(() => {
-                                            removeSavedDz(name);
-                                        });
-                                    }
-                                }}
-                            >
-                                ╳
-                            </button>
-                        </p>
-                    `;
-                })}
-            </div>
-
-            <button
-                type="button"
-                onClick=${() => {
-                    saveCurrentDz(prompt("Nimi", NAME.value));
-                }}
-            >
-                Tallenna nykyinen
-            </button>
-
-            <h3>Muut</h3>
-            <div class="dzs dz-grid" onClick=${savePreviousDz}>
-                ${OTHER_DZs.value.map(
-                    (dz) => html`
-                        <p><a href=${dz.href}>${dz.title}</a></p>
-                    `,
-                )}
-            </div>
-
-            <h2>Ongelmia?</h2>
-
-            <p>
-                Näkyykö tiedot jotenkin väärin? Lataa alla olevasta napista
-                datadumpit ja lähetä ne Esalle hyppykeli@esamatti.fi ja kerro
-                millä tavalla ne näkyi väärin. Laita kuvakaappaus mukaan myös.
-            </p>
-
-            <form onSubmit=${downloadDataDump}>
-                <select name="storedQuery">
-                    ${Object.keys(RAW_DATA.value).map(
-                        (key) => html`
-                            <option value=${key}>${key}</option>
-                        `,
-                    )}
-                </select>
-                <button type="submit" name="mode" value="download">
-                    Lataa
-                </button>
+            <header class="menu-header">
+                <div>
+                    <span class="menu-brand">Hyppykeli</span>
+                    <h1>${NAME.value}</h1>
+                </div>
                 <button
-                    class=${
-                        // @ts-ignore
-                        navigator.share ? "" : "hide"
-                    }
-                    type="submit"
-                    name="mode"
-                    value="share"
+                    class="menu-close"
+                    type="button"
+                    aria-label="Sulje valikko"
+                    onClick=${() => {
+                        MENU_OPEN.value = false;
+                    }}
                 >
-                    Jaa
+                    ${h(Icon, { name: "close", size: 20 })}
                 </button>
-            </form>
+            </header>
 
-            <h2>Muokkaa näkymää</h2>
-            <p>
-                Tee mukautettu näkymä lisäämällä omaa CSS-koodia. Katso
-                esimerkki${" "}
-                <a
-                    onClick=${asInPageNavigation}
-                    href=${getQs({ css: btoa(EXAMPLE_CSS) })}
-                >
-                    tästä
-                </a>
-            </p>
-            <${CSSEditor} />
+            <div class="menu-content">
+                <section class="menu-section" aria-labelledby="menu-forecast">
+                    <h2 id="menu-forecast">Ennustepäivä</h2>
+                    <div class="forecast-days">
+                        <a
+                            onClick=${asInPageNavigation}
+                            href=${getQs({ forecast_day: undefined })}
+                            aria-current=${FORECAST_DAY.value === 0 ? "date" : undefined}
+                        >
+                            Tänään
+                        </a>
+                        <a
+                            onClick=${asInPageNavigation}
+                            href=${getQs({ forecast_day: "1" })}
+                            aria-current=${FORECAST_DAY.value === 1 ? "date" : undefined}
+                        >
+                            Huomenna
+                        </a>
+                    </div>
+                    <label for="menu-forecast-date">Valitse päivä</label>
+                    <input
+                        id="menu-forecast-date"
+                        type="date"
+                        name="forecast_date"
+                        min=${new Date().toISOString().split("T")[0]}
+                        max=${dateOffset(9).toISOString().split("T")[0]}
+                        onInput=${handleForecastDayChange}
+                        value=${FORECAST_DATE.value.toISOString().split("T")[0]}
+                    />
+                    <div class="refresh"><${UpdateButton} /></div>
+                </section>
 
-            <!-- prettier-ignore -->
-            <p>
-                Tietoja palvelusta: Katso <a href="/?no_redirect=1">etusivu</a>.
-            </p>
-            ${h(DeveloperMode, {
-                onOpen: () => {
-                    MENU_OPEN.value = false;
-                },
-            })}
-        </div>
-    `;
-}
+                <section class="menu-section" aria-labelledby="menu-dropzones">
+                    <h2 id="menu-dropzones">Hyppypaikat</h2>
+                    ${
+                        SAVED_DZs.value.length > 0
+                            ? html`
+                                  <span class="saved-label">Tallennetut</span>
+                              `
+                            : null
+                    }
+                    <div class="dzs" onClick=${savePreviousDz}>
+                        ${SAVED_DZs.value.flatMap((dz) => {
+                            const name = dz.name;
+                            if (!name) return [];
+                            const qs =
+                                "?" +
+                                new URLSearchParams(
+                                    removeNullish(dz),
+                                ).toString();
+                            return html`
+                                <div class="saved-dz">
+                                    <a href=${qs}>${name}</a>
+                                    <button
+                                        type="button"
+                                        aria-label=${`Poista tallennettu hyppypaikka ${name}`}
+                                        onClick=${() => {
+                                            if (
+                                                confirm(
+                                                    "Haluatko varmasti poistaa tallennetun DZ:n?",
+                                                )
+                                            ) {
+                                                // Keep the target present until outside click detection runs.
+                                                setTimeout(() =>
+                                                    removeSavedDz(name),
+                                                );
+                                            }
+                                        }}
+                                    >
+                                        ${h(Icon, { name: "close", size: 16 })}
+                                    </button>
+                                </div>
+                            `;
+                        })}
+                    </div>
+                    <button
+                        class="save-dz"
+                        type="button"
+                        onClick=${() => saveCurrentDz(prompt("Nimi", NAME.value))}
+                    >
+                        + Tallenna nykyinen
+                    </button>
+                    <div class="dzs dz-grid" onClick=${savePreviousDz}>
+                        ${OTHER_DZs.map(
+                            (dz) => html`
+                                <a href=${dz.href}>${dz.name}</a>
+                            `,
+                        )}
+                    </div>
+                </section>
 
-/**
- * @param {Object} e
- * @param {HTMLFormElement} e.target
- * @param {()=>void} e.preventDefault
- */
-function handleCSSEditorSubmit(e) {
-    e.preventDefault();
-    const css = new FormData(e.target).get("css")?.toString() ?? "";
-    navigateQs({ css: btoa(css) });
-}
-
-function CSSEditor() {
-    const scope = useScope(css`
-        :scope textarea {
-            width: 100%;
-            height: 30ch;
-        }
-    `);
-
-    // prettier-ignore
-    return html`
-        <form class="css-editor" onSubmit=${handleCSSEditorSubmit}>
-            ${scope.style}
-            <textarea name="css">${atob(QUERY_PARAMS.value.css || "")}</textarea>
-            <button type="submit">Submit</button>
-        </form>
+                <footer class="menu-section menu-footer">
+                    <a href="/?no_redirect=1">Etusivulle</a>
+                    ${h(DeveloperMode, {
+                        onOpen: () => {
+                            MENU_OPEN.value = false;
+                        },
+                    })}
+                </footer>
+            </div>
+        </aside>
     `;
 }
 
@@ -1429,93 +1392,44 @@ function RenderInjectedCSS() {
     `;
 }
 
-export function StickyFooter() {
+export function FloatingMenuButton() {
     const scope = useScope(css`
-        :scope .item .icon,
-        :scope .item .text {
-            display: flex;
-            justify-content: center;
-        }
-
-        :scope .item {
-            display: flex;
-            justify-items: center;
-            align-items: center;
-            text-decoration: none;
-            height: 100%;
-        }
-
         :scope {
-            display: flex;
-            z-index: 200;
-            align-items: center;
-            height: 64px;
             position: fixed;
-            bottom: 0;
-            width: 100%;
-            border-top: 1px solid var(--color-border);
-            background-color: var(--color-surface);
+            z-index: 201;
+            right: calc(20px + env(safe-area-inset-right));
+            bottom: calc(20px + env(safe-area-inset-bottom));
+            display: grid;
+            place-items: center;
+            width: 56px;
+            height: 56px;
+            padding: 0;
+            border: none;
+            border-radius: 50%;
+            background: var(--color-primary);
+            color: var(--color-surface);
             box-shadow: var(--shadow-floating);
-            overflow-x: auto;
-            justify-content: space-around;
         }
-        :scope .item {
-            padding: 6px 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        :scope .item:hover {
-            background: var(--color-surface-hover);
-        }
-        .menu-burger {
-            height: 40px;
-            width: 40px;
-            font-size: 150%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+
+        :scope:hover {
+            background: var(--color-primary-hover);
         }
     `);
 
     return html`
-        <div class="sticky-footer">
+        <button
+            class="menu-burger"
+            type="button"
+            aria-label="Valikko"
+            aria-expanded=${MENU_OPEN.value}
+            aria-controls="side-menu"
+            onClick=${() => {
+                MENU_OPEN.value = !MENU_OPEN.value;
+            }}
+        >
             ${scope.style}
-            <a class="item" href="#top" aria-label="Takaisin ylös">
-                <div class="wrap">
-                    <div class="icon">${h(Icon, { name: "up", size: 24 })}</div>
-                </div>
-            </a>
-
-            <a class="item" href="#observations-graph">
-                <div class="wrap">
-                    <div class="icon">
-                        ${h(Icon, { name: "chart", size: 24 })}
-                    </div>
-                    <div class="text">Kaaviot</div>
-                </div>
-            </a>
-
-            <a class="item" href="#high-winds-today">
-                <div class="wrap">
-                    <div class="icon">
-                        ${h(Icon, { name: "wind", size: 24 })}
-                    </div>
-                    <div class="text">Ylätuulet</div>
-                </div>
-            </a>
-
-            <button
-                class="menu-burger"
-                type="button"
-                aria-label="Valikko"
-                aria-expanded=${MENU_OPEN.value}
-                onClick=${() => {
-                    MENU_OPEN.value = !MENU_OPEN.value;
-                }}
-            >
-                ${h(Icon, { name: "menu", size: 24 })}
-            </button>
-        </div>
+            ${h(Icon, { name: MENU_OPEN.value ? "close" : "menu", size: 24 })}
+        </button>
     `;
 }
 
@@ -1961,7 +1875,7 @@ export function Root() {
             <${HighWinds} />
         </div>
         <${SideMenu} />
-        <${StickyFooter} />
+        <${FloatingMenuButton} />
 
         <${RenderInjectedCSS} />
     `;

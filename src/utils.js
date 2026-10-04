@@ -19,26 +19,6 @@ export function formatDate(date) {
 }
 
 /**
- * Save a text string to a file on the user's computer.
- *
- * @param {string} filename - The name of the file to be saved.
- * @param {string} text - The text content to be saved in the file.
- */
-export function saveTextToFile(filename, text) {
-    const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-
-    a.click();
-
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-/**
  * @param {number} offset
  */
 export function dateOffset(offset) {
@@ -110,80 +90,6 @@ export function safeParseNumber(value) {
 
     return { value: null };
 }
-
-export const EXAMPLE_CSS = `
-    #clouds,
-    #forecasts-graph,
-    #forecasts-table,
-    #high-winds-today h2 + p,
-    #high-winds-tomorrow,
-    #info,
-    #observations-table,
-    #title,
-    #winds,
-    button.help,
-    .content h2 {
-        display: none;
-    }
-    .content.grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-    }
-    #observations-graph {
-        grid-column: 1;
-        grid-row: 1;
-        width: 100%;
-        overflow-y: hidden;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-    #observations-graph .chart {
-        height: clamp(200px, 50vh, 400px) !important;
-        width: clamp(200px, 100vw, 480px) !important;
-    }
-    #high-winds-today {
-        grid-column: 1;
-        grid-row: 2;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-    #high-winds-today .wind-table-scroll {
-        max-width: 100%;
-    }
-    .time-header {
-        min-width: 50px;
-    }
-    #compass.compass {
-        grid-column: 2;
-        grid-row: 1/3;
-        width: clamp(200px, 50vw, 600px) !important;
-        position: relative !important;
-        top: unset !important;
-        right: unset !important;
-        box-shadow: none !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-    }
-    .compass-observations-gust,
-    .compass-observations-speed {
-        display: block;
-    }
-    @media (max-width: 900px) {
-        .content.grid {
-            display: block;
-            gap: 0;
-        }
-        #compass.compass {
-            width: clamp(200px, 70vw, 900px) !important;
-            margin: 0 auto;
-        }
-    }
-`;
 
 /**
  * @param {WeatherData|undefined} obs

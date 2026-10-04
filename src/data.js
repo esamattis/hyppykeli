@@ -336,11 +336,6 @@ export const FORECAST_DATE = computed(() => {
     return date;
 });
 
-/**
- * @type {Signal<{ [K in StoredQuery]?: string}>}
- */
-export const RAW_DATA = signal({});
-
 /** @type {ReturnType<typeof setTimeout>} */
 let timer;
 
@@ -389,10 +384,6 @@ export async function fmiRequest(storedQuery, params, exampleUrl) {
         let data;
         try {
             const text = await response.text();
-            RAW_DATA.value = {
-                ...RAW_DATA.value,
-                [storedQuery]: text,
-            };
             const parser = new DOMParser();
             data = parser.parseFromString(text, "application/xml");
         } catch (error) {
