@@ -1,6 +1,6 @@
 // Ported from https://github.com/skydivejkl/metar.js/blob/master/test/metar.test.js
 import { test, expect } from "@playwright/test";
-import { parseMETAR as parseMetar, parseRVR } from "../src/metar.js";
+import { parseMETAR as parseMetar, parseRVR } from "../src/weather/metar.js";
 
 test.describe("METAR parser", function () {
     test("can parse type", function () {

@@ -1,0 +1,289 @@
+// @ts-check
+import { QUERY_PARAMS } from "../app/settings.js";
+import { parseGroundObservations } from "../developer/overrides.js";
+import { isNullish } from "../shared/values.js";
+import { t } from "../translations.js";
+import {
+    hasValidAverageWindData,
+    hasValidWindData,
+    knotsToMs,
+} from "./calculations.js";
+import { parseMetarMessages } from "./metarMessages.js";
+import { computed, signal } from "@preact/signals";
+
+/**
+ * @type {Signal<number>}
+ */
+export const LOADING = signal(0);
+
+/**
+ * @type {Signal<boolean>}
+ */
+export const STALE_FORECASTS = signal(true);
+
+/**
+ * @type {Signal<string | undefined>}
+ */
+export const STATION_NAME = signal(undefined);
+
+/**
+ * @type {Signal<WeatherData[]>}
+ */
+export const LIVE_OBSERVATIONS = signal([]);
+
+/**
+ * Current modelled surface weather used only when station observations are
+ * unavailable. It must not be included in OBSERVATIONS or the observations
+ * chart would present a forecast as a measurement.
+ * @type {Signal<WeatherData|undefined>}
+ */
+export const OPEN_METEO_CURRENT = signal(undefined);
+
+export const OBSERVATIONS = computed(() => {
+    const live = LIVE_OBSERVATIONS.value;
+    const overrides = parseGroundObservations(
+        QUERY_PARAMS.value.DEV_ground_obs,
+    );
+    if (!overrides) return live;
+    const now = Date.now();
+    const cutoff = now - 60 * 60 * 1000;
+    const recent = live.filter(
+        (observation) => observation.time.getTime() >= cutoff,
+    );
+    const edited = overrides.map(({ age, gust, speed, direction }, index) => ({
+        ...recent[index],
+        source: /** @type {const} */ ("mock"),
+        time: new Date(now - age * 60 * 1000),
+        gust,
+        speed,
+        direction,
+    }));
+    return [
+        ...edited,
+        ...live.filter((observation) => observation.time.getTime() < cutoff),
+    ];
+});
+
+export const HAS_WIND_OBSERVATIONS = computed(() => {
+    let count = 0;
+
+    for (const obs of OBSERVATIONS.value) {
+        if (hasValidWindData(obs)) {
+            count++;
+        }
+
+        // At least two observations with wind data
+        if (count > 1) {
+            return true;
+        }
+    }
+
+    return false;
+});
+
+/**
+ * @type {Signal<WeatherData|undefined>}
+ */
+export const HOVERED_OBSERVATION = signal(undefined);
+
+/**
+ * @type {ReadonlySignal<WeatherData|undefined>}
+ */
+export const LATEST_OBSERVATION = computed(() => {
+    const obs = OBSERVATIONS.value[0];
+
+    if (obs && (obs.source === "mock" || hasValidWindData(obs))) {
+        return OBSERVATIONS.value[0];
+    }
+
+    const metar = METARS.value?.[0];
+    if (metar) {
+        /** @type {WeatherData} */
+        const metarWeather = {
+            source: "metar",
+            time: metar.time,
+            gust: isNullish(metar.wind.gust)
+                ? undefined
+                : knotsToMs(metar.wind.gust),
+            speed: isNullish(metar.wind.speed)
+                ? undefined
+                : knotsToMs(metar.wind.speed),
+            direction:
+                typeof metar.wind.direction === "number"
+                    ? metar.wind.direction
+                    : undefined,
+            temperature: metar.temperature,
+            dewPoint: metar.dewpoint,
+        };
+        if (hasValidAverageWindData(metarWeather)) return metarWeather;
+    }
+
+    const model = OPEN_METEO_CURRENT.value;
+    return hasValidWindData(model) ? model : undefined;
+});
+
+/**
+ * @type {Signal<WeatherData[]>}
+ */
+export const FORECASTS = signal([]);
+
+/** @type {Signal<"FMI" | "Open-Meteo" | null>} */
+export const FORECAST_SOURCE = signal(null);
+
+/** @param {WeatherData["source"] | undefined} source */
+export function weatherSourceLabel(source) {
+    switch (source) {
+        case "fmi":
+            return "FMI";
+        case "roads":
+            return "Fintraffic";
+        case "metar":
+            return "METAR";
+        case "openmeteo":
+            return t("source.openMeteoModeled");
+        case "mock":
+            return t("source.developerMode");
+        case "forecast":
+            return FORECAST_SOURCE.value;
+        default:
+            return null;
+    }
+}
+
+export const OBSERVATION_SOURCE = computed(() =>
+    weatherSourceLabel(OBSERVATIONS.value[0]?.source),
+);
+
+export const WIND_SOURCE = computed(() =>
+    weatherSourceLabel(LATEST_OBSERVATION.value?.source),
+);
+
+/**
+ * @type {Signal<WeatherData[]>}
+ */
+export const HOURLY_CLOUD_FORECASTS = computed(() => {
+    const now = Date.now();
+    return FORECASTS.value
+        .filter(
+            (forecast) =>
+                forecast.time.getTime() > now &&
+                forecast.time.getMinutes() === 0,
+        )
+        .slice(0, 12);
+});
+
+/**
+ * @type {Signal<MetarData[] | undefined>}
+ */
+export const LIVE_METARS = signal(undefined);
+
+export const METARS = computed(() => {
+    const text = QUERY_PARAMS.value.DEV_metar?.trim();
+    if (!text) return LIVE_METARS.value;
+    try {
+        return parseMetarMessages([text]);
+    } catch {
+        return LIVE_METARS.value;
+    }
+});
+
+/**
+ * @type {Signal<string|null>}
+ */
+export const STATION_COORDINATES = signal(null);
+
+/**
+ * @type {Signal<string|null>}
+ */
+export const FORECAST_COORDINATES = signal(null);
+
+if (QUERY_PARAMS.value.lat && QUERY_PARAMS.value.lon) {
+    FORECAST_COORDINATES.value = `${QUERY_PARAMS.value.lat},${QUERY_PARAMS.value.lon}`;
+}
+
+/**
+ * @type {Signal<string|null>}
+ */
+export const FORECAST_LOCATION_NAME = signal(null);
+
+/** @type {Signal<string|undefined>} */
+export const FMI_FORECAST_NAME = signal(undefined);
+
+/** @param {string|null|undefined} value */
+function nonEmpty(value) {
+    return value?.trim() || undefined;
+}
+
+/** @param {string|null} coordinates */
+function formatCoordinates(coordinates) {
+    if (!coordinates) return undefined;
+    const [latitudeText, longitudeText] = coordinates.split(",");
+    const latitude = Number(latitudeText);
+    const longitude = Number(longitudeText);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        return undefined;
+    }
+    return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+}
+
+/**
+ * Display name precedence: explicit name, ICAO code, FMI forecast location,
+ * observation station, forecast coordinates, and finally the app name.
+ */
+export const NAME = computed(
+    () =>
+        nonEmpty(QUERY_PARAMS.value.name) ??
+        nonEmpty(QUERY_PARAMS.value.icaocode) ??
+        nonEmpty(FMI_FORECAST_NAME.value) ??
+        nonEmpty(STATION_NAME.value)?.replace(
+            / \((?:FMI|Digitraffic)\)$/,
+            "",
+        ) ??
+        formatCoordinates(FORECAST_COORDINATES.value) ??
+        "Hyppykeli",
+);
+
+/**
+ * @type {Signal<string[]>}
+ */
+export const ERRORS = signal([]);
+
+/**
+ *  How many days in the future the forecast is for.
+ *  0 = today, 1 = tomorrow, 2 = day after tomorrow, etc.
+ *
+ * @type {Signal<number>}
+ */
+export const FORECAST_DAY = computed(() => {
+    const day = QUERY_PARAMS.value.forecast_day;
+    return day ? Number(day) : 0;
+});
+
+/**
+ * @type {Signal<Date>}
+ */
+export const FORECAST_DATE = computed(() => {
+    const day = FORECAST_DAY.value;
+
+    STALE_FORECASTS.value = true;
+
+    if (day === 0) {
+        return new Date();
+    }
+
+    const date = new Date();
+    date.setDate(date.getDate() + day);
+    return date;
+});
+
+/**
+ * @param {string} msg
+ */
+export function addError(msg) {
+    ERRORS.value = [...ERRORS.value, msg];
+}
+
+/**
+ * @type {import("@preact/signals").Signal<OpenMeteoWeatherData | null>}
+ */
+export const OM_DATA = signal(null);

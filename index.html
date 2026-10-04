@@ -30,7 +30,8 @@
             }
         </script>
         <script type="module">
-            import { LandingPage, redirectToDz } from "/src/landing-page.js";
+            import { LandingPage } from "/src/landing/LandingPage.js";
+            import { redirectToDz } from "/src/landing/redirect.js";
             import { render, h } from "preact";
             redirectToDz();
             render(h(LandingPage), document.getElementById("landing-page"));

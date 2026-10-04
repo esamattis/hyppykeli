@@ -24,7 +24,6 @@
         <script type="importmap">
             {
                 "imports": {
-                    "./": "/src/",
                     "@preact/signals": "/vendor/build/preact-signals.js",
                     "preact/hooks": "/vendor/build/preact-hooks.js",
                     "htm/preact": "/vendor/build/htm.js",
@@ -36,20 +35,22 @@
         </script>
         <script type="module">
             // preload to avoid request waterfalls
-            import "./data.js";
-            import "./utils.js";
-            import "./graph.js";
-            import "./compass.js";
+            import "/src/weather/state.js";
+            import "/src/shared/dates.js";
+            import "/src/weather/Graph.js";
+            import "/src/weather/Compass.js";
             import "htm/preact";
             import "preact/hooks";
             import "@preact/signals";
             import "chart.js";
 
             // init the app
-            import { Root } from "./ui.js";
+            import { App } from "/src/app/App.js";
+            import { startApp } from "/src/app/start.js";
             import { render, h } from "preact";
+            startApp();
             const root = document.getElementById("root");
-            render(h(Root), root);
+            render(h(App), root);
         </script>
     </head>
     <body>

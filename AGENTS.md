@@ -2,6 +2,25 @@
 
 Coding rules for AI agents and humans alike.
 
+## Source organization
+
+Group source modules by the feature that owns them:
+
+- `src/app`: dropzone page composition, navigation, settings, and startup.
+- `src/landing`: landing page and dropzone creation.
+- `src/weather`: weather state, refresh orchestration, calculations, and UI.
+- `src/weather/providers`: API requests, caching, and response parsing. Providers
+  return data; refresh orchestration owns updates to weather signals.
+- `src/map`: map UI, map state, freefall, and jump-run calculations.
+- `src/developer`: developer UI and observation overrides.
+- `src/shared`: reusable UI primitives and general-purpose helpers.
+
+Keep component styles with their components. Use PascalCase filenames for
+components and descriptive names for other modules. Import modules directly.
+Shared styles, translations, dropzone listings, and ambient types remain at the
+`src` root. Browser listeners and weather polling start explicitly through
+`src/app/start.js`; importing state or calculation modules must not start polling.
+
 ## Types and validation
 
 The project uses TypeScript through JSDoc comments in `.js` files, with strict

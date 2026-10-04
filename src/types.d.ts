@@ -653,3 +653,17 @@ interface DataSourceProps {
     children?: import("preact").ComponentChildren;
     plural?: boolean;
 }
+
+interface FmiRequestOptions {
+    mock: boolean;
+    onLoading: (delta: number) => void;
+}
+
+interface FmiForecastOptions extends FmiRequestOptions {
+    range: number;
+    day: number;
+}
+
+interface FmiObservationOptions extends FmiRequestOptions {
+    startTime: Date;
+}
