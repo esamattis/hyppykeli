@@ -31,7 +31,7 @@ const artwork = {
         <path d="M4 6h16M4 12h16M4 18h16" />
     `,
     lightning: html`
-        <path d="m13 2-9 12h7l-1 8 10-13h-7z" />
+        <path d="m13 2-9 12h7l-1 8 10-13h-7z" fill="currentColor" />
     `,
     storm: html`
         <path
@@ -83,8 +83,15 @@ const artwork = {
     `,
     cloudFog: html`
         <path
-            d="M6 12a3.5 3.5 0 0 1 2.5-6 5 5 0 0 1 9.5-1 4 4 0 0 1 0 8M3 16h13M19 16h2M5 20h3M11 20h10"
+            d="M6 15a4 4 0 0 1-1-8 5 5 0 0 1 9-3 4 4 0 0 1 5 3 4 4 0 0 1-1 8Z"
+            fill="currentColor"
+            fill-opacity="0.12"
         />
+        <path
+            d="m7 8 3 1M17 8l-3 1M10 13q2-2 4 0M2 19h13M18 19h4M5 23h3M11 23h8"
+        />
+        <circle cx="9" cy="10" r="0.7" fill="currentColor" stroke="none" />
+        <circle cx="15" cy="10" r="0.7" fill="currentColor" stroke="none" />
     `,
     arrow: html`
         <path d="M12 3 21 21 12 17 3 21Z" fill="currentColor" stroke="none" />

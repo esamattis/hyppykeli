@@ -638,12 +638,19 @@ function setMETARSfromMetarMessage(metars) {
 export function parseMetarMessages(metars) {
     return metars.map((metar) => {
         const m = parseMETAR(metar);
+        const cloudTokens = (metar.split(/\s+RMK\b/)[0] ?? metar)
+            .split(/\s+/)
+            .filter((token) =>
+                /^(?:NCD|SKC|CLR|NSC|FEW|SCT|BKN|OVC|VV)(?:\d{3}|\/{3})?(?:CB|TCU)?$/.test(
+                    token,
+                ),
+            );
 
         /** @type MetarData */
         const metarData = {
             time: new Date(m.time),
             metar,
-            cb: /[^ ]CB /.test(metar),
+            cbWithoutLayer: /(?:^|\s)\/\/\/\/\/\/CB(?=\s|$)/.test(metar),
             wind: {
                 gust: m.wind.gust ?? undefined,
                 speed: m.wind.speed ?? undefined,
@@ -652,8 +659,10 @@ export function parseMetarMessages(metars) {
             },
             temperature: m.temperature,
             clouds:
-                m.clouds?.map((cloud) => {
+                m.clouds?.map((cloud, index) => {
                     return {
+                        metarCode: cloudTokens[index],
+                        cumulonimbus: cloud.cumulonimbus,
                         amount: cloud.abbreviation,
                         base: cloud.altitude,
                         unit: "ft",

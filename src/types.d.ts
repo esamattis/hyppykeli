@@ -126,6 +126,8 @@ interface WeatherData {
  * Interface representing a cloud layer.
  */
 interface CloudLayer {
+    metarCode?: string;
+    cumulonimbus?: boolean;
     base: number;
     amount: string;
     unit: string;
@@ -146,7 +148,7 @@ interface MetarData {
         unit: string;
     };
     metar: string;
-    cb: boolean;
+    cbWithoutLayer: boolean;
     time: Date;
     elevation?: number;
 }
@@ -435,6 +437,7 @@ interface CloudTypeDetails {
     label: string;
     icon: IconProps["name"];
     coverage: string;
+    explanation: string;
 }
 
 interface DeveloperModeHandle {

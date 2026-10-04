@@ -142,7 +142,7 @@ test("METAR cloud layers show distinct icons from highest to lowest", async ({
         "1–2/8 taivaasta",
     ]);
 
-    const icons = layers.locator(".cloud-layer-icon svg");
+    const icons = layers.locator(".cloud-layer-icon > svg");
     await expect(icons).toHaveCount(4);
     for (const icon of await icons.all()) {
         await expect(icon).toBeVisible();
@@ -154,10 +154,10 @@ test("METAR cloud layers show distinct icons from highest to lowest", async ({
     expect(new Set(artwork).size).toBe(4);
 
     const conversions = [
-        { metar: "OVC 6000ft", conversion: "6000 ft = 1828,8 m" },
-        { metar: "BKN 3000ft", conversion: "3000 ft = 914,4 m" },
-        { metar: "SCT 1500ft", conversion: "1500 ft = 457,2 m" },
-        { metar: "FEW 500ft", conversion: "500 ft = 152,4 m" },
+        { metar: "OVC060", conversion: "6000 ft = 1828,8 m" },
+        { metar: "BKN030CB", conversion: "3000 ft = 914,4 m" },
+        { metar: "SCT015", conversion: "1500 ft = 457,2 m" },
+        { metar: "FEW005", conversion: "500 ft = 152,4 m" },
     ];
     for (const [index, expected] of conversions.entries()) {
         const layer = layers.nth(index);
@@ -168,17 +168,223 @@ test("METAR cloud layers show distinct icons from highest to lowest", async ({
         await expect(help.locator(".cloud-base-conversion")).toHaveText(
             expected.conversion,
         );
+        if (expected.metar.endsWith("CB")) {
+            await expect(help).toContainText("CB tarkoittaa cumulonimbusta", {
+                useInnerText: true,
+            });
+            await expect(help).toContainText(
+                "äkillisiä muutoksia tuulen nopeudessa ja suunnassa",
+                { useInnerText: true },
+            );
+        }
         await help.getByRole("button", { name: "Sulje", exact: true }).click();
     }
 
-    await expect(card.locator(".cloud-warning")).toHaveText("Ukkospilviä", {
-        useInnerText: true,
-    });
-    await expect(card.locator(".cloud-warning svg")).toBeVisible();
+    await expect(card.locator(".cloud-warning")).toHaveCount(0);
+    await expect(
+        layers.getByRole("img", { name: "Ukkospilviä", exact: true }),
+    ).toHaveCount(1);
+    await expect(
+        layers.nth(1).getByRole("img", { name: "Ukkospilviä", exact: true }),
+    ).toBeVisible();
     await card.locator(".cloud-metar-details summary").click();
     const report = card.getByLabel("METAR", { exact: true });
     await expect(report).toBeVisible();
     await expect(report).toHaveText(metar);
+});
+
+test("unlocated thunderclouds show a separate warning with wind-change help", async ({
+    page,
+}) => {
+    const card = page.locator("#clouds");
+    await expect(card.locator(".cloud-layer")).toHaveCount(1);
+    await expect(card.locator(".cloud-layer .cloud-lightning")).toHaveCount(0);
+    const warning = card.locator(".cloud-warning");
+    await expect(warning).toBeVisible();
+    await expect(warning.locator("span")).toHaveText("Ukkospilviä");
+    await warning.getByRole("button", { name: "Ukkospilvien ohje" }).click();
+    const help = warning.getByRole("dialog");
+    await expect(help).toBeVisible();
+    await expect(help).toContainText(
+        "äkillisiä muutoksia tuulen nopeudessa ja suunnassa",
+        { useInnerText: true },
+    );
+    await expect(help).toContainText(
+        "Havainto ei kerro ukkospilvien peittävyyttä tai korkeutta.",
+        { useInnerText: true },
+    );
+    await expect(help.locator(".metar")).toHaveText("//////CB");
+});
+
+const thundercloudCases = [
+    {
+        name: "few CB",
+        groups: "FEW005CB",
+        layers: ["FEW005CB"],
+        thunder: ["FEW005CB"],
+        separate: false,
+    },
+    {
+        name: "scattered CB",
+        groups: "SCT015CB",
+        layers: ["SCT015CB"],
+        thunder: ["SCT015CB"],
+        separate: false,
+    },
+    {
+        name: "broken CB",
+        groups: "BKN030CB",
+        layers: ["BKN030CB"],
+        thunder: ["BKN030CB"],
+        separate: false,
+    },
+    {
+        name: "overcast CB",
+        groups: "OVC060CB",
+        layers: ["OVC060CB"],
+        thunder: ["OVC060CB"],
+        separate: false,
+    },
+    {
+        name: "multiple CB layers",
+        groups: "FEW005CB SCT015CB BKN030CB OVC060CB",
+        layers: ["OVC060CB", "BKN030CB", "SCT015CB", "FEW005CB"],
+        thunder: ["OVC060CB", "BKN030CB", "SCT015CB", "FEW005CB"],
+        separate: false,
+    },
+    {
+        name: "ordinary clouds",
+        groups: "FEW005 SCT015 BKN030 OVC060",
+        layers: ["OVC060", "BKN030", "SCT015", "FEW005"],
+        thunder: [],
+        separate: false,
+    },
+    {
+        name: "towering cumulus",
+        groups: "SCT015TCU",
+        layers: ["SCT015TCU"],
+        thunder: [],
+        separate: false,
+    },
+    {
+        name: "unlocated CB without other layers",
+        groups: "//////CB",
+        layers: [],
+        thunder: [],
+        separate: true,
+    },
+    {
+        name: "located and unlocated CB together",
+        groups: "FEW005CB SCT015 //////CB",
+        layers: ["SCT015", "FEW005CB"],
+        thunder: ["FEW005CB"],
+        separate: true,
+    },
+    {
+        name: "CB with unknown base",
+        groups: "BKN///CB",
+        layers: ["BKN///CB"],
+        thunder: ["BKN///CB"],
+        separate: false,
+    },
+];
+
+for (const scenario of thundercloudCases) {
+    test(`thundercloud variation: ${scenario.name}`, async ({ page }) => {
+        const params = new URLSearchParams(developerPath.split("?")[1]);
+        params.set(
+            "DEV_metar",
+            `METAR EFJY 041200Z AUTO 19007KT 9999 ${scenario.groups} 11/08 Q1014=`,
+        );
+        await page.goto(`/dz/?${params}`);
+        // Wait for the new report even in cases where zero layers are expected.
+        await expect(page.getByLabel("METAR", { exact: true })).toHaveText(
+            params.get("DEV_metar"),
+        );
+
+        const card = page.locator("#clouds");
+        const layers = card.locator(".cloud-layer");
+        await expect(layers).toHaveCount(scenario.layers.length);
+        await expect(
+            layers.getByRole("img", { name: "Ukkospilviä", exact: true }),
+        ).toHaveCount(scenario.thunder.length);
+        await expect(card.locator(".cloud-warning")).toHaveCount(
+            scenario.separate ? 1 : 0,
+        );
+        if (scenario.separate)
+            await expect(card.locator(".cloud-warning")).toBeVisible();
+
+        for (const [index, code] of scenario.layers.entries()) {
+            const layer = layers.nth(index);
+            const isThundercloud = scenario.thunder.includes(code);
+            const lightning = layer.getByRole("img", {
+                name: "Ukkospilviä",
+                exact: true,
+            });
+            if (isThundercloud) await expect(lightning).toBeVisible();
+            else await expect(lightning).toHaveCount(0);
+            await layer
+                .getByRole("button", { name: "Ohje", exact: true })
+                .click();
+            const help = layer.getByRole("dialog");
+            await expect(help.locator(".metar")).toHaveText(code);
+            if (isThundercloud) {
+                await expect(help).toContainText(
+                    "äkillisiä muutoksia tuulen nopeudessa ja suunnassa",
+                    { useInnerText: true },
+                );
+            } else {
+                await expect(help).not.toContainText(
+                    "CB tarkoittaa cumulonimbusta",
+                    { useInnerText: true },
+                );
+            }
+            if (code === "BKN///CB") {
+                await expect(layer.locator(".cloud-layer-base b")).toHaveCount(
+                    0,
+                );
+                await expect(
+                    help.locator(".cloud-base-conversion"),
+                ).toHaveCount(0);
+            }
+            await help
+                .getByRole("button", { name: "Sulje", exact: true })
+                .click();
+        }
+    });
+}
+
+test("obscured sky METAR shows the grumpy fog icon and vertical visibility", async ({
+    page,
+}) => {
+    const params = new URLSearchParams(developerPath.split("?")[1]);
+    params.set(
+        "DEV_metar",
+        "METAR EFJY 041200Z 00000KT 0200 FG VV002 08/08 Q1014=",
+    );
+    await page.goto(`/dz/?${params}`);
+
+    const layer = page.locator("#clouds .cloud-layer");
+    await expect(layer).toHaveCount(1);
+    await expect(layer.locator(".cloud-layer-name")).toHaveText(
+        "SUMUA PERKELE",
+    );
+    await expect(layer.locator(".cloud-layer-coverage")).toHaveText(
+        "Taivas peittynyt",
+    );
+    await expect(layer.locator(".cloud-layer-icon svg")).toBeVisible();
+    await expect(layer.locator(".cloud-layer-icon svg circle")).toHaveCount(2);
+    await expect(layer.locator(".cloud-layer-base b")).toHaveText("≈ 50 m");
+    await expect(layer.locator(".cloud-base-label")).toHaveText(
+        "Pystynäkyvyys",
+    );
+    await layer.getByRole("button", { name: "Ohje", exact: true }).click();
+    const help = layer.getByRole("dialog");
+    await expect(help).toBeVisible();
+    await expect(help.locator(".metar")).toHaveText("VV002");
+    await expect(help.locator(".cloud-base-conversion")).toHaveText(
+        "200 ft = 60,96 m",
+    );
 });
 
 test("developer banner opens the editor and applies METAR changes", async ({

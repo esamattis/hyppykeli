@@ -583,34 +583,55 @@ const CLOUD_TYPES = {
         label: "Ei pilviä",
         icon: "cloudClear",
         coverage: "Ei havaittuja pilviä",
+        explanation:
+            "NCD tarkoittaa, ettei automaattinen mittaus havainnut pilviä mittauksen havaintoalueella.",
     },
     NSC: {
         label: "Ei merkittäviä pilviä",
         icon: "cloudNsc",
         coverage: "Ei merkittävää pilvisyyttä",
+        explanation:
+            "NSC tarkoittaa, ettei havaittu lentotoiminnan kannalta merkittäviä pilviä. Korkeammalla voi silti olla pilviä.",
     },
-    FEW: { label: "Muutamia", icon: "cloudFew", coverage: "1–2/8 taivaasta" },
+    FEW: {
+        label: "Muutamia",
+        icon: "cloudFew",
+        coverage: "1–2/8 taivaasta",
+        explanation:
+            "FEW tarkoittaa muutamia pilviä: tämä pilvikerros peittää 1–2 kahdeksasosaa taivaasta.",
+    },
     SCT: {
         label: "Hajanaisia",
         icon: "cloudScattered",
         coverage: "3–4/8 taivaasta",
+        explanation:
+            "SCT tarkoittaa hajanaisia pilviä: tämä pilvikerros peittää 3–4 kahdeksasosaa taivaasta.",
     },
     BKN: {
         label: "Rakoileva",
         icon: "cloudBroken",
         coverage: "5–7/8 taivaasta",
+        explanation:
+            "BKN tarkoittaa rakoilevaa pilvikattoa: tämä pilvikerros peittää 5–7 kahdeksasosaa taivaasta.",
     },
     OVC: {
         label: "Täysi pilvikatto",
         icon: "cloudOvercast",
         coverage: "8/8 taivaasta",
+        explanation:
+            "OVC tarkoittaa täyttä pilvikattoa: tämä pilvikerros peittää koko taivaan eli 8/8.",
     },
     VV: {
-        label: "Taivas peittynyt",
+        label: "SUMUA PERKELE",
         icon: "cloudFog",
-        coverage: "Pystynäkyvyys",
+        coverage: "Taivas peittynyt",
+        explanation:
+            "VV tarkoittaa pystynäkyvyyttä: kuinka korkealle maanpinnasta nähdään ylöspäin, kun sumu tai muu este peittää taivaan. Arvo ei ole mitattu pilven alaraja.",
     },
 };
+
+const THUNDERCLOUD_EXPLANATION =
+    "CB tarkoittaa cumulonimbusta eli ukkospilveä. Ukkospilvi voi aiheuttaa äkillisiä muutoksia tuulen nopeudessa ja suunnassa sekä voimakkaita puuskia.";
 
 /** @param {{ cloud: CloudLayer }} props */
 function CloudLayer({ cloud }) {
@@ -623,6 +644,7 @@ function CloudLayer({ cloud }) {
             padding: 14px 0;
         }
         .cloud-layer-icon {
+            position: relative;
             display: grid;
             place-items: center;
             width: 44px;
@@ -630,6 +652,16 @@ function CloudLayer({ cloud }) {
             border-radius: 12px;
             background: var(--color-surface-hover);
             color: var(--color-primary);
+        }
+        .cloud-lightning {
+            position: absolute;
+            right: -3px;
+            bottom: -2px;
+            display: grid;
+            place-items: center;
+            width: 22px;
+            height: 24px;
+            color: var(--color-danger);
         }
         .cloud-layer-name {
             font-weight: 600;
@@ -674,6 +706,15 @@ function CloudLayer({ cloud }) {
             ${scope.style}
             <span class="cloud-layer-icon">
                 ${h(Icon, { name: type?.icon ?? "cloudOvercast", size: 30 })}
+                ${
+                    cloud.cumulonimbus
+                        ? html`
+                              <span class="cloud-lightning">
+                                  ${h(Icon, { name: "lightning", size: 20, label: "Ukkospilviä" })}
+                              </span>
+                          `
+                        : null
+                }
             </span>
             <div>
                 <a class="cloud-layer-name" href=${cloud.href}>
@@ -701,12 +742,50 @@ function CloudLayer({ cloud }) {
                 Help,
                 {},
                 html`
-                    <p class="metar">
-                        ${cloud.amount}${" "}${cloud.base}${cloud.unit}
+                    <h3>
+                        ${cloud.amount === "VV" ? "Pystynäkyvyys" : "Pilvikerros"}
+                    </h3>
+                    <p>
+                        ${type?.explanation ?? `Pilvikerroksen METAR-koodi on ${cloud.amount}.`}
                     </p>
+                    ${
+                        cloud.cumulonimbus
+                            ? html`
+                                  <p>${THUNDERCLOUD_EXPLANATION}</p>
+                              `
+                            : null
+                    }
                     ${
                         hasBase
                             ? html`
+                                  ${
+                                      cloud.amount !== "VV"
+                                          ? html`
+                                                <p>
+                                                    Pilven alaraja on
+                                                    pilvikerroksen pohjan
+                                                    korkeus havaintopaikan
+                                                    maanpinnasta.
+                                                </p>
+                                            `
+                                          : null
+                                  }
+                                  <p>
+                                      Kortin arvo on pyöristetty lähimpään 50
+                                      metriin.
+                                  </p>
+                              `
+                            : null
+                    }
+                    <h3>METAR</h3>
+                    <p class="metar">${cloud.metarCode ?? cloud.amount}</p>
+                    ${
+                        hasBase
+                            ? html`
+                                  <p>
+                                      METARin numerot ilmaisevat korkeuden
+                                      satoina jalkoina (ft).
+                                  </p>
                                   <p class="cloud-base-conversion">
                                       ${`${cloud.base} ${cloud.unit} = ${formatCloudBase(cloud.base, cloud.unit)}`}
                                   </p>
@@ -763,6 +842,9 @@ function CloudSummary() {
                 var(--color-surface)
             );
             font-weight: 600;
+        }
+        .cloud-warning > span {
+            flex: 1;
         }
         .cloud-observation-footer {
             display: flex;
@@ -936,11 +1018,31 @@ function CloudSummary() {
                                     `
                           }
                           ${
-                              metar.cb
+                              metar.cbWithoutLayer
                                   ? html`
                                         <div class="cloud-warning">
                                             ${h(Icon, { name: "storm", size: 24 })}
                                             <span>Ukkospilviä</span>
+                                            ${h(
+                                                Help,
+                                                { label: "Ukkospilvien ohje" },
+                                                html`
+                                                    <h3>Ukkospilviä</h3>
+                                                    <p>
+                                                        ${THUNDERCLOUD_EXPLANATION}
+                                                    </p>
+                                                    <p>
+                                                        Havainto ei kerro
+                                                        ukkospilvien
+                                                        peittävyyttä tai
+                                                        korkeutta.
+                                                    </p>
+                                                    <h3>METAR</h3>
+                                                    <p class="metar">
+                                                        //////CB
+                                                    </p>
+                                                `,
+                                            )}
                                         </div>
                                     `
                                   : null
@@ -1965,9 +2067,7 @@ export function Root() {
             <${Title} />
 
             <div class="clouds" id="clouds">
-                <h2 class="h2-with-icon">
-                    Pilvet ${h(Icon, { name: "cloudScattered", size: 28 })}
-                </h2>
+                <h2 class="h2-with-icon">Pilvet</h2>
 
                 <${CloudSummary} />
             </div>
