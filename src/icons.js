@@ -182,6 +182,29 @@ export function WindArrow({ direction, size = "1em", label }) {
 }
 
 /**
+ * A weather-shaped cloud-cover symbol for compact forecasts. The exact value
+ * is still shown as text; the symbol groups it into quickly scannable 20%
+ * steps.
+ *
+ * @param {Object} props
+ * @param {number} props.percentage
+ * @param {number|string} [props.size]
+ */
+export function CloudCoverIcon({ percentage, size = "1em" }) {
+    const step = Math.round(Math.min(100, Math.max(0, percentage)) / 20);
+    const names = /** @type {const} */ ([
+        "cloudClear",
+        "cloudNsc",
+        "cloudFew",
+        "cloudScattered",
+        "cloudBroken",
+        "cloudOvercast",
+    ]);
+
+    return h(Icon, { name: names[step] ?? "cloudOvercast", size });
+}
+
+/**
  * @param {Object} props
  * @param {number} props.percentage
  */

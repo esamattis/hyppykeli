@@ -40,7 +40,7 @@ import { DeveloperBanner, DeveloperMode } from "./DeveloperMode.js";
 
 import { Graph } from "./graph.js";
 import { DropzoneMap } from "./DropzoneMap.js";
-import { Icon, WindArrow, PieChart } from "./icons.js";
+import { CloudCoverIcon, Icon, WindArrow, PieChart } from "./icons.js";
 import { Compass } from "./compass.js";
 import {
     getLiftedCondensationLevel,
@@ -269,6 +269,36 @@ function ForecastRows(props) {
             </tr>
         `;
     });
+}
+
+/**
+ * Compact cloud-cover reading for the cloud card. Unlike the exact pies in the
+ * full forecast dialog, its weather symbols are deliberately stepped so a run
+ * of hours can be scanned quickly.
+ *
+ * @param {Object} props
+ * @param {number} [props.percentage]
+ */
+function PercentageCloudCover(props) {
+    const scope = useScope(css`
+        :scope {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55ch;
+        }
+    `);
+
+    if (isNullish(props.percentage)) {
+        return null;
+    }
+
+    return html`
+        <span class="cloud-cover">
+            ${scope.style}
+            ${h(CloudCoverIcon, { percentage: props.percentage, size: 24 })}
+            <span class="text">${props.percentage.toFixed(0)} %</span>
+        </span>
+    `;
 }
 
 /**
@@ -1155,6 +1185,18 @@ function CloudSummary() {
                                       </thead>
                                       <tbody>
                                           <tr>
+                                              <th scope="row">Pilvipeitto</th>
+                                              ${forecasts.map(
+                                                  (forecast) => html`
+                                                      <td
+                                                          class="forecast-reading"
+                                                      >
+                                                          ${isNullish(forecast.lowCloudCover) ? "—" : h(PercentageCloudCover, { percentage: forecast.lowCloudCover })}
+                                                      </td>
+                                                  `,
+                                              )}
+                                          </tr>
+                                          <tr>
                                               <th scope="row">
                                                   Tiivistymiskorkeus
                                               </th>
@@ -1173,18 +1215,6 @@ function CloudSummary() {
                                                                       `${getLiftedCondensationLevel(temp, dew)}M`,
                                                               ) ?? "—"
                                                           }
-                                                      </td>
-                                                  `,
-                                              )}
-                                          </tr>
-                                          <tr>
-                                              <th scope="row">Pilvipeitto</th>
-                                              ${forecasts.map(
-                                                  (forecast) => html`
-                                                      <td
-                                                          class="forecast-reading"
-                                                      >
-                                                          ${isNullish(forecast.lowCloudCover) ? "—" : h(PercentagePie, { percentage: forecast.lowCloudCover })}
                                                       </td>
                                                   `,
                                               )}
