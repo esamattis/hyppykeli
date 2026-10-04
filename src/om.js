@@ -65,6 +65,15 @@ const FREE_FALL_HEIGHTS = ["1500", "3000", "4200"];
 export const OM_DATA = signal(null);
 
 /**
+ * Open-Meteo returns offset-free timestamps in the response's timezone.
+ * @param {string} time
+ * @param {number} offset
+ */
+export function forecastTime(time, offset) {
+    return new Date(new Date(`${time}Z`).getTime() - offset * 1000);
+}
+
+/**
  * Validate the forecast fields used by the map and upper-wind tables.
  * @param {unknown} data
  * @returns {data is OpenMeteoWeatherData}
@@ -206,9 +215,9 @@ export async function fetchHighWinds(coordinates) {
 }
 
 /**
- * @param {OpenMeteoHourlyData} hourly
+ * @param {OpenMeteoWeatherData} forecast
  */
-function formatTableData(hourly) {
+function formatTableData({ hourly, utc_offset_seconds }) {
     /** @type {OpenMeteoDayData} */
     const todayData = {};
 
@@ -219,9 +228,19 @@ function formatTableData(hourly) {
 
     TIME_SLOTS.forEach((slot) => {
         if (slot >= blockStartHour - 9) {
-            todayData[slot] = getAverageData(hourly, slot, 0);
+            todayData[slot] = getAverageData(
+                hourly,
+                slot,
+                0,
+                utc_offset_seconds,
+            );
         }
-        tomorrowData[slot] = getAverageData(hourly, slot, 1);
+        tomorrowData[slot] = getAverageData(
+            hourly,
+            slot,
+            1,
+            utc_offset_seconds,
+        );
     });
 
     return { pressureLevels: PRESSURE_LEVELS, todayData, tomorrowData };
@@ -231,8 +250,9 @@ function formatTableData(hourly) {
  * @param {OpenMeteoHourlyData} hourly
  * @param {number} targetHour
  * @param {number} dayOffset
+ * @param {number} offset
  */
-function getAverageData(hourly, targetHour, dayOffset) {
+function getAverageData(hourly, targetHour, dayOffset, offset) {
     const now = new Date();
     const currentHour = now.getHours();
     const isCurrentBlock =
@@ -247,7 +267,7 @@ function getAverageData(hourly, targetHour, dayOffset) {
     currentTime.setMinutes(0, 0, 0);
 
     const relevantIndices = hourly.time.flatMap((time, index) => {
-        const date = new Date(time);
+        const date = forecastTime(time, offset);
         return date >= blockStart && date < blockEnd ? [index] : [];
     });
 
@@ -269,7 +289,9 @@ function getAverageData(hourly, targetHour, dayOffset) {
 
         if (isCurrentBlock) {
             const currentIndex = hourly.time.findIndex(
-                (time) => new Date(time).getTime() === currentTime.getTime(),
+                (time) =>
+                    forecastTime(time, offset).getTime() ===
+                    currentTime.getTime(),
             );
 
             result[level] = {
@@ -424,7 +446,9 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
                     ? null
                     : html`
                           <div class="wind-direction">
-                              <span class="direction-degrees">${roundedDirection}°</span>
+                              <span class="direction-degrees">
+                                  ${roundedDirection}°
+                              </span>
                               ${h(WindArrow, { direction: roundedDirection })}
                           </div>
                       `
@@ -536,7 +560,7 @@ export function WindTable({ days, hourly = false }) {
 }
 
 export function OpenMeteoTool() {
-    const data = OM_DATA.value ? formatTableData(OM_DATA.value.hourly) : null;
+    const data = OM_DATA.value ? formatTableData(OM_DATA.value) : null;
 
     if (!data)
         return html`
@@ -574,7 +598,10 @@ export function OpenMeteoRaw() {
     todayStart.setHours(0, 0, 0, 0);
     const pastIndices = new Set(
         data.hourly.time
-            .map((time, index) => ({ time: new Date(time).getTime(), index }))
+            .map((time, index) => ({
+                time: forecastTime(time, data.utc_offset_seconds).getTime(),
+                index,
+            }))
             .filter(({ time }) => time < currentHourStart.getTime())
             .sort((a, b) => b.time - a.time)
             .slice(0, 3)
@@ -584,7 +611,7 @@ export function OpenMeteoRaw() {
     const days = new Map();
 
     data.hourly.time.forEach((time, index) => {
-        const date = new Date(time);
+        const date = forecastTime(time, data.utc_offset_seconds);
         if (date < currentHourStart && !pastIndices.has(index)) return;
         const dateKey = date.toDateString();
         const isToday = dateKey === today.toDateString();

@@ -444,3 +444,73 @@ test("map wind profile shows the developer average and ground wind", async ({
     await expect(ground).toContainText("4 m/s 194°");
     // Individual altitude forecasts are live data, with no DEV_ override.
 });
+
+test.describe("upper wind forecast timezones", () => {
+    test.use({ timezoneId: "Europe/Helsinki" });
+    for (const offset of [0, 3 * 60 * 60]) {
+        test(`upper wind views agree in Finland with forecast offset ${offset}`, async ({
+            page,
+        }) => {
+            await page.clock.install({
+                time: new Date("2026-07-04T08:30:00Z"),
+            });
+            await page.reload();
+            await page.evaluate(async (offset) => {
+                const { OM_DATA } = await import("/src/om.js");
+                const start = Date.parse("2026-07-04T00:00:00Z");
+                const time = Array.from({ length: 48 }, (_, index) =>
+                    new Date(start + index * 3600000 + offset * 1000)
+                        .toISOString()
+                        .slice(0, 16),
+                );
+                const hourly = { time };
+                for (const level of ["600", "700", "850", "925", "1000"]) {
+                    hourly[`windspeed_${level}hPa`] = time.map(
+                        (_, index) => (11 + index) * 3.6,
+                    );
+                    hourly[`winddirection_${level}hPa`] = time.map(
+                        (_, index) => 234 + index,
+                    );
+                }
+                OM_DATA.value = { utc_offset_seconds: offset, hourly };
+            }, offset);
+
+            const altitude = page.locator("#dropzone-map .wind-level").filter({
+                has: page.getByText("≈ 4200 m", { exact: true }),
+            });
+            await expect(altitude).toContainText("19 m/s 242°");
+            const compact = page.locator(".upperwinds-compact");
+            await expect(compact.locator("th.current-column")).toHaveText(
+                "11:00",
+            );
+            const row = compact.locator("tbody tr").first();
+            await expect(row.locator(".current-column .wind-speed")).toHaveText(
+                "19 m/s",
+            );
+            // Local 12–15 is UTC 09–12, and tomorrow 00–03 starts at UTC 21.
+            await expect(
+                row.locator("td").nth(4).locator(".wind-speed"),
+            ).toHaveText("21 m/s");
+            await expect(
+                row.locator("td").nth(8).locator(".wind-speed"),
+            ).toHaveText("33 m/s");
+
+            await page
+                .getByRole("button", { name: "Näytä tarkat tiedot" })
+                .click();
+            const raw = page.locator(".upperwinds-raw");
+            await expect(raw.locator("th.current-column")).toHaveText("11:00");
+            const current = raw
+                .locator("tbody tr")
+                .first()
+                .locator(".current-column");
+            await expect(current.locator(".wind-speed")).toHaveText("19 m/s");
+            await expect(current.locator(".direction-degrees")).toHaveText(
+                "242°",
+            );
+            await expect(raw.locator("th.time-header").first()).toHaveText(
+                "8:00",
+            );
+        });
+    }
+});

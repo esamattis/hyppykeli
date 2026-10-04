@@ -11,7 +11,7 @@ import {
     NAME,
     getDevNumber,
 } from "./data.js";
-import { OM_DATA } from "./om.js";
+import { OM_DATA, forecastTime } from "./om.js";
 import { formatClock } from "./utils.js";
 import { Icon, WindArrow } from "./icons.js";
 import { Help } from "./components.js";
@@ -78,15 +78,6 @@ export function getMapWindData(now = Date.now()) {
     });
 
     return { data, time, winds, averageWind, ground };
-}
-
-/**
- * Open-Meteo returns offset-free timestamps in the response's timezone.
- * @param {string} time
- * @param {number} offset
- */
-function forecastTime(time, offset) {
-    return new Date(new Date(`${time}Z`).getTime() - offset * 1000);
 }
 
 /** @param {MapWindLevel[]} winds @returns {MapWindLevel} */
