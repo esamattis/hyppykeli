@@ -12,7 +12,7 @@
         "oxfmt-check": "oxfmt --check .",
         "oxfmt": "oxfmt --write .",
         "tsc": "tsc",
-        "test": "pnpm run oxfmt && playwright test",
+        "test": "pnpm run oxfmt && pnpm run tsc && playwright test",
         "test:e2e": "playwright test",
         "build": "./build.sh"
     },

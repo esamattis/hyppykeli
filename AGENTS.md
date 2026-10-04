@@ -5,15 +5,16 @@ Coding rules for AI agents and humans alike.
 ## Types and validation
 
 The project uses TypeScript through JSDoc comments in `.js` files, with strict
-mode enabled. Always check TypeScript diagnostics after code changes by running
-`mise exec -- pnpm run tsc`.
+mode enabled. Always check TypeScript diagnostics after code changes. `pn test`
+includes this check; run `mise exec -- pnpm run tsc` when only checking types.
 
 Purely visual changes do not need tests unless explicitly asked. Do not add or
 run tests solely to verify styling, layout, or artwork for those changes.
 
-For other changes, run the headless Playwright tests with `pn test`
-(`mise exec -- pnpm test` when invoking through mise). The tests start their own
-HTTP server and cover desktop and mobile views. Install Chromium if needed with
+For other changes, run `pn test` (`mise exec -- pnpm test` when invoking through
+mise). This formats files, checks TypeScript diagnostics, and runs the headless
+Playwright tests. The tests start their own HTTP server and cover desktop and
+mobile views. Install Chromium if needed with
 `mise exec -- pnpm exec playwright install chromium`.
 
 Define helper types and interfaces in `types.d.ts`. They can be referenced globally
