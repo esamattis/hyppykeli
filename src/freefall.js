@@ -85,7 +85,7 @@ export function getFreefallDrift(
 
 /**
  * Project an offset onto a sphere using distance and bearing from the exit.
- * @param {import('leaflet').LatLng} start
+ * @param {import('leaflet').LatLngLiteral} start
  * @param {FreefallDriftPoint} offset
  * @returns {[number, number]}
  */

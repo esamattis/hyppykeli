@@ -1143,3 +1143,112 @@ test("jump run adds jumpers using immediately applied template settings", async 
     ).toHaveValue("1500");
     await page.keyboard.press("Escape");
 });
+
+test("map setup survives URL reload and shares in full-window mode", async ({
+    page,
+    isMobile,
+}) => {
+    await page.evaluate(() => {
+        Object.defineProperty(navigator, "share", {
+            configurable: true,
+            value: async (data) => {
+                window.sharedMap = data;
+            },
+        });
+    });
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    const toolbar = page.locator(".freefall-toolbar");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 140, y: 180 } });
+    await expect(map.locator(".freefall-drift-line")).toHaveCount(1);
+    await toolbar
+        .getByRole("button", { name: "Hyppylinja", exact: true })
+        .click();
+    await map.click({ position: { x: 160, y: 190 } });
+    if (isMobile) await page.waitForTimeout(350);
+    await map.click({ position: { x: 200, y: 210 } });
+    await toolbar
+        .getByRole("button", { name: "Lisää hyppääjä", exact: true })
+        .click();
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(2);
+    await map.getByRole("button", { name: "Zoom in" }).click();
+    await expect
+        .poll(() => new URL(page.url()).searchParams.get("map_zoom"))
+        .toBe("15");
+    const setup = new URL(page.url());
+    expect(JSON.parse(setup.searchParams.get("map_jumps"))).toHaveLength(1);
+    expect(JSON.parse(setup.searchParams.get("map_jumpers"))).toHaveLength(2);
+    expect(JSON.parse(setup.searchParams.get("map_run_start"))).toHaveProperty(
+        "lat",
+    );
+    expect(
+        JSON.parse(setup.searchParams.get("map_run_settings")),
+    ).toHaveProperty("direction");
+    expect(JSON.parse(setup.searchParams.get("map_center"))).toHaveProperty(
+        "lng",
+    );
+    await toolbar.getByRole("button", { name: "Jaa kartta" }).click();
+    const shared = await page.evaluate(() => window.sharedMap);
+    const sharedURL = new URL(shared.url);
+    expect(sharedURL.searchParams.get("map_full_window")).toBe("true");
+    setup.searchParams.set("map_full_window", "true");
+    expect(sharedURL.href).toBe(setup.href);
+    expect(new URL(page.url()).searchParams.get("map_full_window")).toBeNull();
+    await page.goto(shared.url);
+    await setUniformFreefallWind(page);
+    await expect(
+        toolbar.getByRole("button", { name: "Palauta Ylätuulet" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+        toolbar.getByRole("button", { name: "Hyppylinja", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(2);
+    await expect(map.locator(".freefall-drift-line")).toHaveCount(3);
+    await toolbar
+        .getByRole("button", { name: "Poista viimeisin nuoli" })
+        .click();
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(1);
+    await toolbar.getByRole("button", { name: "Tyhjennä nuolet" }).click();
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(0);
+    await toolbar
+        .getByRole("button", { name: "Hyppylinja", exact: true })
+        .click();
+    await toolbar.getByRole("button", { name: "Tyhjennä nuolet" }).click();
+    await expect(map.locator(".freefall-drift-line")).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect
+        .poll(() => new URL(page.url()).searchParams.get("map_full_window"))
+        .toBe("false");
+});
+
+test("map query state handles invalid input and browser history", async ({
+    page,
+}) => {
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("/src/data.js");
+        navigateQs({
+            map_full_window: "true",
+            map_jumps: "[null]",
+            map_jumpers: "{}",
+            map_zoom: "1000",
+            map_center: "{broken",
+        });
+    });
+    await setUniformFreefallWind(page);
+    const toolbar = page.locator(".freefall-toolbar");
+    await expect(
+        toolbar.getByRole("button", { name: "Palauta Ylätuulet" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(0);
+    await page.goBack();
+    await expect(
+        toolbar.getByRole("button", {
+            name: "Laajenna Ylätuulet koko ikkunaan",
+        }),
+    ).toHaveAttribute("aria-pressed", "false");
+    await page.goForward();
+    await expect(
+        toolbar.getByRole("button", { name: "Palauta Ylätuulet" }),
+    ).toHaveAttribute("aria-pressed", "true");
+});

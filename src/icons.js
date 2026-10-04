@@ -24,6 +24,9 @@ const artwork = {
         <circle cx="16" cy="12" r="2" />
         <circle cx="10" cy="18" r="2" />
     `,
+    share: html`
+        <path d="M12 16V3m-5 5 5-5 5 5M5 13v8h14v-8" />
+    `,
     expand: html`
         <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5" />
     `,

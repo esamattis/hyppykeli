@@ -57,7 +57,7 @@ interface FreefallDriftPoint {
 }
 
 interface FreefallDriftArrow {
-    start: import("leaflet").LatLng;
+    start: import("leaflet").LatLngLiteral;
     exitHeight: number;
     openingHeight: number;
     speedKmh: number;
@@ -108,6 +108,7 @@ interface JumpRunControlsProps {
 interface FreefallToolbarProps {
     fullWindow: boolean;
     onToggleFullWindow: () => void;
+    onShare: () => void;
     jumpRunActive: boolean;
     onToggleJumpRun: () => void;
     jumpRun: JumpRunControlsProps;
@@ -231,7 +232,22 @@ interface MetarData {
 /**
  * Interface representing query parameters.
  */
+type MapQueryKey = Extract<keyof QueryParams, `map_${string}`>;
+
 interface QueryParams {
+    map_zoom?: string;
+    map_center?: string;
+    map_full_window?: string;
+    map_wind?: string;
+    map_exit_height?: string;
+    map_opening_height?: string;
+    map_speed?: string;
+    map_run_active?: string;
+    map_run_start?: string;
+    map_jumpers?: string;
+    map_next_jumper?: string;
+    map_run_settings?: string;
+    map_jumps?: string;
     DEV_debug?: string;
     DEV_mock?: string;
     DEV_ground_obs?: string;
@@ -499,6 +515,7 @@ interface IconProps {
         | "freefall"
         | "plus"
         | "settings"
+        | "share"
         | "expand"
         | "collapse"
         | "close"

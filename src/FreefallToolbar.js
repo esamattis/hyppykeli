@@ -9,6 +9,7 @@ import { css, useScope } from "./useScope.js";
 export function FreefallToolbar({
     fullWindow,
     onToggleFullWindow,
+    onShare,
     exitHeight,
     openingHeight,
     speedKmh,
@@ -95,6 +96,12 @@ export function FreefallToolbar({
                     className: "clear-arrows",
                     disabled: arrowCount === 0,
                     onClick: onClear,
+                })}
+                ${h(ToolbarButton, {
+                    label: "Jaa kartta",
+                    icon: "share",
+                    disabled: typeof navigator.share !== "function",
+                    onClick: onShare,
                 })}
                 ${h(ToolbarButton, {
                     label: fullWindow

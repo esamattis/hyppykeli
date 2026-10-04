@@ -24,6 +24,7 @@ import {
     STATION_NAME,
     NAME,
     getDevNumber,
+    getQs,
 } from "./data.js";
 import { OM_DATA, forecastTime } from "./om.js";
 import { formatClock } from "./utils.js";
@@ -31,6 +32,13 @@ import { Icon, WindArrow } from "./icons.js";
 import { Help } from "./components.js";
 import { MapWindOverlay } from "./MapWindOverlay.js";
 import { getFreefallDrift, driftCoordinates } from "./freefall.js";
+import {
+    useMapState,
+    isFiniteNumber,
+    isValidPosition,
+    isValidJumper,
+    isValidJumpRunSettings,
+} from "./mapState.js";
 import { FreefallToolbar } from "./FreefallToolbar.js";
 
 /** @type {Readonly<JumpRunJumper>} */
@@ -307,40 +315,93 @@ export function DropzoneMap() {
     /** @type {import('preact').RefObject<HTMLDivElement>} */
     const mapRef = useRef(null);
     const arrowId = `freefall-arrow-${useId()}`;
+    const [shareError, setShareError] = useState("");
     const [now, setNow] = useState(Date.now());
-    const [fullWindow, setFullWindow] = useState(false);
-    const [selectedLabel, setSelectedLabel] = useState("≈ 4200-800 m");
-    const [exitHeight, setExitHeight] = useState(4000);
-    const [openingHeight, setOpeningHeight] = useState(
-        DEFAULT_JUMPER.openingHeight,
+    const [fullWindow, setFullWindow] = useMapState(
+        "map_full_window",
+        false,
+        (value) => typeof value === "boolean",
     );
-    const [speedKmh, setSpeedKmh] = useState(DEFAULT_JUMPER.speedKmh);
-    const [jumpRunActive, setJumpRunActive] = useState(false);
-    const [jumpRunStart, setJumpRunStart] = useState(
-        /** @type {import('leaflet').LatLng | null} */ (null),
+    const [selectedLabel, setSelectedLabel] = useMapState(
+        "map_wind",
+        "≈ 4200-800 m",
+        (value) => typeof value === "string",
+    );
+    const [exitHeight, setExitHeight] = useMapState(
+        "map_exit_height",
+        4000,
+        (value) => isFiniteNumber(value) && value > 0 && value <= 4200,
+    );
+    const [openingHeight, setOpeningHeight] = useMapState(
+        "map_opening_height",
+        DEFAULT_JUMPER.openingHeight,
+        (value) => isFiniteNumber(value) && value >= 0 && value < 4200,
+    );
+    const [speedKmh, setSpeedKmh] = useMapState(
+        "map_speed",
+        DEFAULT_JUMPER.speedKmh,
+        (value) => isFiniteNumber(value) && value > 0,
+    );
+    const [jumpRunActive, setJumpRunActive] = useMapState(
+        "map_run_active",
+        false,
+        (value) => typeof value === "boolean",
+    );
+    const [jumpRunStart, setJumpRunStart] = useMapState(
+        "map_run_start",
+        /** @type {import('leaflet').LatLngLiteral | null} */ (null),
+        (value) => value === null || isValidPosition(value),
     );
     const [placingJumpRunDirection, setPlacingJumpRunDirection] =
         useState(false);
-    const [jumpers, setJumpers] = useState(
+    const [jumpers, setJumpers] = useMapState(
+        "map_jumpers",
         /** @type {JumpRunJumper[]} */ ([{ ...DEFAULT_JUMPER }]),
+        (value) => Array.isArray(value) && value.every(isValidJumper),
     );
-    const [nextJumper, setNextJumper] = useState(
+    const [nextJumper, setNextJumper] = useMapState(
+        "map_next_jumper",
         /** @type {JumpRunJumper} */ ({ ...DEFAULT_JUMPER }),
+        isValidJumper,
     );
     const jumperCount = jumpers.length;
-    const [jumpRunSettings, setJumpRunSettings] = useState(
+    const [jumpRunSettings, setJumpRunSettings] = useMapState(
+        "map_run_settings",
         /** @type {JumpRunSettings} */ ({
             direction: 0,
             speedKmh: 120,
             separationSeconds: 5,
             exitHeight: 4000,
         }),
+        isValidJumpRunSettings,
     );
     const [leafletInstance, setLeafletInstance] = useState(
         /** @type {import('leaflet').Map | null} */ (null),
     );
-    const [driftArrows, setDriftArrows] = useState(
+    const [driftArrows, setDriftArrows] = useMapState(
+        "map_jumps",
         /** @type {FreefallDriftArrow[]} */ ([]),
+        (value) =>
+            Array.isArray(value) &&
+            value.length <= 10 &&
+            value.every(
+                (arrow) =>
+                    isValidJumper(arrow) &&
+                    isValidPosition(arrow.start) &&
+                    isFiniteNumber(arrow.exitHeight) &&
+                    arrow.exitHeight > arrow.openingHeight &&
+                    arrow.exitHeight <= 4200,
+            ),
+    );
+    const [zoom, setZoom] = useMapState(
+        "map_zoom",
+        14,
+        (value) => isFiniteNumber(value) && value >= 0 && value <= 19,
+    );
+    const [center, setCenter] = useMapState(
+        "map_center",
+        /** @type {import('leaflet').LatLngLiteral | null} */ (null),
+        (value) => value === null || isValidPosition(value),
     );
     const coordinates = FORECAST_COORDINATES.value;
     const name = NAME.value ?? "DZ";
@@ -386,10 +447,8 @@ export function DropzoneMap() {
             touchZoom: false,
             zoomSnap: 0,
             tapHold: false,
-        }).setView([lat, lon], 14);
+        }).setView(center ?? [lat, lon], zoom);
         setLeafletInstance(leafletMap);
-        setDriftArrows([]);
-        setJumpRunStart(null);
         setPlacingJumpRunDirection(false);
 
         // Let one finger scroll the page. Handle two-finger pan/pinch ourselves
@@ -487,7 +546,16 @@ export function DropzoneMap() {
             fillOpacity: 1,
             weight: 3,
         }).addTo(leafletMap);
-        const observer = new ResizeObserver(() => leafletMap.invalidateSize());
+        const saveView = () => {
+            const current = leafletMap.getCenter();
+            setCenter({ lat: current.lat, lng: current.lng });
+            setZoom(leafletMap.getZoom());
+        };
+        leafletMap.on("moveend", saveView);
+        saveView();
+        const observer = new ResizeObserver(() =>
+            leafletMap.invalidateSize({ pan: false }),
+        );
         observer.observe(mapRef.current);
         return () => {
             observer.disconnect();
@@ -502,6 +570,21 @@ export function DropzoneMap() {
 
     useEffect(() => {
         if (!leafletInstance) return;
+        const [lat, lng] = coordinates?.split(",").map(Number) ?? [];
+        const target =
+            center ??
+            (lat !== undefined && lng !== undefined
+                ? { lat, lng }
+                : leafletInstance.getCenter());
+        if (
+            !leafletInstance.getCenter().equals(target, 1e-8) ||
+            leafletInstance.getZoom() !== zoom
+        )
+            leafletInstance.setView(target, zoom, { animate: false });
+    }, [leafletInstance, center, zoom, coordinates]);
+
+    useEffect(() => {
+        if (!leafletInstance) return;
         const container = leafletInstance.getContainer();
         let pointerFocus = false;
         const usePointer = () => {
@@ -510,7 +593,7 @@ export function DropzoneMap() {
         const useKeyboard = () => {
             pointerFocus = false;
         };
-        /** @param {import('leaflet').LatLng} target */
+        /** @param {import('leaflet').LatLngLiteral} target */
         const updateJumpRunDirection = (target) => {
             if (!jumpRunStart) return;
             const offset = leafletInstance
@@ -588,7 +671,7 @@ export function DropzoneMap() {
             touchStart = null;
             touchDragged = false;
         };
-        /** @param {import('leaflet').LatLng} start */
+        /** @param {import('leaflet').LatLngLiteral} start */
         const addArrow = (start) => {
             if (jumpRunActive) {
                 if (placingJumpRunDirection) {
@@ -909,9 +992,34 @@ export function DropzoneMap() {
                           `
                         : null
                 }
+                ${
+                    shareError
+                        ? html`
+                              <p role="status">${shareError}</p>
+                          `
+                        : null
+                }
                 <div class=${`map-frame${fullWindow ? " full-window" : ""}`}>
                     ${h(FreefallToolbar, {
                         fullWindow,
+                        onShare: async () => {
+                            setShareError("");
+                            const url = new URL(location.href);
+                            url.search = getQs({ map_full_window: "true" });
+                            try {
+                                await navigator.share({ url: url.href });
+                            } catch (error) {
+                                if (
+                                    !(
+                                        error instanceof DOMException &&
+                                        error.name === "AbortError"
+                                    )
+                                )
+                                    setShareError(
+                                        "Kartan jakaminen epäonnistui.",
+                                    );
+                            }
+                        },
                         onToggleFullWindow: () =>
                             setFullWindow((expanded) => !expanded),
                         jumpRunActive,
@@ -997,7 +1105,7 @@ export function DropzoneMap() {
 }
 
 /**
- * @param {import('leaflet').LatLng} start
+ * @param {import('leaflet').LatLngLiteral} start
  * @param {JumpRunSettings} settings
  * @param {number} index
  * @returns {[number, number]}

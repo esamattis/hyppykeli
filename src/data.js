@@ -1099,8 +1099,16 @@ setInterval(updateWeatherData, 60000);
 
 let initial = true;
 
-// listen to query string changes and refretch the data on changes
-QUERY_PARAMS.subscribe(() => {
+// Refresh weather when its query settings change; map edits only update the URL.
+computed(() =>
+    JSON.stringify(
+        Object.fromEntries(
+            Object.entries(QUERY_PARAMS.value).filter(
+                ([key]) => !key.startsWith("map_"),
+            ),
+        ),
+    ),
+).subscribe(() => {
     updateWeatherData().then(() => {
         if (!initial) {
             return;
