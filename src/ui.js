@@ -34,7 +34,7 @@ import {
     SAVED_DZs,
     saveCurrentDz,
     removeSavedDz,
-    SINGLE_FORECAST,
+    HOURLY_CLOUD_FORECASTS,
 } from "./data.js";
 import { DeveloperBanner, DeveloperMode } from "./DeveloperMode.js";
 
@@ -665,9 +665,53 @@ function CloudSummary() {
             font: inherit;
             letter-spacing: normal;
         }
+        .forecast-scroll {
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+            scrollbar-width: thin;
+            padding-bottom: 6px;
+        }
+        .forecast-scroll:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
+        }
+        .cloud-forecast-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: max-content;
+            font-variant-numeric: tabular-nums;
+        }
+        .cloud-forecast-table th,
+        .cloud-forecast-table td {
+            padding: 10px 12px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .cloud-forecast-table thead th {
+            font-size: 0.85rem;
+        }
+        .cloud-forecast-table tbody th {
+            color: var(--color-muted);
+            font-size: 0.85rem;
+            font-weight: normal;
+            white-space: normal;
+            width: 10ch;
+        }
+        .cloud-forecast-table tr > :first-child {
+            background: var(--color-surface-soft);
+            text-align: left;
+            padding-left: 0;
+            border-right: 1px solid var(--color-border);
+        }
+        .cloud-forecast-table td {
+            min-width: 7ch;
+            font-weight: 650;
+        }
+        .cloud-forecast-table tbody tr + tr > * {
+            border-top: 1px solid var(--color-border);
+        }
         .forecast-reading {
-            display: flex;
-            align-items: center;
+            vertical-align: middle;
         }
         .forecast-reading .cloud-cover {
             align-items: center;
@@ -692,7 +736,7 @@ function CloudSummary() {
     const metar = METARS.value?.at(-1);
     const latest = LATEST_OBSERVATION.value;
     const time = metar?.time ?? latest?.time;
-    const forecast = SINGLE_FORECAST.value;
+    const forecasts = HOURLY_CLOUD_FORECASTS.value;
 
     let msg = "";
 
@@ -786,54 +830,88 @@ function CloudSummary() {
                 )}
             </dl>
             ${
-                forecast
+                forecasts.length
                     ? html`
                           <section
                               class="cloud-forecast"
                               aria-label="Pilvien ennuste"
                           >
                               <div class="forecast-heading">
-                                  <h3>Ennuste · 2h päästä</h3>
+                                  <h3>Ennuste · 12 tuntia</h3>
                                   ${h(
                                       Help,
                                       { label: "?", id: "cloudforecast" },
                                       html`
                                           <p>
-                                              Tiivistymiskorkeuden ja
-                                              pilvipeiton ennuste matalille
-                                              (alle 2km) pilville
-                                              ${
-                                                  forecast
-                                                      ? ` klo ${formatClock(forecast?.time)}`
-                                                      : null
-                                              }
+                                              Tiivistymiskorkeuden ja matalien
+                                              (alle 2km) pilvien peittävyyden
+                                              tuntiennuste. Vieritä sivulle
+                                              nähdäksesi lisää tunteja.
                                           </p>
                                       `,
                                   )}
                               </div>
-                              <dl class="summary-metrics">
-                                  <div>
-                                      <dt>Tiivistymiskorkeus</dt>
-                                      <dd class="forecast-label">
-                                          ${
-                                              whenAll(
-                                                  [
-                                                      forecast.temperature,
-                                                      forecast.dewPoint,
-                                                  ],
-                                                  (temp, dew) =>
-                                                      `${getLiftedCondensationLevel(temp, dew)}M`,
-                                              ) ?? "—"
-                                          }
-                                      </dd>
-                                  </div>
-                                  <div>
-                                      <dt>Pilvipeitto</dt>
-                                      <dd class="forecast-reading">
-                                          ${isNullish(forecast.lowCloudCover) ? "—" : h(PercentagePie, { percentage: forecast.lowCloudCover })}
-                                      </dd>
-                                  </div>
-                              </dl>
+                              <div
+                                  class="forecast-scroll"
+                                  tabindex="0"
+                                  role="region"
+                                  aria-label="Pilvien tuntiennuste, vieritä sivulle"
+                              >
+                                  <table class="cloud-forecast-table">
+                                      <thead>
+                                          <tr>
+                                              <th scope="col">Kello</th>
+                                              ${forecasts.map(
+                                                  (forecast) => html`
+                                                      <th
+                                                          scope="col"
+                                                          title=${formatDate(forecast.time)}
+                                                      >
+                                                          ${formatClock(forecast.time)}
+                                                      </th>
+                                                  `,
+                                              )}
+                                          </tr>
+                                      </thead>
+                                      <tbody>
+                                          <tr>
+                                              <th scope="row">
+                                                  Tiivistymiskorkeus
+                                              </th>
+                                              ${forecasts.map(
+                                                  (forecast) => html`
+                                                      <td
+                                                          class="forecast-label"
+                                                      >
+                                                          ${
+                                                              whenAll(
+                                                                  [
+                                                                      forecast.temperature,
+                                                                      forecast.dewPoint,
+                                                                  ],
+                                                                  (temp, dew) =>
+                                                                      `${getLiftedCondensationLevel(temp, dew)}M`,
+                                                              ) ?? "—"
+                                                          }
+                                                      </td>
+                                                  `,
+                                              )}
+                                          </tr>
+                                          <tr>
+                                              <th scope="row">Pilvipeitto</th>
+                                              ${forecasts.map(
+                                                  (forecast) => html`
+                                                      <td
+                                                          class="forecast-reading"
+                                                      >
+                                                          ${isNullish(forecast.lowCloudCover) ? "—" : h(PercentagePie, { percentage: forecast.lowCloudCover })}
+                                                      </td>
+                                                  `,
+                                              )}
+                                          </tr>
+                                      </tbody>
+                                  </table>
+                              </div>
                           </section>
                       `
                     : null

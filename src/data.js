@@ -203,13 +203,17 @@ export const LATEST_OBSERVATION = computed(() =>
 export const FORECASTS = signal([]);
 
 /**
- * @type {Signal<WeatherData|undefined>}
+ * @type {Signal<WeatherData[]>}
  */
-export const SINGLE_FORECAST = computed(() => {
-    const inTwoHours = Date.now() + 2 * 60 * 60 * 1000;
-    return FORECASTS.value.find((fore) => {
-        return fore.time.getTime() > inTwoHours;
-    });
+export const HOURLY_CLOUD_FORECASTS = computed(() => {
+    const now = Date.now();
+    return FORECASTS.value
+        .filter(
+            (forecast) =>
+                forecast.time.getTime() > now &&
+                forecast.time.getMinutes() === 0,
+        )
+        .slice(0, 12);
 });
 
 /**
@@ -436,7 +440,10 @@ export function addError(msg) {
  * @param {string} coordinates
  */
 async function fetchFmiForecasts(coordinates) {
-    const forecastRange = Number(QUERY_PARAMS.value.forecast_range) || 12;
+    const forecastRange = Math.max(
+        12,
+        Number(QUERY_PARAMS.value.forecast_range) || 12,
+    );
 
     const forecastStartTime = new Date();
     const forecastEndTime = new Date();
