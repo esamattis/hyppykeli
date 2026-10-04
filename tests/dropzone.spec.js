@@ -1553,63 +1553,74 @@ test("default direction is used only when creating a jump run", async ({
     ).toBe(225);
 });
 
-test("jump run is positioned using defaults around the map-center target", async ({
-    page,
-}) => {
-    const center = { lat: 62.4, lng: 25.6 };
-    await page.goto(
-        `${developerPath}&default_jump_run_direction=90&map_center_lat=${center.lat}&map_center_lon=${center.lng}`,
-    );
-    await setUniformFreefallWind(page);
-    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+for (const jumperCount of [1, 13, 14]) {
+    test(`jump run centers ${jumperCount} jumpers around the map-center target`, async ({
+        page,
+    }) => {
+        const center = { lat: 62.4, lng: 25.6 };
+        await page.goto(
+            `${developerPath}&default_jumper_count=${jumperCount}&default_jump_run_direction=90&map_center_lat=${center.lat}&map_center_lon=${center.lng}`,
+        );
+        await setUniformFreefallWind(page);
+        await page
+            .getByRole("button", { name: "Hyppylinja", exact: true })
+            .click();
 
-    const map = page.locator(".dz-map");
-    await expect(page.locator(".map-viewport .jump-run-target")).toHaveCount(1);
-    await page
-        .getByRole("button", {
-            name: "Sijoita hyppylinja automaattisesti",
-        })
-        .click();
+        const map = page.locator(".dz-map");
+        await expect(
+            page.locator(".map-viewport .jump-run-target"),
+        ).toHaveCount(1);
+        await page
+            .getByRole("button", {
+                name: "Sijoita hyppylinja automaattisesti",
+            })
+            .click();
 
-    await expect(map.locator(".jump-run-jumper")).toHaveCount(14);
-    const result = await page.evaluate(async () => {
-        const { getMapWindData, jumpRunCoordinates } =
-            await import("/src/DropzoneMap.js");
-        const { getFreefallDrift, driftCoordinates } =
-            await import("/src/freefall.js");
-        const { latLng } = await import("leaflet");
-        const params = new URL(location.href).searchParams;
-        const settings = JSON.parse(params.get("map_run_settings"));
-        const start = JSON.parse(params.get("map_run_start"));
-        const jumpers = JSON.parse(params.get("map_jumpers"));
-        const target = {
-            lat: Number(params.get("map_center_lat")),
-            lng: Number(params.get("map_center_lon")),
-        };
-        const middleIndex = Math.floor(jumpers.length / 2);
-        const middleExit = latLng(
-            jumpRunCoordinates(start, settings, middleIndex),
-        );
-        const middleJumper = jumpers[middleIndex];
-        const path = getFreefallDrift(
-            getMapWindData().freefallWinds,
-            settings.exitHeight,
-            middleJumper.speedKmh,
-            middleJumper.openingHeight,
-        );
-        const opening = latLng(
-            driftCoordinates(middleExit, path[path.length - 1]),
-        );
-        return {
-            direction: settings.direction,
-            jumperCount: jumpers.length,
-            openingDistance: opening.distanceTo(target),
-        };
+        await expect(map.locator(".jump-run-jumper")).toHaveCount(jumperCount);
+        const result = await page.evaluate(async () => {
+            const { getMapWindData, jumpRunCoordinates } =
+                await import("/src/DropzoneMap.js");
+            const { getFreefallDrift, driftCoordinates } =
+                await import("/src/freefall.js");
+            const { latLng } = await import("leaflet");
+            const params = new URL(location.href).searchParams;
+            const settings = JSON.parse(params.get("map_run_settings"));
+            const start = JSON.parse(params.get("map_run_start"));
+            const jumpers = JSON.parse(params.get("map_jumpers"));
+            const target = {
+                lat: Number(params.get("map_center_lat")),
+                lng: Number(params.get("map_center_lon")),
+            };
+            const middleIndex = (jumpers.length - 1) / 2;
+            const openings = [
+                Math.floor(middleIndex),
+                Math.ceil(middleIndex),
+            ].map((index) => {
+                const exit = latLng(jumpRunCoordinates(start, settings, index));
+                const jumper = jumpers[index];
+                const path = getFreefallDrift(
+                    getMapWindData().freefallWinds,
+                    settings.exitHeight,
+                    jumper.speedKmh,
+                    jumper.openingHeight,
+                );
+                return latLng(driftCoordinates(exit, path[path.length - 1]));
+            });
+            const opening = latLng(
+                (openings[0].lat + openings[1].lat) / 2,
+                (openings[0].lng + openings[1].lng) / 2,
+            );
+            return {
+                direction: settings.direction,
+                jumperCount: jumpers.length,
+                openingDistance: opening.distanceTo(target),
+            };
+        });
+        expect(result.direction).toBe(90);
+        expect(result.jumperCount).toBe(jumperCount);
+        expect(result.openingDistance).toBeLessThan(1);
     });
-    expect(result.direction).toBe(90);
-    expect(result.jumperCount).toBe(14);
-    expect(result.openingDistance).toBeLessThan(1);
-});
+}
 
 test("two-finger navigation retains loaded tiles and saves the completed view", async ({
     page,

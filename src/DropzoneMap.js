@@ -1125,33 +1125,51 @@ export function DropzoneMap() {
                                           { length: defaultJumperCount },
                                           () => ({ ...nextJumper }),
                                       );
-                                const middleIndex = Math.floor(
-                                    positionedJumpers.length / 2,
+                                const middleIndex = Math.max(
+                                    0,
+                                    (positionedJumpers.length - 1) / 2,
                                 );
-                                const middleJumper =
-                                    positionedJumpers[middleIndex] ??
-                                    nextJumper;
+                                const middleJumpers = positionedJumpers.slice(
+                                    Math.floor(middleIndex),
+                                    Math.ceil(middleIndex) + 1,
+                                );
+                                if (!middleJumpers.length)
+                                    middleJumpers.push(nextJumper);
                                 const settings = jumpRunStart
                                     ? jumpRunSettings
                                     : {
                                           ...jumpRunSettings,
                                           direction: defaultJumpRunDirection,
                                       };
-                                const path = getFreefallDrift(
-                                    getMapWindData(now).freefallWinds,
-                                    settings.exitHeight,
-                                    middleJumper.speedKmh,
-                                    middleJumper.openingHeight,
+                                const winds = getMapWindData(now).freefallWinds;
+                                const openingOffset = middleJumpers.reduce(
+                                    (offset, jumper) => {
+                                        const path = getFreefallDrift(
+                                            winds,
+                                            settings.exitHeight,
+                                            jumper.speedKmh,
+                                            jumper.openingHeight,
+                                        );
+                                        const opening = path?.[path.length - 1];
+                                        return {
+                                            east:
+                                                offset.east +
+                                                (opening?.east ?? 0) /
+                                                    middleJumpers.length,
+                                            north:
+                                                offset.north +
+                                                (opening?.north ?? 0) /
+                                                    middleJumpers.length,
+                                        };
+                                    },
+                                    { east: 0, north: 0 },
                                 );
-                                const openingOffset = path?.[path.length - 1];
                                 const middleExit = latLng(
-                                    openingOffset
-                                        ? driftCoordinates(target, {
-                                              height: 0,
-                                              east: -openingOffset.east,
-                                              north: -openingOffset.north,
-                                          })
-                                        : target,
+                                    driftCoordinates(target, {
+                                        height: 0,
+                                        east: -openingOffset.east,
+                                        north: -openingOffset.north,
+                                    }),
                                 );
                                 setJumpRunSettings(settings);
                                 setJumpRunStart(
