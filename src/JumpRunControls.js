@@ -33,11 +33,14 @@ export function JumpRunControls({
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
         }
+        .add-jumper,
         .remove-jumper {
             display: inline-flex;
             align-items: center;
             gap: 6px;
             margin-top: 14px;
+        }
+        .remove-jumper {
             background: var(--color-surface-hover);
             color: var(--color-text);
             box-shadow: none;
@@ -70,6 +73,16 @@ export function JumpRunControls({
     const removeJumper = (index) => {
         setJumperDrafts((drafts) => drafts.filter((_, i) => i !== index));
         onJumpersChange(jumpers.filter((_, i) => i !== index));
+    };
+    const addJumper = () => {
+        setJumperDrafts((drafts) => [
+            ...drafts,
+            {
+                openingHeight: String(nextJumper.openingHeight),
+                speedKmh: String(nextJumper.speedKmh),
+            },
+        ]);
+        onAdd();
     };
     const open = () => {
         setNextDraft({
@@ -194,6 +207,14 @@ export function JumpRunControls({
                                 }));
                             },
                         })}
+                        <button
+                            type="button"
+                            class="add-jumper"
+                            onClick=${addJumper}
+                        >
+                            ${h(Icon, { name: "plus", size: 16 })} Lisää
+                            hyppääjä
+                        </button>
                     </fieldset>
                     ${jumperDrafts.map(
                         (jumper, index) => html`

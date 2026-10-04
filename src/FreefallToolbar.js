@@ -133,6 +133,18 @@ export function FreefallToolbar({
                         ${`${jumpRunActive ? jumpRun.nextJumper.speedKmh : speedKmh} km/h`}
                     </strong>
                 </span>
+                ${
+                    jumpRunActive
+                        ? html`
+                              <span>
+                                  <span class="value-label">Hyppylinja</span>
+                                  <strong class="value-number">
+                                      ${`${jumpRun.settings.speedKmh} km/h`}
+                                  </strong>
+                              </span>
+                          `
+                        : null
+                }
             </div>
         </div>
     `;

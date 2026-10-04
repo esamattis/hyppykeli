@@ -815,7 +815,10 @@ test("jump run redraws all jumpers and applies individual settings immediately",
         name: "Hyppylinja",
         exact: true,
     });
+    const summary = page.locator(".toolbar-summary");
+    await expect(summary).not.toContainText("Hyppylinja");
     await toggle.click();
+    await expect(summary).toContainText(/Hyppylinja\s*120 km\/h/);
     const place = async (x = 100, y = 160) => {
         await map.scrollIntoViewIfNeeded();
         if (isMobile) await map.tap({ position: { x, y } });
@@ -894,8 +897,10 @@ test("jump run redraws all jumpers and applies individual settings immediately",
         name: "Hyppylinjan nopeus (km/h)",
     });
     await speed.fill("0");
+    await expect(summary).toContainText(/Hyppylinja\s*120 km\/h/);
     await expect(run).toHaveAttribute("d", runPath);
     await speed.fill("180");
+    await expect(summary).toContainText(/Hyppylinja\s*180 km\/h/);
     await expect(run).toHaveAttribute("d", runPath);
     await expect(jumpers.nth(1)).not.toHaveAttribute("d", secondStart);
     await settings
@@ -1084,9 +1089,8 @@ test("jump run adds jumpers using immediately applied template settings", async 
     await dialog.getByRole("button", { name: /^Freefly/ }).click();
     await expect(template).toContainText("1200 m");
     await expect(template).toContainText("240 km/h");
-    await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
-    await edit.click();
+    await dialog.getByRole("button", { name: "Lisää hyppääjä" }).click();
+    await expect(settings).toBeVisible();
     const first = settings.getByRole("group", {
         name: "Hyppääjä 1",
         exact: true,
