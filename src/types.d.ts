@@ -262,36 +262,57 @@ interface FlykMetarProperties {
     iconImage: string;
 }
 
+interface MetarAbbreviation {
+    abbreviation: string;
+    meaning: string;
+}
+
+interface MetarCloud extends MetarAbbreviation {
+    metarCode: string;
+    altitude: number | null;
+    cumulonimbus: boolean;
+}
+
+interface MetarRunwayVisibility {
+    runway: string;
+    direction?: string;
+    seperator: string;
+    minIndicator?: string;
+    minValue: string;
+    variableIndicator?: string;
+    maxIndicator?: string;
+    maxValue?: string;
+    trend?: string;
+    unitsOfMeasure?: string;
+}
+
 interface MetarJSResponse {
-    type: "METAR";
-    correction: boolean;
+    type: "METAR" | "SPECI";
+    correction: boolean | string;
     station: string;
-    time: string;
+    time: Date;
     auto: boolean;
     wind: {
-        speed: number;
+        speed: number | null;
         gust: number | null;
-        direction: number | "VRB";
-        variation: number | null;
+        direction: number | "VRB" | null;
+        variation: boolean | { min: number; max: number } | null;
         unit: string;
     };
     cavok: boolean;
-    visibility: number;
-    visibilityVariation: number | null;
+    cbWithoutLayer: boolean;
+    visibility: number | null;
+    visibilityVariation: string | null;
     visibilityVariationDirection: string | null;
-    weather: {
-        abbreviation: string;
-        meaning: string;
-    }[];
-    clouds?: {
-        abbreviation: string;
-        meaning: string;
-        altitude: number;
-        cumulonimbus: boolean;
-    }[];
-    temperature: number;
-    dewpoint: number;
-    altimeterInHpa: number;
+    weather: MetarAbbreviation[] | null;
+    clouds: MetarCloud[] | null;
+    temperature: number | null;
+    dewpoint: number | null;
+    altimeterInHpa: number | null;
+    altimeterInHg: number | null;
+    recentSignificantWeather: string | null;
+    recentSignificantWeatherDescription: string | null;
+    rvr: MetarRunwayVisibility | null;
 }
 
 interface RoadSensorValue {
@@ -385,9 +406,6 @@ interface RoadStationInfoDetailed {
         sensors: number[];
     };
 }
-
-declare module "metar" {}
-declare function parseMETAR(metarString: string): MetarJSResponse;
 
 interface CSSScope {
     end: string;

@@ -10,8 +10,7 @@ import {
     fetchJSON,
 } from "./utils.js";
 import { fetchHighWinds } from "./om.js";
-// just exposes the parseMETAR global
-import "metar";
+import { parseMETAR } from "./metar.js";
 
 /** @type {Signal<QueryParams[]>} */
 export const SAVED_DZs = signal(
@@ -638,33 +637,25 @@ function setMETARSfromMetarMessage(metars) {
 export function parseMetarMessages(metars) {
     return metars.map((metar) => {
         const m = parseMETAR(metar);
-        const cloudTokens = (metar.split(/\s+RMK\b/)[0] ?? metar)
-            .split(/\s+/)
-            .filter((token) =>
-                /^(?:NCD|SKC|CLR|NSC|FEW|SCT|BKN|OVC|VV)(?:\d{3}|\/{3})?(?:CB|TCU)?$/.test(
-                    token,
-                ),
-            );
-
         /** @type MetarData */
         const metarData = {
             time: new Date(m.time),
             metar,
-            cbWithoutLayer: /(?:^|\s)\/\/\/\/\/\/CB(?=\s|$)/.test(metar),
+            cbWithoutLayer: m.cbWithoutLayer,
             wind: {
                 gust: m.wind.gust ?? undefined,
-                speed: m.wind.speed ?? undefined,
-                direction: m.wind.direction,
+                speed: m.wind.speed ?? NaN,
+                direction: m.wind.direction ?? NaN,
                 unit: m.wind.unit.toLowerCase(),
             },
-            temperature: m.temperature,
+            temperature: m.temperature ?? NaN,
             clouds:
-                m.clouds?.map((cloud, index) => {
+                m.clouds?.map((cloud) => {
                     return {
-                        metarCode: cloudTokens[index],
+                        metarCode: cloud.metarCode,
                         cumulonimbus: cloud.cumulonimbus,
                         amount: cloud.abbreviation,
-                        base: cloud.altitude,
+                        base: cloud.altitude ?? NaN,
                         unit: "ft",
                     };
                 }) ?? [],
