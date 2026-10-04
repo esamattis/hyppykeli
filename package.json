@@ -12,6 +12,8 @@
         "oxfmt-check": "oxfmt --check index.html src/ *.css",
         "oxfmt": "oxfmt --write index.html src/ *.css",
         "tsc": "tsc",
+        "test": "playwright test",
+        "test:e2e": "playwright test",
         "build": "./build.sh"
     },
     "dependencies": {
@@ -24,6 +26,7 @@
         "typescript": "^7.0.2"
     },
     "devDependencies": {
+        "@playwright/test": "^1.63.0",
         "@types/leaflet": "^1.9.22",
         "oxfmt": "^0.71.0"
     }
