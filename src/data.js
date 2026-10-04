@@ -9,7 +9,7 @@ import {
     safeParseNumber,
     fetchJSON,
 } from "./utils.js";
-import { fetchHighWinds } from "./om.js";
+import { fetchHighWinds, getOpenMeteoSurfaceWeather } from "./om.js";
 import { parseMETAR } from "./metar.js";
 
 /** @type {Signal<QueryParams[]>} */
@@ -147,6 +147,14 @@ export const STATION_NAME = signal(undefined);
  */
 const LIVE_OBSERVATIONS = signal([]);
 
+/**
+ * Current modelled surface weather used only when station observations are
+ * unavailable. It must not be included in OBSERVATIONS or the observations
+ * chart would present a forecast as a measurement.
+ * @type {Signal<WeatherData|undefined>}
+ */
+const OPEN_METEO_CURRENT = signal(undefined);
+
 export const OBSERVATIONS = computed(() => {
     const live = LIVE_OBSERVATIONS.value;
     const overrides = parseGroundObservations(
@@ -204,39 +212,69 @@ export const LATEST_OBSERVATION = computed(() => {
         return OBSERVATIONS.value[0];
     }
 
-    const metar = METARS.value?.[0];
-    if (!metar) {
-        return;
+    if (!QUERY_PARAMS.value.fmisid && !QUERY_PARAMS.value.roadsid) {
+        const metar = METARS.value?.[0];
+        if (metar) {
+            /** @type {WeatherData} */
+            const metarWeather = {
+                source: "metar",
+                time: metar.time,
+                gust: isNullish(metar.wind.gust)
+                    ? undefined
+                    : knotsToMs(metar.wind.gust),
+                speed: isNullish(metar.wind.speed)
+                    ? undefined
+                    : knotsToMs(metar.wind.speed),
+                direction:
+                    typeof metar.wind.direction === "number"
+                        ? metar.wind.direction
+                        : undefined,
+                temperature: metar.temperature,
+                dewPoint: metar.dewpoint,
+            };
+            if (hasValidWindData(metarWeather)) return metarWeather;
+        }
     }
 
-    const speed = metar.wind.speed;
-    const gust = metar.wind.gust;
-
-    /** @type {WeatherData} */
-    const metarObs = {
-        source: "metar",
-        lowCloudCover: undefined,
-        middleCloudCover: undefined,
-        temperature: obs?.temperature ?? metar.temperature,
-        dewPoint: obs?.dewPoint ?? metar.dewpoint,
-        time: metar.time,
-        gust: isNullish(gust) ? undefined : knotsToMs(gust),
-        speed: isNullish(speed) ? undefined : knotsToMs(speed),
-        direction:
-            typeof metar.wind.direction === "number"
-                ? metar.wind.direction
-                : undefined,
-    };
-
-    if (hasValidWindData(metarObs)) {
-        return metarObs;
-    }
+    const model = OPEN_METEO_CURRENT.value;
+    return hasValidWindData(model) ? model : undefined;
 });
 
 /**
  * @type {Signal<WeatherData[]>}
  */
 export const FORECASTS = signal([]);
+
+/** @type {Signal<"FMI" | "Open-Meteo" | null>} */
+export const FORECAST_SOURCE = signal(null);
+
+/** @param {WeatherData["source"] | undefined} source */
+export function weatherSourceLabel(source) {
+    switch (source) {
+        case "fmi":
+            return "FMI";
+        case "roads":
+            return "Fintraffic";
+        case "metar":
+            return "METAR";
+        case "openmeteo":
+            return "Open-Meteo (mallinnettu)";
+        case "mock":
+            return "Kehittäjätila";
+        case "forecast":
+            return FORECAST_SOURCE.value;
+        default:
+            return null;
+    }
+}
+
+export const OBSERVATION_SOURCE = computed(() =>
+    weatherSourceLabel(OBSERVATIONS.value[0]?.source),
+);
+
+export const WIND_SOURCE = computed(() =>
+    weatherSourceLabel(LATEST_OBSERVATION.value?.source),
+);
 
 /**
  * @type {Signal<WeatherData[]>}
@@ -371,7 +409,12 @@ export async function fmiRequest(storedQuery, params, exampleUrl) {
 
     LOADING.value += 1;
     try {
-        const response = await fetch(useExample ? (exampleUrl ?? url) : url);
+        const response = await fetch(
+            useExample ? (exampleUrl ?? url) : url,
+        ).catch(() => null);
+        if (!response) {
+            return "error";
+        }
         if (response.status === 404) {
             return;
         }
@@ -523,13 +566,11 @@ async function fetchFmiForecasts(coordinates) {
     );
 
     if (forecastXml === "error") {
-        addError("Virhe ennusteiden hakemisessa.");
-        return;
+        return false;
     }
 
     if (!forecastXml) {
-        addError("Ennusteita ei löytynyt");
-        return;
+        return false;
     }
 
     // const allFeatures = Array.from(
@@ -607,8 +648,14 @@ async function fetchFmiForecasts(coordinates) {
         };
     });
 
+    if (!combinedForecasts.some(hasValidWindData)) {
+        return false;
+    }
+
     FORECASTS.value = combinedForecasts;
+    FORECAST_SOURCE.value = "FMI";
     STALE_FORECASTS.value = false;
+    return true;
 }
 
 /**
@@ -624,6 +671,24 @@ async function fetchFlykMetar(icaocode) {
         return re.test(f.properties.text);
     });
     return features?.properties.text;
+}
+
+async function fetchMetar() {
+    if (QUERY_PARAMS.value.DEV_metar?.trim()) return;
+
+    const icaocode = QUERY_PARAMS.value.icaocode?.trim();
+    if (!icaocode) {
+        LIVE_METARS.value = undefined;
+        return;
+    }
+
+    const metar = await fetchFlykMetar(icaocode);
+    if (metar) {
+        setMETARSfromMetarMessage([metar]);
+    } else {
+        LIVE_METARS.value = undefined;
+        addError(`Ei METAR-sanomaa kentälle ${icaocode}.`);
+    }
 }
 
 /**
@@ -676,10 +741,9 @@ function getObservationStartTime() {
  * @param {string} fmisid
  */
 export async function fetchFmiObservations(fmisid) {
-    const icaocode = QUERY_PARAMS.value.icaocode;
     const customName = QUERY_PARAMS.value.name;
 
-    NAME.value = customName || icaocode || undefined;
+    NAME.value = customName || QUERY_PARAMS.value.icaocode || undefined;
     if (NAME.value) {
         localStorage.setItem("previous_dz", NAME.value);
     }
@@ -687,19 +751,6 @@ export async function fetchFmiObservations(fmisid) {
     const obsStartTime = getObservationStartTime();
 
     const cacheBust = Math.floor(Date.now() / 30_000);
-
-    if (icaocode) {
-        // intentionally not awaiting, it can be updated on the background
-        fetchFlykMetar(icaocode).then((metar) => {
-            if (metar) {
-                setMETARSfromMetarMessage([metar]);
-            } else {
-                addError(`Ei METAR-sanomaa kentälle ${icaocode}.`);
-            }
-        });
-    } else {
-        addError("Ei METAR tietoja.");
-    }
 
     const doc = await fmiRequest(
         "fmi::observations::weather::timevaluepair",
@@ -721,14 +772,14 @@ export async function fetchFmiObservations(fmisid) {
 
     if (!doc) {
         addError(`Havaintoasemaa ${fmisid} ei löytynyt.`);
-        return;
+        return false;
     }
 
     if (doc === "error") {
         addError(
             `Virhe Ilmatieteenlaitoksen havaintoaseman ${fmisid} tietojen hakemisessa.`,
         );
-        return;
+        return false;
     }
 
     // const allFeatures = Array.from(
@@ -744,7 +795,7 @@ export async function fetchFmiObservations(fmisid) {
 
     if (!name) {
         addError(`Havaintoasema ${fmisid} ei taida toimia tässä.`);
-        return;
+        return false;
     }
 
     STATION_NAME.value = name + " (FMI)";
@@ -790,6 +841,7 @@ export async function fetchFmiObservations(fmisid) {
     mockAllEntries(combined);
 
     LIVE_OBSERVATIONS.value = combined;
+    return combined.some(hasValidWindData);
 }
 
 /**
@@ -858,11 +910,11 @@ async function fetchRoadStationInfo(roadsid) {
                 "Digitraffic-User": "hyppykeli.fi",
             },
         },
-    );
+    ).catch(() => null);
 
-    if (!res.ok) {
-        addError(`Virhe Digitraffic API:ssa: ${res.status}`);
-        return;
+    if (!res?.ok) {
+        addError(`Virhe Digitraffic API:ssa: ${res?.status ?? "yhteysvirhe"}`);
+        return false;
     }
 
     /** @type {RoadStationInfoDetailed} */
@@ -873,6 +925,7 @@ async function fetchRoadStationInfo(roadsid) {
         FORECAST_COORDINATES.value = STATION_COORDINATES.value;
     }
     STATION_NAME.value = data.properties.names.fi + " (Digitraffic)";
+    return true;
 }
 
 /**
@@ -908,7 +961,7 @@ async function fetchRoadObservations(roadsid) {
     );
 
     if (!data) {
-        return;
+        return false;
     }
 
     const gust = data.sensorValues.find((v) => v.name === "MAKSIMITUULI");
@@ -931,14 +984,15 @@ async function fetchRoadObservations(roadsid) {
     };
 
     LIVE_OBSERVATIONS.value = [obs];
+    const hasCurrentWind = hasValidWindData(obs);
 
     const history = await historyPromise;
     if (!history) {
-        return;
+        return hasCurrentWind;
     }
 
     if (!gust) {
-        return;
+        return hasCurrentWind;
     }
 
     const gusts = history.values.filter((v) => v.id === gust.id);
@@ -989,43 +1043,124 @@ async function fetchRoadObservations(roadsid) {
     mockAllEntries(full);
 
     LIVE_OBSERVATIONS.value = full;
+    return full.some(hasValidWindData);
 }
 
 async function fetchObservations() {
     if (QUERY_PARAMS.value.fmisid) {
-        await fetchFmiObservations(QUERY_PARAMS.value.fmisid);
-    } else if (QUERY_PARAMS.value.roadsid) {
-        await Promise.all([
+        const found = await fetchFmiObservations(QUERY_PARAMS.value.fmisid);
+        if (found) return;
+    }
+
+    if (QUERY_PARAMS.value.roadsid) {
+        const [found] = await Promise.all([
             fetchRoadObservations(QUERY_PARAMS.value.roadsid),
             fetchRoadStationInfo(QUERY_PARAMS.value.roadsid),
         ]);
-    } else {
-        addError(
-            "Ilmatieteenlaitoksen eikä tiehallinnon havaintoasemaa ole määritetty.",
-        );
+        if (found) return;
     }
+
+    LIVE_OBSERVATIONS.value = [];
+}
+
+function explicitForecastCoordinates() {
+    const lat = Number(QUERY_PARAMS.value.lat);
+    const lon = Number(QUERY_PARAMS.value.lon);
+    if (
+        !QUERY_PARAMS.value.lat?.trim() ||
+        !QUERY_PARAMS.value.lon?.trim() ||
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lon) ||
+        lat < -90 ||
+        lat > 90 ||
+        lon < -180 ||
+        lon > 180
+    ) {
+        return null;
+    }
+    return `${lat},${lon}`;
+}
+
+/** @param {OpenMeteoWeatherData} data */
+function useOpenMeteoSurfaceWeather(data) {
+    const weather = getOpenMeteoSurfaceWeather(data);
+    const now = new Date();
+    const current = weather.find(
+        ({ time }) =>
+            time.getTime() <= now.getTime() &&
+            now.getTime() < time.getTime() + 60 * 60 * 1000,
+    );
+    OPEN_METEO_CURRENT.value = current
+        ? { ...current, source: "openmeteo" }
+        : undefined;
+
+    const forecastRange = Math.max(
+        12,
+        Number(QUERY_PARAMS.value.forecast_range) || 12,
+    );
+    const start = new Date(now);
+    const end = new Date(now);
+    end.setHours(end.getHours() + forecastRange, 0, 0, 0);
+    const day = FORECAST_DAY.value;
+    if (day > 0) {
+        start.setHours(7, 0, 0, 0);
+        start.setDate(start.getDate() + day);
+        end.setHours(21, 0, 0, 0);
+        end.setDate(end.getDate() + day);
+    }
+
+    return weather.filter(({ time }) => time >= start && time <= end);
 }
 
 export async function updateWeatherData() {
     ERRORS.value = [];
-    if (FORECAST_COORDINATES.value) {
-        // we can fetch everyting in parallel if we have manually provided coordinates
-        await Promise.all([
-            fetchObservations(),
-            fetchFmiForecasts(FORECAST_COORDINATES.value),
-            fetchHighWinds(FORECAST_COORDINATES.value),
-        ]);
-    } else {
-        // otherwise we need to fetch the stationdata first to get the station coordinates
-        await fetchObservations();
-        if (FORECAST_COORDINATES.value) {
-            await Promise.all([
-                fetchFmiForecasts(FORECAST_COORDINATES.value),
-                fetchHighWinds(FORECAST_COORDINATES.value),
-            ]);
-        } else {
-            addError("Koordinaattien haku epännistui havaintoasemalta.");
+    STALE_FORECASTS.value = true;
+    STATION_COORDINATES.value = null;
+    STATION_NAME.value = undefined;
+    FORECAST_COORDINATES.value = explicitForecastCoordinates();
+    NAME.value =
+        QUERY_PARAMS.value.name ?? QUERY_PARAMS.value.icaocode ?? undefined;
+
+    const metarPromise = fetchMetar();
+    await fetchObservations();
+    await metarPromise;
+
+    const coordinates = FORECAST_COORDINATES.value;
+    if (!coordinates) {
+        OPEN_METEO_CURRENT.value = undefined;
+        FORECASTS.value = [];
+        FORECAST_SOURCE.value = null;
+        FORECAST_LOCATION_NAME.value = null;
+        addError(
+            "Koordinaatit puuttuvat. Anna leveys- ja pituusaste tai määritä FMI:n tai Fintrafficin havaintoasema.",
+        );
+        return;
+    }
+
+    const [hasFmiForecast, openMeteo] = await Promise.all([
+        fetchFmiForecasts(coordinates),
+        fetchHighWinds(coordinates),
+    ]);
+
+    let hasForecast = hasFmiForecast;
+    if (openMeteo) {
+        const surfaceForecasts = useOpenMeteoSurfaceWeather(openMeteo);
+        if (!hasFmiForecast && surfaceForecasts.some(hasValidWindData)) {
+            FORECASTS.value = surfaceForecasts;
+            FORECAST_SOURCE.value = "Open-Meteo";
+            FORECAST_LOCATION_NAME.value = coordinates;
+            STALE_FORECASTS.value = false;
+            hasForecast = true;
         }
+    } else {
+        OPEN_METEO_CURRENT.value = undefined;
+    }
+
+    if (!hasForecast) {
+        FORECASTS.value = [];
+        FORECAST_SOURCE.value = null;
+        FORECAST_LOCATION_NAME.value = null;
+        addError("Ennusteita ei löytynyt.");
     }
 }
 

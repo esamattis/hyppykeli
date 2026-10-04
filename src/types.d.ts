@@ -148,6 +148,14 @@ interface OpenMeteoHourlyData {
     winddirection_850hPa: number[];
     winddirection_700hPa: number[];
     winddirection_600hPa: number[];
+    wind_speed_10m: (number | null)[];
+    wind_gusts_10m: (number | null)[];
+    wind_direction_10m: (number | null)[];
+    temperature_2m: (number | null)[];
+    dew_point_2m: (number | null)[];
+    precipitation_probability: (number | null)[];
+    cloud_cover_low: (number | null)[];
+    cloud_cover_mid: (number | null)[];
 }
 
 interface FormattedTableData {
@@ -186,7 +194,7 @@ interface WindTableDay {
  * Interface representing weather data.
  */
 interface WeatherData {
-    source: "metar" | "fmi" | "roads" | "forecast" | "mock";
+    source: "metar" | "fmi" | "roads" | "openmeteo" | "forecast" | "mock";
     gust?: number;
     speed?: number;
     direction?: number;

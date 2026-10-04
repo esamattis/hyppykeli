@@ -13,6 +13,8 @@ import {
     FORECAST_DATE,
     STALE_FORECASTS,
     HAS_WIND_OBSERVATIONS,
+    OBSERVATION_SOURCE,
+    FORECAST_SOURCE,
 } from "./data.js";
 import { formatClock, formatDate, humanDayText } from "./utils.js";
 
@@ -149,6 +151,14 @@ export function Graph(props) {
         .chart-heading h2 {
             margin: 0;
         }
+        .source-note {
+            margin-left: auto;
+            color: var(--color-muted);
+            font-size: 0.8rem;
+        }
+        .source-note + button {
+            margin-left: 0;
+        }
         .chart {
             position: relative;
             height: clamp(350px, 70vh, 600px);
@@ -210,6 +220,9 @@ export function Graph(props) {
                                       ${formatDate(new Date())}
                                   </span>
                               </h2>
+                              <small class="source-note">
+                                  Lähde: ${OBSERVATION_SOURCE}
+                              </small>
                               ${props.observationsTable}
                           </div>
                           <div class="chart" onMouseLeave=${onMouseLeaveObs}>
@@ -233,6 +246,7 @@ export function Graph(props) {
                         ${humanDayText(FORECAST_DATE.value)}
                     </span>
                 </h2>
+                <small class="source-note">Lähde: ${FORECAST_SOURCE}</small>
                 ${props.forecastsTable}
             </div>
 

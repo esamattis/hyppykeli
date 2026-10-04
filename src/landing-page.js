@@ -242,9 +242,30 @@ export function CreateDropzoneForm() {
         }
     }
 
+    /** @param {import("preact").JSX.TargetedSubmitEvent<HTMLFormElement>} event */
+    function validateCoordinates(event) {
+        const lat = Number(fields.lat);
+        const lon = Number(fields.lon);
+        const validCoordinates =
+            fields.lat.trim() !== "" &&
+            fields.lon.trim() !== "" &&
+            Number.isFinite(lat) &&
+            Number.isFinite(lon) &&
+            lat >= -90 &&
+            lat <= 90 &&
+            lon >= -180 &&
+            lon <= 180;
+        if (validCoordinates || fields.fmisid || fields.roadsid) return;
+
+        event.preventDefault();
+        alert(
+            "Anna koordinaatit tai FMI:n tai Fintrafficin havaintoaseman tunnus.",
+        );
+    }
+
     return html`
         <h2>${headingScope.style}Luo hyppypaikka</h2>
-        <form action="/dz">
+        <form action="/dz" onSubmit=${validateCoordinates}>
             ${scope.style}
 
             <fieldset>
@@ -345,8 +366,9 @@ export function CreateDropzoneForm() {
                     />
                 </label>
                 <div class="desc">
-                    Desimaalimuodossa. Ei pakollinen. Käytetään havaintoaseman
-                    sijaintia jos ei annettu.
+                    Desimaalimuodossa. Pakollinen, ellei FMI:n tai Fintrafficin
+                    havaintoasemaa ole määritetty. Muuten käytetään
+                    havaintoaseman sijaintia.
                 </div>
                 <button
                     id="get-location"

@@ -25,6 +25,7 @@ import {
     NAME,
     getDevNumber,
     getQs,
+    weatherSourceLabel,
 } from "./data.js";
 import { OM_DATA, forecastTime } from "./om.js";
 import { formatClock } from "./utils.js";
@@ -276,6 +277,12 @@ export function DropzoneMap() {
         }
         .wind-profile {
             min-width: 0;
+        }
+        .source-note {
+            display: block;
+            margin: -0.5rem 0 1rem;
+            color: var(--color-muted);
+            font-size: 0.8rem;
         }
         ul {
             display: flex;
@@ -967,6 +974,12 @@ export function DropzoneMap() {
                     `,
                 )}
             </h2>
+            <small class="source-note">
+                Lähde:
+                Open-Meteo${
+                    ground ? `, ${weatherSourceLabel(ground.source)}` : ""
+                }
+            </small>
             <div class="map-layout">
                 <aside class="wind-profile">
                     <ul>

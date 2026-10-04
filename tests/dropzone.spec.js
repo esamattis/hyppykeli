@@ -20,6 +20,33 @@ async function setUniformFreefallWind(page) {
     });
 }
 
+function openMeteoResponse() {
+    const start = new Date();
+    start.setMinutes(0, 0, 0);
+    start.setHours(start.getHours() - 1);
+    const time = Array.from({ length: 50 }, (_, index) =>
+        new Date(start.getTime() + index * 60 * 60 * 1000)
+            .toISOString()
+            .slice(0, 16),
+    );
+    const hourly = {
+        time,
+        wind_speed_10m: time.map(() => 5),
+        wind_gusts_10m: time.map(() => 9),
+        wind_direction_10m: time.map(() => 180),
+        temperature_2m: time.map(() => 10),
+        dew_point_2m: time.map(() => 5),
+        precipitation_probability: time.map(() => 10),
+        cloud_cover_low: time.map(() => 20),
+        cloud_cover_mid: time.map(() => 30),
+    };
+    for (const level of ["600", "700", "850", "925", "1000"]) {
+        hourly[`windspeed_${level}hPa`] = time.map(() => 12);
+        hourly[`winddirection_${level}hPa`] = time.map(() => 200);
+    }
+    return { utc_offset_seconds: 0, hourly };
+}
+
 test.beforeEach(async ({ page, baseURL }) => {
     // These tests use DEV_ values only; live weather, tiles and analytics
     // must not make their results depend on external services.
@@ -144,6 +171,140 @@ test("ground wind omits hourly ranges when rounded endpoints are equal", async (
     );
     await expect(metrics.nth(2).locator(".direction-value")).toHaveText("194°");
     await expect(metrics.locator(".hourly-range")).toHaveCount(0);
+});
+
+test("coordinate-only dropzone uses Open-Meteo without an observations card or METAR error", async ({
+    page,
+}) => {
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: openMeteoResponse() }),
+    );
+    await page.goto("/dz/?name=World+DZ&lat=40.7&lon=-74");
+
+    await expect(page.locator("#winds .source-note")).toHaveText(
+        "Lähde: Open-Meteo (mallinnettu)",
+    );
+    await expect(page.locator("#forecasts-graph .source-note")).toHaveText(
+        "Lähde: Open-Meteo",
+    );
+    await expect(page.locator("#observations-graph")).toHaveCount(0);
+    await expect(
+        page.locator("#compass .compass-observations-gust"),
+    ).toHaveText("9 m/s");
+    await expect(page.locator("#errors")).toHaveCount(0);
+});
+
+test("METAR supplies the compass when no station source is configured", async ({
+    page,
+}) => {
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: openMeteoResponse() }),
+    );
+    const params = new URLSearchParams({
+        name: "METAR DZ",
+        lat: "40.7",
+        lon: "-74",
+        icaocode: "KJFK",
+        DEV_metar: "METAR KJFK 041200Z 18010G15KT 9999 FEW020 10/05 Q1014=",
+    });
+    await page.goto(`/dz/?${params}`);
+
+    await expect(page.locator("#winds .source-note")).toHaveText(
+        "Lähde: METAR",
+    );
+    await expect(page.locator("#observations-graph")).toHaveCount(0);
+});
+
+test("FMI takes priority over a configured Fintraffic station and supplies coordinates", async ({
+    page,
+}) => {
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: openMeteoResponse() }),
+    );
+    let roadRequests = 0;
+    page.on("request", (request) => {
+        if (request.url().startsWith("https://tie.digitraffic.fi/"))
+            roadRequests++;
+    });
+    await page.goto("/dz/?fmisid=137208&roadsid=5004&DEV_mock=1");
+
+    await expect(page.locator("#winds .source-note")).toHaveText("Lähde: FMI");
+    await expect
+        .poll(() =>
+            page.evaluate(async () => {
+                const { FORECAST_COORDINATES } = await import("/src/data.js");
+                return FORECAST_COORDINATES.value;
+            }),
+        )
+        .not.toBeNull();
+    expect(roadRequests).toBe(0);
+});
+
+test("Fintraffic station supplies observations and fallback coordinates", async ({
+    page,
+}) => {
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: openMeteoResponse() }),
+    );
+    await page.route("https://tie.digitraffic.fi/**", (route) => {
+        const url = new URL(route.request().url());
+        const now = new Date().toISOString();
+        if (url.pathname.endsWith("/data/history")) {
+            return route.fulfill({
+                json: { id: "5004", dataUpdatedTime: now, values: [] },
+            });
+        }
+        if (url.pathname.endsWith("/data")) {
+            const sensor = (id, name, value) => ({
+                id,
+                stationId: 5004,
+                name,
+                shortName: name,
+                measuredTime: now,
+                value,
+                unit: "",
+            });
+            return route.fulfill({
+                json: {
+                    id: 5004,
+                    dataUpdatedTime: now,
+                    sensorValues: [
+                        sensor(1, "MAKSIMITUULI", 8),
+                        sensor(2, "KESKITUULI", 5),
+                        sensor(3, "TUULENSUUNTA", 190),
+                        sensor(4, "ILMA", 10),
+                        sensor(5, "KASTEPISTE", 5),
+                    ],
+                },
+            });
+        }
+        return route.fulfill({
+            json: {
+                type: "Feature",
+                id: 5004,
+                geometry: {
+                    type: "Point",
+                    coordinates: [24.9, 60.2, 0],
+                },
+                properties: {
+                    names: { fi: "Tieasema", sv: "", en: "" },
+                },
+            },
+        });
+    });
+    await page.goto("/dz/?name=Road+DZ&roadsid=5004");
+
+    await expect(page.locator("#winds .source-note")).toHaveText(
+        "Lähde: Fintraffic",
+    );
+    await expect
+        .poll(() =>
+            page.evaluate(async () => {
+                const { FORECAST_COORDINATES } = await import("/src/data.js");
+                return FORECAST_COORDINATES.value;
+            }),
+        )
+        .toBe("60.2,24.9");
 });
 
 test("METAR cloud layers show coverage, heights and conversion help", async ({

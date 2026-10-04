@@ -34,6 +34,9 @@ import {
     saveCurrentDz,
     removeSavedDz,
     HOURLY_CLOUD_FORECASTS,
+    FORECAST_SOURCE,
+    WIND_SOURCE,
+    weatherSourceLabel,
 } from "./data.js";
 import { completeDropzones, partialDropzones } from "./dropzones.js";
 import { DeveloperBanner, DeveloperMode } from "./DeveloperMode.js";
@@ -510,6 +513,17 @@ function TableDialog(props) {
                 <div class=${scope.end}>${props.children}</div>
             `,
         )}
+    `;
+}
+
+/** @param {{ sources: Array<string | null | undefined> }} props */
+function SourceNote({ sources }) {
+    const unique = sources.filter(
+        (source, index) => source && sources.indexOf(source) === index,
+    );
+    if (!unique.length) return null;
+    return html`
+        <small class="source-note">Lähde: ${unique.join(", ")}</small>
     `;
 }
 
@@ -1743,6 +1757,7 @@ function HighWinds() {
     return html`
         <div id="high-winds-today">
             <h2>ECMWF Ylätuuliennusteet</h2>
+            <small class="source-note">Lähde: Open-Meteo</small>
 
             <p>
                 <button
@@ -2052,6 +2067,13 @@ export function Root() {
             align-items: center;
         }
 
+        .source-note {
+            display: block;
+            margin: -0.5rem 0 1rem;
+            color: var(--color-muted);
+            font-size: 0.8rem;
+        }
+
         .heading-spacer {
             width: 1ch;
         }
@@ -2091,12 +2113,20 @@ export function Root() {
 
             <div class="clouds" id="clouds">
                 <h2 class="h2-with-icon">Pilvet</h2>
+                ${h(SourceNote, {
+                    sources: [
+                        METARS.value ? "METAR" : null,
+                        weatherSourceLabel(LATEST_OBSERVATION.value?.source),
+                        FORECAST_SOURCE.value,
+                    ],
+                })}
 
                 <${CloudSummary} />
             </div>
 
             <div id="winds">
                 <h2 class="h2-with-icon">Tuulet</h2>
+                ${h(SourceNote, { sources: [WIND_SOURCE.value] })}
                 <${WindSummary} />
                 ${h(Compass, { floating: false })}
             </div>

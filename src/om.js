@@ -47,6 +47,17 @@ const PRESSURE_LEVELS_RAW = [
     },
 ];
 
+const SURFACE_FIELDS = [
+    "wind_speed_10m",
+    "wind_gusts_10m",
+    "wind_direction_10m",
+    "temperature_2m",
+    "dew_point_2m",
+    "precipitation_probability",
+    "cloud_cover_low",
+    "cloud_cover_mid",
+];
+
 const TIME_SLOTS = [0, 3, 6, 9, 12, 15, 18, 21];
 
 const WIND_SPEED_CLASSES = [
@@ -103,34 +114,24 @@ function isWindForecast(data) {
     ) {
         return false;
     }
-    return PRESSURE_LEVELS_RAW.every(({ key, directionKey }) =>
-        [key, directionKey].every((field) => {
-            const values = hourly[field];
-            return (
-                Array.isArray(values) &&
-                values.length === times.length &&
-                values.every(
-                    (value) =>
-                        value === null ||
-                        (typeof value === "number" && Number.isFinite(value)),
-                )
-            );
-        }),
-    );
-}
-
-function getTimeRange() {
-    const now = new Date();
-    const start = now.toISOString();
-    const end = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate() + 1,
-        23,
-        59,
-        59,
-    ).toISOString();
-    return { start, end };
+    return [
+        ...PRESSURE_LEVELS_RAW.flatMap(({ key, directionKey }) => [
+            key,
+            directionKey,
+        ]),
+        ...SURFACE_FIELDS,
+    ].every((field) => {
+        const values = hourly[field];
+        return (
+            Array.isArray(values) &&
+            values.length === times.length &&
+            values.every(
+                (value) =>
+                    value === null ||
+                    (typeof value === "number" && Number.isFinite(value)),
+            )
+        );
+    });
 }
 
 /**
@@ -138,12 +139,29 @@ function getTimeRange() {
  * @returns {Promise<OpenMeteoWeatherData | null>}
  */
 async function fetchDataWithCoordinates(coordinates) {
-    const { start, end } = getTimeRange();
-    const [latitude, longitude] = coordinates.split(",").map(Number);
+    const [latitudeText = "", longitudeText = ""] = coordinates.split(",");
+    const latitude = Number(latitudeText);
+    const longitude = Number(longitudeText);
+    const hourly = [
+        ...PRESSURE_LEVELS_RAW.flatMap(({ key, directionKey }) => [
+            key,
+            directionKey,
+        ]),
+        ...SURFACE_FIELDS,
+    ].join(",");
+    const params = new URLSearchParams({
+        latitude: latitude.toString(),
+        longitude: longitude.toString(),
+        hourly,
+        past_hours: "1",
+        forecast_days: "3",
+        timezone: "auto",
+        wind_speed_unit: "ms",
+    });
 
     try {
         const response = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&hourly=windspeed_1000hPa,windspeed_925hPa,windspeed_850hPa,windspeed_700hPa,windspeed_600hPa,winddirection_1000hPa,winddirection_925hPa,winddirection_850hPa,winddirection_700hPa,winddirection_600hPa&start=${start}&end=${end}`,
+            `https://api.open-meteo.com/v1/forecast?${params}`,
         );
         if (!response.ok) {
             throw new Error(`Open-Meteo HTTP ${response.status}`);
@@ -198,7 +216,7 @@ export async function fetchHighWinds(coordinates) {
         ) {
             console.log("Käytetään välimuistissa olevaa dataa");
             OM_DATA.value = cachedForecast;
-            return;
+            return cachedForecast;
         }
     }
 
@@ -212,6 +230,26 @@ export async function fetchHighWinds(coordinates) {
     }
 
     OM_DATA.value = newData;
+    return newData;
+}
+
+/**
+ * @param {OpenMeteoWeatherData} data
+ * @returns {WeatherData[]}
+ */
+export function getOpenMeteoSurfaceWeather(data) {
+    return data.hourly.time.map((time, index) => ({
+        source: /** @type {const} */ ("forecast"),
+        time: forecastTime(time, data.utc_offset_seconds),
+        speed: data.hourly.wind_speed_10m[index] ?? undefined,
+        gust: data.hourly.wind_gusts_10m[index] ?? undefined,
+        direction: data.hourly.wind_direction_10m[index] ?? undefined,
+        temperature: data.hourly.temperature_2m[index] ?? undefined,
+        dewPoint: data.hourly.dew_point_2m[index] ?? undefined,
+        rain: data.hourly.precipitation_probability[index] ?? undefined,
+        lowCloudCover: data.hourly.cloud_cover_low[index] ?? undefined,
+        middleCloudCover: data.hourly.cloud_cover_mid[index] ?? undefined,
+    }));
 }
 
 /**

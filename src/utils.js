@@ -99,11 +99,18 @@ export function hasValidWindData(obs) {
         return false;
     }
 
-    if (obs.direction === -1 || obs.gust === -1 || obs.speed === -1) {
-        return false;
-    }
-
-    return true;
+    return (
+        typeof obs.direction === "number" &&
+        Number.isFinite(obs.direction) &&
+        obs.direction >= 0 &&
+        obs.direction <= 360 &&
+        typeof obs.gust === "number" &&
+        Number.isFinite(obs.gust) &&
+        obs.gust >= 0 &&
+        typeof obs.speed === "number" &&
+        Number.isFinite(obs.speed) &&
+        obs.speed >= 0
+    );
 }
 
 /**
