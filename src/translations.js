@@ -210,7 +210,7 @@ export const english = {
     "map.selectWind": "Select an altitude to show its wind on the map.",
     "map.navigationHelp": "Pan and zoom the map with two fingers.",
     "map.jumpRunHelp":
-        "On load, the jump run is positioned at the landing coordinates along the default axis, facing the average 4200–800 m wind. The positioning button repeats this. Click or tap the map, then confirm in the callout to position the jump run so the group opens at that point. Clicking anywhere else cancels positioning. Press Enter on the focused map to do the same at the map centre. The direction button turns on direction mode; drag with the mouse or a finger to rotate the run around that opening point, and press the button again to leave it. The rotation buttons turn the run 90° clockwise or counterclockwise around the opening point. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
+        "On load, automatic placement uses the default axis facing the average 4200–800 m wind. Every predicted opening is placed at least 50 m upwind of the landing coordinates relative to each non-calm wind layer below that opening. The preferred offset estimates canopy wind drift with a constant descent speed of 5 m/s, using ground, 110 m, 800 m and any higher layers below opening. These are nominal forecast heights; the estimate does not model canopy glide or guarantee landing-area reachability. Automatic placement requires a ground observation no older than one hour and current upper winds; conflicting wind directions can prevent placement. The positioning button repeats this calculation. Manual edits can move openings outside these limits. Click or tap the map, then confirm in the callout to position the jump run so the group opens at that point. Clicking anywhere else cancels positioning. Press Enter on the focused map to do the same at the map centre. The direction button turns on direction mode; drag with the mouse or a finger to rotate the run around that opening point, and press the button again to leave it. The rotation buttons turn the run 90° clockwise or counterclockwise around the opening point. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
     "map.legendHelp":
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
@@ -222,6 +222,8 @@ export const english = {
     "map.shareFailed": "Sharing the map failed.",
     "map.driftUnavailable":
         "Drift estimate unavailable: upper-wind data is missing.",
+    "map.automaticRunUnavailable":
+        "Automatic placement unavailable: current wind data is missing, the track cannot be flown, or all openings cannot be placed upwind of every lower wind layer.",
     "map.jumpRunUnavailable":
         "Jump-run positions unavailable: exit-altitude wind is missing or the selected track cannot be flown at this airspeed.",
     "map.directionHint":
@@ -560,7 +562,7 @@ const finnish = {
     "map.selectWind": "Valitse korkeus nähdäksesi sen tuulen kartalla.",
     "map.navigationHelp": "Karttaa voi liikuttaa ja zoomata kahdella sormella.",
     "map.jumpRunHelp":
-        "Hyppylinja sijoitetaan ladattaessa laskeutumiskoordinaatteihin oletussuunnan mukaisesti vasten 4200–800 m keskituulta. Sijoituspainike tekee tämän uudelleen. Klikkaa tai napauta karttaa ja vahvista sijainti puhekuplasta sijoittaaksesi hyppylinjan niin, että ryhmä avautuu kyseiseen kohtaan. Klikkaus muualle peruu sijoittamisen. Enter kohdistetulla kartalla tekee saman kartan keskikohtaan. Suuntapainike käynnistää suunnan asetuksen; vedä hiirellä tai sormella kiertääksesi hyppylinjan tuon avautumiskohdan ympäri ja paina painiketta uudelleen poistuaksesi. Kiertopainikkeet kääntävät hyppylinjaa 90° myötä- tai vastapäivään avautumiskohdan ympäri. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
+        "Automaattinen sijoitus käyttää ladattaessa oletussuuntaa vasten 4200–800 m keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskoordinaattien tuulenpuolelle suhteessa jokaiseen avautumisen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin käyttäen maanpinnan, 110 m:n, 800 m:n ja avautumisen alapuolisten ylempien kerrosten tuulia. Korkeudet ovat ennusteen nimelliskorkeuksia; arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä. Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ylätuulet; ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike toistaa laskennan. Käsin tehdyt muutokset voivat siirtää avautumiskohtia näiden rajojen ulkopuolelle. Klikkaa tai napauta karttaa ja vahvista sijainti puhekuplasta sijoittaaksesi hyppylinjan niin, että ryhmä avautuu kyseiseen kohtaan. Klikkaus muualle peruu sijoittamisen. Enter kohdistetulla kartalla tekee saman kartan keskikohtaan. Suuntapainike käynnistää suunnan asetuksen; vedä hiirellä tai sormella kiertääksesi hyppylinjan tuon avautumiskohdan ympäri ja paina painiketta uudelleen poistuaksesi. Kiertopainikkeet kääntävät hyppylinjaa 90° myötä- tai vastapäivään avautumiskohdan ympäri. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
     "map.legendHelp":
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
@@ -572,6 +574,8 @@ const finnish = {
     "map.shareFailed": "Kartan jakaminen epäonnistui.",
     "map.driftUnavailable":
         "Ajautumisarvio ei saatavilla: ylätuulitietoja puuttuu.",
+    "map.automaticRunUnavailable":
+        "Automaattinen sijoitus ei ole saatavilla: ajantasaisia tuulitietoja puuttuu, lentorataa ei voi lentää tai kaikkia avautumiskohtia ei voi sijoittaa jokaisen alatuulikerroksen tuulenpuolelle.",
     "map.jumpRunUnavailable":
         "Hyppylinjan paikat eivät ole saatavilla: uloshyppykorkeuden tuulitieto puuttuu tai valittua lentorataa ei voi lentää tällä ilmanopeudella.",
     "map.directionHint":

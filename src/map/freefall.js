@@ -1,5 +1,6 @@
 // @ts-check
 
+export const EARTH_RADIUS_METRES = 6371000;
 export const FREEFALL_EXIT = 4000;
 export const FREEFALL_OPENING = 800;
 export const FREEFALL_SPEED = 180 / 3.6;
@@ -316,7 +317,7 @@ export function getJumpRunVelocity(winds, settings) {
  * @returns {[number, number]}
  */
 export function driftCoordinates(start, { east, north }) {
-    const distance = Math.hypot(east, north) / 6371000;
+    const distance = Math.hypot(east, north) / EARTH_RADIUS_METRES;
     const bearing = Math.atan2(east, north);
     const lat = (start.lat * Math.PI) / 180;
     const lon = (start.lng * Math.PI) / 180;

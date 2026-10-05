@@ -1,4 +1,5 @@
 // @ts-check
+import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
 import { QUERY_PARAMS, getQs, navigateQs } from "#app/app/settings.js";
 import { Help } from "#app/shared/Help.js";
 import { formatClock } from "#app/shared/dates.js";
@@ -305,6 +306,7 @@ export function DropzoneMap() {
     const openingTargetRef = useRef(null);
     const openingTargetKeyRef = useRef("");
     const calculateJumpRun = useMemo(createJumpRunCalculator, []);
+    const calculateDefaultRun = useMemo(createJumpRunCalculator, []);
     const [shareError, setShareError] = useState("");
     const [now, setNow] = useState(Date.now());
     const [fullWindow, setFullWindow] = useMapState(
@@ -647,8 +649,15 @@ export function DropzoneMap() {
             leafletInstance.setView(target, zoom, { animate: false });
     }, [leafletInstance, center, zoom, coordinates]);
 
-    const { data, time, winds, averageWind, ground, freefallWinds } =
-        getMapWindData(now);
+    const {
+        data,
+        time,
+        winds,
+        averageWind,
+        ground,
+        freefallWinds,
+        canopyWinds,
+    } = getMapWindData(now);
     const calculation = calculateJumpRun(freefallWinds, jumpRunSettings);
     const jumpRunVelocity = calculation.velocity;
     /** @param {import('leaflet').LatLngLiteral | null} start @param {JumpRunSettings} settings @param {JumpRunJumper[]} group */
@@ -686,9 +695,7 @@ export function DropzoneMap() {
         );
     };
 
-    /** @param {import('leaflet').LatLngLiteral} target @param {number} [direction] */
-    const positionJumpRunAt = (target, direction) => {
-        if (!isValidPosition(target)) return;
+    const placementGroup = () => {
         const creating = !jumpRunStart;
         const untouched =
             jumpers.length === 0 ||
@@ -701,15 +708,19 @@ export function DropzoneMap() {
                 : Array.from({ length: defaultJumperCount }, () => ({
                       ...nextJumper,
                   }));
+        return positionedJumpers.length ? positionedJumpers : [nextJumper];
+    };
+    /** @param {import('leaflet').LatLngLiteral} target @param {number} [direction] */
+    const positionJumpRunAt = (target, direction) => {
+        if (!isValidPosition(target)) return;
+        const creating = !jumpRunStart;
         const settings =
             direction !== undefined
                 ? { ...jumpRunSettings, direction }
                 : creating && !QUERY_PARAMS.value.map_run_settings
                   ? { ...jumpRunSettings, direction: defaultJumpRunDirection }
                   : jumpRunSettings;
-        const group = positionedJumpers.length
-            ? positionedJumpers
-            : [nextJumper];
+        const group = placementGroup();
         const start = startForOpeningTarget(
             target,
             settings,
@@ -732,22 +743,48 @@ export function DropzoneMap() {
         ) < -1e-10
             ? (defaultJumpRunDirection + 180) % 360
             : defaultJumpRunDirection;
-    const canPositionDefault =
-        hasLandingCoordinates &&
-        freefallWinds.every(
-            ({ speed, direction }) => speed !== null && direction !== null,
-        ) &&
-        !!calculateJumpRun(freefallWinds, {
-            ...jumpRunSettings,
-            direction: intoWindDirection,
-        }).velocity;
+    const defaultSettings = {
+        ...jumpRunSettings,
+        direction: intoWindDirection,
+    };
+    const defaultGroup = placementGroup();
+    const defaultPlacementKey = JSON.stringify([
+        landingLat,
+        landingLon,
+        defaultSettings,
+        defaultGroup,
+        canopyWinds,
+    ]);
+    const defaultStart = useMemo(
+        () =>
+            hasLandingCoordinates
+                ? startForAutomaticRun(
+                      { lat: Number(landingLat), lng: Number(landingLon) },
+                      defaultSettings,
+                      defaultGroup,
+                      calculateDefaultRun(freefallWinds, defaultSettings),
+                      canopyWinds,
+                  )
+                : null,
+        [defaultPlacementKey],
+    );
+    const canPositionDefault = !!defaultStart;
     const positionDefaultJumpRun = () => {
-        if (!canPositionDefault) return;
+        if (!defaultStart) return;
         setPlacingJumpRunDirection(false);
-        positionJumpRunAt(
-            { lat: Number(landingLat), lng: Number(landingLon) },
-            intoWindDirection,
+        const target = openingTargetForRun(
+            defaultStart,
+            defaultSettings,
+            defaultGroup,
+            calculateDefaultRun(freefallWinds, defaultSettings),
         );
+        if (target)
+            savePositionedRun(
+                target,
+                defaultStart,
+                defaultSettings,
+                defaultGroup,
+            );
     };
     const initialPositionHandled = useRef(
         !!jumpRunStart || QUERY_PARAMS.peek().map_run_start === "null",
@@ -759,7 +796,7 @@ export function DropzoneMap() {
             return;
         }
         if (!canPositionDefault || !leafletInstance) return;
-        // Keep waiting if upper winds have not arrived yet. Once positioned,
+        // Wait for a feasible placement and fresh upper/lower winds. Once positioned,
         // later weather updates must not overwrite the user's edits or clear.
         initialPositionHandled.current = true;
         positionDefaultJumpRun();
@@ -1345,6 +1382,18 @@ export function DropzoneMap() {
                         ? html`
                               <p class="jump-run-unavailable" role="status">
                                   ${t("map.jumpRunUnavailable")}
+                              </p>
+                          `
+                        : null
+                }
+                ${
+                    hasLandingCoordinates && !canPositionDefault
+                        ? html`
+                              <p
+                                  class="automatic-run-unavailable"
+                                  role="status"
+                              >
+                                  ${t("map.automaticRunUnavailable")}
                               </p>
                           `
                         : null

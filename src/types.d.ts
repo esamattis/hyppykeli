@@ -56,6 +56,17 @@ interface MapWindLevel {
     direction: number | null;
 }
 
+interface AutomaticOpeningCheck {
+    index: number;
+    opening: FreefallDriftPoint;
+    directions: WindVector[];
+}
+
+interface OpeningWindConstraint {
+    direction: WindVector;
+    minimum: number;
+}
+
 interface FreefallWindLevel extends MapWindLevel {
     height: number;
 }

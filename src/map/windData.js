@@ -4,6 +4,8 @@ import { t } from "#app/translations.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
 import { OBSERVATIONS, OM_DATA } from "#app/weather/state.js";
 
+const MAX_GROUND_WIND_AGE_MS = 60 * 60 * 1000;
+
 /** @type {Array<{ level: OpenMeteoPressureLevel, height: number }>} */
 const LEVELS = [
     { level: "600", height: 4200 },
@@ -60,7 +62,27 @@ export function getMapWindData(now = Date.now()) {
         direction: ground?.direction ?? null,
     });
 
-    return { data, time, winds, averageWind, ground, freefallWinds };
+    const groundAge = ground ? now - ground.time.getTime() : Infinity;
+    // Observations can arrive after the map's most recent minute tick.
+    const freshGround = groundAge <= MAX_GROUND_WIND_AGE_MS;
+    const canopyWinds = [
+        ...altitudeWinds,
+        {
+            height: 0,
+            label: t("map.ground"),
+            speed: freshGround ? (ground?.speed ?? null) : null,
+            direction: freshGround ? (ground?.direction ?? null) : null,
+        },
+    ];
+    return {
+        data,
+        time,
+        winds,
+        averageWind,
+        ground,
+        freefallWinds,
+        canopyWinds,
+    };
 }
 
 /** @param {MapWindLevel[]} winds @returns {MapWindLevel} */
