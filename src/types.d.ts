@@ -97,6 +97,11 @@ interface JumpRunJumperDraft {
     openingHeight: string;
 }
 
+interface JumpRunDirectionGesture {
+    direction: number;
+    offset: import("leaflet").Point;
+}
+
 interface JumpRunSettings {
     exitHeight: number;
     direction: number;
@@ -548,6 +553,7 @@ interface IconProps {
     name:
         | "plane"
         | "plus"
+        | "minus"
         | "settings"
         | "share"
         | "expand"

@@ -12,6 +12,9 @@ const artwork = {
     plus: html`
         <path d="M12 4v16M4 12h16" />
     `,
+    minus: html`
+        <path d="M4 12h16" />
+    `,
     settings: html`
         <path d="M4 6h16M4 12h16M4 18h16" />
         <circle cx="8" cy="6" r="2" />
@@ -67,9 +70,8 @@ const artwork = {
         <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
     `,
     heading: html`
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v10" />
-        <path d="m8.5 10.5 3.5-3.5 3.5 3.5" />
+        <path d="M21 7v5h-5" />
+        <path d="M21 12a9 9 0 1 0-2.64 6.36" />
     `,
     lightning: html`
         <path d="m13 2-9 12h7l-1 8 10-13h-7z" fill="currentColor" />

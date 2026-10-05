@@ -66,7 +66,7 @@ export function FreefallToolbar({
                 ${h(JumpRunControls, jumpRun)}
                 ${h(ToolbarButton, {
                     label: t("toolbar.undoArrow"),
-                    icon: "undo",
+                    icon: "minus",
                     className: "undo-arrow",
                     disabled: arrowCount === 0,
                     onClick: onUndo,

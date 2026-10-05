@@ -43,7 +43,6 @@ import {
 } from "leaflet";
 import {
     useEffect,
-    useId,
     useLayoutEffect,
     useMemo,
     useRef,
@@ -124,6 +123,9 @@ export function DropzoneMap() {
         .jump-run-line {
             stroke: var(--map-direction-color, #2563eb);
             animation: dropzone-map-direction-dashes 700ms linear infinite;
+        }
+        .freefall-drift-line {
+            opacity: 0.65;
         }
         @media (prefers-reduced-motion: reduce) {
             .jump-run-line {
@@ -224,32 +226,6 @@ export function DropzoneMap() {
             opacity: 0.55;
             pointer-events: none;
         }
-        .jump-run-target {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            z-index: 500;
-            width: 20px;
-            height: 20px;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-        }
-        .jump-run-target::before,
-        .jump-run-target::after {
-            content: "";
-            position: absolute;
-            top: 9px;
-            left: 1px;
-            width: 18px;
-            height: 2px;
-            border-radius: 1px;
-            background: #dc2626;
-            box-shadow: 0 0 0 1px white;
-            transform: rotate(45deg);
-        }
-        .jump-run-target::after {
-            transform: rotate(-45deg);
-        }
         .direction-hint {
             position: absolute;
             top: 12px;
@@ -310,13 +286,14 @@ export function DropzoneMap() {
     const activeLeafletRef = useRef(null);
     /** @type {import('preact').RefObject<(target: import('leaflet').LatLngLiteral) => void>} */
     const positionJumpRunAtRef = useRef(() => {});
-    /** @type {import('preact').RefObject<(pointer: import('leaflet').LatLngLiteral) => void>} */
+    /** @type {import('preact').RefObject<(pointer: import('leaflet').Point) => JumpRunDirectionGesture | null>} */
+    const beginDirectionDragRef = useRef(() => null);
+    /** @type {import('preact').RefObject<(direction: number) => void>} */
     const aimJumpRunAtRef = useRef(() => {});
     /** @type {import('preact').RefObject<import('leaflet').LatLngLiteral | null>} */
     const openingTargetRef = useRef(null);
     const openingTargetKeyRef = useRef("");
     const calculateJumpRun = useMemo(createJumpRunCalculator, []);
-    const arrowId = `freefall-arrow-${useId()}`;
     const [shareError, setShareError] = useState("");
     const [now, setNow] = useState(Date.now());
     const [fullWindow, setFullWindow] = useMapState(
@@ -436,20 +413,28 @@ export function DropzoneMap() {
         if (!fullWindow) return;
         const previousOverflow = document.body.style.overflow;
         document.body.style.overflow = "hidden";
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [fullWindow]);
+
+    useEffect(() => {
+        if (!fullWindow && !placingJumpRunDirection) return;
         /** @param {KeyboardEvent} event */
         const exit = (event) => {
             if (
                 event.key === "Escape" &&
                 !document.querySelector("dialog:modal")
-            )
-                setFullWindow(false);
+            ) {
+                if (placingJumpRunDirection) setPlacingJumpRunDirection(false);
+                else setFullWindow(false);
+            }
         };
         document.addEventListener("keydown", exit);
         return () => {
-            document.body.style.overflow = previousOverflow;
             document.removeEventListener("keydown", exit);
         };
-    }, [fullWindow]);
+    }, [fullWindow, placingJumpRunDirection]);
 
     useEffect(() => {
         if (!mapRef.current || !coordinates) return;
@@ -538,7 +523,6 @@ export function DropzoneMap() {
         )
             return;
         const handlers = [
-            leafletInstance.scrollWheelZoom,
             leafletInstance.doubleClickZoom,
             leafletInstance.touchZoom,
             leafletInstance.boxZoom,
@@ -556,6 +540,14 @@ export function DropzoneMap() {
             zoomControl.enable();
         };
     }, [leafletInstance, placingJumpRunDirection]);
+
+    useLayoutEffect(() => {
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
+            return;
+        if (fullWindow && !placingJumpRunDirection)
+            leafletInstance.scrollWheelZoom.enable();
+        else leafletInstance.scrollWheelZoom.disable();
+    }, [leafletInstance, fullWindow, placingJumpRunDirection]);
 
     useEffect(() => {
         if (
@@ -687,14 +679,24 @@ export function DropzoneMap() {
         if (!start) return;
         savePositionedRun(target, start, settings, group);
     };
-    aimJumpRunAtRef.current = (pointer) => {
+    beginDirectionDragRef.current = (pointer) => {
         const map = activeLeafletRef.current;
         const pivot = currentOpeningTarget();
-        if (!map || !pivot || !isValidPosition(pointer)) return;
-        const offset = map.project(pointer).subtract(map.project(pivot));
-        if (offset.x === 0 && offset.y === 0) return;
-        const direction =
-            ((Math.atan2(offset.x, -offset.y) * 180) / Math.PI + 360) % 360;
+        if (!map || !pivot) return null;
+        const bounds = map.getContainer().getBoundingClientRect();
+        let offset = pointer
+            .subtract(point(bounds.left, bounds.top))
+            .subtract(map.latLngToContainerPoint(pivot));
+        // A drag starting near the pivot needs a stable rotation radius.
+        if (offset.distanceTo(point(0, 0)) < 40) {
+            const radians = (jumpRunSettings.direction * Math.PI) / 180;
+            offset = point(Math.sin(radians) * 40, -Math.cos(radians) * 40);
+        }
+        return { direction: jumpRunSettings.direction, offset };
+    };
+    aimJumpRunAtRef.current = (direction) => {
+        const pivot = currentOpeningTarget();
+        if (!pivot || !Number.isFinite(direction)) return;
         const settings = { ...jumpRunSettings, direction };
         const start = startForOpeningTarget(
             pivot,
@@ -749,23 +751,32 @@ export function DropzoneMap() {
         const useKeyboard = () => {
             pointerFocus = false;
         };
-        // Clicking positions the run. Direction mode stays on until the
-        // direction button is pressed again. Dragging aims around the stored
-        // opening through aimJumpRunAtRef, which also moves the start. This
-        // effect must not depend on that start, or the gesture restarts.
+        // Clicking positions the run, or exits direction mode without moving it.
+        // Dragging rotates relative to its initial bearing around the stored
+        // opening. This effect must not depend on the run start or heading,
+        // or it would reset the gesture during rotation.
         const directionPlacement = placingJumpRunDirection;
+        /** @type {JumpRunDirectionGesture | null} */
+        let directionGesture = null;
         /** @type {import('leaflet').Point | null} */
         let pendingAim = null;
         /** @type {number | null} */
         let aimFrame = null;
         /** @param {number} x @param {number} y */
         const aimAtClientPoint = (x, y) => {
-            const bounds = container.getBoundingClientRect();
-            aimJumpRunAtRef.current?.(
-                leafletInstance.containerPointToLatLng(
-                    point(x - bounds.left, y - bounds.top),
-                ),
-            );
+            if (!dragStart || !directionGesture) return;
+            const initial = directionGesture.offset;
+            const offset = initial.add(point(x, y).subtract(dragStart));
+            if (offset.x === 0 && offset.y === 0) return;
+            const rotation =
+                Math.atan2(offset.x, -offset.y) -
+                Math.atan2(initial.x, -initial.y);
+            const direction =
+                (((directionGesture.direction + (rotation * 180) / Math.PI) %
+                    360) +
+                    360) %
+                360;
+            aimJumpRunAtRef.current?.(direction);
         };
         const flushDirectionAim = () => {
             if (aimFrame !== null) cancelAnimationFrame(aimFrame);
@@ -777,11 +788,14 @@ export function DropzoneMap() {
         /** @type {import('leaflet').Point | null} */
         let dragStart = null;
         let dragMoved = false;
+        let directionDragged = false;
         let pointerDrag = false;
         const finishDirectionDrag = () => {
             // Commit the last movement even when release precedes the next frame.
             flushDirectionAim();
+            directionDragged = dragMoved;
             dragStart = null;
+            directionGesture = null;
             dragMoved = false;
             pointerDrag = false;
             setDraggingJumpRunDirection(false);
@@ -810,8 +824,11 @@ export function DropzoneMap() {
             )
                 return;
             pointerDrag = true;
+            directionDragged = false;
             dragMoved = false;
             dragStart = point(event.clientX, event.clientY);
+            directionGesture =
+                beginDirectionDragRef.current?.(dragStart) ?? null;
             try {
                 container.setPointerCapture(event.pointerId);
             } catch {
@@ -835,7 +852,9 @@ export function DropzoneMap() {
         const startDirectionTouch = (event) => {
             // A mouse drag already owns this gesture.
             if (pointerDrag) return;
+            directionDragged = false;
             dragStart = null;
+            directionGesture = null;
             dragMoved = false;
             if (!directionPlacement || event.touches.length !== 1) return;
             if (
@@ -844,7 +863,11 @@ export function DropzoneMap() {
             )
                 return;
             const touch = event.touches[0];
-            if (touch) dragStart = point(touch.clientX, touch.clientY);
+            if (touch) {
+                dragStart = point(touch.clientX, touch.clientY);
+                directionGesture =
+                    beginDirectionDragRef.current?.(dragStart) ?? null;
+            }
         };
         /** @param {TouchEvent} event */
         const followDirectionTouch = (event) => {
@@ -855,8 +878,8 @@ export function DropzoneMap() {
             }
             const touch = event.touches[0];
             if (!dragStart || !touch) return;
-            event.preventDefault();
-            followDirectionDrag(touch.clientX, touch.clientY);
+            if (followDirectionDrag(touch.clientX, touch.clientY))
+                event.preventDefault();
         };
         /** @param {TouchEvent} event */
         const finishDirectionTouch = (event) => {
@@ -883,7 +906,10 @@ export function DropzoneMap() {
         /** @param {import('leaflet').LeafletMouseEvent} event */
         const selectPoint = (event) => {
             cancelPendingPoint();
-            if (directionPlacement) return;
+            if (directionPlacement) {
+                if (!directionDragged) setPlacingJumpRunDirection(false);
+                return;
+            }
             // Leaflet can synthesize dblclick before dispatching the second
             // click, so also ignore that click by its original timestamp.
             if (
@@ -1064,40 +1090,10 @@ export function DropzoneMap() {
             ];
         });
         setDriftMissing(lines.length < arrows.length);
-        // A screen-sized SVG arrowhead follows the final segment at every zoom.
-        const svgNamespace = "http://www.w3.org/2000/svg";
-        const definitions = document.createElementNS(svgNamespace, "defs");
-        const arrow = document.createElementNS(svgNamespace, "marker");
-        arrow.id = arrowId;
-        arrow.setAttribute("viewBox", "0 0 12 12");
-        arrow.setAttribute("refX", "10");
-        arrow.setAttribute("refY", "6");
-        arrow.setAttribute("markerWidth", "16");
-        arrow.setAttribute("markerHeight", "16");
-        arrow.setAttribute("markerUnits", "userSpaceOnUse");
-        arrow.setAttribute("orient", "auto");
-        const tip = document.createElementNS(svgNamespace, "path");
-        tip.setAttribute("d", "M4 2L10 6L4 10");
-        tip.setAttribute("fill", "none");
-        tip.setAttribute("stroke", "#c2410c");
-        tip.setAttribute("stroke-width", "2.25");
-        tip.setAttribute("stroke-linecap", "round");
-        tip.setAttribute("stroke-linejoin", "round");
-        arrow.append(tip);
-        definitions.append(arrow);
-        const element = lines[0]?.getElement();
-        if (element instanceof SVGPathElement) {
-            element.ownerSVGElement?.prepend(definitions);
-        }
-        for (const line of lines) {
-            line.getElement()?.setAttribute("marker-end", `url(#${arrowId})`);
-        }
         return () => {
-            definitions.remove();
             layers.remove();
         };
     }, [
-        arrowId,
         leafletInstance,
         jumpers,
         data,
@@ -1305,7 +1301,6 @@ export function DropzoneMap() {
                             ${mapLayerScope.style}
                             ${!coordinates ? t("common.waitingCoordinates") : null}
                         </div>
-                        <span class="jump-run-target" aria-hidden="true"></span>
                         ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
                     </div>
                 </div>

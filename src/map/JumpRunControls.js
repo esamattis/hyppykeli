@@ -34,6 +34,9 @@ export function JumpRunControls({
             font-size: 0.8rem;
         }
         ${settingsDialogStyles}
+        .direction-toggle[aria-pressed="true"] {
+            background: var(--color-surface-hover);
+        }
         fieldset {
             margin-top: 14px;
             border: 1px solid var(--color-border);
@@ -151,6 +154,7 @@ export function JumpRunControls({
             ${h(ToolbarButton, {
                 label: t("settings.setJumpRunDirection"),
                 icon: "heading",
+                className: "direction-toggle",
                 pressed: directionActive,
                 disabled: !canAim,
                 onClick: onToggleDirection,
