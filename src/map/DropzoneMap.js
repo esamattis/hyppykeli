@@ -560,6 +560,9 @@ export function DropzoneMap() {
         handlers.forEach((handler) => handler.disable());
         zoomControl.disable();
         return () => {
+            // Coordinate changes and unmounts can remove the map before this
+            // cleanup runs. Only restore controls on the map still in use.
+            if (activeLeafletRef.current !== leafletInstance) return;
             enabledHandlers.forEach((handler) => handler.enable());
             zoomControl.enable();
         };

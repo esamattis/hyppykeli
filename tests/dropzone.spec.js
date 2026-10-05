@@ -1034,30 +1034,57 @@ test("map help separates instructions and explains forecast limitations", async 
     await expect(help).toContainText("äläkä tee operatiivisia päätöksiä");
 });
 
-test("map recreates safely when forecast coordinates change", async ({
-    page,
-}) => {
-    await setUniformFreefallWind(page);
-    const errors = [];
-    page.on("pageerror", (error) => errors.push(error.message));
-    const map = page.locator(".dz-map");
-    await expect(map.getByRole("button", { name: "Zoom in" })).toBeVisible();
+for (const settingDirection of [false, true]) {
+    test(`map recreates safely when forecast coordinates change ${settingDirection ? "during direction setting" : "while idle"}`, async ({
+        page,
+    }) => {
+        await setUniformFreefallWind(page);
+        const errors = [];
+        page.on("pageerror", (error) => errors.push(error.message));
+        const map = page.locator(".dz-map");
+        await expect(
+            map.getByRole("button", { name: "Zoom in" }),
+        ).toBeVisible();
 
-    await page.evaluate(async () => {
-        const { FORECAST_COORDINATES } = await import("#app/weather/state.js");
-        FORECAST_COORDINATES.value = "62.5,25.7";
-        await new Promise((resolve) =>
-            requestAnimationFrame(() => requestAnimationFrame(resolve)),
-        );
+        const directionButton = page.getByRole("button", {
+            name: "Aseta hyppylinjan suunta",
+        });
+        if (settingDirection) {
+            await map.click({ position: { x: 100, y: 160 } });
+            await expect(map.locator(".jump-run-jumper").first()).toBeVisible();
+            await directionButton.click();
+            await expect(directionButton).toHaveAttribute(
+                "aria-pressed",
+                "true",
+            );
+            await expect(
+                map.getByRole("button", { name: "Zoom in" }),
+            ).toHaveAttribute("aria-disabled", "true");
+        }
+
+        await page.evaluate(async () => {
+            const { FORECAST_COORDINATES } =
+                await import("#app/weather/state.js");
+            FORECAST_COORDINATES.value = "62.5,25.7";
+            await new Promise((resolve) =>
+                requestAnimationFrame(() => requestAnimationFrame(resolve)),
+            );
+        });
+
+        await expect(
+            map.getByRole("button", { name: "Zoom in" }),
+        ).toBeVisible();
+        await expect(directionButton).toHaveAttribute("aria-pressed", "false");
+        await expect(
+            map.getByRole("button", { name: "Zoom in" }),
+        ).toHaveAttribute("aria-disabled", "false");
+        await map.getByRole("button", { name: "Zoom in" }).click();
+        await expect
+            .poll(() => new URL(page.url()).searchParams.get("map_zoom"))
+            .toBe("15");
+        expect(errors).toEqual([]);
     });
-
-    await expect(map.getByRole("button", { name: "Zoom in" })).toBeVisible();
-    await map.getByRole("button", { name: "Zoom in" }).click();
-    await expect
-        .poll(() => new URL(page.url()).searchParams.get("map_zoom"))
-        .toBe("15");
-    expect(errors).toEqual([]);
-});
+}
 
 test("map wind profile shows the developer average and ground wind", async ({
     page,
