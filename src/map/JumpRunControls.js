@@ -10,9 +10,11 @@ import { SpeedPresets } from "#app/map/SpeedPresets.js";
 import { h, html } from "htm/preact";
 import { useId, useRef, useState } from "preact/hooks";
 
-/** @param {JumpRunControlsProps} props */
+/** @param {JumpRunPositionControlsProps} props */
 export function JumpRunControls({
     settings,
+    canPosition,
+    onPosition,
     defaultJumperCount,
     jumpers,
     nextJumper,
@@ -150,6 +152,12 @@ export function JumpRunControls({
                 icon: "settings",
                 hasPopup: "dialog",
                 onClick: open,
+            })}
+            ${h(ToolbarButton, {
+                label: t("toolbar.positionJumpRun"),
+                icon: "location",
+                disabled: !canPosition,
+                onClick: onPosition,
             })}
             ${h(ToolbarButton, {
                 label: t("settings.setJumpRunDirection"),

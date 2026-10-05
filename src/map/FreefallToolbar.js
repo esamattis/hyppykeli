@@ -77,14 +77,8 @@ export function FreefallToolbar({
             ${scope.style}
             <div class="toolbar-actions">
                 <div class="toolbar-controls">
-                    ${h(JumpRunControls, jumpRun)}
+                    ${h(JumpRunControls, { ...jumpRun, canPosition, onPosition })}
                     <div class="toolbar-map-actions">
-                        ${h(ToolbarButton, {
-                            label: t("toolbar.positionJumpRun"),
-                            icon: "location",
-                            disabled: !canPosition,
-                            onClick: onPosition,
-                        })}
                         ${h(ToolbarButton, {
                             label: t("toolbar.undoArrow"),
                             icon: "minus",

@@ -126,7 +126,14 @@ interface JumpRunControlsProps {
     onAdd: () => void;
 }
 
+interface JumpRunPositionControlsProps extends JumpRunControlsProps {
+    canPosition: boolean;
+    onPosition: () => void;
+}
+
 interface FreefallToolbarProps {
+    canPosition: boolean;
+    onPosition: () => void;
     fullWindow: boolean;
     onToggleFullWindow: () => void;
     onShare: () => void;

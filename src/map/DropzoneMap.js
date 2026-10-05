@@ -686,7 +686,8 @@ export function DropzoneMap() {
         );
     };
 
-    positionJumpRunAtRef.current = (target) => {
+    /** @param {import('leaflet').LatLngLiteral} target @param {number} [direction] */
+    const positionJumpRunAt = (target, direction) => {
         if (!isValidPosition(target)) return;
         const creating = !jumpRunStart;
         const untouched =
@@ -701,9 +702,11 @@ export function DropzoneMap() {
                       ...nextJumper,
                   }));
         const settings =
-            creating && !QUERY_PARAMS.value.map_run_settings
-                ? { ...jumpRunSettings, direction: defaultJumpRunDirection }
-                : jumpRunSettings;
+            direction !== undefined
+                ? { ...jumpRunSettings, direction }
+                : creating && !QUERY_PARAMS.value.map_run_settings
+                  ? { ...jumpRunSettings, direction: defaultJumpRunDirection }
+                  : jumpRunSettings;
         const group = positionedJumpers.length
             ? positionedJumpers
             : [nextJumper];
@@ -717,6 +720,50 @@ export function DropzoneMap() {
         if (!start) return;
         savePositionedRun(target, start, settings, group);
     };
+    positionJumpRunAtRef.current = positionJumpRunAt;
+    // Wind directions describe where the wind comes from. Pick the end
+    // of the configured axis with a headwind; keep the axis in a crosswind.
+    const intoWindDirection =
+        averageWind.speed !== null &&
+        averageWind.speed > 0 &&
+        averageWind.direction !== null &&
+        Math.cos(
+            ((defaultJumpRunDirection - averageWind.direction) * Math.PI) / 180,
+        ) < -1e-10
+            ? (defaultJumpRunDirection + 180) % 360
+            : defaultJumpRunDirection;
+    const canPositionDefault =
+        hasLandingCoordinates &&
+        freefallWinds.every(
+            ({ speed, direction }) => speed !== null && direction !== null,
+        ) &&
+        !!calculateJumpRun(freefallWinds, {
+            ...jumpRunSettings,
+            direction: intoWindDirection,
+        }).velocity;
+    const positionDefaultJumpRun = () => {
+        if (!canPositionDefault) return;
+        setPlacingJumpRunDirection(false);
+        positionJumpRunAt(
+            { lat: Number(landingLat), lng: Number(landingLon) },
+            intoWindDirection,
+        );
+    };
+    const initialPositionHandled = useRef(
+        !!jumpRunStart || QUERY_PARAMS.peek().map_run_start === "null",
+    );
+    useEffect(() => {
+        if (initialPositionHandled.current) return;
+        if (jumpRunStart || QUERY_PARAMS.peek().map_run_start === "null") {
+            initialPositionHandled.current = true;
+            return;
+        }
+        if (!canPositionDefault || !leafletInstance) return;
+        // Keep waiting if upper winds have not arrived yet. Once positioned,
+        // later weather updates must not overwrite the user's edits or clear.
+        initialPositionHandled.current = true;
+        positionDefaultJumpRun();
+    });
     beginDirectionDragRef.current = (pointer) => {
         const map = activeLeafletRef.current;
         const pivot = currentOpeningTarget();
@@ -1312,6 +1359,8 @@ export function DropzoneMap() {
                 <div class=${`map-frame${fullWindow ? " full-window" : ""}`}>
                     ${h(FreefallToolbar, {
                         fullWindow,
+                        canPosition: canPositionDefault,
+                        onPosition: positionDefaultJumpRun,
                         onShare: async () => {
                             setShareError("");
                             const url = new URL(location.href);

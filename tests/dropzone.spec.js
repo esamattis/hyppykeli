@@ -3478,3 +3478,78 @@ test("missing current Open-Meteo cloud data shows an unavailable message", async
     );
     await expect(card.locator(".cloud-profile-layers")).toHaveCount(0);
 });
+
+for (const [axis, wind, speed, expected] of [
+    [180, 0, 10, 0],
+    [30, 350, 10, 30],
+    [90, 0, 10, 90],
+    [180, 0, 0, 180],
+]) {
+    test(`automatic jump-run positioning uses axis ${axis} into wind ${wind} at ${speed} m/s`, async ({
+        page,
+    }) => {
+        await page.goto(
+            `${developerPath}&lat=62.4&lon=25.6&default_jump_run_direction=${axis}&default_jump_group_count=4&DEV_map_direction=${wind}&DEV_map_speed=${speed}`,
+        );
+        expect(
+            new URL(page.url()).searchParams.get("map_run_start"),
+        ).toBeNull();
+        await setUniformFreefallWind(page);
+        await expect(page.locator(".jump-run-jumper")).toHaveCount(4);
+        const params = new URL(page.url()).searchParams;
+        expect(JSON.parse(params.get("map_run_settings")).direction).toBe(
+            expected,
+        );
+        expect(
+            await openingDistance(page, { lat: 62.4, lng: 25.6 }),
+        ).toBeLessThan(1);
+        // A saved placement survives reload, even before fresh winds arrive.
+        const start = params.get("map_run_start");
+        await page.reload();
+        await setUniformFreefallWind(page);
+        expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
+            start,
+        );
+    });
+}
+
+test("manual default positioning restores the landing target and chooses direction using current average wind", async ({
+    page,
+}) => {
+    await page.goto(
+        `${developerPath}&lat=62.4&lon=25.6&default_jump_run_direction=180&DEV_map_direction=180`,
+    );
+    await setUniformFreefallWind(page);
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs(
+            {
+                DEV_map_direction: "0",
+                map_run_start: JSON.stringify({ lat: 62.41, lng: 25.61 }),
+            },
+            { replace: true },
+        );
+    });
+    const position = page.getByRole("button", {
+        name: "Sijoita hyppylinja laskeutumiskoordinaatteihin",
+    });
+    // Changing the developer wind triggers a weather refresh; restore the
+    // fixture after that refresh reports the blocked network request.
+    await expect(position).toBeDisabled();
+    await setUniformFreefallWind(page);
+    await position.click();
+    expect(
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+            .direction,
+    ).toBe(0);
+    expect(await openingDistance(page, { lat: 62.4, lng: 25.6 })).toBeLessThan(
+        1,
+    );
+    await page.getByRole("button", { name: "Tyhjennä nuolet" }).click();
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(0);
+    await setUniformFreefallWind(page);
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(0);
+    await position.click();
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+});
