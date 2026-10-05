@@ -210,11 +210,12 @@ export const english = {
     "map.selectWind": "Select an altitude to show its wind on the map.",
     "map.navigationHelp": "Pan and zoom the map with two fingers.",
     "map.jumpRunHelp":
-        "Click or tap the map to position the jump run so the group opens at that point. Press Enter on the focused map to do the same at the map centre. The direction button turns on direction mode; drag with the mouse or a finger to rotate the run around that opening point, and press the button again to leave it. The rotation buttons turn the run 90° clockwise or counterclockwise around the opening point. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
+        "Click or tap the map, then confirm in the callout to position the jump run so the group opens at that point. Clicking anywhere else cancels positioning. Press Enter on the focused map to do the same at the map centre. The direction button turns on direction mode; drag with the mouse or a finger to rotate the run around that opening point, and press the button again to leave it. The rotation buttons turn the run 90° clockwise or counterclockwise around the opening point. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
     "map.legendHelp":
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
         "Moving lines show the selected wind's flow direction. Stronger wind appears as longer, faster-moving lines.",
+    "map.confirmJumpRunPosition": "Position jump run here",
     "map.directionPrompt": "Drag to set the jump-run direction.",
     "map.averageHelp":
         "Average speed and direction at 800, 1,500, 3,000, and 4,200 m. Direction averaging accounts for crossing north and provides a rough freefall-drift estimate.",
@@ -558,11 +559,12 @@ const finnish = {
     "map.selectWind": "Valitse korkeus nähdäksesi sen tuulen kartalla.",
     "map.navigationHelp": "Karttaa voi liikuttaa ja zoomata kahdella sormella.",
     "map.jumpRunHelp":
-        "Klikkaus tai napautus sijoittaa hyppylinjan niin, että ryhmä avautuu kyseiseen kohtaan. Enter kohdistetulla kartalla tekee saman kartan keskikohtaan. Suuntapainike käynnistää suunnan asetuksen; vedä hiirellä tai sormella kiertääksesi hyppylinjan tuon avautumiskohdan ympäri ja paina painiketta uudelleen poistuaksesi. Kiertopainikkeet kääntävät hyppylinjaa 90° myötä- tai vastapäivään avautumiskohdan ympäri. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
+        "Klikkaa tai napauta karttaa ja vahvista sijainti puhekuplasta sijoittaaksesi hyppylinjan niin, että ryhmä avautuu kyseiseen kohtaan. Klikkaus muualle peruu sijoittamisen. Enter kohdistetulla kartalla tekee saman kartan keskikohtaan. Suuntapainike käynnistää suunnan asetuksen; vedä hiirellä tai sormella kiertääksesi hyppylinjan tuon avautumiskohdan ympäri ja paina painiketta uudelleen poistuaksesi. Kiertopainikkeet kääntävät hyppylinjaa 90° myötä- tai vastapäivään avautumiskohdan ympäri. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
     "map.legendHelp":
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
         "Kartan liikkuvat viivat näyttävät valitun tuulen virtaussuunnan. Voimakkaampi tuuli näkyy pidempinä ja nopeammin liikkuvina viivoina.",
+    "map.confirmJumpRunPosition": "Sijoita hyppylinja tähän",
     "map.directionPrompt": "Vedä asettaaksesi hyppylinjan suunnan.",
     "map.averageHelp":
         "Nopeuden ja suunnan keskiarvo korkeuksilta 800, 1500, 3000 ja 4200 m. Suunnan keskiarvo huomioi pohjoissuunnan ylityksen ja antaa karkean arvion vapaapudotusajautumisesta.",

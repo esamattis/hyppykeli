@@ -34,11 +34,13 @@ import { getMapWindData } from "#app/map/windData.js";
 import { h, html } from "htm/preact";
 import {
     circleMarker,
+    DomEvent,
     latLng,
     layerGroup,
     map,
     point,
     polyline,
+    popup,
     tileLayer,
 } from "leaflet";
 import {
@@ -119,6 +121,15 @@ export function DropzoneMap() {
             color: var(--color-text);
             border-color: var(--color-border);
             font: inherit;
+        }
+        .jump-run-placement .leaflet-popup-content-wrapper,
+        .jump-run-placement .leaflet-popup-tip {
+            background: var(--color-surface);
+            color: var(--color-text);
+        }
+        .jump-run-placement button {
+            font: inherit;
+            cursor: pointer;
         }
         .jump-run-line {
             stroke: var(--map-direction-color, #2563eb);
@@ -800,7 +811,7 @@ export function DropzoneMap() {
         const useKeyboard = () => {
             pointerFocus = false;
         };
-        // Clicking positions the run, or exits direction mode without moving it.
+        // Clicking asks to position the run, or exits direction mode without moving it.
         // Dragging rotates relative to its initial bearing around the stored
         // opening. This effect must not depend on the run start or heading,
         // or it would reset the gesture during rotation.
@@ -943,6 +954,55 @@ export function DropzoneMap() {
             clearTimeout(pendingPoint);
             pendingPoint = undefined;
         };
+        /** @type {import('leaflet').Popup | null} */
+        let placementCallout = null;
+        /** @type {HTMLElement | null} */
+        let placementContent = null;
+        /** @type {Event | null} */
+        let dismissedClick = null;
+        const dismissPlacement = () => {
+            cancelPendingPoint();
+            placementCallout?.remove();
+            placementCallout = null;
+            placementContent = null;
+        };
+        /** @param {MouseEvent} event */
+        const dismissOutside = (event) => {
+            if (!placementCallout && pendingPoint === undefined) return;
+            if (
+                event.target instanceof Node &&
+                placementContent?.contains(event.target)
+            )
+                return;
+            dismissedClick = event;
+            dismissPlacement();
+        };
+        /** @param {KeyboardEvent} event */
+        const dismissWithKeyboard = (event) => {
+            if (event.key === "Escape") dismissPlacement();
+        };
+        /** @param {import('leaflet').LatLngLiteral} target */
+        const confirmPositionAt = (target) => {
+            dismissPlacement();
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = t("map.confirmJumpRunPosition");
+            button.addEventListener("click", () => {
+                dismissPlacement();
+                positionJumpRunAtRef.current?.(target);
+            });
+            placementContent = document.createElement("div");
+            placementContent.append(button);
+            DomEvent.disableClickPropagation(placementContent);
+            placementCallout = popup({
+                closeButton: false,
+                autoPan: false,
+                className: "jump-run-placement",
+            })
+                .setLatLng(target)
+                .setContent(placementContent)
+                .openOn(leafletInstance);
+        };
         /** @param {import('leaflet').LatLngLiteral} target */
         const positionAt = (target) => {
             if (!directionPlacement) positionJumpRunAtRef.current?.(target);
@@ -950,10 +1010,11 @@ export function DropzoneMap() {
         /** @param {import('leaflet').LeafletMouseEvent} event */
         const cancelDoubleClick = (event) => {
             doubleClickTimeStamp = event.originalEvent.timeStamp;
-            cancelPendingPoint();
+            dismissPlacement();
         };
         /** @param {import('leaflet').LeafletMouseEvent} event */
         const selectPoint = (event) => {
+            if (event.originalEvent === dismissedClick) return;
             cancelPendingPoint();
             if (directionPlacement) {
                 if (!directionDragged) setPlacingJumpRunDirection(false);
@@ -969,7 +1030,7 @@ export function DropzoneMap() {
             const target = event.latlng;
             pendingPoint = setTimeout(() => {
                 pendingPoint = undefined;
-                positionAt(target);
+                confirmPositionAt(target);
             }, 300);
         };
         /** @param {KeyboardEvent} event */
@@ -985,6 +1046,9 @@ export function DropzoneMap() {
         };
         container.addEventListener("pointerdown", usePointer, true);
         document.addEventListener("keydown", useKeyboard, true);
+        document.addEventListener("click", dismissOutside, true);
+        document.addEventListener("keydown", dismissWithKeyboard);
+        leafletInstance.on("movestart", dismissPlacement);
         leafletInstance.on("click", selectPoint);
         leafletInstance.on("dblclick", cancelDoubleClick);
         container.addEventListener("pointerdown", startDirectionPointer);
@@ -1001,7 +1065,10 @@ export function DropzoneMap() {
         container.addEventListener("touchcancel", finishDirectionTouch);
         container.addEventListener("keydown", selectWithKeyboard);
         return () => {
-            cancelPendingPoint();
+            dismissPlacement();
+            document.removeEventListener("click", dismissOutside, true);
+            document.removeEventListener("keydown", dismissWithKeyboard);
+            leafletInstance.off("movestart", dismissPlacement);
             if (aimFrame !== null) cancelAnimationFrame(aimFrame);
             pendingAim = null;
             setDraggingJumpRunDirection(false);
