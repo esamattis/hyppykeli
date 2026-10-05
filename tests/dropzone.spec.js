@@ -2299,6 +2299,8 @@ test("two-finger navigation retains loaded tiles and saves the completed view", 
                 ),
         )
         .toBe(true);
+    // Switching back from wheel input must retain fractional touch zoom.
+    await map.dispatchEvent("wheel", { deltaY: -20 });
     const tile = await map.locator("img.leaflet-tile").first().elementHandle();
     const initial = new URL(page.url());
     const bounds = await map.boundingBox();
@@ -2539,6 +2541,31 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
     await wheel();
     await page.waitForTimeout(400);
     expect(zoom()).toBe(restoredZoom);
+});
+
+test("small wheel movements zoom by a full level after a fractional touch view", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs(
+            { map_zoom: "14.25", map_full_window: "true" },
+            { replace: true },
+        );
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+    });
+    const map = page.locator(".dz-map");
+    await expect(page.locator(".map-frame")).toHaveClass(/full-window/);
+    await map.dispatchEvent("wheel", {
+        deltaY: -20,
+        clientX: 200,
+        clientY: 200,
+    });
+    await expect
+        .poll(() => new URL(page.url()).searchParams.get("map_zoom"))
+        .toBe("15");
 });
 
 test("map zoom is disabled during jump run direction setting and restored afterward", async ({

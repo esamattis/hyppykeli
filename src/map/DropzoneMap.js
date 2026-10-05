@@ -460,6 +460,24 @@ export function DropzoneMap() {
         setLeafletInstance(leafletMap);
         setPlacingJumpRunDirection(false);
 
+        // Leaflet drops wheel zoom requests during its zoom animation. Tiny
+        // fractional steps therefore feel slow; use its default wheel steps,
+        // while keeping fractional zoom for smooth two-finger pan and pinch.
+        const useWheelZoomSteps = () => {
+            leafletMap.options.zoomSnap = 1;
+        };
+        const useTouchZoomSteps = () => {
+            leafletMap.options.zoomSnap = 0;
+        };
+        container.addEventListener("wheel", useWheelZoomSteps, {
+            capture: true,
+            passive: true,
+        });
+        container.addEventListener("touchstart", useTouchZoomSteps, {
+            capture: true,
+            passive: true,
+        });
+
         tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution:
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -488,6 +506,12 @@ export function DropzoneMap() {
             if (activeLeafletRef.current === leafletMap)
                 activeLeafletRef.current = null;
             observer.disconnect();
+            container.removeEventListener("wheel", useWheelZoomSteps, true);
+            container.removeEventListener(
+                "touchstart",
+                useTouchZoomSteps,
+                true,
+            );
             leafletMap.remove();
         };
     }, [coordinates]);
