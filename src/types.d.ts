@@ -644,3 +644,8 @@ interface FmiForecastOptions extends FmiRequestOptions {
 interface FmiObservationOptions extends FmiRequestOptions {
     startTime: Date;
 }
+
+interface JumpRunCalculation {
+    velocity: JumpRunVelocity | null;
+    drift: (jumper: JumpRunJumper) => FreefallDriftPoint[] | null;
+}

@@ -17,12 +17,7 @@ import {
 } from "#app/weather/state.js";
 import { FreefallToolbar } from "#app/map/FreefallToolbar.js";
 import { MapWindOverlay } from "#app/map/MapWindOverlay.js";
-import {
-    driftCoordinates,
-    getFreefallDrift,
-    getJumpRunVelocity,
-    jumpRunCoordinates,
-} from "#app/map/freefall.js";
+import { driftCoordinates, jumpRunCoordinates } from "#app/map/freefall.js";
 import {
     isFiniteNumber,
     isValidJumpRunSettings,
@@ -30,6 +25,11 @@ import {
     isValidPosition,
     useMapState,
 } from "#app/map/mapState.js";
+import {
+    createJumpRunCalculator,
+    startForOpeningTarget,
+    openingTargetForRun,
+} from "#app/map/jumpRun.js";
 import { getMapWindData } from "#app/map/windData.js";
 import { h, html } from "htm/preact";
 import {
@@ -52,98 +52,6 @@ import {
 
 /** @type {Readonly<JumpRunJumper>} */
 const DEFAULT_JUMPER = { speedKmh: 180, openingHeight: 800 };
-
-/**
- * First-exit position that puts the middle openings on the target.
- * @param {import('leaflet').LatLngLiteral} target
- * @param {JumpRunSettings} settings
- * @param {JumpRunJumper[]} group
- * @param {FreefallWindLevel[]} winds
- * @returns {import('leaflet').LatLng | null}
- */
-function startForOpeningTarget(target, settings, group, winds) {
-    const velocity = getJumpRunVelocity(winds, settings);
-    if (!velocity || !group.length) return null;
-    const middleIndex = Math.max(0, (group.length - 1) / 2);
-    const middleJumpers = group.slice(
-        Math.floor(middleIndex),
-        Math.ceil(middleIndex) + 1,
-    );
-    if (!middleJumpers.length) return null;
-    const openingOffset = middleJumpers.reduce(
-        (offset, jumper) => {
-            const path = getFreefallDrift(
-                winds,
-                settings.exitHeight,
-                jumper.speedKmh,
-                jumper.openingHeight,
-                velocity.air,
-            );
-            const opening = path?.[path.length - 1];
-            return {
-                east: offset.east + (opening?.east ?? 0) / middleJumpers.length,
-                north:
-                    offset.north + (opening?.north ?? 0) / middleJumpers.length,
-            };
-        },
-        { east: 0, north: 0 },
-    );
-    const middleExit = latLng(
-        driftCoordinates(target, {
-            height: 0,
-            east: -openingOffset.east,
-            north: -openingOffset.north,
-        }),
-    );
-    return latLng(
-        jumpRunCoordinates(middleExit, settings, -middleIndex, velocity.ground),
-    );
-}
-
-/**
- * Where the middle of the group opens for an existing run.
- * @param {import('leaflet').LatLngLiteral} start
- * @param {JumpRunSettings} settings
- * @param {JumpRunJumper[]} group
- * @param {FreefallWindLevel[]} winds
- * @returns {import('leaflet').LatLngLiteral | null}
- */
-function openingTargetForRun(start, settings, group, winds) {
-    const velocity = getJumpRunVelocity(winds, settings);
-    if (!velocity || !group.length) return null;
-    const middleIndex = Math.max(0, (group.length - 1) / 2);
-    const indexes = [
-        ...new Set([Math.floor(middleIndex), Math.ceil(middleIndex)]),
-    ];
-    /** @type {import('leaflet').LatLng[]} */
-    const openings = [];
-    for (const index of indexes) {
-        const jumper = group[index];
-        if (!jumper) continue;
-        const exit = latLng(
-            jumpRunCoordinates(start, settings, index, velocity.ground),
-        );
-        const path = getFreefallDrift(
-            winds,
-            settings.exitHeight,
-            jumper.speedKmh,
-            jumper.openingHeight,
-            velocity.air,
-        );
-        const opening = path?.[path.length - 1];
-        if (!opening) continue;
-        openings.push(latLng(driftCoordinates(exit, opening)));
-    }
-    if (!openings.length) return null;
-    return {
-        lat:
-            openings.reduce((sum, point) => sum + point.lat, 0) /
-            openings.length,
-        lng:
-            openings.reduce((sum, point) => sum + point.lng, 0) /
-            openings.length,
-    };
-}
 
 /** @param {{ wind: MapWindLevel, selected: boolean, onSelect: () => void }} props */
 function WindLevel({ wind, selected, onSelect }) {
@@ -406,6 +314,8 @@ export function DropzoneMap() {
     const aimJumpRunAtRef = useRef(() => {});
     /** @type {import('preact').RefObject<import('leaflet').LatLngLiteral | null>} */
     const openingTargetRef = useRef(null);
+    const openingTargetKeyRef = useRef("");
+    const calculateJumpRun = useMemo(createJumpRunCalculator, []);
     const arrowId = `freefall-arrow-${useId()}`;
     const [shareError, setShareError] = useState("");
     const [now, setNow] = useState(Date.now());
@@ -439,16 +349,6 @@ export function DropzoneMap() {
         isValidJumper,
     );
     const jumperCount = jumpers.length;
-    const [jumpRunSettings, setJumpRunSettings] = useMapState(
-        "map_run_settings",
-        /** @type {JumpRunSettings} */ ({
-            direction: 0,
-            speedKmh: 157,
-            separationSeconds: 5,
-            exitHeight: 4000,
-        }),
-        isValidJumpRunSettings,
-    );
     const defaultJumpRunDirectionValue = Number(
         QUERY_PARAMS.value.default_jump_run_direction,
     );
@@ -459,6 +359,16 @@ export function DropzoneMap() {
         defaultJumpRunDirectionValue <= 360
             ? defaultJumpRunDirectionValue
             : 0;
+    const [jumpRunSettings, setJumpRunSettings] = useMapState(
+        "map_run_settings",
+        /** @type {JumpRunSettings} */ ({
+            direction: defaultJumpRunDirection,
+            speedKmh: 157,
+            separationSeconds: 5,
+            exitHeight: 4000,
+        }),
+        isValidJumpRunSettings,
+    );
     const defaultJumperCountValue = Number(
         QUERY_PARAMS.value.default_jump_group_count,
     );
@@ -473,6 +383,7 @@ export function DropzoneMap() {
         /** @type {import('leaflet').Map | null} */ (null),
     );
     const [driftMissing, setDriftMissing] = useState(false);
+    const [placementUnavailable, setPlacementUnavailable] = useState(false);
     const [zoom, setZoom] = useMapState(
         "map_zoom",
         14,
@@ -706,6 +617,45 @@ export function DropzoneMap() {
             leafletInstance.setView(target, zoom, { animate: false });
     }, [leafletInstance, center, zoom, coordinates]);
 
+    const { data, time, winds, averageWind, ground, freefallWinds } =
+        getMapWindData(now);
+    const calculation = calculateJumpRun(freefallWinds, jumpRunSettings);
+    const jumpRunVelocity = calculation.velocity;
+    /** @param {import('leaflet').LatLngLiteral | null} start @param {JumpRunSettings} settings @param {JumpRunJumper[]} group */
+    const openingKey = (start, settings, group) =>
+        JSON.stringify([start, settings, group, freefallWinds]);
+    const currentOpeningTarget = () => {
+        // Preserve the target across rotations, but derive it again after any
+        // other change to the run or weather, including restored URL state.
+        const key = openingKey(jumpRunStart, jumpRunSettings, jumpers);
+        if (key !== openingTargetKeyRef.current) {
+            openingTargetRef.current = jumpRunStart
+                ? openingTargetForRun(
+                      jumpRunStart,
+                      jumpRunSettings,
+                      jumpers,
+                      calculation,
+                  )
+                : null;
+            openingTargetKeyRef.current = key;
+        }
+        return openingTargetRef.current;
+    };
+    /** @param {import('leaflet').LatLngLiteral} target @param {import('leaflet').LatLngLiteral} start @param {JumpRunSettings} settings @param {JumpRunJumper[]} group */
+    const savePositionedRun = (target, start, settings, group) => {
+        setPlacementUnavailable(false);
+        openingTargetRef.current = { lat: target.lat, lng: target.lng };
+        openingTargetKeyRef.current = openingKey(start, settings, group);
+        navigateQs(
+            {
+                map_run_start: JSON.stringify(start),
+                map_run_settings: JSON.stringify(settings),
+                map_jumpers: JSON.stringify(group),
+            },
+            { replace: true },
+        );
+    };
+
     positionJumpRunAtRef.current = (target) => {
         if (!isValidPosition(target)) return;
         const creating = !jumpRunStart;
@@ -720,34 +670,40 @@ export function DropzoneMap() {
                 : Array.from({ length: defaultJumperCount }, () => ({
                       ...nextJumper,
                   }));
-        const settings = creating
-            ? { ...jumpRunSettings, direction: defaultJumpRunDirection }
-            : jumpRunSettings;
-        const winds = getMapWindData(now).freefallWinds;
+        const settings =
+            creating && !QUERY_PARAMS.value.map_run_settings
+                ? { ...jumpRunSettings, direction: defaultJumpRunDirection }
+                : jumpRunSettings;
         const group = positionedJumpers.length
             ? positionedJumpers
             : [nextJumper];
-        const start = startForOpeningTarget(target, settings, group, winds);
+        const start = startForOpeningTarget(
+            target,
+            settings,
+            group,
+            calculateJumpRun(freefallWinds, settings),
+        );
+        setPlacementUnavailable(!start);
         if (!start) return;
-        openingTargetRef.current = { lat: target.lat, lng: target.lng };
-        if (creating) setJumpRunSettings(settings);
-        setJumpRunStart(start);
-        if (creating && untouched) setJumpers(positionedJumpers);
+        savePositionedRun(target, start, settings, group);
     };
     aimJumpRunAtRef.current = (pointer) => {
         const map = activeLeafletRef.current;
-        const pivot = openingTargetRef.current;
+        const pivot = currentOpeningTarget();
         if (!map || !pivot || !isValidPosition(pointer)) return;
         const offset = map.project(pointer).subtract(map.project(pivot));
         if (offset.x === 0 && offset.y === 0) return;
         const direction =
             ((Math.atan2(offset.x, -offset.y) * 180) / Math.PI + 360) % 360;
         const settings = { ...jumpRunSettings, direction };
-        const winds = getMapWindData(now).freefallWinds;
-        const start = startForOpeningTarget(pivot, settings, jumpers, winds);
+        const start = startForOpeningTarget(
+            pivot,
+            settings,
+            jumpers,
+            calculateJumpRun(freefallWinds, settings),
+        );
         if (!start) return;
-        setJumpRunSettings(settings);
-        setJumpRunStart(start);
+        savePositionedRun(pivot, start, settings, jumpers);
     };
     /** @param {JumpRunSettings} next */
     const applyJumpRunSettings = (next) => {
@@ -759,26 +715,27 @@ export function DropzoneMap() {
             setJumpRunSettings(next);
             return;
         }
-        const winds = getMapWindData(now).freefallWinds;
-        if (!openingTargetRef.current) {
-            const derived = openingTargetForRun(
-                jumpRunStart,
-                jumpRunSettings,
-                jumpers,
-                winds,
-            );
-            if (derived) openingTargetRef.current = derived;
-        }
-        const pivot = openingTargetRef.current;
+        const pivot = currentOpeningTarget();
         const start = pivot
-            ? startForOpeningTarget(pivot, next, jumpers, winds)
+            ? startForOpeningTarget(
+                  pivot,
+                  next,
+                  jumpers,
+                  calculateJumpRun(freefallWinds, next),
+              )
             : null;
         if (!start) {
+            // There is no opening to derive for an infeasible heading. Retain
+            // the last target so returning to a feasible heading can recover.
+            openingTargetKeyRef.current = openingKey(
+                jumpRunStart,
+                next,
+                jumpers,
+            );
             setJumpRunSettings(next);
             return;
         }
-        setJumpRunSettings(next);
-        setJumpRunStart(start);
+        if (pivot) savePositionedRun(pivot, start, next, jumpers);
     };
 
     useEffect(() => {
@@ -797,6 +754,10 @@ export function DropzoneMap() {
         // opening through aimJumpRunAtRef, which also moves the start. This
         // effect must not depend on that start, or the gesture restarts.
         const directionPlacement = placingJumpRunDirection;
+        /** @type {import('leaflet').Point | null} */
+        let pendingAim = null;
+        /** @type {number | null} */
+        let aimFrame = null;
         /** @param {number} x @param {number} y */
         const aimAtClientPoint = (x, y) => {
             const bounds = container.getBoundingClientRect();
@@ -806,11 +767,20 @@ export function DropzoneMap() {
                 ),
             );
         };
+        const flushDirectionAim = () => {
+            if (aimFrame !== null) cancelAnimationFrame(aimFrame);
+            aimFrame = null;
+            const target = pendingAim;
+            pendingAim = null;
+            if (target) aimAtClientPoint(target.x, target.y);
+        };
         /** @type {import('leaflet').Point | null} */
         let dragStart = null;
         let dragMoved = false;
         let pointerDrag = false;
         const finishDirectionDrag = () => {
+            // Commit the last movement even when release precedes the next frame.
+            flushDirectionAim();
             dragStart = null;
             dragMoved = false;
             pointerDrag = false;
@@ -823,7 +793,9 @@ export function DropzoneMap() {
                 return false;
             dragMoved = true;
             setDraggingJumpRunDirection(true);
-            aimAtClientPoint(x, y);
+            pendingAim = point(x, y);
+            if (aimFrame === null)
+                aimFrame = requestAnimationFrame(flushDirectionAim);
             return true;
         };
         /** @param {PointerEvent} event */
@@ -955,6 +927,8 @@ export function DropzoneMap() {
         container.addEventListener("keydown", selectWithKeyboard);
         return () => {
             cancelPendingPoint();
+            if (aimFrame !== null) cancelAnimationFrame(aimFrame);
+            pendingAim = null;
             setDraggingJumpRunDirection(false);
             container.removeEventListener("pointerdown", usePointer, true);
             document.removeEventListener("keydown", useKeyboard, true);
@@ -978,9 +952,6 @@ export function DropzoneMap() {
         };
     }, [leafletInstance, placingJumpRunDirection]);
 
-    const { data, time, winds, averageWind, ground, freefallWinds } =
-        getMapWindData(now);
-    const jumpRunVelocity = getJumpRunVelocity(freefallWinds, jumpRunSettings);
     const jumperStarts =
         jumpRunStart && jumpRunVelocity
             ? Array.from({ length: jumperCount }, (_, index) =>
@@ -1059,14 +1030,13 @@ export function DropzoneMap() {
         now,
     ]);
     useEffect(() => {
-        /** @type {Array<FreefallDriftArrow & { exitVelocity?: WindVector }>} */
+        /** @type {FreefallDriftArrow[]} */
         const arrows = jumperStarts.map((start, index) => ({
             start,
             exitHeight: jumpRunSettings.exitHeight,
             openingHeight:
                 jumpers[index]?.openingHeight ?? DEFAULT_JUMPER.openingHeight,
             speedKmh: jumpers[index]?.speedKmh ?? DEFAULT_JUMPER.speedKmh,
-            exitVelocity: jumpRunVelocity?.air,
         }));
         if (
             !leafletInstance ||
@@ -1077,15 +1047,8 @@ export function DropzoneMap() {
             return;
         }
         const layers = layerGroup().addTo(leafletInstance);
-        const forecastWinds = getMapWindData(now).freefallWinds;
         const lines = arrows.flatMap((settings) => {
-            const path = getFreefallDrift(
-                forecastWinds,
-                settings.exitHeight,
-                settings.speedKmh,
-                settings.openingHeight,
-                settings.exitVelocity,
-            );
+            const path = calculation.drift(settings);
             if (!path) return [];
             const positions = path.map((offset) =>
                 driftCoordinates(settings.start, offset),
@@ -1219,7 +1182,7 @@ export function DropzoneMap() {
                         : null
                 }
                 ${
-                    jumpRunStart && !jumpRunVelocity
+                    placementUnavailable || (jumpRunStart && !jumpRunVelocity)
                         ? html`
                               <p class="jump-run-unavailable" role="status">
                                   ${t("map.jumpRunUnavailable")}
@@ -1271,19 +1234,6 @@ export function DropzoneMap() {
                             directionActive: placingJumpRunDirection,
                             canAim: !!jumpRunStart,
                             onToggleDirection: () => {
-                                if (
-                                    !placingJumpRunDirection &&
-                                    !openingTargetRef.current &&
-                                    jumpRunStart
-                                ) {
-                                    const pivot = openingTargetForRun(
-                                        jumpRunStart,
-                                        jumpRunSettings,
-                                        jumpers,
-                                        getMapWindData(now).freefallWinds,
-                                    );
-                                    if (pivot) openingTargetRef.current = pivot;
-                                }
                                 setPlacingJumpRunDirection((active) => !active);
                             },
                             onAdd: () =>
@@ -1294,7 +1244,12 @@ export function DropzoneMap() {
                         },
                         arrowCount: jumpRunStart ? Math.max(1, jumperCount) : 0,
                         onClear: () => {
+                            setPlacementUnavailable(false);
                             openingTargetRef.current = null;
+                            setJumpRunSettings({
+                                ...jumpRunSettings,
+                                direction: defaultJumpRunDirection,
+                            });
                             setJumpRunStart(null);
                             setPlacingJumpRunDirection(false);
                             setJumpers([{ ...DEFAULT_JUMPER }]);
@@ -1304,6 +1259,10 @@ export function DropzoneMap() {
                                 setJumpers((current) => current.slice(0, -1));
                             else {
                                 openingTargetRef.current = null;
+                                setJumpRunSettings({
+                                    ...jumpRunSettings,
+                                    direction: defaultJumpRunDirection,
+                                });
                                 setJumpRunStart(null);
                                 setPlacingJumpRunDirection(false);
                             }

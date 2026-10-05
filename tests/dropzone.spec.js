@@ -1917,6 +1917,195 @@ test("default direction is used only when creating a jump run", async ({
     ).toBe(225);
 });
 
+test("rotation preserves the current opening after settings, group, and wind edits", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 120, y: 160 } });
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(6);
+    const edit = page.getByRole("button", {
+        name: "Hyppylinjan asetukset",
+        exact: true,
+    });
+    const dialog = page.getByRole("dialog", { name: "Hyppylinjan asetukset" });
+    await edit.click();
+    const direction = dialog.getByRole("slider", {
+        name: "Hyppylinjan suunta",
+    });
+    let degrees = 0;
+    for (const [name, value] of [
+        ["Hyppääjien väli (s)", "10"],
+        ["Todellinen ilmanopeus (km/h)", "180"],
+        ["Uloshyppykorkeus (m)", "3500"],
+    ]) {
+        const before = await middleOpening(page);
+        await dialog.getByRole("spinbutton", { name, exact: true }).fill(value);
+        expect(await openingDistance(page, before)).toBeGreaterThan(1);
+        const opening = await middleOpening(page);
+        await direction.fill(String(++degrees));
+        expect(await openingDistance(page, opening)).toBeLessThan(1);
+    }
+    const middleJumper = dialog.getByRole("group", {
+        name: "Hyppääjä 3",
+        exact: true,
+    });
+    await middleJumper
+        .getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" })
+        .fill("240");
+    let opening = await middleOpening(page);
+    await direction.fill(String(++degrees));
+    expect(await openingDistance(page, opening)).toBeLessThan(1);
+    await page.keyboard.press("Escape");
+    await page
+        .locator(".freefall-toolbar")
+        .getByRole("button", { name: "Lisää hyppääjä", exact: true })
+        .click();
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(7);
+    opening = await middleOpening(page);
+    await edit.click();
+    await direction.fill(String(++degrees));
+    expect(await openingDistance(page, opening)).toBeLessThan(1);
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const data = structuredClone(OM_DATA.value);
+        for (const level of ["600", "700", "850", "925", "1000"])
+            data.hourly[`windspeed_${level}hPa`] = [15];
+        OM_DATA.value = data;
+    });
+    opening = await middleOpening(page);
+    await direction.fill(String(++degrees));
+    expect(await openingDistance(page, opening)).toBeLessThan(1);
+});
+
+test("a feasible selected direction allows placement after the default track fails", async ({
+    page,
+}) => {
+    await page.goto(
+        `${developerPath}&default_jump_run_direction=0&map_run_settings=${encodeURIComponent(JSON.stringify({ direction: 0, speedKmh: 20, separationSeconds: 5, exitHeight: 4000 }))}`,
+    );
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 120, y: 160 } });
+    await expect(page.locator(".jump-run-unavailable")).toBeVisible();
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBeNull();
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    await page.getByRole("slider", { name: "Hyppylinjan suunta" }).fill("180");
+    await page.keyboard.press("Escape");
+    await map.click({ position: { x: 120, y: 160 } });
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(6);
+    await expect(page.locator(".jump-run-unavailable")).toHaveCount(0);
+    expect(
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+            .direction,
+    ).toBe(180);
+});
+
+test("rotation recovers its opening after an infeasible heading", async ({
+    page,
+}) => {
+    await page.goto(
+        `${developerPath}&default_jump_run_direction=180&map_run_settings=${encodeURIComponent(JSON.stringify({ direction: 180, speedKmh: 20, separationSeconds: 5, exitHeight: 4000 }))}`,
+    );
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 120, y: 160 } });
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(6);
+    const opening = await middleOpening(page);
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    const direction = page.getByRole("slider", { name: "Hyppylinjan suunta" });
+    await direction.fill("0");
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(0);
+    await direction.fill("170");
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(6);
+    expect(await openingDistance(page, opening)).toBeLessThan(1);
+});
+
+test("direction dragging coalesces movements and commits the final position on release", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 120, y: 160 } });
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(6);
+    // Invalidate the original target, then exercise the drag path as well as the slider.
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    await page
+        .getByRole("spinbutton", { name: "Hyppääjien väli (s)" })
+        .fill("10");
+    await page.keyboard.press("Escape");
+    const opening = await middleOpening(page);
+    await page
+        .getByRole("button", { name: "Aseta hyppylinjan suunta" })
+        .click();
+    const writes = await map.evaluate(async (element) => {
+        const original = history.replaceState;
+        let writes = 0;
+        history.replaceState = function (...args) {
+            writes++;
+            return original.apply(this, args);
+        };
+        const bounds = element.getBoundingClientRect();
+        const send = (type, x, y) =>
+            element.dispatchEvent(
+                new PointerEvent(type, {
+                    bubbles: true,
+                    pointerId: 1,
+                    pointerType: "mouse",
+                    button: 0,
+                    clientX: bounds.left + x,
+                    clientY: bounds.top + y,
+                }),
+            );
+        try {
+            send("pointerdown", 120, 160);
+            for (let i = 0; i < 20; i++) send("pointermove", 140 + i, 160);
+            const beforeFrame = writes;
+            await new Promise(requestAnimationFrame);
+            const afterFrame = writes;
+            // These events happen in the same task: release must flush the latest point.
+            send("pointermove", 160, 200);
+            send("pointermove", 120, 250);
+            send("pointerup", 120, 250);
+            const afterRelease = writes;
+            const settings = new URL(location.href).searchParams.get(
+                "map_run_settings",
+            );
+            await new Promise(requestAnimationFrame);
+            await new Promise(requestAnimationFrame);
+            return {
+                beforeFrame,
+                afterFrame,
+                afterRelease,
+                afterIdle: writes,
+                settings,
+                finalSettings: new URL(location.href).searchParams.get(
+                    "map_run_settings",
+                ),
+            };
+        } finally {
+            history.replaceState = original;
+        }
+    });
+    expect(writes.beforeFrame).toBe(0);
+    expect(writes.afterFrame).toBe(1);
+    expect(writes.afterRelease).toBe(2);
+    expect(writes.afterIdle).toBe(2);
+    expect(writes.finalSettings).toBe(writes.settings);
+    expect(JSON.parse(writes.settings).direction).toBeCloseTo(180, 0);
+    expect(await openingDistance(page, opening)).toBeLessThan(1);
+});
+
 for (const jumperCount of [1, 13, 14]) {
     test(`jump run centers ${jumperCount} jumpers on a map click`, async ({
         page,
