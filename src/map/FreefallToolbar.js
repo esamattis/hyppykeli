@@ -66,11 +66,7 @@ export function FreefallToolbar({
             font-variant-numeric: tabular-nums;
         }
         .window-toggle {
-            margin-left: auto;
             flex-shrink: 0;
-        }
-        .wind-level-menu:popover-open {
-            min-width: min(16rem, calc(100vw - 16px));
         }
         .wind-level-menu-list {
             display: flex;
@@ -132,7 +128,13 @@ export function FreefallToolbar({
                 <div class="toolbar-controls">
                     ${h(
                         JumpRunControls,
-                        { ...jumpRun, canPosition, onPosition },
+                        {
+                            ...jumpRun,
+                            canPosition,
+                            onPosition,
+                            arrowCount,
+                            onUndo,
+                        },
                         h(
                             DropdownMenu,
                             {
@@ -175,27 +177,20 @@ export function FreefallToolbar({
                     )}
                     <div class="toolbar-map-actions">
                         ${h(ToolbarButton, {
-                            label: t("toolbar.removeJumper"),
-                            icon: "minus",
-                            className: "undo-arrow",
-                            disabled: arrowCount === 0,
-                            onClick: onUndo,
-                        })}
-                        ${h(ToolbarButton, {
                             label: t("toolbar.removeJumpRun"),
                             icon: "trash",
                             className: "clear-arrows",
                             disabled: arrowCount === 0,
                             onClick: onClear,
                         })}
-                        ${h(ToolbarButton, {
-                            label: t("toolbar.shareMap"),
-                            icon: "share",
-                            disabled: typeof navigator.share !== "function",
-                            onClick: onShare,
-                        })}
                     </div>
                 </div>
+                ${h(ToolbarButton, {
+                    label: t("toolbar.shareMap"),
+                    icon: "share",
+                    disabled: typeof navigator.share !== "function",
+                    onClick: onShare,
+                })}
                 ${h(ToolbarButton, {
                     label: fullWindow
                         ? t("toolbar.restoreMap")

@@ -215,9 +215,9 @@ export const english = {
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
         "Moving lines show the selected wind's flow direction. Stronger wind appears as longer, faster-moving lines.",
-    "map.confirmJumpRunPosition": "Drop jumpers here",
-    "map.centerJumpRunPosition": "Center jump run here",
-    "map.parachuteLandingPosition": "Land parachutes here",
+    "map.confirmJumpRunPosition": "Opening",
+    "map.centerJumpRunPosition": "Center jump run",
+    "map.parachuteLandingPosition": "Landing",
     "map.directionPrompt": "Drag to set the jump-run direction.",
     "map.averageHelp":
         "Average speed and direction at 800, 1,500, 3,000, and 4,200 m. Direction averaging accounts for crossing north and provides a rough freefall-drift estimate.",
@@ -571,9 +571,9 @@ const finnish = {
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
         "Kartan liikkuvat viivat näyttävät valitun tuulen virtaussuunnan. Voimakkaampi tuuli näkyy pidempinä ja nopeammin liikkuvina viivoina.",
-    "map.confirmJumpRunPosition": "Pudota hyppääjät tähän",
-    "map.centerJumpRunPosition": "Keskitä hyppylinja tähän",
-    "map.parachuteLandingPosition": "Laskeudu varjolla tähän",
+    "map.confirmJumpRunPosition": "Avaus",
+    "map.centerJumpRunPosition": "Keskitä hyppylinja",
+    "map.parachuteLandingPosition": "Laskeutuminen",
     "map.directionPrompt": "Vedä asettaaksesi hyppylinjan suunnan.",
     "map.averageHelp":
         "Nopeuden ja suunnan keskiarvo korkeuksilta 800, 1500, 3000 ja 4200 m. Suunnan keskiarvo huomioi pohjoissuunnan ylityksen ja antaa karkean arvion vapaapudotusajautumisesta.",

@@ -33,9 +33,10 @@ test("every map toolbar button exposes its tooltip on hover, including disabled 
 test("keyboard focus shows tooltips and Escape dismisses them", async ({
     page,
 }) => {
-    const target = page
-        .locator(".freefall-toolbar button.arrow-action")
-        .first();
+    const target = page.getByRole("button", {
+        name: "Hyppylinjan asetukset",
+        exact: true,
+    });
     const tooltip = page.getByRole("tooltip");
     await target.evaluate((element) =>
         element.setAttribute("aria-describedby", "existing-description"),

@@ -1106,8 +1106,8 @@ export function DropzoneMap() {
             placementContent = document.createElement("div");
             /** @type {Array<[JumpRunPlacement, string]>} */
             const options = [
-                ["opening", t("map.confirmJumpRunPosition")],
                 ["center", t("map.centerJumpRunPosition")],
+                ["opening", t("map.confirmJumpRunPosition")],
                 ["landing", t("map.parachuteLandingPosition")],
             ];
             for (const [placement, label] of options) {

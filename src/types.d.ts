@@ -141,6 +141,8 @@ interface JumpRunControlsProps {
 }
 
 interface JumpRunPositionControlsProps extends JumpRunControlsProps {
+    arrowCount: number;
+    onUndo: () => void;
     canPosition: boolean;
     onPosition: () => void;
     children?: import("preact").ComponentChildren;

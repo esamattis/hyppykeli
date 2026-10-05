@@ -28,6 +28,8 @@ export function JumpRunControls({
     onToggleDirection,
     onResetDirection,
     onAdd,
+    onUndo,
+    arrowCount,
     children,
 }) {
     const scope = useScope(css`
@@ -148,13 +150,6 @@ export function JumpRunControls({
         <div class="jump-run-controls">
             ${scope.style}
             ${h(ToolbarButton, {
-                label: t("settings.jumpRun"),
-                icon: "settings",
-                hasPopup: "dialog",
-                onClick: open,
-            })}
-            ${children}
-            ${h(ToolbarButton, {
                 label: t("toolbar.positionJumpRun"),
                 icon: "location",
                 disabled: !canPosition,
@@ -210,6 +205,20 @@ export function JumpRunControls({
                 icon: "plus",
                 onClick: onAdd,
             })}
+            ${h(ToolbarButton, {
+                label: t("toolbar.removeJumper"),
+                icon: "minus",
+                className: "undo-arrow",
+                disabled: arrowCount === 0,
+                onClick: onUndo,
+            })}
+            ${h(ToolbarButton, {
+                label: t("settings.jumpRun"),
+                icon: "settings",
+                hasPopup: "dialog",
+                onClick: open,
+            })}
+            ${children}
         </div>
         ${h(
             Dialog,
