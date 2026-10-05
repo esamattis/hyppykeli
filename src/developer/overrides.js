@@ -19,15 +19,31 @@ export const DEV_ACTIVE = computed(() =>
     ),
 );
 
-/** @param {DeveloperKey} key */
-export function getDevNumber(key) {
-    const text = QUERY_PARAMS.value[key]?.trim();
-    if (!text) return undefined;
-    const value = Number(text);
-    const max = key.endsWith("direction") ? 360 : Infinity;
-    return Number.isFinite(value) && value >= 0 && value <= max
-        ? value
-        : undefined;
+/**
+ * Decode five altitude rows, highest first: speed, direction.
+ * Empty cells represent missing wind data; invalid overrides use live data.
+ * @param {string | undefined} text
+ * @returns {DeveloperUpperWindInput[] | undefined}
+ */
+export function parseUpperWinds(text) {
+    if (!text?.trim()) return undefined;
+    const rows = text.split(";").map((row) => row.split(","));
+    if (rows.length !== 5) return undefined;
+    const winds = [];
+    for (const row of rows) {
+        if (row.length !== 2) return undefined;
+        const [speed = "", direction = ""] = row.map((value) => value.trim());
+        if (
+            [speed, direction].some(
+                (value) => value && !Number.isFinite(Number(value)),
+            ) ||
+            (speed && Number(speed) < 0) ||
+            (direction && (Number(direction) < 0 || Number(direction) > 360))
+        )
+            return undefined;
+        winds.push({ speed, direction });
+    }
+    return winds;
 }
 
 /**

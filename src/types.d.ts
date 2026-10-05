@@ -328,8 +328,7 @@ interface QueryParams {
     DEV_ground_avg?: string;
     DEV_ground_direction?: string;
     DEV_metar?: string;
-    DEV_map_speed?: string;
-    DEV_map_direction?: string;
+    DEV_upper_winds?: string;
     __gusts?: string;
     __speeds?: string;
     __directions?: string;
@@ -356,6 +355,11 @@ interface DeveloperObservation {
     speed?: number;
     direction?: number;
     age: number;
+}
+
+interface DeveloperUpperWindInput {
+    speed: string;
+    direction: string;
 }
 
 interface DeveloperObservationInput {

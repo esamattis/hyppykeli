@@ -678,6 +678,7 @@ export function DropzoneMap() {
         freefallWinds,
         canopyWinds,
     } = getMapWindData(now);
+    const upperWindOverride = QUERY_PARAMS.value.DEV_upper_winds;
     const calculation = calculateJumpRun(freefallWinds, jumpRunSettings);
     const jumpRunVelocity = calculation.velocity;
     /** @param {import('leaflet').LatLngLiteral | null} start @param {JumpRunSettings} settings @param {JumpRunJumper[]} group */
@@ -1319,6 +1320,7 @@ export function DropzoneMap() {
         jumpRunSettings,
         jumperCount,
         data,
+        upperWindOverride,
         time,
         now,
     ]);
@@ -1383,6 +1385,7 @@ export function DropzoneMap() {
         leafletInstance,
         jumpers,
         data,
+        upperWindOverride,
         ground,
         time,
         now,

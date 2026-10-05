@@ -1,5 +1,6 @@
 // @ts-check
-import { getDevNumber } from "#app/developer/overrides.js";
+import { parseUpperWinds } from "#app/developer/overrides.js";
+import { QUERY_PARAMS } from "#app/app/settings.js";
 import { t } from "#app/translations.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
 import { OBSERVATIONS, OM_DATA } from "#app/weather/state.js";
@@ -35,26 +36,30 @@ export function getMapWindData(now = Date.now()) {
             (latest, obs) => (!latest || obs.time > latest.time ? obs : latest),
             /** @type {WeatherData | undefined} */ (undefined),
         );
+    const overrides = parseUpperWinds(QUERY_PARAMS.value.DEV_upper_winds);
     /** @type {FreefallWindLevel[]} */
-    const altitudeWinds = LEVELS.map(({ level, height }) => ({
+    const altitudeWinds = LEVELS.map(({ level, height }, row) => ({
         height,
         label: `≈ ${height} m`,
-        speed:
-            index >= 0
-                ? (data?.hourly[`windspeed_${level}hPa`][index] ?? null)
-                : null,
-        direction:
-            index >= 0
-                ? (data?.hourly[`winddirection_${level}hPa`][index] ?? null)
-                : null,
+        speed: overrides
+            ? overrides[row]?.speed
+                ? Number(overrides[row].speed)
+                : null
+            : index >= 0
+              ? (data?.hourly[`windspeed_${level}hPa`][index] ?? null)
+              : null,
+        direction: overrides
+            ? overrides[row]?.direction
+                ? Number(overrides[row].direction)
+                : null
+            : index >= 0
+              ? (data?.hourly[`winddirection_${level}hPa`][index] ?? null)
+              : null,
     }));
     const freefallWinds = altitudeWinds.slice(0, 4);
     /** @type {MapWindLevel[]} */
     const winds = [...altitudeWinds];
     const averageWind = averageFreeFallWind(freefallWinds);
-    averageWind.speed = getDevNumber("DEV_map_speed") ?? averageWind.speed;
-    averageWind.direction =
-        getDevNumber("DEV_map_direction") ?? averageWind.direction;
     winds.unshift(averageWind);
     winds.push({
         label: t("map.ground"),

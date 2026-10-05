@@ -13,6 +13,7 @@ import {
 import {
     DEV_ACTIVE,
     parseGroundObservations,
+    parseUpperWinds,
 } from "#app/developer/overrides.js";
 import { h, html } from "htm/preact";
 import { useImperativeHandle, useRef, useState } from "preact/hooks";
@@ -26,12 +27,6 @@ function fields() {
         },
         { key: "DEV_mock", label: t("developer.mock"), checkbox: true },
         { key: "DEV_metar", label: t("developer.metar") },
-        { key: "DEV_map_speed", label: t("developer.mapSpeed") },
-        {
-            key: "DEV_map_direction",
-            label: t("developer.mapDirection"),
-            max: 360,
-        },
     ]);
 }
 
@@ -54,6 +49,23 @@ function serializeObservations(observations) {
             )
             .join(";") || undefined
     );
+}
+
+/** @param {number} [now] @returns {DeveloperUpperWindInput[]} */
+function currentUpperWinds(now) {
+    return getMapWindData(now)
+        .winds.slice(1, 6)
+        .map(({ speed, direction }) => ({
+            speed: speed?.toString() ?? "",
+            direction: direction?.toString() ?? "",
+        }));
+}
+
+/** @param {DeveloperUpperWindInput[]} winds */
+function serializeUpperWinds(winds) {
+    return winds
+        .map(({ speed, direction }) => `${speed.trim()},${direction.trim()}`)
+        .join(";");
 }
 
 function clearOverrides() {
@@ -230,6 +242,11 @@ export function DeveloperMode(props) {
     );
     const [observationsEdited, setObservationsEdited] = useState(false);
 
+    const [upperWinds, setUpperWinds] = useState(
+        /** @type {DeveloperUpperWindInput[]} */ ([]),
+    );
+    const [upperWindsEdited, setUpperWindsEdited] = useState(false);
+
     function open() {
         setValues({ ...QUERY_PARAMS.value });
         setError("");
@@ -263,6 +280,8 @@ export function DeveloperMode(props) {
         }
         setObservations(toObservationInputs(recent));
         setObservationsEdited(false);
+        setUpperWinds(currentUpperWinds(now));
+        setUpperWindsEdited(false);
         dialogRef.current?.showModal();
         props.onOpen();
     }
@@ -286,6 +305,23 @@ export function DeveloperMode(props) {
         applyValues(values, edited, true);
     }
 
+    /**
+     * @param {number} index
+     * @param {"speed" | "direction"} key
+     * @param {Event & { currentTarget: HTMLInputElement }} event
+     */
+    function editUpperWind(index, key, event) {
+        const value = event.currentTarget.value;
+        const edited = upperWinds.map((row, rowIndex) =>
+            rowIndex === index ? { ...row, [key]: value } : row,
+        );
+        setUpperWinds(edited);
+        setUpperWindsEdited(true);
+        setStatus("");
+        setCopyUrl("");
+        applyValues(values, observations, observationsEdited, edited, true);
+    }
+
     function captureCurrentValues() {
         const now = Date.now();
         let recent = OBSERVATIONS.value
@@ -301,12 +337,11 @@ export function DeveloperMode(props) {
             recent = [{ ...LATEST_OBSERVATION.value, age: 0 }];
         }
         const inputs = toObservationInputs(recent);
-        const { averageWind } = getMapWindData(now);
+        const winds = currentUpperWinds(now);
         const captured = {
             DEV_ground_obs: serializeObservations(inputs),
             DEV_metar: METARS.value?.[0]?.metar,
-            DEV_map_speed: averageWind.speed?.toString(),
-            DEV_map_direction: averageWind.direction?.toString(),
+            DEV_upper_winds: serializeUpperWinds(winds),
             DEV_ground_gust: undefined,
             DEV_ground_avg: undefined,
             DEV_ground_direction: undefined,
@@ -314,6 +349,8 @@ export function DeveloperMode(props) {
         navigateQs(captured);
         setValues({ ...QUERY_PARAMS.value });
         setObservations(inputs);
+        setUpperWinds(winds);
+        setUpperWindsEdited(false);
         setObservationsEdited(false);
         setError("");
         setCopyUrl("");
@@ -340,11 +377,15 @@ export function DeveloperMode(props) {
      * @param {QueryParams} [editedValues]
      * @param {DeveloperObservationInput[]} [editedObservations]
      * @param {boolean} [groundEdited]
+     * @param {DeveloperUpperWindInput[]} [editedUpperWinds]
+     * @param {boolean} [upperEdited]
      */
     function applyValues(
         editedValues = values,
         editedObservations = observations,
         groundEdited = observationsEdited,
+        editedUpperWinds = upperWinds,
+        upperEdited = upperWindsEdited,
     ) {
         if (!dialogRef.current?.querySelector("form")?.checkValidity()) {
             setError(t("developer.windInvalid"));
@@ -372,7 +413,15 @@ export function DeveloperMode(props) {
             setError(t("developer.observationsInvalid"));
             return false;
         }
+        const upper = upperEdited
+            ? serializeUpperWinds(editedUpperWinds)
+            : editedValues.DEV_upper_winds;
+        if (upper && !parseUpperWinds(upper)) {
+            setError(t("developer.windInvalid"));
+            return false;
+        }
         const params = {
+            DEV_upper_winds: upper,
             ...Object.fromEntries(
                 fields().map(({ key }) => [
                     key,
@@ -420,7 +469,6 @@ export function DeveloperMode(props) {
                 ${scope.style}
                 <h2 id="developer-mode-title">${t("developer.title")}</h2>
                 <p>${t("developer.description")}</p>
-                <p>${t("developer.mapOverride")}</p>
                 <div class="developer-actions">
                     <button type="button" onClick=${captureCurrentValues}>
                         ${t("developer.capture")}
@@ -515,6 +563,54 @@ export function DeveloperMode(props) {
                             `;
                         })}
                     </div>
+                    <h3>${t("developer.upperTitle")}</h3>
+                    <p>${t("developer.upperHelp")}</p>
+                    <table class="developer-observations developer-upper-winds">
+                        <thead>
+                            <tr>
+                                <th scope="col">${t("developer.altitude")}</th>
+                                <th scope="col">
+                                    ${t("developer.meanWindUnit")}
+                                </th>
+                                <th scope="col">
+                                    ${t("developer.directionUnit")}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${upperWinds.map((wind, index) => {
+                                const height = [4200, 3000, 1500, 800, 110][
+                                    index
+                                ];
+                                return html`
+                                    <tr>
+                                        <th scope="row">≈ ${height} m</th>
+                                        ${
+                                            /** @type {const} */ ([
+                                                "speed",
+                                                "direction",
+                                            ]).map(
+                                                (key) => html`
+                                                    <td>
+                                                        <input
+                                                            type="number"
+                                                            name=${`DEV_upper_winds_${index}_${key}`}
+                                                            aria-label=${`${key === "speed" ? t("developer.meanWind") : t("weather.direction")}, ≈ ${height} m`}
+                                                            min="0"
+                                                            max=${key === "direction" ? 360 : undefined}
+                                                            step="any"
+                                                            value=${wind[key]}
+                                                            onInput=${/** @param {Event & { currentTarget: HTMLInputElement }} event */ (event) => editUpperWind(index, key, event)}
+                                                        />
+                                                    </td>
+                                                `,
+                                            )
+                                        }
+                                    </tr>
+                                `;
+                            })}
+                        </tbody>
+                    </table>
                     <h3>${t("developer.groundTitle")}</h3>
                     <p>${t("developer.groundHelp")}</p>
                     <table class="developer-observations">

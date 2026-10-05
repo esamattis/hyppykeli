@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 const developerPath =
-    "/dz/?fmisid=137208&icaocode=EFJY&DEV_ground_obs=6.4%2C3.5%2C194%2C4.8%3B6.2%2C3.7%2C193%2C14.8%3B6.1%2C4%2C194%2C24.8%3B4%2C2.8%2C200%2C34.8%3B4.4%2C2.6%2C201%2C44.8%3B4.7%2C2.9%2C199%2C54.8&DEV_metar=METAR+EFJY+040720Z+AUTO+19007KT+160V220+9999+-SHRA+OVC005+%2F%2F%2F%2F%2F%2FCB+11%2F11+Q1014%3D&DEV_map_speed=12.5625&DEV_map_direction=246.25350981256466";
+    "/dz/?fmisid=137208&icaocode=EFJY&DEV_ground_obs=6.4%2C3.5%2C194%2C4.8%3B6.2%2C3.7%2C193%2C14.8%3B6.1%2C4%2C194%2C24.8%3B4%2C2.8%2C200%2C34.8%3B4.4%2C2.6%2C201%2C44.8%3B4.7%2C2.9%2C199%2C54.8&DEV_metar=METAR+EFJY+040720Z+AUTO+19007KT+160V220+9999+-SHRA+OVC005+%2F%2F%2F%2F%2F%2FCB+11%2F11+Q1014%3D";
 
 /** @param {import("@playwright/test").Page} page */
 async function setUniformFreefallWind(page) {
@@ -987,7 +987,7 @@ test("developer banner opens the editor and applies METAR changes", async ({
     const metarInput = editor.getByRole("textbox", { name: "METAR-teksti" });
     const query = editor.getByRole("region", { name: "Kyselymerkkijono" });
     await expect(query).toContainText('"fmisid": "137208"');
-    await expect(query).toContainText('"DEV_map_speed": "12.5625"');
+    await expect(query).toContainText('"DEV_ground_obs"');
     await expect(metarInput).toHaveValue(
         new URL(page.url()).searchParams.get("DEV_metar"),
     );
@@ -1016,6 +1016,97 @@ test("developer banner opens the editor and applies METAR changes", async ({
     await expect(editor).toBeVisible();
     await expect(metarInput).toHaveValue(metar);
     await expect(page.locator("#developer-mode")).toHaveCount(1);
+});
+
+test("developer altitude table updates drift and persists missing values", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const readDrift = () =>
+        page.evaluate(async () => {
+            const { getMapWindData } = await import("#app/map/windData.js");
+            const { getFreefallDrift } = await import("#app/map/freefall.js");
+            const { getCanopyDrift } = await import("#app/map/canopy.js");
+            const data = getMapWindData();
+            return {
+                winds: data.winds.slice(1, 6),
+                mean: data.averageWind,
+                freefall: getFreefallDrift(data.freefallWinds)?.at(-1),
+                canopy: getCanopyDrift(data.canopyWinds, 800)?.at(-1),
+            };
+        });
+    const original = await readDrift();
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs(
+            { map_run_start: JSON.stringify({ lat: 62.4, lng: 25.6 }) },
+            { replace: true },
+        );
+    });
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(1);
+    await expect(page.locator(".parachute-drift-line")).toHaveCount(1);
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    const editor = page.locator("#developer-mode");
+    const table = editor.locator(".developer-upper-winds");
+    await expect(table.locator("tbody tr")).toHaveCount(5);
+    await expect(
+        editor.locator('[name="DEV_map_speed"], [name="DEV_map_direction"]'),
+    ).toHaveCount(0);
+    await expect(table.locator('[name="DEV_upper_winds_0_speed"]')).toHaveValue(
+        "10",
+    );
+    await editor
+        .getByRole("button", { name: "Tallenna nykyiset arvot testiarvoiksi" })
+        .click();
+    await expect(page).toHaveURL(
+        (url) =>
+            url.searchParams.get("DEV_upper_winds") ===
+            "10,0;10,0;10,0;10,0;10,0",
+    );
+    await table.locator('[name="DEV_upper_winds_0_speed"]').fill("20");
+    await table.locator('[name="DEV_upper_winds_0_direction"]').fill("270");
+    const upperEdited = await readDrift();
+    expect(upperEdited.mean.speed).toBe(12.5);
+    expect(upperEdited.freefall.east).toBeGreaterThan(original.freefall.east);
+    expect(upperEdited.canopy).toEqual(original.canopy);
+    await table.locator('[name="DEV_upper_winds_4_speed"]').fill("30");
+    await table.locator('[name="DEV_upper_winds_4_direction"]').fill("90");
+    const lowerEdited = await readDrift();
+    expect(lowerEdited.freefall).toEqual(upperEdited.freefall);
+    expect(lowerEdited.canopy.east).toBeLessThan(upperEdited.canopy.east);
+    const saved = new URL(page.url()).searchParams.get("DEV_upper_winds");
+    await table.locator('[name="DEV_upper_winds_4_direction"]').fill("361");
+    await expect(editor.getByRole("alert")).toBeVisible();
+    expect(new URL(page.url()).searchParams.get("DEV_upper_winds")).toBe(saved);
+    await table.locator('[name="DEV_upper_winds_4_direction"]').fill("");
+    const missing = await readDrift();
+    expect(missing.winds[4].direction).toBeNull();
+    expect(missing.canopy).toBeUndefined();
+    await expect(page.locator(".parachute-drift-line")).toHaveCount(0);
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(1);
+    await table.locator('[name="DEV_upper_winds_0_speed"]').fill("");
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(0);
+    await table.locator('[name="DEV_upper_winds_0_speed"]').fill("20");
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(1);
+    await page.reload();
+    await setUniformFreefallWind(page);
+    expect((await readDrift()).winds).toEqual(missing.winds);
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    await expect(
+        table.locator('[name="DEV_upper_winds_4_direction"]'),
+    ).toHaveValue("");
+    await editor.getByRole("button", { name: "Tyhjennä testiarvot" }).click();
+    await expect(page).toHaveURL(
+        (url) => !url.searchParams.has("DEV_upper_winds"),
+    );
+    await setUniformFreefallWind(page);
+    expect((await readDrift()).winds).toEqual(original.winds);
 });
 
 test("map toolbar expands only the map in both modes and restores", async ({
@@ -1144,9 +1235,12 @@ for (const settingDirection of [false, true]) {
 test("map wind profile shows the developer average and ground wind", async ({
     page,
 }) => {
-    await expect(windLevel(page, "≈ 4200-800 m")).toContainText("13 m/s 246°");
+    await page.goto(
+        `${developerPath}&DEV_upper_winds=15,276;14,272;12,246;12,238;3,204`,
+    );
+    await expect(windLevel(page, "≈ 4200-800 m")).toContainText("13 m/s 258°");
+    await expect(windLevel(page, "≈ 110 m")).toContainText("3 m/s 204°");
     await expect(windLevel(page, "Maanpinta")).toContainText("4 m/s 194°");
-    // Individual altitude forecasts are live data, with no DEV_ override.
 });
 
 test("upper-wind forecast help explains how forecast readings are received", async ({
@@ -3663,7 +3757,7 @@ for (const [axis, wind, speed, expected] of [
         page,
     }) => {
         await page.goto(
-            `${developerPath}&DEV_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=${axis}&default_jump_group_count=4&DEV_map_direction=${wind}&DEV_map_speed=${speed}`,
+            `${developerPath}&DEV_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=${axis}&default_jump_group_count=4&DEV_upper_winds=${Array(5).fill(`${speed},${wind}`).join(";")}`,
         );
         expect(
             new URL(page.url()).searchParams.get("map_run_start"),
@@ -3689,7 +3783,7 @@ test("automatic positioning preserves the current direction and reset restores t
     page,
 }) => {
     await page.goto(
-        `${developerPath}&DEV_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=180&DEV_map_direction=180`,
+        `${developerPath}&DEV_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=180&DEV_upper_winds=10,180;10,180;10,180;10,0;10,0`,
     );
     await setUniformFreefallWind(page);
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
@@ -3698,7 +3792,7 @@ test("automatic positioning preserves the current direction and reset restores t
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs(
             {
-                DEV_map_direction: "0",
+                DEV_upper_winds: "10,0;10,0;10,0;10,0;10,0",
                 map_run_start: JSON.stringify({ lat: 62.41, lng: 25.61 }),
             },
             { replace: true },
@@ -3707,9 +3801,8 @@ test("automatic positioning preserves the current direction and reset restores t
     const position = page.getByRole("button", {
         name: "Hyppylinjan automaattinen sijoitus",
     });
-    // Changing the developer wind triggers a weather refresh; restore the
-    // fixture after that refresh reports the blocked network request.
-    await expect(position).toBeDisabled();
+    // Altitude overrides remain usable during a weather refresh.
+    await expect(position).toBeEnabled();
     await setUniformFreefallWind(page);
     await position.click();
     const positionedParams = new URL(page.url()).searchParams;
@@ -3753,7 +3846,7 @@ test("automatic positioning is disabled for an infeasible current direction and 
     page,
 }) => {
     await page.goto(
-        `${developerPath}&DEV_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=180&DEV_map_direction=180`,
+        `${developerPath}&DEV_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=180&DEV_upper_winds=10,0;10,180;10,180;10,90;10,0`,
     );
     await setUniformFreefallWind(page);
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);

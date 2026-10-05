@@ -70,6 +70,7 @@ export function startApp() {
                 Object.entries(QUERY_PARAMS.value).filter(
                     ([key]) =>
                         !key.startsWith("map_") &&
+                        key !== "DEV_upper_winds" &&
                         key !== "default_jump_run_direction" &&
                         key !== "default_jump_group_count",
                 ),

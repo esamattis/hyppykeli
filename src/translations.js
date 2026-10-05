@@ -287,10 +287,12 @@ export const english = {
     "developer.debug": "Debug mode (console logs and all observation times)",
     "developer.mock": "Use FMI sample data",
     "developer.metar": "METAR text",
-    "developer.mapSpeed": "Map wind speed (m/s)",
-    "developer.mapDirection": "Map wind direction (°)",
+    "developer.upperTitle": "Open-Meteo winds for the current hour",
+    "developer.altitude": "Altitude",
+    "developer.upperHelp":
+        "Editing this table replaces the five altitude winds used by the map, freefall and canopy drift calculations. An empty value means missing wind data. Ground wind comes from the observations below.",
     "developer.description":
-        "Test values are stored in DEV_ URL parameters. An empty METAR or map field uses real data.",
+        "Test values are stored in DEV_ URL parameters. An empty METAR field uses real data.",
     "developer.capture": "Save current values as test values",
     "developer.copyUrl": "Copy URL",
     "developer.clear": "Clear test values",
@@ -306,8 +308,6 @@ export const english = {
     "developer.metarInvalid": "Could not parse the METAR text. Check the text.",
     "developer.observationsInvalid":
         "Check the observation wind values and directions.",
-    "developer.mapOverride":
-        "Map values override the freefall mean wind and animation.",
     "developer.immediate":
         "Changes take effect immediately and are stored in the URL.",
     "developer.shareUrl": "Shareable URL",
@@ -643,10 +643,12 @@ const finnish = {
     "developer.debug": "Debug-tila (konsolilokit ja kaikki havaintoajat)",
     "developer.mock": "Käytä FMI:n esimerkkitietoja",
     "developer.metar": "METAR-teksti",
-    "developer.mapSpeed": "Kartan tuulen nopeus (m/s)",
-    "developer.mapDirection": "Kartan tuulen suunta (°)",
+    "developer.upperTitle": "Open-Meteon tuulet nykyiselle tunnille",
+    "developer.altitude": "Korkeus",
+    "developer.upperHelp":
+        "Taulukon muokkaus korvaa kartan, vapaapudotuksen ja varjon varassa ajautumisen laskennassa käytettävät viiden korkeuden tuulet. Tyhjä arvo tarkoittaa puuttuvaa tuulitietoa. Maanpinnan tuuli tulee alla olevista havainnoista.",
     "developer.description":
-        "Testiarvot tallennetaan osoitteen DEV_-parametreihin. Tyhjä METAR- tai karttakenttä käyttää oikeita tietoja.",
+        "Testiarvot tallennetaan osoitteen DEV_-parametreihin. Tyhjä METAR-kenttä käyttää oikeita tietoja.",
     "developer.capture": "Tallenna nykyiset arvot testiarvoiksi",
     "developer.copyUrl": "Kopioi URL",
     "developer.clear": "Tyhjennä testiarvot",
@@ -664,8 +666,6 @@ const finnish = {
         "METAR-tekstin lukeminen epäonnistui. Tarkista teksti.",
     "developer.observationsInvalid":
         "Tarkista havaintojen tuuliarvot ja suunnat.",
-    "developer.mapOverride":
-        "Kartan arvot korvaavat vapaapudotuksen keskituulen ja animaation.",
     "developer.immediate":
         "Muokkaukset tulevat voimaan heti ja tallentuvat osoitteeseen.",
     "developer.shareUrl": "Jaettava osoite",
