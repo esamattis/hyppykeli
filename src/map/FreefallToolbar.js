@@ -10,6 +10,8 @@ export function FreefallToolbar({
     fullWindow,
     onToggleFullWindow,
     onShare,
+    canPosition,
+    onPosition,
     arrowCount,
     onClear,
     onUndo,
@@ -23,9 +25,23 @@ export function FreefallToolbar({
         }
         .toolbar-actions {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 4px;
             padding: 3px 8px;
+        }
+        .toolbar-controls {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+            flex-wrap: wrap;
+            gap: 4px 14px;
+        }
+        .toolbar-map-actions {
+            display: flex;
+            align-items: center;
+            flex: 0 0 auto;
+            gap: 4px;
         }
         .toolbar-summary {
             display: flex;
@@ -47,9 +63,6 @@ export function FreefallToolbar({
             font-weight: 600;
             font-variant-numeric: tabular-nums;
         }
-        .undo-arrow {
-            margin-left: 10px;
-        }
         .window-toggle {
             margin-left: auto;
             flex-shrink: 0;
@@ -63,27 +76,37 @@ export function FreefallToolbar({
         >
             ${scope.style}
             <div class="toolbar-actions">
-                ${h(JumpRunControls, jumpRun)}
-                ${h(ToolbarButton, {
-                    label: t("toolbar.undoArrow"),
-                    icon: "minus",
-                    className: "undo-arrow",
-                    disabled: arrowCount === 0,
-                    onClick: onUndo,
-                })}
-                ${h(ToolbarButton, {
-                    label: t("toolbar.clearArrows"),
-                    icon: "trash",
-                    className: "clear-arrows",
-                    disabled: arrowCount === 0,
-                    onClick: onClear,
-                })}
-                ${h(ToolbarButton, {
-                    label: t("toolbar.shareMap"),
-                    icon: "share",
-                    disabled: typeof navigator.share !== "function",
-                    onClick: onShare,
-                })}
+                <div class="toolbar-controls">
+                    ${h(JumpRunControls, jumpRun)}
+                    <div class="toolbar-map-actions">
+                        ${h(ToolbarButton, {
+                            label: t("toolbar.positionJumpRun"),
+                            icon: "location",
+                            disabled: !canPosition,
+                            onClick: onPosition,
+                        })}
+                        ${h(ToolbarButton, {
+                            label: t("toolbar.undoArrow"),
+                            icon: "minus",
+                            className: "undo-arrow",
+                            disabled: arrowCount === 0,
+                            onClick: onUndo,
+                        })}
+                        ${h(ToolbarButton, {
+                            label: t("toolbar.clearArrows"),
+                            icon: "trash",
+                            className: "clear-arrows",
+                            disabled: arrowCount === 0,
+                            onClick: onClear,
+                        })}
+                        ${h(ToolbarButton, {
+                            label: t("toolbar.shareMap"),
+                            icon: "share",
+                            disabled: typeof navigator.share !== "function",
+                            onClick: onShare,
+                        })}
+                    </div>
+                </div>
                 ${h(ToolbarButton, {
                     label: fullWindow
                         ? t("toolbar.restoreMap")
@@ -117,7 +140,7 @@ export function FreefallToolbar({
                 <span>
                     <span class="value-label">${t("toolbar.jumpRun")}</span>
                     <strong class="value-number">
-                        ${`${jumpRun.settings.speedKmh} km/h`}
+                        ${`${Math.round(jumpRun.settings.direction)}° · ${jumpRun.settings.speedKmh} km/h`}
                     </strong>
                 </span>
             </div>

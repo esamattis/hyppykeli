@@ -1668,7 +1668,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
     const summary = page.locator(".toolbar-summary");
-    await expect(summary).toContainText(/Hyppylinja\s*157 km\/h/);
+    await expect(summary).toContainText(/Hyppylinja\s*\d+° · 157 km\/h/);
     const place = async (x = 100, y = 160) => {
         await map.scrollIntoViewIfNeeded();
         if (isMobile) await map.tap({ position: { x, y } });
@@ -1750,10 +1750,10 @@ test("jump run redraws all jumpers and applies individual settings immediately",
         name: "Todellinen ilmanopeus (km/h)",
     });
     await speed.fill("0");
-    await expect(summary).toContainText(/Hyppylinja\s*157 km\/h/);
+    await expect(summary).toContainText(/Hyppylinja\s*\d+° · 157 km\/h/);
     await expect(run).toHaveAttribute("d", runPath);
     await speed.fill("180");
-    await expect(summary).toContainText(/Hyppylinja\s*180 km\/h/);
+    await expect(summary).toContainText(/Hyppylinja\s*\d+° · 180 km\/h/);
     await expect(run).toHaveAttribute("d", runPath);
     await expect(arrows.nth(1)).not.toHaveAttribute("d", secondArrow);
     await settings
@@ -1942,6 +1942,9 @@ test("quarter-turn buttons rotate both ways around the opening center", async ({
             JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
                 .direction,
         ).toBeCloseTo(direction, 8);
+        await expect(toolbar.locator(".toolbar-summary")).toContainText(
+            `${Math.round(direction)}° · 120 km/h`,
+        );
         expect(await openingDistance(page, opening)).toBeLessThan(1);
     }
     await toolbar.getByRole("button", { name: "Tyhjennä nuolet" }).click();

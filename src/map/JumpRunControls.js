@@ -29,7 +29,7 @@ export function JumpRunControls({
         :scope.jump-run-controls {
             display: flex;
             align-items: center;
-            flex-wrap: wrap;
+            flex: 0 0 auto;
             gap: 4px;
             font-size: 0.8rem;
         }
