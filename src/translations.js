@@ -210,13 +210,12 @@ export const english = {
     "map.selectWind": "Select an altitude to show its wind on the map.",
     "map.navigationHelp": "Pan and zoom the map with two fingers.",
     "map.jumpRunHelp":
-        "The first click or tap positions the first jumper, and the second locks the direction. Focusing the map with Tab positions the first jumper at its centre; Enter places the next point after moving the map. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
+        "Click or tap the map to position the jump run so the group opens at that point. Press Enter on the focused map to do the same at the map centre. The direction button turns on direction mode; drag with the mouse or a finger to rotate the run around that opening point, and press the button again to leave it. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
     "map.legendHelp":
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
         "Moving lines show the selected wind's flow direction. Stronger wind appears as longer, faster-moving lines.",
-    "map.directionPrompt":
-        "Set jump-run direction: click or drag with your finger.",
+    "map.directionPrompt": "Drag to set the jump-run direction.",
     "map.averageHelp":
         "Average speed and direction at 800, 1,500, 3,000, and 4,200 m. Direction averaging accounts for crossing north and provides a rough freefall-drift estimate.",
     "map.shareFailed": "Sharing the map failed.",
@@ -225,7 +224,7 @@ export const english = {
     "map.jumpRunUnavailable":
         "Jump-run positions unavailable: exit-altitude wind is missing or the selected track cannot be flown at this airspeed.",
     "map.directionHint":
-        "Click or tap to lock the direction; drag on a touch screen.",
+        "Drag with the mouse or a finger. Press the direction button again to finish.",
     "toolbar.freefallValues": "Freefall values",
     "toolbar.jumpRun": "Jump run",
     "toolbar.undoArrow": "Remove latest arrow",
@@ -245,7 +244,7 @@ export const english = {
     "settings.jumpRunSpeed": "True airspeed (km/h)",
     "settings.jumperInterval": "Jumper interval (s)",
     "settings.nextJumper": "Settings for the next jumper",
-    "settings.positionJumpRun": "Position jump run automatically",
+    "settings.setJumpRunDirection": "Set jump run direction",
     "settings.addJumper": "Add jumper",
     "settings.jumper": (/** @type {number} */ number) => `Jumper ${number}`,
     "settings.removeJumper": (/** @type {number} */ number) =>
@@ -556,13 +555,12 @@ const finnish = {
     "map.selectWind": "Valitse korkeus nähdäksesi sen tuulen kartalla.",
     "map.navigationHelp": "Karttaa voi liikuttaa ja zoomata kahdella sormella.",
     "map.jumpRunHelp":
-        "Ensimmäinen klikkaus tai napautus asettaa ensimmäisen hyppääjän paikan ja toinen lukitsee suunnan. Sarkaimella kartalle siirtyminen asettaa ensimmäisen hyppääjän kartan keskikohtaan; Enter asettaa seuraavan pisteen kartan liikuttamisen jälkeen. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
+        "Klikkaus tai napautus sijoittaa hyppylinjan niin, että ryhmä avautuu kyseiseen kohtaan. Enter kohdistetulla kartalla tekee saman kartan keskikohtaan. Suuntapainike käynnistää suunnan asetuksen; vedä hiirellä tai sormella kiertääksesi hyppylinjan tuon avautumiskohdan ympäri ja paina painiketta uudelleen poistuaksesi. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
     "map.legendHelp":
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
         "Kartan liikkuvat viivat näyttävät valitun tuulen virtaussuunnan. Voimakkaampi tuuli näkyy pidempinä ja nopeammin liikkuvina viivoina.",
-    "map.directionPrompt":
-        "Aseta hyppylinjan suunta: klikkaa tai vedä sormella.",
+    "map.directionPrompt": "Vedä asettaaksesi hyppylinjan suunnan.",
     "map.averageHelp":
         "Nopeuden ja suunnan keskiarvo korkeuksilta 800, 1500, 3000 ja 4200 m. Suunnan keskiarvo huomioi pohjoissuunnan ylityksen ja antaa karkean arvion vapaapudotusajautumisesta.",
     "map.shareFailed": "Kartan jakaminen epäonnistui.",
@@ -571,7 +569,7 @@ const finnish = {
     "map.jumpRunUnavailable":
         "Hyppylinjan paikat eivät ole saatavilla: uloshyppykorkeuden tuulitieto puuttuu tai valittua lentorataa ei voi lentää tällä ilmanopeudella.",
     "map.directionHint":
-        "Klikkaa tai napauta lukitaksesi suunta; vedä kosketusnäytöllä.",
+        "Vedä hiirellä tai sormella. Paina suuntapainiketta uudelleen lopettaaksesi.",
     "toolbar.freefallValues": "Vapaapudotuksen arvot",
     "toolbar.jumpRun": "Hyppylinja",
     "toolbar.undoArrow": "Poista viimeisin nuoli",
@@ -591,7 +589,7 @@ const finnish = {
     "settings.jumpRunSpeed": "Todellinen ilmanopeus (km/h)",
     "settings.jumperInterval": "Hyppääjien väli (s)",
     "settings.nextJumper": "Lisättävän hyppääjän asetukset",
-    "settings.positionJumpRun": "Sijoita hyppylinja automaattisesti",
+    "settings.setJumpRunDirection": "Aseta hyppylinjan suunta",
     "settings.addJumper": "Lisää hyppääjä",
     "settings.jumper": (number) => `Hyppääjä ${number}`,
     "settings.removeJumper": (number) => `Poista hyppääjä ${number}`,

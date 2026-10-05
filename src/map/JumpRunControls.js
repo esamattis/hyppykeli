@@ -20,7 +20,9 @@ export function JumpRunControls({
     onChange,
     onDefaultJumperCountChange,
     onJumpersChange,
-    onPosition,
+    directionActive,
+    canAim,
+    onToggleDirection,
     onAdd,
 }) {
     const scope = useScope(css`
@@ -147,9 +149,11 @@ export function JumpRunControls({
                 onClick: open,
             })}
             ${h(ToolbarButton, {
-                label: t("settings.positionJumpRun"),
-                icon: "location",
-                onClick: onPosition,
+                label: t("settings.setJumpRunDirection"),
+                icon: "heading",
+                pressed: directionActive,
+                disabled: !canAim,
+                onClick: onToggleDirection,
             })}
             ${h(ToolbarButton, {
                 label: t("settings.addJumper"),

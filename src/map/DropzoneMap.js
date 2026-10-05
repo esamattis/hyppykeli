@@ -53,6 +53,98 @@ import {
 /** @type {Readonly<JumpRunJumper>} */
 const DEFAULT_JUMPER = { speedKmh: 180, openingHeight: 800 };
 
+/**
+ * First-exit position that puts the middle openings on the target.
+ * @param {import('leaflet').LatLngLiteral} target
+ * @param {JumpRunSettings} settings
+ * @param {JumpRunJumper[]} group
+ * @param {FreefallWindLevel[]} winds
+ * @returns {import('leaflet').LatLng | null}
+ */
+function startForOpeningTarget(target, settings, group, winds) {
+    const velocity = getJumpRunVelocity(winds, settings);
+    if (!velocity || !group.length) return null;
+    const middleIndex = Math.max(0, (group.length - 1) / 2);
+    const middleJumpers = group.slice(
+        Math.floor(middleIndex),
+        Math.ceil(middleIndex) + 1,
+    );
+    if (!middleJumpers.length) return null;
+    const openingOffset = middleJumpers.reduce(
+        (offset, jumper) => {
+            const path = getFreefallDrift(
+                winds,
+                settings.exitHeight,
+                jumper.speedKmh,
+                jumper.openingHeight,
+                velocity.air,
+            );
+            const opening = path?.[path.length - 1];
+            return {
+                east: offset.east + (opening?.east ?? 0) / middleJumpers.length,
+                north:
+                    offset.north + (opening?.north ?? 0) / middleJumpers.length,
+            };
+        },
+        { east: 0, north: 0 },
+    );
+    const middleExit = latLng(
+        driftCoordinates(target, {
+            height: 0,
+            east: -openingOffset.east,
+            north: -openingOffset.north,
+        }),
+    );
+    return latLng(
+        jumpRunCoordinates(middleExit, settings, -middleIndex, velocity.ground),
+    );
+}
+
+/**
+ * Where the middle of the group opens for an existing run.
+ * @param {import('leaflet').LatLngLiteral} start
+ * @param {JumpRunSettings} settings
+ * @param {JumpRunJumper[]} group
+ * @param {FreefallWindLevel[]} winds
+ * @returns {import('leaflet').LatLngLiteral | null}
+ */
+function openingTargetForRun(start, settings, group, winds) {
+    const velocity = getJumpRunVelocity(winds, settings);
+    if (!velocity || !group.length) return null;
+    const middleIndex = Math.max(0, (group.length - 1) / 2);
+    const indexes = [
+        ...new Set([Math.floor(middleIndex), Math.ceil(middleIndex)]),
+    ];
+    /** @type {import('leaflet').LatLng[]} */
+    const openings = [];
+    for (const index of indexes) {
+        const jumper = group[index];
+        if (!jumper) continue;
+        const exit = latLng(
+            jumpRunCoordinates(start, settings, index, velocity.ground),
+        );
+        const path = getFreefallDrift(
+            winds,
+            settings.exitHeight,
+            jumper.speedKmh,
+            jumper.openingHeight,
+            velocity.air,
+        );
+        const opening = path?.[path.length - 1];
+        if (!opening) continue;
+        openings.push(latLng(driftCoordinates(exit, opening)));
+    }
+    if (!openings.length) return null;
+    return {
+        lat:
+            openings.reduce((sum, point) => sum + point.lat, 0) /
+            openings.length,
+        lng:
+            openings.reduce((sum, point) => sum + point.lng, 0) /
+            openings.length,
+    };
+}
+
 /** @param {{ wind: MapWindLevel, selected: boolean, onSelect: () => void }} props */
 function WindLevel({ wind, selected, onSelect }) {
     const validSpeed =
@@ -308,6 +400,12 @@ export function DropzoneMap() {
     const mapRef = useRef(null);
     /** @type {import('preact').RefObject<import('leaflet').Map | null>} */
     const activeLeafletRef = useRef(null);
+    /** @type {import('preact').RefObject<(target: import('leaflet').LatLngLiteral) => void>} */
+    const positionJumpRunAtRef = useRef(() => {});
+    /** @type {import('preact').RefObject<(pointer: import('leaflet').LatLngLiteral) => void>} */
+    const aimJumpRunAtRef = useRef(() => {});
+    /** @type {import('preact').RefObject<import('leaflet').LatLngLiteral | null>} */
+    const openingTargetRef = useRef(null);
     const arrowId = `freefall-arrow-${useId()}`;
     const [shareError, setShareError] = useState("");
     const [now, setNow] = useState(Date.now());
@@ -608,6 +706,81 @@ export function DropzoneMap() {
             leafletInstance.setView(target, zoom, { animate: false });
     }, [leafletInstance, center, zoom, coordinates]);
 
+    positionJumpRunAtRef.current = (target) => {
+        if (!isValidPosition(target)) return;
+        const creating = !jumpRunStart;
+        const untouched =
+            jumpers.length === 0 ||
+            (jumpers.length === 1 &&
+                jumpers[0]?.speedKmh === DEFAULT_JUMPER.speedKmh &&
+                jumpers[0]?.openingHeight === DEFAULT_JUMPER.openingHeight);
+        const positionedJumpers =
+            !creating || !untouched
+                ? jumpers
+                : Array.from({ length: defaultJumperCount }, () => ({
+                      ...nextJumper,
+                  }));
+        const settings = creating
+            ? { ...jumpRunSettings, direction: defaultJumpRunDirection }
+            : jumpRunSettings;
+        const winds = getMapWindData(now).freefallWinds;
+        const group = positionedJumpers.length
+            ? positionedJumpers
+            : [nextJumper];
+        const start = startForOpeningTarget(target, settings, group, winds);
+        if (!start) return;
+        openingTargetRef.current = { lat: target.lat, lng: target.lng };
+        if (creating) setJumpRunSettings(settings);
+        setJumpRunStart(start);
+        if (creating && untouched) setJumpers(positionedJumpers);
+    };
+    aimJumpRunAtRef.current = (pointer) => {
+        const map = activeLeafletRef.current;
+        const pivot = openingTargetRef.current;
+        if (!map || !pivot || !isValidPosition(pointer)) return;
+        const offset = map.project(pointer).subtract(map.project(pivot));
+        if (offset.x === 0 && offset.y === 0) return;
+        const direction =
+            ((Math.atan2(offset.x, -offset.y) * 180) / Math.PI + 360) % 360;
+        const settings = { ...jumpRunSettings, direction };
+        const winds = getMapWindData(now).freefallWinds;
+        const start = startForOpeningTarget(pivot, settings, jumpers, winds);
+        if (!start) return;
+        setJumpRunSettings(settings);
+        setJumpRunStart(start);
+    };
+    /** @param {JumpRunSettings} next */
+    const applyJumpRunSettings = (next) => {
+        if (
+            next.direction === jumpRunSettings.direction ||
+            !jumpRunStart ||
+            !jumpers.length
+        ) {
+            setJumpRunSettings(next);
+            return;
+        }
+        const winds = getMapWindData(now).freefallWinds;
+        if (!openingTargetRef.current) {
+            const derived = openingTargetForRun(
+                jumpRunStart,
+                jumpRunSettings,
+                jumpers,
+                winds,
+            );
+            if (derived) openingTargetRef.current = derived;
+        }
+        const pivot = openingTargetRef.current;
+        const start = pivot
+            ? startForOpeningTarget(pivot, next, jumpers, winds)
+            : null;
+        if (!start) {
+            setJumpRunSettings(next);
+            return;
+        }
+        setJumpRunSettings(next);
+        setJumpRunStart(start);
+    };
+
     useEffect(() => {
         if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
             return;
@@ -619,32 +792,79 @@ export function DropzoneMap() {
         const useKeyboard = () => {
             pointerFocus = false;
         };
-        let directionCommitted = false;
-        let directionPlacement = placingJumpRunDirection;
-        let directionOrigin = jumpRunStart;
-        /** @param {import('leaflet').LatLngLiteral} target */
-        const updateJumpRunDirection = (target) => {
-            if (!directionOrigin) return;
-            const offset = leafletInstance
-                .project(target)
-                .subtract(leafletInstance.project(directionOrigin));
-            if (offset.x === 0 && offset.y === 0) return;
-            const direction =
-                ((Math.atan2(offset.x, -offset.y) * 180) / Math.PI + 360) % 360;
-            setJumpRunSettings((settings) => ({ ...settings, direction }));
-        };
-        /** @param {import('leaflet').LeafletMouseEvent} event */
-        const followPointer = (event) => {
-            if (directionPlacement && !directionCommitted)
-                updateJumpRunDirection(event.latlng);
+        // Clicking positions the run. Direction mode stays on until the
+        // direction button is pressed again. Dragging aims around the stored
+        // opening through aimJumpRunAtRef, which also moves the start. This
+        // effect must not depend on that start, or the gesture restarts.
+        const directionPlacement = placingJumpRunDirection;
+        /** @param {number} x @param {number} y */
+        const aimAtClientPoint = (x, y) => {
+            const bounds = container.getBoundingClientRect();
+            aimJumpRunAtRef.current?.(
+                leafletInstance.containerPointToLatLng(
+                    point(x - bounds.left, y - bounds.top),
+                ),
+            );
         };
         /** @type {import('leaflet').Point | null} */
-        let touchStart = null;
-        let touchDragged = false;
+        let dragStart = null;
+        let dragMoved = false;
+        let pointerDrag = false;
+        const finishDirectionDrag = () => {
+            dragStart = null;
+            dragMoved = false;
+            pointerDrag = false;
+            setDraggingJumpRunDirection(false);
+        };
+        /** @param {number} x @param {number} y */
+        const followDirectionDrag = (x, y) => {
+            if (!dragStart) return false;
+            if (dragStart.distanceTo(point(x, y)) < 5 && !dragMoved)
+                return false;
+            dragMoved = true;
+            setDraggingJumpRunDirection(true);
+            aimAtClientPoint(x, y);
+            return true;
+        };
+        /** @param {PointerEvent} event */
+        const startDirectionPointer = (event) => {
+            // Touch is handled with touch events. Handling it here as well drops
+            // the gesture when the browser emits both event types.
+            if (event.pointerType === "touch" || event.button !== 0) return;
+            if (!directionPlacement || dragStart) return;
+            if (
+                event.target instanceof Element &&
+                event.target.closest(".leaflet-control")
+            )
+                return;
+            pointerDrag = true;
+            dragMoved = false;
+            dragStart = point(event.clientX, event.clientY);
+            try {
+                container.setPointerCapture(event.pointerId);
+            } catch {
+                // The pointer can end before capture is requested.
+            }
+        };
+        /** @param {PointerEvent} event */
+        const followDirectionPointer = (event) => {
+            if (!pointerDrag) return;
+            if (followDirectionDrag(event.clientX, event.clientY))
+                event.preventDefault();
+        };
+        /** @param {PointerEvent} event */
+        const finishDirectionPointer = (event) => {
+            if (!pointerDrag) return;
+            if (container.hasPointerCapture(event.pointerId))
+                container.releasePointerCapture(event.pointerId);
+            finishDirectionDrag();
+        };
         /** @param {TouchEvent} event */
         const startDirectionTouch = (event) => {
-            touchStart = null;
-            touchDragged = false;
+            // A mouse drag already owns this gesture.
+            if (pointerDrag) return;
+            dragStart = null;
+            dragMoved = false;
             if (!directionPlacement || event.touches.length !== 1) return;
             if (
                 event.target instanceof Element &&
@@ -652,67 +872,25 @@ export function DropzoneMap() {
             )
                 return;
             const touch = event.touches[0];
-            if (touch) touchStart = point(touch.clientX, touch.clientY);
+            if (touch) dragStart = point(touch.clientX, touch.clientY);
         };
         /** @param {TouchEvent} event */
-        const followTouch = (event) => {
+        const followDirectionTouch = (event) => {
+            if (pointerDrag) return;
             if (event.touches.length !== 1) {
-                touchStart = null;
-                touchDragged = false;
+                finishDirectionDrag();
                 return;
             }
             const touch = event.touches[0];
-            if (!touchStart || !touch) return;
+            if (!dragStart || !touch) return;
             event.preventDefault();
-            if (
-                touchStart.distanceTo(point(touch.clientX, touch.clientY)) <
-                    5 &&
-                !touchDragged
-            )
-                return;
-            touchDragged = true;
-            setDraggingJumpRunDirection(true);
-            const bounds = container.getBoundingClientRect();
-            updateJumpRunDirection(
-                leafletInstance.containerPointToLatLng(
-                    point(
-                        touch.clientX - bounds.left,
-                        touch.clientY - bounds.top,
-                    ),
-                ),
-            );
+            followDirectionDrag(touch.clientX, touch.clientY);
         };
         /** @param {TouchEvent} event */
         const finishDirectionTouch = (event) => {
-            if (touchDragged) {
-                // Prevent a synthetic click from starting another placement.
-                event.preventDefault();
-                directionCommitted = true;
-                directionPlacement = false;
-                setPlacingJumpRunDirection(false);
-            }
-            touchStart = null;
-            touchDragged = false;
-            setDraggingJumpRunDirection(false);
-        };
-        const cancelDirectionTouch = () => {
-            touchStart = null;
-            touchDragged = false;
-            setDraggingJumpRunDirection(false);
-        };
-        /** @param {import('leaflet').LatLngLiteral} start */
-        const placeJumpRun = (start) => {
-            if (directionPlacement) {
-                updateJumpRunDirection(start);
-                directionCommitted = true;
-                directionPlacement = false;
-                setPlacingJumpRunDirection(false);
-            } else {
-                directionOrigin = start;
-                directionPlacement = true;
-                setJumpRunStart(start);
-                setPlacingJumpRunDirection(true);
-            }
+            if (pointerDrag) return;
+            if (dragMoved) event.preventDefault();
+            finishDirectionDrag();
         };
         /** @type {ReturnType<typeof setTimeout> | undefined} */
         let pendingPoint;
@@ -720,6 +898,10 @@ export function DropzoneMap() {
         const cancelPendingPoint = () => {
             clearTimeout(pendingPoint);
             pendingPoint = undefined;
+        };
+        /** @param {import('leaflet').LatLngLiteral} target */
+        const positionAt = (target) => {
+            if (!directionPlacement) positionJumpRunAtRef.current?.(target);
         };
         /** @param {import('leaflet').LeafletMouseEvent} event */
         const cancelDoubleClick = (event) => {
@@ -729,10 +911,7 @@ export function DropzoneMap() {
         /** @param {import('leaflet').LeafletMouseEvent} event */
         const selectPoint = (event) => {
             cancelPendingPoint();
-            if (directionPlacement) {
-                placeJumpRun(event.latlng);
-                return;
-            }
+            if (directionPlacement) return;
             // Leaflet can synthesize dblclick before dispatching the second
             // click, so also ignore that click by its original timestamp.
             if (
@@ -740,56 +919,64 @@ export function DropzoneMap() {
                 event.originalEvent.timeStamp === doubleClickTimeStamp
             )
                 return;
+            const target = event.latlng;
             pendingPoint = setTimeout(() => {
                 pendingPoint = undefined;
-                placeJumpRun(event.latlng);
+                positionAt(target);
             }, 300);
-        };
-        /** @param {FocusEvent} event */
-        const selectCenter = (event) => {
-            if (event.target === container && !pointerFocus)
-                placeJumpRun(leafletInstance.getCenter());
         };
         /** @param {KeyboardEvent} event */
         const selectWithKeyboard = (event) => {
             if (
                 event.target === container &&
+                !pointerFocus &&
                 (event.key === "Enter" || event.key === " ")
             ) {
                 event.preventDefault();
-                placeJumpRun(leafletInstance.getCenter());
+                positionAt(leafletInstance.getCenter());
             }
         };
         container.addEventListener("pointerdown", usePointer, true);
         document.addEventListener("keydown", useKeyboard, true);
         leafletInstance.on("click", selectPoint);
         leafletInstance.on("dblclick", cancelDoubleClick);
-        leafletInstance.on("mousemove", followPointer);
+        container.addEventListener("pointerdown", startDirectionPointer);
+        container.addEventListener("pointermove", followDirectionPointer);
+        container.addEventListener("pointerup", finishDirectionPointer);
+        container.addEventListener("pointercancel", finishDirectionPointer);
         container.addEventListener("touchstart", startDirectionTouch);
-        container.addEventListener("touchmove", followTouch, {
+        container.addEventListener("touchmove", followDirectionTouch, {
             passive: false,
         });
         container.addEventListener("touchend", finishDirectionTouch, {
             passive: false,
         });
-        container.addEventListener("touchcancel", cancelDirectionTouch);
-        container.addEventListener("focus", selectCenter);
+        container.addEventListener("touchcancel", finishDirectionTouch);
         container.addEventListener("keydown", selectWithKeyboard);
         return () => {
             cancelPendingPoint();
+            setDraggingJumpRunDirection(false);
             container.removeEventListener("pointerdown", usePointer, true);
             document.removeEventListener("keydown", useKeyboard, true);
             leafletInstance.off("click", selectPoint);
             leafletInstance.off("dblclick", cancelDoubleClick);
-            leafletInstance.off("mousemove", followPointer);
+            container.removeEventListener("pointerdown", startDirectionPointer);
+            container.removeEventListener(
+                "pointermove",
+                followDirectionPointer,
+            );
+            container.removeEventListener("pointerup", finishDirectionPointer);
+            container.removeEventListener(
+                "pointercancel",
+                finishDirectionPointer,
+            );
             container.removeEventListener("touchstart", startDirectionTouch);
-            container.removeEventListener("touchmove", followTouch);
+            container.removeEventListener("touchmove", followDirectionTouch);
             container.removeEventListener("touchend", finishDirectionTouch);
-            container.removeEventListener("touchcancel", cancelDirectionTouch);
-            container.removeEventListener("focus", selectCenter);
+            container.removeEventListener("touchcancel", finishDirectionTouch);
             container.removeEventListener("keydown", selectWithKeyboard);
         };
-    }, [leafletInstance, jumpRunStart, placingJumpRunDirection]);
+    }, [leafletInstance, placingJumpRunDirection]);
 
     const { data, time, winds, averageWind, ground, freefallWinds } =
         getMapWindData(now);
@@ -1075,101 +1262,29 @@ export function DropzoneMap() {
                             nextJumper,
                             onNextJumperChange: setNextJumper,
                             onJumpersChange: setJumpers,
-                            onChange: setJumpRunSettings,
+                            onChange: applyJumpRunSettings,
                             onDefaultJumperCountChange: (count) =>
                                 navigateQs(
                                     { default_jump_group_count: String(count) },
                                     { replace: true },
                                 ),
-                            onPosition: () => {
-                                const [latitude, longitude] =
-                                    coordinates?.split(",").map(Number) ?? [];
-                                const initialCenter =
-                                    latitude !== undefined &&
-                                    longitude !== undefined &&
-                                    Number.isFinite(latitude) &&
-                                    Number.isFinite(longitude) &&
-                                    Math.abs(latitude) <= 90 &&
-                                    Math.abs(longitude) <= 180
-                                        ? { lat: latitude, lng: longitude }
-                                        : null;
-                                const target =
-                                    leafletInstance?.getCenter() ??
-                                    center ??
-                                    initialCenter;
-                                if (!target) return;
-                                const positionedJumpers = jumpRunStart
-                                    ? jumpers
-                                    : Array.from(
-                                          { length: defaultJumperCount },
-                                          () => ({ ...nextJumper }),
-                                      );
-                                const middleIndex = Math.max(
-                                    0,
-                                    (positionedJumpers.length - 1) / 2,
-                                );
-                                const middleJumpers = positionedJumpers.slice(
-                                    Math.floor(middleIndex),
-                                    Math.ceil(middleIndex) + 1,
-                                );
-                                if (!middleJumpers.length)
-                                    middleJumpers.push(nextJumper);
-                                const settings = jumpRunStart
-                                    ? jumpRunSettings
-                                    : {
-                                          ...jumpRunSettings,
-                                          direction: defaultJumpRunDirection,
-                                      };
-                                const winds = getMapWindData(now).freefallWinds;
-                                const velocity = getJumpRunVelocity(
-                                    winds,
-                                    settings,
-                                );
-                                if (!velocity) return;
-                                const openingOffset = middleJumpers.reduce(
-                                    (offset, jumper) => {
-                                        const path = getFreefallDrift(
-                                            winds,
-                                            settings.exitHeight,
-                                            jumper.speedKmh,
-                                            jumper.openingHeight,
-                                            velocity.air,
-                                        );
-                                        const opening = path?.[path.length - 1];
-                                        return {
-                                            east:
-                                                offset.east +
-                                                (opening?.east ?? 0) /
-                                                    middleJumpers.length,
-                                            north:
-                                                offset.north +
-                                                (opening?.north ?? 0) /
-                                                    middleJumpers.length,
-                                        };
-                                    },
-                                    { east: 0, north: 0 },
-                                );
-                                const middleExit = latLng(
-                                    driftCoordinates(target, {
-                                        height: 0,
-                                        east: -openingOffset.east,
-                                        north: -openingOffset.north,
-                                    }),
-                                );
-                                setJumpRunSettings(settings);
-                                setJumpRunStart(
-                                    latLng(
-                                        jumpRunCoordinates(
-                                            middleExit,
-                                            settings,
-                                            -middleIndex,
-                                            velocity.ground,
-                                        ),
-                                    ),
-                                );
-                                if (!jumpRunStart)
-                                    setJumpers(positionedJumpers);
-                                setPlacingJumpRunDirection(false);
+                            directionActive: placingJumpRunDirection,
+                            canAim: !!jumpRunStart,
+                            onToggleDirection: () => {
+                                if (
+                                    !placingJumpRunDirection &&
+                                    !openingTargetRef.current &&
+                                    jumpRunStart
+                                ) {
+                                    const pivot = openingTargetForRun(
+                                        jumpRunStart,
+                                        jumpRunSettings,
+                                        jumpers,
+                                        getMapWindData(now).freefallWinds,
+                                    );
+                                    if (pivot) openingTargetRef.current = pivot;
+                                }
+                                setPlacingJumpRunDirection((active) => !active);
                             },
                             onAdd: () =>
                                 setJumpers((current) => [
@@ -1179,6 +1294,7 @@ export function DropzoneMap() {
                         },
                         arrowCount: jumpRunStart ? Math.max(1, jumperCount) : 0,
                         onClear: () => {
+                            openingTargetRef.current = null;
                             setJumpRunStart(null);
                             setPlacingJumpRunDirection(false);
                             setJumpers([{ ...DEFAULT_JUMPER }]);
@@ -1187,6 +1303,7 @@ export function DropzoneMap() {
                             if (jumperCount > 1)
                                 setJumpers((current) => current.slice(0, -1));
                             else {
+                                openingTargetRef.current = null;
                                 setJumpRunStart(null);
                                 setPlacingJumpRunDirection(false);
                             }

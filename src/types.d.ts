@@ -115,7 +115,9 @@ interface JumpRunControlsProps {
     onJumpersChange: (jumpers: JumpRunJumper[]) => void;
     onChange: (settings: JumpRunSettings) => void;
     onDefaultJumperCountChange: (count: number) => void;
-    onPosition: () => void;
+    directionActive: boolean;
+    canAim: boolean;
+    onToggleDirection: () => void;
     onAdd: () => void;
 }
 
@@ -561,6 +563,7 @@ interface IconProps {
         | "trash"
         | "menu"
         | "location"
+        | "heading"
         | "lightning"
         | "storm"
         | "arrow"

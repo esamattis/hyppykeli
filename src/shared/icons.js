@@ -66,6 +66,11 @@ const artwork = {
         <circle cx="12" cy="12" r="4" />
         <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
     `,
+    heading: html`
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v10" />
+        <path d="m8.5 10.5 3.5-3.5 3.5 3.5" />
+    `,
     lightning: html`
         <path d="m13 2-9 12h7l-1 8 10-13h-7z" fill="currentColor" />
     `,
