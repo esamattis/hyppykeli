@@ -123,7 +123,12 @@ export function DropzoneMap() {
         }
         .jump-run-line {
             stroke: var(--map-direction-color, #2563eb);
-            animation: var(--map-direction-animation, none);
+            animation: dropzone-map-direction-dashes 700ms linear infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .jump-run-line {
+                animation: none;
+            }
         }
     `);
     const scope = useScope(css`
@@ -343,6 +348,8 @@ export function DropzoneMap() {
     );
     const [placingJumpRunDirection, setPlacingJumpRunDirection] =
         useState(false);
+    const [draggingJumpRunDirection, setDraggingJumpRunDirection] =
+        useState(false);
     const [jumpers, setJumpers] = useMapState(
         "map_jumpers",
         /** @type {JumpRunJumper[]} */ ([{ ...DEFAULT_JUMPER }]),
@@ -548,6 +555,33 @@ export function DropzoneMap() {
         };
     }, [leafletInstance, fullWindow, placingJumpRunDirection]);
 
+    useLayoutEffect(() => {
+        if (
+            !leafletInstance ||
+            activeLeafletRef.current !== leafletInstance ||
+            !placingJumpRunDirection
+        )
+            return;
+        const handlers = [
+            leafletInstance.scrollWheelZoom,
+            leafletInstance.doubleClickZoom,
+            leafletInstance.touchZoom,
+            leafletInstance.boxZoom,
+            leafletInstance.keyboard,
+        ];
+        const enabledHandlers = handlers.filter((handler) => handler.enabled());
+        const zoomControl = /** @type {import("leaflet").Control.Zoom & {
+            disable: () => import("leaflet").Control.Zoom;
+            enable: () => import("leaflet").Control.Zoom;
+        }} */ (leafletInstance.zoomControl);
+        handlers.forEach((handler) => handler.disable());
+        zoomControl.disable();
+        return () => {
+            enabledHandlers.forEach((handler) => handler.enable());
+            zoomControl.enable();
+        };
+    }, [leafletInstance, placingJumpRunDirection]);
+
     useEffect(() => {
         if (
             !leafletInstance ||
@@ -619,12 +653,15 @@ export function DropzoneMap() {
         const useKeyboard = () => {
             pointerFocus = false;
         };
+        let directionCommitted = false;
+        let directionPlacement = placingJumpRunDirection;
+        let directionOrigin = jumpRunStart;
         /** @param {import('leaflet').LatLngLiteral} target */
         const updateJumpRunDirection = (target) => {
-            if (!jumpRunStart) return;
+            if (!directionOrigin) return;
             const offset = leafletInstance
                 .project(target)
-                .subtract(leafletInstance.project(jumpRunStart));
+                .subtract(leafletInstance.project(directionOrigin));
             if (offset.x === 0 && offset.y === 0) return;
             const direction =
                 ((Math.atan2(offset.x, -offset.y) * 180) / Math.PI + 360) % 360;
@@ -632,7 +669,7 @@ export function DropzoneMap() {
         };
         /** @param {import('leaflet').LeafletMouseEvent} event */
         const followPointer = (event) => {
-            if (jumpRunActive && placingJumpRunDirection)
+            if (jumpRunActive && directionPlacement && !directionCommitted)
                 updateJumpRunDirection(event.latlng);
         };
         /** @type {import('leaflet').Point | null} */
@@ -644,7 +681,7 @@ export function DropzoneMap() {
             touchDragged = false;
             if (
                 !jumpRunActive ||
-                !placingJumpRunDirection ||
+                !directionPlacement ||
                 event.touches.length !== 1
             )
                 return;
@@ -673,6 +710,7 @@ export function DropzoneMap() {
             )
                 return;
             touchDragged = true;
+            setDraggingJumpRunDirection(true);
             const bounds = container.getBoundingClientRect();
             updateJumpRunDirection(
                 leafletInstance.containerPointToLatLng(
@@ -688,22 +726,30 @@ export function DropzoneMap() {
             if (touchDragged) {
                 // Prevent a synthetic click from starting another placement.
                 event.preventDefault();
+                directionCommitted = true;
+                directionPlacement = false;
                 setPlacingJumpRunDirection(false);
             }
             touchStart = null;
             touchDragged = false;
+            setDraggingJumpRunDirection(false);
         };
         const cancelDirectionTouch = () => {
             touchStart = null;
             touchDragged = false;
+            setDraggingJumpRunDirection(false);
         };
         /** @param {import('leaflet').LatLngLiteral} start */
         const addArrow = (start) => {
             if (jumpRunActive) {
-                if (placingJumpRunDirection) {
+                if (directionPlacement) {
                     updateJumpRunDirection(start);
+                    directionCommitted = true;
+                    directionPlacement = false;
                     setPlacingJumpRunDirection(false);
                 } else {
+                    directionOrigin = start;
+                    directionPlacement = true;
                     setJumpRunStart(start);
                     setPlacingJumpRunDirection(true);
                 }
@@ -733,6 +779,10 @@ export function DropzoneMap() {
                 return;
             }
             cancelPendingPoint();
+            if (directionPlacement) {
+                addArrow(event.latlng);
+                return;
+            }
             // Leaflet can synthesize dblclick before dispatching the second
             // click, so also ignore that click by its original timestamp.
             if (
@@ -1244,9 +1294,18 @@ export function DropzoneMap() {
                         ${
                             placingJumpRunDirection
                                 ? html`
-                                      <div class="direction-hint" role="status">
-                                          ${t("map.directionPrompt")}
-                                      </div>
+                                      ${
+                                          !draggingJumpRunDirection
+                                              ? html`
+                                                    <div
+                                                        class="direction-hint"
+                                                        role="status"
+                                                    >
+                                                        ${t("map.directionPrompt")}
+                                                    </div>
+                                                `
+                                              : null
+                                      }
                                       <svg
                                           class="direction-border"
                                           aria-hidden="true"

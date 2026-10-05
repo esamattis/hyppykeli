@@ -2152,7 +2152,7 @@ test("one finger on the map scrolls the page without changing the map view", asy
     await touch.detach();
 });
 
-for (const placement of ["unplaced", "positioned", "direction-setting"]) {
+for (const placement of ["unplaced", "positioned"]) {
     test(`double-tap zoom preserves the ${placement} jump run`, async ({
         page,
         isMobile,
@@ -2173,11 +2173,6 @@ for (const placement of ["unplaced", "positioned", "direction-setting"]) {
                 .click();
         }
         await map.scrollIntoViewIfNeeded();
-        if (placement === "direction-setting") {
-            if (isMobile) await map.tap({ position: { x: 100, y: 160 } });
-            else await map.click({ position: { x: 100, y: 160 } });
-            await expect(hint).toBeVisible();
-        }
         const initial = new URL(page.url()).searchParams;
         if (isMobile) {
             const bounds = await map.boundingBox();
@@ -2206,11 +2201,114 @@ for (const placement of ["unplaced", "positioned", "direction-setting"]) {
         await page.waitForTimeout(400);
         const result = new URL(page.url()).searchParams;
         expect(result.get("map_run_start")).toBe(initial.get("map_run_start"));
-        await expect(hint).toHaveCount(
-            placement === "direction-setting" ? 1 : 0,
-        );
+        await expect(hint).toHaveCount(0);
     });
 }
+
+test("the second jump run click locks direction before later pointer movement", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 100, y: 160 } });
+    const hint = page
+        .getByRole("status")
+        .filter({ hasText: "Aseta hyppylinjan suunta" });
+    await expect(hint).toBeVisible();
+    const start = new URL(page.url()).searchParams.get("map_run_start");
+    await map.click({ position: { x: 200, y: 160 } });
+    const bounds = await map.boundingBox();
+    await page.mouse.move(bounds.x + 100, bounds.y + 260);
+    // Render the click and movement before the former 300 ms delay can expire.
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    expect(await hint.count()).toBe(0);
+    const settings = () =>
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"));
+    expect(settings().direction).toBeCloseTo(90);
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
+    await page.waitForTimeout(400);
+    expect(settings().direction).toBeCloseTo(90);
+});
+
+test("map zoom is disabled during jump run direction setting and restored afterward", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 100, y: 160 } });
+    const hint = page
+        .getByRole("status")
+        .filter({ hasText: "Aseta hyppylinjan suunta" });
+    await expect(hint).toBeVisible();
+    const zoom = () => new URL(page.url()).searchParams.get("map_zoom");
+    const initialZoom = zoom();
+    const zoomIn = map.locator(".leaflet-control-zoom-in");
+    const zoomOut = map.locator(".leaflet-control-zoom-out");
+    await expect(zoomIn).toHaveAttribute("aria-disabled", "true");
+    await expect(zoomOut).toHaveAttribute("aria-disabled", "true");
+    await zoomIn.click({ force: true });
+    await zoomOut.click({ force: true });
+    await map.focus();
+    await page.keyboard.press("+");
+    await page.keyboard.press("-");
+    // A dblclick event must not zoom while the direction preview is active.
+    await map.dispatchEvent("dblclick", {
+        clientX: 150,
+        clientY: 220,
+        detail: 2,
+    });
+    const bounds = await map.boundingBox();
+    await page.mouse.move(bounds.x + 150, bounds.y + 220);
+    await page.mouse.wheel(0, -500);
+    await page.keyboard.down("Shift");
+    await page.mouse.move(bounds.x + 100, bounds.y + 160);
+    await page.mouse.down();
+    await page.mouse.move(bounds.x + 200, bounds.y + 260, { steps: 5 });
+    await page.mouse.up();
+    await page.keyboard.up("Shift");
+    const touch = await page.context().newCDPSession(page);
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [
+            { id: 1, x: bounds.x + 100, y: bounds.y + 200 },
+            { id: 2, x: bounds.x + 200, y: bounds.y + 200 },
+        ],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [
+            { id: 1, x: bounds.x + 50, y: bounds.y + 200 },
+            { id: 2, x: bounds.x + 250, y: bounds.y + 200 },
+        ],
+    });
+    await touch.send("Input.dispatchTouchEvent", {
+        type: "touchEnd",
+        touchPoints: [],
+    });
+    await touch.detach();
+    await page.waitForTimeout(400);
+    expect(zoom()).toBe(initialZoom);
+    await expect(hint).toBeVisible();
+    const currentBounds = await map.boundingBox();
+    await map.dispatchEvent("click", {
+        clientX: currentBounds.x + 200,
+        clientY: currentBounds.y + 160,
+        detail: 1,
+    });
+    await expect(hint).toHaveCount(0);
+    await expect(zoomIn).toHaveAttribute("aria-disabled", "false");
+    await expect(zoomOut).toHaveAttribute("aria-disabled", "false");
+    await zoomIn.click();
+    await expect.poll(zoom).not.toBe(initialZoom);
+    const buttonZoom = zoom();
+    await map.focus();
+    await page.keyboard.press("+");
+    await expect.poll(zoom).not.toBe(buttonZoom);
+});
 
 test("full-window one-finger pan pauses for direction setting and resumes on release", async ({
     page,
@@ -2308,7 +2406,7 @@ test("jump run direction follows touch dragging and locks on release", async ({
     });
     await expect(run).not.toHaveAttribute("d", originalDirection);
     await expect(jumper).toHaveAttribute("d", firstStart);
-    await expect(hint).toBeVisible();
+    await expect(hint).toHaveCount(0);
     expect(await page.evaluate(() => scrollY)).toBe(scroll);
     const preview = await run.getAttribute("d");
     await touch.send("Input.dispatchTouchEvent", {
@@ -2442,7 +2540,11 @@ test("map setup survives URL reload and shares in full-window mode", async ({
         .getByRole("button", { name: "Hyppylinja", exact: true })
         .click();
     await map.click({ position: { x: 160, y: 190 } });
-    if (isMobile) await page.waitForTimeout(350);
+    await expect(
+        page
+            .getByRole("status")
+            .filter({ hasText: "Aseta hyppylinjan suunta" }),
+    ).toBeVisible();
     await map.click({ position: { x: 200, y: 210 } });
     await toolbar
         .getByRole("button", { name: "Lisää hyppääjä", exact: true })
