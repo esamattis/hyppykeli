@@ -22,6 +22,12 @@ Shared styles, translations, dropzone listings, and ambient types remain at the
 `src` root. Browser listeners and weather polling start explicitly through
 `src/app/start.js`; importing state or calculation modules must not start polling.
 
+## Translations
+
+When adding or updating translations, update all other language translations to
+match in the same change. Keep translation keys and meanings consistent across
+all supported languages.
+
 ## Types and validation
 
 The project uses TypeScript through JSDoc comments in `.js` files, with strict
