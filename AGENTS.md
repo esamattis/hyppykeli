@@ -98,7 +98,8 @@ The app is served by the user systemd unit `hyppykeli.service`, defined in
 `/home/esamatti/.config/systemd/user/hyppykeli.service`.
 
 - Working directory: `/home/esamatti/code/hyppykeli`
-- Command: `/usr/bin/python3 -m http.server 8488 --bind 0.0.0.0`
+- Command: `/usr/bin/caddy run --config /home/esamatti/.config/hyppykeli/Caddyfile --adapter caddyfile`
+- Caddy config: `/home/esamatti/.config/hyppykeli/Caddyfile`
 - Local URL: `http://localhost:8488` (listens on all network interfaces)
 
 The server serves this checkout directly, so source changes are available on
