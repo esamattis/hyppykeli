@@ -1,4 +1,5 @@
 // @ts-check
+import { getCanopyDrift } from "#app/map/canopy.js";
 import {
     EARTH_RADIUS_METRES,
     driftCoordinates,
@@ -8,7 +9,6 @@ import {
 
 // Planning assumptions, also stated in the map help. This is wind drift only,
 // not a canopy glide/reachability model.
-const CANOPY_DESCENT_SPEED_MPS = 5;
 const UPWIND_BUFFER_METRES = 50;
 
 // Numerical tolerances are separate from the planning assumptions above.
@@ -131,10 +131,11 @@ export function startForAutomaticRun(
         const vectors = heights.map((height) =>
             getWindAtHeight(profile, height),
         );
-        const drift = { east: 0, north: 0 };
+        const drift = getCanopyDrift(profile, jumper.openingHeight)?.at(-1);
+        if (!drift) return null;
         /** @type {WindVector[]} */
         const directions = [];
-        for (const [layer, vector] of vectors.entries()) {
+        for (const vector of vectors) {
             if (!vector) return null;
             const speed = Math.hypot(vector.east, vector.north);
             if (speed > ZERO_WIND_TOLERANCE_MPS) {
@@ -159,14 +160,6 @@ export function startForAutomaticRun(
                 if (existing)
                     existing.minimum = Math.max(existing.minimum, minimum);
                 else constraints.push({ direction, minimum });
-            }
-            const next = vectors[layer + 1];
-            const height = heights[layer];
-            const nextHeight = heights[layer + 1];
-            if (next && height !== undefined && nextHeight !== undefined) {
-                const time = (height - nextHeight) / CANOPY_DESCENT_SPEED_MPS;
-                drift.east += ((vector.east + next.east) / 2) * time;
-                drift.north += ((vector.north + next.north) / 2) * time;
             }
         }
         preferred.east -= (offset.east + drift.east) / group.length;

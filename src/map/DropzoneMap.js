@@ -1,5 +1,6 @@
 // @ts-check
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
+import { getCanopyDrift } from "#app/map/canopy.js";
 import { QUERY_PARAMS, getQs, navigateQs } from "#app/app/settings.js";
 import { Help } from "#app/shared/Help.js";
 import { formatClock } from "#app/shared/dates.js";
@@ -152,7 +153,8 @@ export function DropzoneMap() {
             stroke: var(--map-direction-color, #2563eb);
             animation: dropzone-map-direction-dashes 700ms linear infinite;
         }
-        .freefall-drift-line {
+        .freefall-drift-line,
+        .parachute-drift-line {
             opacity: 0.65;
         }
         @media (prefers-reduced-motion: reduce) {
@@ -1344,6 +1346,25 @@ export function DropzoneMap() {
             const positions = path.map((offset) =>
                 driftCoordinates(settings.start, offset),
             );
+            const opening = positions.at(-1);
+            const canopyPath = getCanopyDrift(
+                canopyWinds,
+                settings.openingHeight,
+            );
+            if (opening && canopyPath) {
+                polyline(
+                    canopyPath.map((offset) =>
+                        driftCoordinates(latLng(opening), offset),
+                    ),
+                    {
+                        color: "#c2410c",
+                        weight: 1,
+                        lineCap: "round",
+                        interactive: false,
+                        className: "parachute-drift-line",
+                    },
+                ).addTo(layers);
+            }
             return [
                 polyline(positions, {
                     color: "#c2410c",
@@ -1362,6 +1383,7 @@ export function DropzoneMap() {
         leafletInstance,
         jumpers,
         data,
+        ground,
         time,
         now,
         jumpRunStart,
