@@ -25,6 +25,7 @@ export function JumpRunControls({
     directionActive,
     canAim,
     onToggleDirection,
+    onResetDirection,
     onAdd,
 }) {
     const scope = useScope(css`
@@ -189,6 +190,12 @@ export function JumpRunControls({
                         ...settings,
                         direction: (settings.direction + 90) % 360,
                     }),
+            })}
+            ${h(ToolbarButton, {
+                label: t("settings.resetJumpRunDirection"),
+                icon: "undo",
+                disabled: !canAim,
+                onClick: onResetDirection,
             })}
             ${h(ToolbarButton, {
                 label: t("settings.addJumper"),

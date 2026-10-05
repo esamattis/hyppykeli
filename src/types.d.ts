@@ -134,6 +134,7 @@ interface JumpRunControlsProps {
     directionActive: boolean;
     canAim: boolean;
     onToggleDirection: () => void;
+    onResetDirection: () => void;
     onAdd: () => void;
 }
 

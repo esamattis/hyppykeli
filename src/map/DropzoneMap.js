@@ -306,7 +306,7 @@ export function DropzoneMap() {
     const openingTargetRef = useRef(null);
     const openingTargetKeyRef = useRef("");
     const calculateJumpRun = useMemo(createJumpRunCalculator, []);
-    const calculateDefaultRun = useMemo(createJumpRunCalculator, []);
+    const calculateAutomaticRun = useMemo(createJumpRunCalculator, []);
     const [shareError, setShareError] = useState("");
     const [now, setNow] = useState(Date.now());
     const [fullWindow, setFullWindow] = useMapState(
@@ -743,47 +743,50 @@ export function DropzoneMap() {
         ) < -1e-10
             ? (defaultJumpRunDirection + 180) % 360
             : defaultJumpRunDirection;
-    const defaultSettings = {
+    const automaticSettings = {
         ...jumpRunSettings,
-        direction: intoWindDirection,
+        direction:
+            jumpRunStart || QUERY_PARAMS.value.map_run_settings
+                ? jumpRunSettings.direction
+                : intoWindDirection,
     };
-    const defaultGroup = placementGroup();
-    const defaultPlacementKey = JSON.stringify([
+    const automaticGroup = placementGroup();
+    const automaticPlacementKey = JSON.stringify([
         landingLat,
         landingLon,
-        defaultSettings,
-        defaultGroup,
+        automaticSettings,
+        automaticGroup,
         canopyWinds,
     ]);
-    const defaultStart = useMemo(
+    const automaticStart = useMemo(
         () =>
             hasLandingCoordinates
                 ? startForAutomaticRun(
                       { lat: Number(landingLat), lng: Number(landingLon) },
-                      defaultSettings,
-                      defaultGroup,
-                      calculateDefaultRun(freefallWinds, defaultSettings),
+                      automaticSettings,
+                      automaticGroup,
+                      calculateAutomaticRun(freefallWinds, automaticSettings),
                       canopyWinds,
                   )
                 : null,
-        [defaultPlacementKey],
+        [automaticPlacementKey],
     );
-    const canPositionDefault = !!defaultStart;
-    const positionDefaultJumpRun = () => {
-        if (!defaultStart) return;
+    const canPositionAutomatic = !!automaticStart;
+    const positionAutomaticJumpRun = () => {
+        if (!automaticStart) return;
         setPlacingJumpRunDirection(false);
         const target = openingTargetForRun(
-            defaultStart,
-            defaultSettings,
-            defaultGroup,
-            calculateDefaultRun(freefallWinds, defaultSettings),
+            automaticStart,
+            automaticSettings,
+            automaticGroup,
+            calculateAutomaticRun(freefallWinds, automaticSettings),
         );
         if (target)
             savePositionedRun(
                 target,
-                defaultStart,
-                defaultSettings,
-                defaultGroup,
+                automaticStart,
+                automaticSettings,
+                automaticGroup,
             );
     };
     const initialPositionHandled = useRef(
@@ -795,11 +798,11 @@ export function DropzoneMap() {
             initialPositionHandled.current = true;
             return;
         }
-        if (!canPositionDefault || !leafletInstance) return;
+        if (!canPositionAutomatic || !leafletInstance) return;
         // Wait for a feasible placement and fresh upper/lower winds. Once positioned,
         // later weather updates must not overwrite the user's edits or clear.
         initialPositionHandled.current = true;
-        positionDefaultJumpRun();
+        positionAutomaticJumpRun();
     });
     beginDirectionDragRef.current = (pointer) => {
         const map = activeLeafletRef.current;
@@ -1387,7 +1390,7 @@ export function DropzoneMap() {
                         : null
                 }
                 ${
-                    hasLandingCoordinates && !canPositionDefault
+                    hasLandingCoordinates && !canPositionAutomatic
                         ? html`
                               <p
                                   class="automatic-run-unavailable"
@@ -1408,8 +1411,8 @@ export function DropzoneMap() {
                 <div class=${`map-frame${fullWindow ? " full-window" : ""}`}>
                     ${h(FreefallToolbar, {
                         fullWindow,
-                        canPosition: canPositionDefault,
-                        onPosition: positionDefaultJumpRun,
+                        canPosition: canPositionAutomatic,
+                        onPosition: positionAutomaticJumpRun,
                         onShare: async () => {
                             setShareError("");
                             const url = new URL(location.href);
@@ -1443,6 +1446,13 @@ export function DropzoneMap() {
                                 ),
                             directionActive: placingJumpRunDirection,
                             canAim: !!jumpRunStart,
+                            onResetDirection: () => {
+                                setPlacingJumpRunDirection(false);
+                                applyJumpRunSettings({
+                                    ...jumpRunSettings,
+                                    direction: intoWindDirection,
+                                });
+                            },
                             onToggleDirection: () => {
                                 setPlacingJumpRunDirection((active) => !active);
                             },

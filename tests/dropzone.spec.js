@@ -1678,9 +1678,11 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     const jumpers = map.locator(".jump-run-jumper");
     const arrows = map.locator(".freefall-drift-line");
     await expect(jumpers).toHaveCount(1);
-    const firstStart = await jumpers.first().getAttribute("d");
+    const firstStart = new URL(page.url()).searchParams.get("map_run_start");
     await place(100, 80);
-    await expect(jumpers.first()).not.toHaveAttribute("d", firstStart);
+    await expect
+        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
+        .not.toBe(firstStart);
     const lineBounds = await run.boundingBox();
     const mapBounds = await map.boundingBox();
     expect(lineBounds.y).toBeLessThan(mapBounds.y);
@@ -3471,7 +3473,7 @@ for (const [axis, wind, speed, expected] of [
     });
 }
 
-test("manual default positioning restores the landing target and chooses direction using current average wind", async ({
+test("automatic positioning preserves the current direction and reset restores the default into current wind", async ({
     page,
 }) => {
     await page.goto(
@@ -3479,6 +3481,11 @@ test("manual default positioning restores the landing target and chooses directi
     );
     await setUniformFreefallWind(page);
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+    await page
+        .getByRole("button", {
+            name: "Kierrä hyppylinjaa 90° myötäpäivään",
+        })
+        .click();
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs(
@@ -3497,17 +3504,87 @@ test("manual default positioning restores the landing target and chooses directi
     await expect(position).toBeDisabled();
     await setUniformFreefallWind(page);
     await position.click();
-    expect(
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-            .direction,
-    ).toBe(0);
+    const positionedParams = new URL(page.url()).searchParams;
+    const positionedSettings = JSON.parse(
+        positionedParams.get("map_run_settings"),
+    );
+    expect(positionedSettings.direction).toBe(270);
+    expect(JSON.parse(positionedParams.get("map_run_start"))).not.toEqual({
+        lat: 62.41,
+        lng: 25.61,
+    });
     await expectAutomaticOpeningsUpwind(page);
+    const opening = await middleOpening(page);
+    const directionMode = page.getByRole("button", {
+        name: "Kierrä hyppylinjaa vapaasti vetämällä",
+    });
+    await directionMode.click();
+    await page
+        .getByRole("button", {
+            name: "Palauta hyppylinjan oletussuunta",
+        })
+        .click();
+    await expect(directionMode).toHaveAttribute("aria-pressed", "false");
+    const resetParams = new URL(page.url()).searchParams;
+    expect(JSON.parse(resetParams.get("map_run_settings"))).toEqual({
+        ...positionedSettings,
+        direction: 0,
+    });
+    expect(resetParams.get("map_jumpers")).toBe(
+        positionedParams.get("map_jumpers"),
+    );
+    expect(resetParams.get("default_jump_run_direction")).toBe("180");
+    expect(await openingDistance(page, opening)).toBeLessThan(1);
     await page.getByRole("button", { name: "Poista hyppylinja" }).click();
     await expect(page.locator(".jump-run-jumper")).toHaveCount(0);
     await setUniformFreefallWind(page);
     await expect(page.locator(".jump-run-jumper")).toHaveCount(0);
     await position.click();
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+    expect(
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+            .direction,
+    ).toBe(180);
+});
+
+test("automatic positioning is disabled for an infeasible current direction and reset recovers", async ({
+    page,
+}) => {
+    await page.goto(
+        `${developerPath}&DEV_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=180&DEV_map_direction=180`,
+    );
+    await setUniformFreefallWind(page);
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    const settings = page.getByRole("dialog", {
+        name: "Hyppylinjan asetukset",
+    });
+    await settings
+        .getByRole("slider", { name: "Hyppylinjan suunta" })
+        .fill("90");
+    await settings
+        .getByRole("spinbutton", { name: "Todellinen ilmanopeus (km/h)" })
+        .fill("20");
+    await page.keyboard.press("Escape");
+    const position = page.getByRole("button", {
+        name: "Hyppylinjan automaattinen sijoitus",
+    });
+    await expect(position).toBeDisabled();
+    await expect(page.locator(".automatic-run-unavailable")).toBeVisible();
+    await page
+        .getByRole("button", { name: "Palauta hyppylinjan oletussuunta" })
+        .click();
+    await expect(position).toBeEnabled();
+    await expect(page.locator(".automatic-run-unavailable")).toHaveCount(0);
+    const run = JSON.parse(
+        new URL(page.url()).searchParams.get("map_run_settings"),
+    );
+    expect(run.direction).toBe(180);
+    expect(run.speedKmh).toBe(20);
+    await position.click();
+    await expectAutomaticOpeningsUpwind(page);
 });
 
 async function expectAutomaticOpeningsUpwind(page) {
