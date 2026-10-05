@@ -87,19 +87,6 @@ interface FreefallDriftArrow {
     speedKmh: number;
 }
 
-type FreefallSettingsProps = Pick<
-    FreefallToolbarProps,
-    | "exitHeight"
-    | "openingHeight"
-    | "speedKmh"
-    | "onAltitudeChange"
-    | "onSpeedChange"
-> & {
-    title?: string;
-    exitReadOnly?: boolean;
-    showExit?: boolean;
-};
-
 interface JumpRunJumper {
     speedKmh: number;
     openingHeight: number;
@@ -136,17 +123,10 @@ interface FreefallToolbarProps {
     fullWindow: boolean;
     onToggleFullWindow: () => void;
     onShare: () => void;
-    jumpRunActive: boolean;
-    onToggleJumpRun: () => void;
     jumpRun: JumpRunControlsProps;
     arrowCount: number;
     onClear: () => void;
     onUndo: () => void;
-    exitHeight: number;
-    openingHeight: number;
-    speedKmh: number;
-    onAltitudeChange: (exitHeight: number, openingHeight: number) => void;
-    onSpeedChange: (speedKmh: number) => void;
 }
 
 interface MapWindMotion {
@@ -295,15 +275,10 @@ interface QueryParams {
     map_center_lon?: string;
     map_full_window?: string;
     map_wind?: string;
-    map_exit_height?: string;
-    map_opening_height?: string;
-    map_speed?: string;
-    map_run_active?: string;
     map_run_start?: string;
     map_jumpers?: string;
     map_next_jumper?: string;
     map_run_settings?: string;
-    map_jumps?: string;
     DEV_debug?: string;
     DEV_mock?: string;
     DEV_ground_obs?: string;
@@ -570,7 +545,6 @@ interface LandingDropzone {
 interface IconProps {
     name:
         | "plane"
-        | "freefall"
         | "plus"
         | "settings"
         | "share"

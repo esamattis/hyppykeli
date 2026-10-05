@@ -321,26 +321,6 @@ export function DropzoneMap() {
         "≈ 4200-800 m",
         (value) => typeof value === "string",
     );
-    const [exitHeight, setExitHeight] = useMapState(
-        "map_exit_height",
-        4000,
-        (value) => isFiniteNumber(value) && value > 0 && value <= 4200,
-    );
-    const [openingHeight, setOpeningHeight] = useMapState(
-        "map_opening_height",
-        DEFAULT_JUMPER.openingHeight,
-        (value) => isFiniteNumber(value) && value >= 0 && value < 4200,
-    );
-    const [speedKmh, setSpeedKmh] = useMapState(
-        "map_speed",
-        DEFAULT_JUMPER.speedKmh,
-        (value) => isFiniteNumber(value) && value > 0,
-    );
-    const [jumpRunActive, setJumpRunActive] = useMapState(
-        "map_run_active",
-        false,
-        (value) => typeof value === "boolean",
-    );
     const [jumpRunStart, setJumpRunStart] = useMapState(
         "map_run_start",
         /** @type {import('leaflet').LatLngLiteral | null} */ (null),
@@ -394,21 +374,7 @@ export function DropzoneMap() {
     const [leafletInstance, setLeafletInstance] = useState(
         /** @type {import('leaflet').Map | null} */ (null),
     );
-    const [driftArrows, setDriftArrows] = useMapState(
-        "map_jumps",
-        /** @type {FreefallDriftArrow[]} */ ([]),
-        (value) =>
-            Array.isArray(value) &&
-            value.length <= 10 &&
-            value.every(
-                (arrow) =>
-                    isValidJumper(arrow) &&
-                    isValidPosition(arrow.start) &&
-                    isFiniteNumber(arrow.exitHeight) &&
-                    arrow.exitHeight > arrow.openingHeight &&
-                    arrow.exitHeight <= 4200,
-            ),
-    );
+    const [driftMissing, setDriftMissing] = useState(false);
     const [zoom, setZoom] = useMapState(
         "map_zoom",
         14,
@@ -669,7 +635,7 @@ export function DropzoneMap() {
         };
         /** @param {import('leaflet').LeafletMouseEvent} event */
         const followPointer = (event) => {
-            if (jumpRunActive && directionPlacement && !directionCommitted)
+            if (directionPlacement && !directionCommitted)
                 updateJumpRunDirection(event.latlng);
         };
         /** @type {import('leaflet').Point | null} */
@@ -679,12 +645,7 @@ export function DropzoneMap() {
         const startDirectionTouch = (event) => {
             touchStart = null;
             touchDragged = false;
-            if (
-                !jumpRunActive ||
-                !directionPlacement ||
-                event.touches.length !== 1
-            )
-                return;
+            if (!directionPlacement || event.touches.length !== 1) return;
             if (
                 event.target instanceof Element &&
                 event.target.closest(".leaflet-control")
@@ -740,25 +701,18 @@ export function DropzoneMap() {
             setDraggingJumpRunDirection(false);
         };
         /** @param {import('leaflet').LatLngLiteral} start */
-        const addArrow = (start) => {
-            if (jumpRunActive) {
-                if (directionPlacement) {
-                    updateJumpRunDirection(start);
-                    directionCommitted = true;
-                    directionPlacement = false;
-                    setPlacingJumpRunDirection(false);
-                } else {
-                    directionOrigin = start;
-                    directionPlacement = true;
-                    setJumpRunStart(start);
-                    setPlacingJumpRunDirection(true);
-                }
-                return;
+        const placeJumpRun = (start) => {
+            if (directionPlacement) {
+                updateJumpRunDirection(start);
+                directionCommitted = true;
+                directionPlacement = false;
+                setPlacingJumpRunDirection(false);
+            } else {
+                directionOrigin = start;
+                directionPlacement = true;
+                setJumpRunStart(start);
+                setPlacingJumpRunDirection(true);
             }
-            setDriftArrows((arrows) => [
-                ...arrows.slice(-9),
-                { start, exitHeight, openingHeight, speedKmh },
-            ]);
         };
         /** @type {ReturnType<typeof setTimeout> | undefined} */
         let pendingPoint;
@@ -774,13 +728,9 @@ export function DropzoneMap() {
         };
         /** @param {import('leaflet').LeafletMouseEvent} event */
         const selectPoint = (event) => {
-            if (!jumpRunActive) {
-                addArrow(event.latlng);
-                return;
-            }
             cancelPendingPoint();
             if (directionPlacement) {
-                addArrow(event.latlng);
+                placeJumpRun(event.latlng);
                 return;
             }
             // Leaflet can synthesize dblclick before dispatching the second
@@ -792,13 +742,13 @@ export function DropzoneMap() {
                 return;
             pendingPoint = setTimeout(() => {
                 pendingPoint = undefined;
-                addArrow(event.latlng);
+                placeJumpRun(event.latlng);
             }, 300);
         };
         /** @param {FocusEvent} event */
         const selectCenter = (event) => {
             if (event.target === container && !pointerFocus)
-                addArrow(leafletInstance.getCenter());
+                placeJumpRun(leafletInstance.getCenter());
         };
         /** @param {KeyboardEvent} event */
         const selectWithKeyboard = (event) => {
@@ -807,7 +757,7 @@ export function DropzoneMap() {
                 (event.key === "Enter" || event.key === " ")
             ) {
                 event.preventDefault();
-                addArrow(leafletInstance.getCenter());
+                placeJumpRun(leafletInstance.getCenter());
             }
         };
         container.addEventListener("pointerdown", usePointer, true);
@@ -839,24 +789,10 @@ export function DropzoneMap() {
             container.removeEventListener("focus", selectCenter);
             container.removeEventListener("keydown", selectWithKeyboard);
         };
-    }, [
-        leafletInstance,
-        exitHeight,
-        openingHeight,
-        speedKmh,
-        jumpRunActive,
-        jumpRunStart,
-        placingJumpRunDirection,
-    ]);
+    }, [leafletInstance, jumpRunStart, placingJumpRunDirection]);
 
     const { data, time, winds, averageWind, ground, freefallWinds } =
         getMapWindData(now);
-    const drift = getFreefallDrift(
-        freefallWinds,
-        exitHeight,
-        speedKmh,
-        openingHeight,
-    );
     const jumpRunVelocity = getJumpRunVelocity(freefallWinds, jumpRunSettings);
     const jumperStarts =
         jumpRunStart && jumpRunVelocity
@@ -937,24 +873,22 @@ export function DropzoneMap() {
     ]);
     useEffect(() => {
         /** @type {Array<FreefallDriftArrow & { exitVelocity?: WindVector }>} */
-        const arrows = [
-            ...driftArrows,
-            ...jumperStarts.map((start, index) => ({
-                start,
-                exitHeight: jumpRunSettings.exitHeight,
-                openingHeight:
-                    jumpers[index]?.openingHeight ??
-                    DEFAULT_JUMPER.openingHeight,
-                speedKmh: jumpers[index]?.speedKmh ?? DEFAULT_JUMPER.speedKmh,
-                exitVelocity: jumpRunVelocity?.air,
-            })),
-        ];
+        const arrows = jumperStarts.map((start, index) => ({
+            start,
+            exitHeight: jumpRunSettings.exitHeight,
+            openingHeight:
+                jumpers[index]?.openingHeight ?? DEFAULT_JUMPER.openingHeight,
+            speedKmh: jumpers[index]?.speedKmh ?? DEFAULT_JUMPER.speedKmh,
+            exitVelocity: jumpRunVelocity?.air,
+        }));
         if (
             !leafletInstance ||
             activeLeafletRef.current !== leafletInstance ||
             !arrows.length
-        )
+        ) {
+            setDriftMissing(false);
             return;
+        }
         const layers = layerGroup().addTo(leafletInstance);
         const forecastWinds = getMapWindData(now).freefallWinds;
         const lines = arrows.flatMap((settings) => {
@@ -979,6 +913,7 @@ export function DropzoneMap() {
                 }).addTo(layers),
             ];
         });
+        setDriftMissing(lines.length < arrows.length);
         // A screen-sized SVG arrowhead follows the final segment at every zoom.
         const svgNamespace = "http://www.w3.org/2000/svg";
         const definitions = document.createElementNS(svgNamespace, "defs");
@@ -1014,7 +949,6 @@ export function DropzoneMap() {
     }, [
         arrowId,
         leafletInstance,
-        driftArrows,
         jumpers,
         data,
         time,
@@ -1022,9 +956,6 @@ export function DropzoneMap() {
         jumpRunStart,
         jumpRunSettings,
         jumperCount,
-        exitHeight,
-        openingHeight,
-        speedKmh,
     ]);
     const selectedWind =
         winds.find((wind) => wind.label === selectedLabel) ?? averageWind;
@@ -1063,9 +994,6 @@ export function DropzoneMap() {
                                 ${t("map.legendHelp")}
                             </p>
 
-                            <h3>${t("map.freefallHelpTitle")}</h3>
-                            <p>${t("map.freefallHelp")}</p>
-
                             <h3>${t("map.jumpRunHelpTitle")}</h3>
                             <p>${t("map.jumpRunHelp")}</p>
                         `,
@@ -1092,7 +1020,7 @@ export function DropzoneMap() {
                     </ul>
                 </aside>
                 ${
-                    (driftArrows.length > 0 || jumpRunStart) && !drift
+                    driftMissing
                         ? html`
                               <div
                                   class="freefall-drift-summary"
@@ -1104,7 +1032,7 @@ export function DropzoneMap() {
                         : null
                 }
                 ${
-                    jumpRunActive && !jumpRunVelocity
+                    jumpRunStart && !jumpRunVelocity
                         ? html`
                               <p class="jump-run-unavailable" role="status">
                                   ${t("map.jumpRunUnavailable")}
@@ -1140,11 +1068,6 @@ export function DropzoneMap() {
                         },
                         onToggleFullWindow: () =>
                             setFullWindow((expanded) => !expanded),
-                        jumpRunActive,
-                        onToggleJumpRun: () => {
-                            setJumpRunActive((active) => !active);
-                            setPlacingJumpRunDirection(false);
-                        },
                         jumpRun: {
                             settings: jumpRunSettings,
                             defaultJumperCount,
@@ -1254,38 +1177,19 @@ export function DropzoneMap() {
                                     { ...nextJumper },
                                 ]),
                         },
-                        exitHeight,
-                        openingHeight,
-                        speedKmh,
-                        onAltitudeChange: (exit, opening) => {
-                            setExitHeight(exit);
-                            setOpeningHeight(opening);
-                        },
-                        onSpeedChange: setSpeedKmh,
-                        arrowCount: jumpRunActive
-                            ? jumpRunStart
-                                ? Math.max(1, jumperCount)
-                                : 0
-                            : driftArrows.length,
+                        arrowCount: jumpRunStart ? Math.max(1, jumperCount) : 0,
                         onClear: () => {
-                            if (jumpRunActive) {
-                                setJumpRunStart(null);
-                                setPlacingJumpRunDirection(false);
-                                setJumpers([{ ...DEFAULT_JUMPER }]);
-                            } else setDriftArrows([]);
+                            setJumpRunStart(null);
+                            setPlacingJumpRunDirection(false);
+                            setJumpers([{ ...DEFAULT_JUMPER }]);
                         },
                         onUndo: () => {
-                            if (jumpRunActive) {
-                                if (jumperCount > 1)
-                                    setJumpers((current) =>
-                                        current.slice(0, -1),
-                                    );
-                                else {
-                                    setJumpRunStart(null);
-                                    setPlacingJumpRunDirection(false);
-                                }
-                            } else
-                                setDriftArrows((arrows) => arrows.slice(0, -1));
+                            if (jumperCount > 1)
+                                setJumpers((current) => current.slice(0, -1));
+                            else {
+                                setJumpRunStart(null);
+                                setPlacingJumpRunDirection(false);
+                            }
                         },
                     })}
                     <div
@@ -1325,16 +1229,7 @@ export function DropzoneMap() {
                             ${mapLayerScope.style}
                             ${!coordinates ? t("common.waitingCoordinates") : null}
                         </div>
-                        ${
-                            jumpRunActive
-                                ? html`
-                                      <span
-                                          class="jump-run-target"
-                                          aria-hidden="true"
-                                      ></span>
-                                  `
-                                : null
-                        }
+                        <span class="jump-run-target" aria-hidden="true"></span>
                         ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
                     </div>
                 </div>

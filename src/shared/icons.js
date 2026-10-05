@@ -9,12 +9,6 @@ const artwork = {
             d="M12 3c-1 0-1.5 1-1.5 2v5L3 15v2l7.5-2v4L8 21v1l4-1 4 1v-1l-2.5-2v-4l7.5 2v-2L13.5 10V5c0-1-.5-2-1.5-2Z"
         />
     `,
-    freefall: html`
-        <circle cx="12" cy="5" r="2" />
-        <path
-            d="M12 7v7M12 10l-5 2-3-4M12 10l5 2 3-4M12 14l-5 3-2 4M12 14l5 3 2 4"
-        />
-    `,
     plus: html`
         <path d="M12 4v16M4 12h16" />
     `,

@@ -2,7 +2,6 @@
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
-import { FreefallSettings } from "#app/map/FreefallSettings.js";
 import { JumpRunControls } from "#app/map/JumpRunControls.js";
 import { h, html } from "htm/preact";
 
@@ -11,16 +10,9 @@ export function FreefallToolbar({
     fullWindow,
     onToggleFullWindow,
     onShare,
-    exitHeight,
-    openingHeight,
-    speedKmh,
-    onAltitudeChange,
-    onSpeedChange,
     arrowCount,
     onClear,
     onUndo,
-    jumpRunActive,
-    onToggleJumpRun,
     jumpRun,
 }) {
     const scope = useScope(css`
@@ -55,9 +47,6 @@ export function FreefallToolbar({
             font-weight: 600;
             font-variant-numeric: tabular-nums;
         }
-        .jump-run-toggle {
-            margin-right: 10px;
-        }
         .undo-arrow {
             margin-left: 10px;
         }
@@ -74,16 +63,7 @@ export function FreefallToolbar({
         >
             ${scope.style}
             <div class="toolbar-actions">
-                ${h(ToolbarButton, {
-                    label: t("toolbar.jumpRun"),
-                    icon: jumpRunActive ? "plane" : "freefall",
-                    size: 20,
-                    className: "jump-run-toggle",
-                    pressed: jumpRunActive,
-                    onClick: onToggleJumpRun,
-                })}
-                ${jumpRunActive ? h(JumpRunControls, jumpRun) : null}
-                ${!jumpRunActive ? h(FreefallSettings, { exitHeight, openingHeight, speedKmh, onAltitudeChange, onSpeedChange }) : null}
+                ${h(JumpRunControls, jumpRun)}
                 ${h(ToolbarButton, {
                     label: t("toolbar.undoArrow"),
                     icon: "undo",
@@ -119,35 +99,27 @@ export function FreefallToolbar({
                 <span>
                     <span class="value-label">${t("toolbar.exit")}</span>
                     <strong class="value-number">
-                        ${`${jumpRunActive ? jumpRun.settings.exitHeight : exitHeight} m`}
+                        ${`${jumpRun.settings.exitHeight} m`}
                     </strong>
                 </span>
                 <span>
                     <span class="value-label">${t("toolbar.opening")}</span>
                     <strong class="value-number">
-                        ${`${jumpRunActive ? jumpRun.nextJumper.openingHeight : openingHeight} m`}
+                        ${`${jumpRun.nextJumper.openingHeight} m`}
                     </strong>
                 </span>
                 <span>
                     <span class="value-label">${t("toolbar.speed")}</span>
                     <strong class="value-number">
-                        ${`${jumpRunActive ? jumpRun.nextJumper.speedKmh : speedKmh} km/h`}
+                        ${`${jumpRun.nextJumper.speedKmh} km/h`}
                     </strong>
                 </span>
-                ${
-                    jumpRunActive
-                        ? html`
-                              <span>
-                                  <span class="value-label">
-                                      ${t("toolbar.jumpRun")}
-                                  </span>
-                                  <strong class="value-number">
-                                      ${`${jumpRun.settings.speedKmh} km/h`}
-                                  </strong>
-                              </span>
-                          `
-                        : null
-                }
+                <span>
+                    <span class="value-label">${t("toolbar.jumpRun")}</span>
+                    <strong class="value-number">
+                        ${`${jumpRun.settings.speedKmh} km/h`}
+                    </strong>
+                </span>
             </div>
         </div>
     `;
