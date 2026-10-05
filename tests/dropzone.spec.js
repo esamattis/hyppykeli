@@ -2152,6 +2152,131 @@ test("one finger on the map scrolls the page without changing the map view", asy
     await touch.detach();
 });
 
+for (const placement of ["unplaced", "positioned", "direction-setting"]) {
+    test(`double-tap zoom preserves the ${placement} jump run`, async ({
+        page,
+        isMobile,
+    }) => {
+        await setUniformFreefallWind(page);
+        await page
+            .getByRole("button", { name: "Hyppylinja", exact: true })
+            .click();
+        const map = page.locator(".dz-map");
+        const hint = page
+            .getByRole("status")
+            .filter({ hasText: "Aseta hyppylinjan suunta" });
+        if (placement === "positioned") {
+            await page
+                .getByRole("button", {
+                    name: "Sijoita hyppylinja automaattisesti",
+                })
+                .click();
+        }
+        await map.scrollIntoViewIfNeeded();
+        if (placement === "direction-setting") {
+            if (isMobile) await map.tap({ position: { x: 100, y: 160 } });
+            else await map.click({ position: { x: 100, y: 160 } });
+            await expect(hint).toBeVisible();
+        }
+        const initial = new URL(page.url()).searchParams;
+        if (isMobile) {
+            const bounds = await map.boundingBox();
+            const touch = await page.context().newCDPSession(page);
+            for (let tap = 0; tap < 2; tap++) {
+                await touch.send("Input.dispatchTouchEvent", {
+                    type: "touchStart",
+                    touchPoints: [{ x: bounds.x + 150, y: bounds.y + 220 }],
+                });
+                await touch.send("Input.dispatchTouchEvent", {
+                    type: "touchEnd",
+                    touchPoints: [],
+                });
+                if (tap === 0) await page.waitForTimeout(60);
+            }
+            await touch.detach();
+        } else {
+            await map.dblclick({ position: { x: 150, y: 220 }, delay: 60 });
+        }
+        await expect(page).toHaveURL(
+            (url) =>
+                Number(url.searchParams.get("map_zoom")) >
+                Number(initial.get("map_zoom")),
+        );
+        // Allow the single-click delay to expire to detect late placement.
+        await page.waitForTimeout(400);
+        const result = new URL(page.url()).searchParams;
+        expect(result.get("map_run_start")).toBe(initial.get("map_run_start"));
+        await expect(hint).toHaveCount(
+            placement === "direction-setting" ? 1 : 0,
+        );
+    });
+}
+
+test("full-window one-finger pan pauses for direction setting and resumes on release", async ({
+    page,
+    isMobile,
+}) => {
+    test.skip(!isMobile, "Requires mobile touch input");
+    await setUniformFreefallWind(page);
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
+    await page
+        .getByRole("button", { name: "Laajenna Tuulikartta koko ikkunaan" })
+        .click();
+    const map = page.locator(".dz-map");
+    const hint = page
+        .getByRole("status")
+        .filter({ hasText: "Aseta hyppylinjan suunta" });
+    const touch = await page.context().newCDPSession(page);
+    const view = () => {
+        const params = new URL(page.url()).searchParams;
+        return [params.get("map_center_lat"), params.get("map_center_lon")];
+    };
+    const drag = async () => {
+        const bounds = await map.boundingBox();
+        await touch.send("Input.dispatchTouchEvent", {
+            type: "touchStart",
+            touchPoints: [{ x: bounds.x + 100, y: bounds.y + 200 }],
+        });
+        for (const offset of [20, 40, 60, 80]) {
+            await touch.send("Input.dispatchTouchEvent", {
+                type: "touchMove",
+                touchPoints: [
+                    { x: bounds.x + 100 + offset, y: bounds.y + 200 - offset },
+                ],
+            });
+            await page.evaluate(() => new Promise(requestAnimationFrame));
+        }
+        await touch.send("Input.dispatchTouchEvent", {
+            type: "touchEnd",
+            touchPoints: [],
+        });
+    };
+    const initial = view();
+    await drag();
+    await expect.poll(view).not.toEqual(initial);
+    await expect(hint).toHaveCount(0);
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBeNull();
+    await map.tap({ position: { x: 100, y: 160 } });
+    await expect(hint).toBeVisible();
+    const beforeDirection = view();
+    const start = new URL(page.url()).searchParams.get("map_run_start");
+    const beforeSettings = new URL(page.url()).searchParams.get(
+        "map_run_settings",
+    );
+    await drag();
+    await expect(hint).toHaveCount(0);
+    expect(view()).toEqual(beforeDirection);
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
+    expect(new URL(page.url()).searchParams.get("map_run_settings")).not.toBe(
+        beforeSettings,
+    );
+    await drag();
+    await expect.poll(view).not.toEqual(beforeDirection);
+    await expect(hint).toHaveCount(0);
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
+    await touch.detach();
+});
+
 test("jump run direction follows touch dragging and locks on release", async ({
     page,
     isMobile,

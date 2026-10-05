@@ -114,12 +114,16 @@ function WindLevel({ wind, selected, onSelect }) {
 }
 
 export function DropzoneMap() {
-    const stationScope = useScope(css`
+    const mapLayerScope = useScope(css`
         .weather-station-callout {
             background: var(--color-surface);
             color: var(--color-text);
             border-color: var(--color-border);
             font: inherit;
+        }
+        .jump-run-line {
+            stroke: var(--map-direction-color, #2563eb);
+            animation: var(--map-direction-animation, none);
         }
     `);
     const scope = useScope(css`
@@ -173,6 +177,38 @@ export function DropzoneMap() {
         }
         .direction-setting .dz-map {
             cursor: crosshair;
+        }
+        .direction-setting {
+            --map-direction-color: #00aaff;
+            --map-direction-animation: dropzone-map-direction-dashes 700ms
+                linear infinite;
+        }
+        .direction-border {
+            position: absolute;
+            inset: 0;
+            z-index: 700;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .direction-border rect {
+            width: calc(100% - 3px);
+            height: calc(100% - 3px);
+            fill: none;
+            stroke: var(--map-direction-color);
+            stroke-width: 3;
+            stroke-dasharray: 8 6;
+            animation: var(--map-direction-animation);
+        }
+        @keyframes dropzone-map-direction-dashes {
+            to {
+                stroke-dashoffset: -14;
+            }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .direction-setting {
+                --map-direction-animation: none;
+            }
         }
         .direction-setting .dz-map::after {
             content: "";
@@ -457,14 +493,6 @@ export function DropzoneMap() {
         setLeafletInstance(leafletMap);
         setPlacingJumpRunDirection(false);
 
-        // Let one finger scroll the page and Leaflet handle two-finger pan/pinch.
-        // Disable single-touch dragging before Leaflet captures the pointer.
-        /** @param {PointerEvent} event */
-        const selectDragging = (event) => {
-            if (event.pointerType === "touch") leafletMap.dragging.disable();
-            else leafletMap.dragging.enable();
-        };
-        container.addEventListener("pointerdown", selectDragging, true);
         tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution:
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
@@ -493,10 +521,32 @@ export function DropzoneMap() {
             if (activeLeafletRef.current === leafletMap)
                 activeLeafletRef.current = null;
             observer.disconnect();
-            container.removeEventListener("pointerdown", selectDragging, true);
             leafletMap.remove();
         };
     }, [coordinates]);
+
+    useLayoutEffect(() => {
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
+            return;
+        const container = leafletInstance.getContainer();
+        if (placingJumpRunDirection) leafletInstance.dragging.disable();
+        else leafletInstance.dragging.enable();
+        // Choose dragging before Leaflet captures the pointer. In the embedded
+        // map, one finger scrolls the page; in full window, it pans the map.
+        /** @param {PointerEvent} event */
+        const selectDragging = (event) => {
+            if (
+                placingJumpRunDirection ||
+                (event.pointerType === "touch" && !fullWindow)
+            )
+                leafletInstance.dragging.disable();
+            else leafletInstance.dragging.enable();
+        };
+        container.addEventListener("pointerdown", selectDragging, true);
+        return () => {
+            container.removeEventListener("pointerdown", selectDragging, true);
+        };
+    }, [leafletInstance, fullWindow, placingJumpRunDirection]);
 
     useEffect(() => {
         if (
@@ -664,8 +714,37 @@ export function DropzoneMap() {
                 { start, exitHeight, openingHeight, speedKmh },
             ]);
         };
+        /** @type {ReturnType<typeof setTimeout> | undefined} */
+        let pendingPoint;
+        let doubleClickTimeStamp = -1;
+        const cancelPendingPoint = () => {
+            clearTimeout(pendingPoint);
+            pendingPoint = undefined;
+        };
         /** @param {import('leaflet').LeafletMouseEvent} event */
-        const selectPoint = (event) => addArrow(event.latlng);
+        const cancelDoubleClick = (event) => {
+            doubleClickTimeStamp = event.originalEvent.timeStamp;
+            cancelPendingPoint();
+        };
+        /** @param {import('leaflet').LeafletMouseEvent} event */
+        const selectPoint = (event) => {
+            if (!jumpRunActive) {
+                addArrow(event.latlng);
+                return;
+            }
+            cancelPendingPoint();
+            // Leaflet can synthesize dblclick before dispatching the second
+            // click, so also ignore that click by its original timestamp.
+            if (
+                event.originalEvent.detail > 1 ||
+                event.originalEvent.timeStamp === doubleClickTimeStamp
+            )
+                return;
+            pendingPoint = setTimeout(() => {
+                pendingPoint = undefined;
+                addArrow(event.latlng);
+            }, 300);
+        };
         /** @param {FocusEvent} event */
         const selectCenter = (event) => {
             if (event.target === container && !pointerFocus)
@@ -684,6 +763,7 @@ export function DropzoneMap() {
         container.addEventListener("pointerdown", usePointer, true);
         document.addEventListener("keydown", useKeyboard, true);
         leafletInstance.on("click", selectPoint);
+        leafletInstance.on("dblclick", cancelDoubleClick);
         leafletInstance.on("mousemove", followPointer);
         container.addEventListener("touchstart", startDirectionTouch);
         container.addEventListener("touchmove", followTouch, {
@@ -696,9 +776,11 @@ export function DropzoneMap() {
         container.addEventListener("focus", selectCenter);
         container.addEventListener("keydown", selectWithKeyboard);
         return () => {
+            cancelPendingPoint();
             container.removeEventListener("pointerdown", usePointer, true);
             document.removeEventListener("keydown", useKeyboard, true);
             leafletInstance.off("click", selectPoint);
+            leafletInstance.off("dblclick", cancelDoubleClick);
             leafletInstance.off("mousemove", followPointer);
             container.removeEventListener("touchstart", startDirectionTouch);
             container.removeEventListener("touchmove", followTouch);
@@ -1165,17 +1247,23 @@ export function DropzoneMap() {
                                       <div class="direction-hint" role="status">
                                           ${t("map.directionPrompt")}
                                       </div>
+                                      <svg
+                                          class="direction-border"
+                                          aria-hidden="true"
+                                      >
+                                          <rect x="1.5" y="1.5" />
+                                      </svg>
                                   `
                                 : null
                         }
                         <div
                             class=${`dz-map ${scope.end}`}
                             ref=${mapRef}
-                            style=${{ touchAction: placingJumpRunDirection ? "none" : "pan-y" }}
+                            style=${{ touchAction: fullWindow || placingJumpRunDirection ? "none" : "pan-y" }}
                             role="region"
                             aria-label=${t("map.onMap", name)}
                         >
-                            ${stationScope.style}
+                            ${mapLayerScope.style}
                             ${!coordinates ? t("common.waitingCoordinates") : null}
                         </div>
                         ${
