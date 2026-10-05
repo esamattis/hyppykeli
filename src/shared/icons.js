@@ -70,8 +70,26 @@ const artwork = {
         <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
     `,
     heading: html`
-        <path d="M21 7v5h-5" />
-        <path d="M21 12a9 9 0 1 0-2.64 6.36" />
+        <path d="M17 7a7.071 7.071 0 0 0-10 0M7 3.5V7h3.5" stroke-width="1.2" />
+        <path
+            d="M7 17a7.071 7.071 0 0 0 10 0M13.5 17H17v3.5"
+            stroke-width="1.2"
+        />
+        <path d="m7 17 3.5-3.5m3-3L17 7" />
+        <circle cx="12" cy="12" r="2" />
+    `,
+    rotateClockwise: html`
+        <path
+            d="M17 7a7.071 7.071 0 0 1 0 10M17 13.5V17h3.5"
+            stroke-width="1.2"
+        />
+        <path d="m7 17 3.5-3.5m3-3L17 7" />
+        <circle cx="12" cy="12" r="2" />
+    `,
+    rotateCounterclockwise: html`
+        <path d="M17 7a7.071 7.071 0 0 0-10 0M7 3.5V7h3.5" stroke-width="1.2" />
+        <path d="m7 17 3.5-3.5m3-3L17 7" />
+        <circle cx="12" cy="12" r="2" />
     `,
     lightning: html`
         <path d="m13 2-9 12h7l-1 8 10-13h-7z" fill="currentColor" />

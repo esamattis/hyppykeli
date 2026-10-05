@@ -1887,6 +1887,53 @@ test("jump run heading displays whole degrees without changing its precision", a
     ).toBe(16.6);
 });
 
+test("quarter-turn buttons rotate both ways around the opening center", async ({
+    page,
+}) => {
+    const runSettings = {
+        direction: 316.6,
+        speedKmh: 120,
+        separationSeconds: 5,
+        exitHeight: 4000,
+    };
+    await page.goto(
+        `${developerPath}&map_run_settings=${encodeURIComponent(JSON.stringify(runSettings))}`,
+    );
+    await setUniformFreefallWind(page);
+    const toolbar = page.locator(".freefall-toolbar");
+    const clockwise = toolbar.getByRole("button", {
+        name: "Kierrä hyppylinjaa 90° myötäpäivään",
+    });
+    const counterclockwise = toolbar.getByRole("button", {
+        name: "Kierrä hyppylinjaa 90° vastapäivään",
+    });
+    await expect(clockwise).toBeDisabled();
+    await expect(counterclockwise).toBeDisabled();
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 120, y: 160 } });
+    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
+    const opening = await middleOpening(page);
+    for (const [button, direction] of [
+        [clockwise, 46.6],
+        [counterclockwise, 316.6],
+        [counterclockwise, 226.6],
+        [counterclockwise, 136.6],
+        [counterclockwise, 46.6],
+        [counterclockwise, 316.6],
+    ]) {
+        await button.click();
+        expect(
+            JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+                .direction,
+        ).toBeCloseTo(direction, 8);
+        expect(await openingDistance(page, opening)).toBeLessThan(1);
+    }
+    await toolbar.getByRole("button", { name: "Tyhjennä nuolet" }).click();
+    await expect(clockwise).toBeDisabled();
+    await expect(counterclockwise).toBeDisabled();
+});
+
 test("default direction is used only when creating a jump run", async ({
     page,
 }) => {
@@ -1942,6 +1989,54 @@ test("default direction is used only when creating a jump run", async ({
         JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
             .direction,
     ).toBe(225);
+});
+
+test("adding, removing, and undoing jumpers preserves the opening center", async ({
+    page,
+}) => {
+    await page.goto(`${developerPath}&default_jump_group_count=1`);
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 120, y: 160 } });
+    const paths = map.locator(".freefall-drift-line");
+    await expect(paths).toHaveCount(1);
+    const target = await middleOpening(page);
+    const toolbar = page.locator(".freefall-toolbar");
+    const edit = page.getByRole("button", {
+        name: "Hyppylinjan asetukset",
+        exact: true,
+    });
+    const dialog = page.getByRole("dialog", { name: "Hyppylinjan asetukset" });
+    await edit.click();
+    const template = dialog.getByRole("group", {
+        name: "Lisättävän hyppääjän asetukset",
+    });
+    await template
+        .getByRole("spinbutton", { name: "Avauskorkeus (m)" })
+        .fill("1200");
+    await template.getByRole("button", { name: /^Freefly/ }).click();
+    await template.getByRole("button", { name: "Lisää hyppääjä" }).click();
+    await expect(paths).toHaveCount(2);
+    expect(await openingDistance(page, target)).toBeLessThan(1);
+    await page.keyboard.press("Escape");
+    await toolbar
+        .getByRole("button", { name: "Lisää hyppääjä", exact: true })
+        .click();
+    await expect(paths).toHaveCount(3);
+    expect(await openingDistance(page, target)).toBeLessThan(1);
+    await edit.click();
+    await dialog
+        .getByRole("button", { name: "Poista hyppääjä 2", exact: true })
+        .click();
+    await expect(paths).toHaveCount(2);
+    expect(await openingDistance(page, target)).toBeLessThan(1);
+    await page.keyboard.press("Escape");
+    await toolbar
+        .getByRole("button", { name: "Poista viimeisin nuoli" })
+        .click();
+    await expect(paths).toHaveCount(1);
+    expect(await openingDistance(page, target)).toBeLessThan(1);
 });
 
 test("rotation preserves the current opening after settings, group, and wind edits", async ({

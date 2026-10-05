@@ -644,8 +644,8 @@ export function DropzoneMap() {
     const openingKey = (start, settings, group) =>
         JSON.stringify([start, settings, group, freefallWinds]);
     const currentOpeningTarget = () => {
-        // Preserve the target across rotations, but derive it again after any
-        // other change to the run or weather, including restored URL state.
+        // Preserve the target across rotations and jumper count changes, but
+        // derive it again after other edits or restored URL state.
         const key = openingKey(jumpRunStart, jumpRunSettings, jumpers);
         if (key !== openingTargetKeyRef.current) {
             openingTargetRef.current = jumpRunStart
@@ -733,6 +733,28 @@ export function DropzoneMap() {
         );
         if (!start) return;
         savePositionedRun(pivot, start, settings, jumpers);
+    };
+    /** @param {JumpRunJumper[]} group */
+    const applyJumpers = (group) => {
+        if (!jumpRunStart || !group.length || group.length === jumpers.length) {
+            setJumpers(group);
+            return;
+        }
+        const target = currentOpeningTarget();
+        const start = target
+            ? startForOpeningTarget(target, jumpRunSettings, group, calculation)
+            : null;
+        if (target && start) {
+            savePositionedRun(target, start, jumpRunSettings, group);
+            return;
+        }
+        // Keep the last target when the current heading is infeasible.
+        openingTargetKeyRef.current = openingKey(
+            jumpRunStart,
+            jumpRunSettings,
+            group,
+        );
+        setJumpers(group);
     };
     /** @param {JumpRunSettings} next */
     const applyJumpRunSettings = (next) => {
@@ -1247,7 +1269,7 @@ export function DropzoneMap() {
                             jumpers,
                             nextJumper,
                             onNextJumperChange: setNextJumper,
-                            onJumpersChange: setJumpers,
+                            onJumpersChange: applyJumpers,
                             onChange: applyJumpRunSettings,
                             onDefaultJumperCountChange: (count) =>
                                 navigateQs(
@@ -1260,10 +1282,7 @@ export function DropzoneMap() {
                                 setPlacingJumpRunDirection((active) => !active);
                             },
                             onAdd: () =>
-                                setJumpers((current) => [
-                                    ...current,
-                                    { ...nextJumper },
-                                ]),
+                                applyJumpers([...jumpers, { ...nextJumper }]),
                         },
                         arrowCount: jumpRunStart ? Math.max(1, jumperCount) : 0,
                         onClear: () => {
@@ -1279,7 +1298,7 @@ export function DropzoneMap() {
                         },
                         onUndo: () => {
                             if (jumperCount > 1)
-                                setJumpers((current) => current.slice(0, -1));
+                                applyJumpers(jumpers.slice(0, -1));
                             else {
                                 openingTargetRef.current = null;
                                 setJumpRunSettings({

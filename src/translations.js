@@ -210,7 +210,7 @@ export const english = {
     "map.selectWind": "Select an altitude to show its wind on the map.",
     "map.navigationHelp": "Pan and zoom the map with two fingers.",
     "map.jumpRunHelp":
-        "Click or tap the map to position the jump run so the group opens at that point. Press Enter on the focused map to do the same at the map centre. The direction button turns on direction mode; drag with the mouse or a finger to rotate the run around that opening point, and press the button again to leave it. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
+        "Click or tap the map to position the jump run so the group opens at that point. Press Enter on the focused map to do the same at the map centre. The direction button turns on direction mode; drag with the mouse or a finger to rotate the run around that opening point, and press the button again to leave it. The rotation buttons turn the run 90° clockwise or counterclockwise around the opening point. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
     "map.legendHelp":
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
@@ -245,6 +245,9 @@ export const english = {
     "settings.jumperInterval": "Jumper interval (s)",
     "settings.nextJumper": "Settings for the next jumper",
     "settings.setJumpRunDirection": "Set jump run direction",
+    "settings.rotateJumpRunClockwise": "Rotate jump run 90° clockwise",
+    "settings.rotateJumpRunCounterclockwise":
+        "Rotate jump run 90° counterclockwise",
     "settings.addJumper": "Add jumper",
     "settings.jumper": (/** @type {number} */ number) => `Jumper ${number}`,
     "settings.removeJumper": (/** @type {number} */ number) =>
@@ -555,7 +558,7 @@ const finnish = {
     "map.selectWind": "Valitse korkeus nähdäksesi sen tuulen kartalla.",
     "map.navigationHelp": "Karttaa voi liikuttaa ja zoomata kahdella sormella.",
     "map.jumpRunHelp":
-        "Klikkaus tai napautus sijoittaa hyppylinjan niin, että ryhmä avautuu kyseiseen kohtaan. Enter kohdistetulla kartalla tekee saman kartan keskikohtaan. Suuntapainike käynnistää suunnan asetuksen; vedä hiirellä tai sormella kiertääksesi hyppylinjan tuon avautumiskohdan ympäri ja paina painiketta uudelleen poistuaksesi. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
+        "Klikkaus tai napautus sijoittaa hyppylinjan niin, että ryhmä avautuu kyseiseen kohtaan. Enter kohdistetulla kartalla tekee saman kartan keskikohtaan. Suuntapainike käynnistää suunnan asetuksen; vedä hiirellä tai sormella kiertääksesi hyppylinjan tuon avautumiskohdan ympäri ja paina painiketta uudelleen poistuaksesi. Kiertopainikkeet kääntävät hyppylinjaa 90° myötä- tai vastapäivään avautumiskohdan ympäri. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
     "map.legendHelp":
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
@@ -590,6 +593,9 @@ const finnish = {
     "settings.jumperInterval": "Hyppääjien väli (s)",
     "settings.nextJumper": "Lisättävän hyppääjän asetukset",
     "settings.setJumpRunDirection": "Aseta hyppylinjan suunta",
+    "settings.rotateJumpRunClockwise": "Kierrä hyppylinjaa 90° myötäpäivään",
+    "settings.rotateJumpRunCounterclockwise":
+        "Kierrä hyppylinjaa 90° vastapäivään",
     "settings.addJumper": "Lisää hyppääjä",
     "settings.jumper": (number) => `Hyppääjä ${number}`,
     "settings.removeJumper": (number) => `Poista hyppääjä ${number}`,

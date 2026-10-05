@@ -154,10 +154,33 @@ export function JumpRunControls({
             ${h(ToolbarButton, {
                 label: t("settings.setJumpRunDirection"),
                 icon: "heading",
+                size: 24,
                 className: "direction-toggle",
                 pressed: directionActive,
                 disabled: !canAim,
                 onClick: onToggleDirection,
+            })}
+            ${h(ToolbarButton, {
+                label: t("settings.rotateJumpRunCounterclockwise"),
+                icon: "rotateCounterclockwise",
+                size: 24,
+                disabled: !canAim,
+                onClick: () =>
+                    onChange({
+                        ...settings,
+                        direction: (settings.direction + 270) % 360,
+                    }),
+            })}
+            ${h(ToolbarButton, {
+                label: t("settings.rotateJumpRunClockwise"),
+                icon: "rotateClockwise",
+                size: 24,
+                disabled: !canAim,
+                onClick: () =>
+                    onChange({
+                        ...settings,
+                        direction: (settings.direction + 90) % 360,
+                    }),
             })}
             ${h(ToolbarButton, {
                 label: t("settings.addJumper"),

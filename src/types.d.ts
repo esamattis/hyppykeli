@@ -570,6 +570,8 @@ interface IconProps {
         | "menu"
         | "location"
         | "heading"
+        | "rotateClockwise"
+        | "rotateCounterclockwise"
         | "lightning"
         | "storm"
         | "arrow"
