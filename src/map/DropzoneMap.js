@@ -29,6 +29,7 @@ import {
 import {
     createJumpRunCalculator,
     startForOpeningTarget,
+    startForRunCenter,
     openingTargetForRun,
 } from "#app/map/jumpRun.js";
 import { getMapWindData } from "#app/map/windData.js";
@@ -128,9 +129,21 @@ export function DropzoneMap() {
             background: var(--color-surface);
             color: var(--color-text);
         }
+        .jump-run-placement .leaflet-popup-content > div {
+            display: grid;
+            gap: 6px;
+        }
         .jump-run-placement button {
             font: inherit;
             cursor: pointer;
+        }
+        .jump-run-placement .leaflet-popup-tip-container {
+            translate: calc(-1 * var(--placement-offset-x, 0px)) 0;
+        }
+        .jump-run-placement-below .leaflet-popup-tip-container {
+            top: -20px;
+            bottom: auto;
+            transform: scaleY(-1);
         }
         .jump-run-line {
             stroke: var(--map-direction-color, #2563eb);
@@ -296,7 +309,7 @@ export function DropzoneMap() {
     const mapRef = useRef(null);
     /** @type {import('preact').RefObject<import('leaflet').Map | null>} */
     const activeLeafletRef = useRef(null);
-    /** @type {import('preact').RefObject<(target: import('leaflet').LatLngLiteral) => void>} */
+    /** @type {import('preact').RefObject<(target: import('leaflet').LatLngLiteral, placement?: JumpRunPlacement) => void>} */
     const positionJumpRunAtRef = useRef(() => {});
     /** @type {import('preact').RefObject<(pointer: import('leaflet').Point) => JumpRunDirectionGesture | null>} */
     const beginDirectionDragRef = useRef(() => null);
@@ -373,7 +386,9 @@ export function DropzoneMap() {
         /** @type {import('leaflet').Map | null} */ (null),
     );
     const [driftMissing, setDriftMissing] = useState(false);
-    const [placementUnavailable, setPlacementUnavailable] = useState(false);
+    const [placementUnavailable, setPlacementUnavailable] = useState(
+        /** @type {JumpRunPlacement | null} */ (null),
+    );
     const [zoom, setZoom] = useMapState(
         "map_zoom",
         14,
@@ -682,7 +697,7 @@ export function DropzoneMap() {
     };
     /** @param {import('leaflet').LatLngLiteral} target @param {import('leaflet').LatLngLiteral} start @param {JumpRunSettings} settings @param {JumpRunJumper[]} group */
     const savePositionedRun = (target, start, settings, group) => {
-        setPlacementUnavailable(false);
+        setPlacementUnavailable(null);
         openingTargetRef.current = { lat: target.lat, lng: target.lng };
         openingTargetKeyRef.current = openingKey(start, settings, group);
         navigateQs(
@@ -710,26 +725,36 @@ export function DropzoneMap() {
                   }));
         return positionedJumpers.length ? positionedJumpers : [nextJumper];
     };
-    /** @param {import('leaflet').LatLngLiteral} target @param {number} [direction] */
-    const positionJumpRunAt = (target, direction) => {
+    /** @param {import('leaflet').LatLngLiteral} target @param {JumpRunPlacement} [placement] */
+    const positionJumpRunAt = (target, placement = "opening") => {
         if (!isValidPosition(target)) return;
         const creating = !jumpRunStart;
         const settings =
-            direction !== undefined
-                ? { ...jumpRunSettings, direction }
-                : creating && !QUERY_PARAMS.value.map_run_settings
-                  ? { ...jumpRunSettings, direction: defaultJumpRunDirection }
-                  : jumpRunSettings;
+            creating && !QUERY_PARAMS.value.map_run_settings
+                ? { ...jumpRunSettings, direction: defaultJumpRunDirection }
+                : jumpRunSettings;
         const group = placementGroup();
-        const start = startForOpeningTarget(
-            target,
-            settings,
-            group,
-            calculateJumpRun(freefallWinds, settings),
-        );
-        setPlacementUnavailable(!start);
-        if (!start) return;
-        savePositionedRun(target, start, settings, group);
+        const calculation = calculateJumpRun(freefallWinds, settings);
+        const start =
+            placement === "landing"
+                ? startForAutomaticRun(
+                      target,
+                      settings,
+                      group,
+                      calculation,
+                      canopyWinds,
+                  )
+                : placement === "center"
+                  ? startForRunCenter(target, settings, group, calculation)
+                  : startForOpeningTarget(target, settings, group, calculation);
+        const openingTarget =
+            placement === "opening"
+                ? target
+                : start &&
+                  openingTargetForRun(start, settings, group, calculation);
+        setPlacementUnavailable(start && openingTarget ? null : placement);
+        if (!start || !openingTarget) return;
+        savePositionedRun(openingTarget, start, settings, group);
     };
     positionJumpRunAtRef.current = positionJumpRunAt;
     // Wind directions describe where the wind comes from. Pick the end
@@ -1049,7 +1074,11 @@ export function DropzoneMap() {
         let dismissedClick = null;
         const dismissPlacement = () => {
             cancelPendingPoint();
+            const element = placementCallout?.getElement();
             placementCallout?.remove();
+            // Leaflet fades removed popups out; their buttons must stop
+            // receiving taps immediately when choosing or cancelling a point.
+            element?.remove();
             placementCallout = null;
             placementContent = null;
         };
@@ -1071,24 +1100,54 @@ export function DropzoneMap() {
         /** @param {import('leaflet').LatLngLiteral} target */
         const confirmPositionAt = (target) => {
             dismissPlacement();
-            const button = document.createElement("button");
-            button.type = "button";
-            button.textContent = t("map.confirmJumpRunPosition");
-            button.addEventListener("click", () => {
-                dismissPlacement();
-                positionJumpRunAtRef.current?.(target);
-            });
             placementContent = document.createElement("div");
-            placementContent.append(button);
+            /** @type {Array<[JumpRunPlacement, string]>} */
+            const options = [
+                ["opening", t("map.confirmJumpRunPosition")],
+                ["center", t("map.centerJumpRunPosition")],
+                ["landing", t("map.parachuteLandingPosition")],
+            ];
+            for (const [placement, label] of options) {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.textContent = label;
+                button.addEventListener("click", (event) => {
+                    event.stopPropagation();
+                    dismissPlacement();
+                    positionJumpRunAtRef.current?.(target, placement);
+                });
+                placementContent.append(button);
+            }
             DomEvent.disableClickPropagation(placementContent);
             placementCallout = popup({
                 closeButton: false,
                 autoPan: false,
                 className: "jump-run-placement",
+                maxWidth: Math.min(300, container.clientWidth - 40),
             })
                 .setLatLng(target)
                 .setContent(placementContent)
                 .openOn(leafletInstance);
+            // Keep all three choices inside the map without panning away from
+            // the selected point. Near the top edge, show the callout below it.
+            const element = placementCallout.getElement();
+            if (!element) return;
+            const mapBounds = container.getBoundingClientRect();
+            let bounds = element.getBoundingClientRect();
+            const offset = point(0, 7);
+            if (bounds.top < mapBounds.top + 8) {
+                element.classList.add("jump-run-placement-below");
+                offset.y = bounds.height + 33;
+                placementCallout.options.offset = offset;
+                placementCallout.update();
+                bounds = element.getBoundingClientRect();
+            }
+            offset.x =
+                Math.max(0, mapBounds.left + 8 - bounds.left) +
+                Math.min(0, mapBounds.right - 8 - bounds.right);
+            element.style.setProperty("--placement-offset-x", `${offset.x}px`);
+            placementCallout.options.offset = offset;
+            placementCallout.update();
         };
         /** @param {import('leaflet').LatLngLiteral} target */
         const positionAt = (target) => {
@@ -1384,7 +1443,7 @@ export function DropzoneMap() {
                     placementUnavailable || (jumpRunStart && !jumpRunVelocity)
                         ? html`
                               <p class="jump-run-unavailable" role="status">
-                                  ${t("map.jumpRunUnavailable")}
+                                  ${t(placementUnavailable === "landing" ? "map.automaticRunUnavailable" : "map.jumpRunUnavailable")}
                               </p>
                           `
                         : null
@@ -1461,7 +1520,7 @@ export function DropzoneMap() {
                         },
                         arrowCount: jumpRunStart ? Math.max(1, jumperCount) : 0,
                         onClear: () => {
-                            setPlacementUnavailable(false);
+                            setPlacementUnavailable(null);
                             openingTargetRef.current = null;
                             setJumpRunSettings({
                                 ...jumpRunSettings,

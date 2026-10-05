@@ -113,6 +113,8 @@ interface JumpRunDirectionGesture {
     offset: import("leaflet").Point;
 }
 
+type JumpRunPlacement = "opening" | "center" | "landing";
+
 interface JumpRunSettings {
     exitHeight: number;
     direction: number;

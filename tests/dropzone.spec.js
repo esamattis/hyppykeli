@@ -2359,11 +2359,17 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
     await map.scrollIntoViewIfNeeded();
     await map.click({ position: { x: 120, y: 160 } });
     await expect(confirm).toBeVisible();
+    await expect(
+        map.getByRole("button", { name: "Keskitä hyppylinja tähän" }),
+    ).toBeVisible();
+    await expect(
+        map.getByRole("button", { name: "Laskeudu varjolla tähän" }),
+    ).toBeVisible();
     expect(new URL(page.url()).searchParams.get("map_run_start")).toBeNull();
     await expect(map.locator(".jump-run-jumper")).toHaveCount(0);
 
     // Another map click dismisses the callout without choosing a new point.
-    await map.click({ position: { x: 40, y: 250 } });
+    await map.click({ position: { x: 40, y: 400 } });
     await expect(confirm).toHaveCount(0);
     await page.waitForTimeout(400);
     await expect(confirm).toHaveCount(0);
@@ -2392,6 +2398,169 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
         );
     }
 });
+
+for (const jumperCount of [1, 5, 6]) {
+    test(`centering the jump run puts the middle of ${jumperCount} exits at the tapped point`, async ({
+        page,
+    }) => {
+        const target = { lat: 62.4, lng: 25.6 };
+        await page.goto(
+            `${developerPath}&default_jump_group_count=${jumperCount}&default_jump_run_direction=90&map_center_lat=${target.lat}&map_center_lon=${target.lng}`,
+        );
+        await setUniformFreefallWind(page);
+        const map = page.locator(".dz-map");
+        await map.scrollIntoViewIfNeeded();
+        const bounds = await map.boundingBox();
+        await map.click({
+            position: { x: bounds.width / 2, y: bounds.height / 2 },
+        });
+        await page
+            .getByRole("button", { name: "Keskitä hyppylinja tähän" })
+            .click();
+        await expect(map.locator(".jump-run-jumper")).toHaveCount(jumperCount);
+        await expect(map.locator(".jump-run-placement")).toHaveCount(0);
+        const distance = await page.evaluate(async (target) => {
+            const { getMapWindData } = await import("#app/map/windData.js");
+            const { getJumpRunVelocity, jumpRunCoordinates } =
+                await import("#app/map/freefall.js");
+            const { latLng } = await import("leaflet");
+            const params = new URL(location.href).searchParams;
+            const settings = JSON.parse(params.get("map_run_settings"));
+            const start = JSON.parse(params.get("map_run_start"));
+            const group = JSON.parse(params.get("map_jumpers"));
+            const velocity = getJumpRunVelocity(
+                getMapWindData().freefallWinds,
+                settings,
+            );
+            const last = latLng(
+                jumpRunCoordinates(
+                    start,
+                    settings,
+                    group.length - 1,
+                    velocity.ground,
+                ),
+            );
+            return latLng(
+                (start.lat + last.lat) / 2,
+                (start.lng + last.lng) / 2,
+            ).distanceTo(target);
+        }, target);
+        // Map clicks are rounded to screen pixels at the current zoom.
+        expect(distance).toBeLessThan(10);
+        expect(await openingDistance(page, target)).toBeGreaterThan(100);
+        const opening = await middleOpening(page);
+        await page
+            .getByRole("button", {
+                name: "Kierrä hyppylinjaa 90° myötäpäivään",
+            })
+            .click();
+        expect(await openingDistance(page, opening)).toBeLessThan(1);
+    });
+}
+
+test("parachute landing at a tapped point reuses automatic positioning for the current group and direction", async ({
+    page,
+}) => {
+    const target = { lat: 62.41, lng: 25.61 };
+    const settings = {
+        direction: 270,
+        speedKmh: 157,
+        exitHeight: 4000,
+        separationSeconds: 5,
+    };
+    const group = [
+        { speedKmh: 180, openingHeight: 800 },
+        { speedKmh: 240, openingHeight: 1200 },
+        { speedKmh: 80, openingHeight: 1500 },
+        { speedKmh: 180, openingHeight: 800 },
+    ];
+    await page.goto(
+        `${developerPath}&DEV_ground_obs=10,10,0,1&lat=62.4&lon=25.6&map_run_start=null&map_run_settings=${encodeURIComponent(JSON.stringify(settings))}&map_jumpers=${encodeURIComponent(JSON.stringify(group))}&map_center_lat=${target.lat}&map_center_lon=${target.lng}`,
+    );
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    const bounds = await map.boundingBox();
+    await map.click({
+        position: { x: bounds.width / 2, y: bounds.height / 2 },
+    });
+    await page.getByRole("button", { name: "Laskeudu varjolla tähän" }).click();
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(group.length);
+    await expect(map.locator(".jump-run-placement")).toHaveCount(0);
+    const params = new URL(page.url()).searchParams;
+    expect(JSON.parse(params.get("map_run_settings"))).toEqual(settings);
+    expect(JSON.parse(params.get("map_jumpers"))).toEqual(group);
+    expect(params.get("lat")).toBe("62.4");
+    expect(params.get("lon")).toBe("25.6");
+    const distance = await page.evaluate(async (target) => {
+        const { startForAutomaticRun } =
+            await import("#app/map/automaticPlacement.js");
+        const { createJumpRunCalculator } = await import("#app/map/jumpRun.js");
+        const { getMapWindData } = await import("#app/map/windData.js");
+        const { latLng } = await import("leaflet");
+        const params = new URL(location.href).searchParams;
+        const settings = JSON.parse(params.get("map_run_settings"));
+        const group = JSON.parse(params.get("map_jumpers"));
+        const { freefallWinds, canopyWinds } = getMapWindData();
+        const expected = startForAutomaticRun(
+            target,
+            settings,
+            group,
+            createJumpRunCalculator()(freefallWinds, settings),
+            canopyWinds,
+        );
+        return latLng(JSON.parse(params.get("map_run_start"))).distanceTo(
+            expected,
+        );
+    }, target);
+    expect(distance).toBeLessThan(10);
+    await expectAutomaticOpeningsUpwind(page, target.lat);
+    const opening = await middleOpening(page);
+    await page
+        .getByRole("button", { name: "Kierrä hyppylinjaa 90° myötäpäivään" })
+        .click();
+    expect(await openingDistance(page, opening)).toBeLessThan(1);
+});
+
+for (const [description, ground] of [
+    ["opposing", "10,10,180,1"],
+    ["stale", "10,10,0,61"],
+    ["missing", ""],
+]) {
+    test(`parachute landing rejects ${description} lower winds and keeps the existing run`, async ({
+        page,
+    }) => {
+        await page.goto(`${developerPath}&DEV_ground_obs=${ground}`);
+        await setUniformFreefallWind(page);
+        const map = page.locator(".dz-map");
+        await map.scrollIntoViewIfNeeded();
+        await map.click({ position: { x: 120, y: 160 } });
+        await page
+            .getByRole("button", { name: "Keskitä hyppylinja tähän" })
+            .click();
+        const start = new URL(page.url()).searchParams.get("map_run_start");
+        expect(start).not.toBeNull();
+        await map.click({ position: { x: 180, y: 200 } });
+        await page
+            .getByRole("button", { name: "Laskeudu varjolla tähän" })
+            .click();
+        await expect(page.locator(".jump-run-unavailable")).toContainText(
+            "Automaattinen sijoitus ei ole saatavilla",
+        );
+        expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
+            start,
+        );
+        await map.scrollIntoViewIfNeeded();
+        await map.click({ position: { x: 180, y: 200 } });
+        await page
+            .getByRole("button", { name: "Pudota hyppääjät tähän" })
+            .click();
+        await expect(page.locator(".jump-run-unavailable")).toHaveCount(0);
+        expect(new URL(page.url()).searchParams.get("map_run_start")).not.toBe(
+            start,
+        );
+    });
+}
 
 for (const jumperCount of [1, 13, 14]) {
     test(`jump run centers ${jumperCount} jumpers on a map click`, async ({
@@ -3587,7 +3756,7 @@ test("automatic positioning is disabled for an infeasible current direction and 
     await expectAutomaticOpeningsUpwind(page);
 });
 
-async function expectAutomaticOpeningsUpwind(page) {
+async function expectAutomaticOpeningsUpwind(page, targetLat = 62.4) {
     const openings = await page.evaluate(async () => {
         const { getMapWindData } = await import("#app/map/windData.js");
         const { createJumpRunCalculator } = await import("#app/map/jumpRun.js");
@@ -3616,7 +3785,7 @@ async function expectAutomaticOpeningsUpwind(page) {
     });
     for (const [lat] of openings)
         expect(
-            (((lat - 62.4) * Math.PI) / 180) * 6371000,
+            (((lat - targetLat) * Math.PI) / 180) * 6371000,
         ).toBeGreaterThanOrEqual(50);
 }
 

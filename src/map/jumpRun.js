@@ -52,6 +52,27 @@ export function createJumpRunCalculator() {
 }
 
 /**
+ * First-exit position that puts the middle of the exit sequence on the target.
+ * @param {import('leaflet').LatLngLiteral} target
+ * @param {JumpRunSettings} settings
+ * @param {JumpRunJumper[]} group
+ * @param {JumpRunCalculation} calculation
+ * @returns {import('leaflet').LatLngLiteral | null}
+ */
+export function startForRunCenter(target, settings, group, calculation) {
+    const { velocity } = calculation;
+    if (!velocity || !group.length) return null;
+    return position(
+        jumpRunCoordinates(
+            target,
+            settings,
+            -(group.length - 1) / 2,
+            velocity.ground,
+        ),
+    );
+}
+
+/**
  * First-exit position that puts the middle openings on the target.
  * @param {import('leaflet').LatLngLiteral} target
  * @param {JumpRunSettings} settings
