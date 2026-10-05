@@ -227,7 +227,7 @@ test("redesigned menu lists dropzones and removes obsolete tools", async ({
         menu.getByRole("link", { name: "EFUT", exact: true }),
     ).toHaveAttribute(
         "href",
-        "/dz/?fmisid=101191&icaocode=EFUT&lat=60.89755354967867&lon=26.926031112670902&map_zoom=14&default_jump_run_direction=78&default_jump_group_count=16",
+        "/dz/?fmisid=101191&icaocode=EFUT&lat=60.89755354967867&lon=26.926031112670902&map_zoom=14&default_jump_run_direction=78&default_jump_group_count=8",
     );
     await expect(menu.getByRole("heading")).toHaveText([
         "EFJY",
