@@ -77,6 +77,68 @@ async function openingDistance(page, target) {
     );
 }
 
+const directionControls = {
+    drag: "Kierrä hyppylinjaa vapaasti vetämällä",
+    clockwise: "Kierrä hyppylinjaa 90° myötäpäivään",
+    counterclockwise: "Kierrä hyppylinjaa 90° vastapäivään",
+    reset: "Palauta hyppylinjan oletussuunta",
+};
+
+/** @param {import("@playwright/test").Page} page */
+function directionMenu(page) {
+    return page.locator("#jump-run-direction-menu");
+}
+
+/** @param {import("@playwright/test").Page} page */
+function directionTrigger(page) {
+    return page.getByRole("button", {
+        name: "Hyppylinjan suunta",
+        exact: true,
+    });
+}
+
+/**
+ * Direction actions stay in the menu, including while it is closed.
+ * @param {import("@playwright/test").Page} page
+ * @param {string} name
+ */
+function directionControl(page, name) {
+    return directionMenu(page).locator("button", { hasText: name });
+}
+
+/**
+ * @param {import("@playwright/test").Page} page
+ * @param {string} name
+ */
+async function clickDirection(page, name) {
+    const menu = directionMenu(page);
+    if (!(await menu.evaluate((element) => element.matches(":popover-open"))))
+        await directionTrigger(page).click();
+    await expect(menu).toBeVisible();
+    await directionControl(page, name).click();
+}
+
+/** @param {import("@playwright/test").Page} page */
+function windMenu(page) {
+    return page.locator("#wind-level-menu");
+}
+
+/** @param {import("@playwright/test").Page} page */
+function windTrigger(page) {
+    return page.getByRole("button", { name: "Tuulikorkeudet", exact: true });
+}
+
+/**
+ * The altitude row stays on the page. The toolbar menu repeats it for full window.
+ * @param {import("@playwright/test").Page} page
+ * @param {string} label
+ */
+function windLevel(page, label) {
+    return page.locator("#dropzone-map .wind-profile .wind-level-button", {
+        hasText: label,
+    });
+}
+
 function openMeteoResponse() {
     const start = new Date();
     start.setMinutes(0, 0, 0);
@@ -343,11 +405,7 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
     expect(new URL(request.url()).searchParams.get("wind_speed_unit")).toBe(
         "ms",
     );
-    await expect(
-        page
-            .locator("#dropzone-map")
-            .getByRole("button", { name: /^≈ 4200 m/ }),
-    ).toContainText("10 m/s 270°");
+    await expect(windLevel(page, "≈ 4200 m")).toContainText("10 m/s 270°");
     await expect(
         page.locator(".upperwinds-compact .wind-speed").first(),
     ).toHaveText("10 m/s");
@@ -399,11 +457,7 @@ test("Open-Meteo refreshes cached winds with incompatible units", async ({
     const requestPromise = page.waitForRequest("https://api.open-meteo.com/**");
     await page.goto("/dz/?name=Wind+DZ&lat=40.7&lon=-74");
     await requestPromise;
-    await expect(
-        page
-            .locator("#dropzone-map")
-            .getByRole("button", { name: /^≈ 4200 m/ }),
-    ).toContainText("12 m/s 200°");
+    await expect(windLevel(page, "≈ 4200 m")).toContainText("12 m/s 200°");
     const units = await page.evaluate(
         () => JSON.parse(localStorage.getItem("ECMWFWindAloft")).hourly_units,
     );
@@ -993,6 +1047,8 @@ test("map toolbar expands only the map in both modes and restores", async ({
     const restore = card.getByRole("button", { name: "Palauta Tuulikartta" });
     await expect(restore).toHaveAttribute("aria-pressed", "true");
     await expect(card.locator(".wind-level-button").first()).toBeVisible();
+    await expect(frame.locator("#wind-level-menu")).toHaveCount(1);
+    await expect(windTrigger(page)).toBeVisible();
     await restore.click();
     await expect(heading).toBeVisible();
     await expect(help).toBeVisible();
@@ -1046,18 +1102,16 @@ for (const settingDirection of [false, true]) {
             map.getByRole("button", { name: "Zoom in" }),
         ).toBeVisible();
 
-        const directionButton = page.getByRole("button", {
-            name: "Kierrä hyppylinjaa vapaasti vetämällä",
-        });
+        const directionButton = directionControl(page, directionControls.drag);
         if (settingDirection) {
             await map.click({ position: { x: 100, y: 160 } });
             await page
                 .getByRole("button", { name: "Pudota hyppääjät tähän" })
                 .click();
             await expect(map.locator(".jump-run-jumper").first()).toBeVisible();
-            await directionButton.click();
+            await clickDirection(page, directionControls.drag);
             await expect(directionButton).toHaveAttribute(
-                "aria-pressed",
+                "aria-checked",
                 "true",
             );
             await expect(
@@ -1077,7 +1131,7 @@ for (const settingDirection of [false, true]) {
         await expect(
             map.getByRole("button", { name: "Zoom in" }),
         ).toBeVisible();
-        await expect(directionButton).toHaveAttribute("aria-pressed", "false");
+        await expect(directionButton).toHaveAttribute("aria-checked", "false");
         await expect(
             map.getByRole("button", { name: "Zoom in" }),
         ).toHaveAttribute("aria-disabled", "false");
@@ -1092,15 +1146,8 @@ for (const settingDirection of [false, true]) {
 test("map wind profile shows the developer average and ground wind", async ({
     page,
 }) => {
-    const profile = page.locator("#dropzone-map .wind-level");
-    const average = profile.filter({
-        has: page.getByText("≈ 4200-800 m", { exact: true }),
-    });
-    const ground = profile.filter({
-        has: page.getByText("Maanpinta", { exact: true }),
-    });
-    await expect(average).toContainText("13 m/s 246°");
-    await expect(ground).toContainText("4 m/s 194°");
+    await expect(windLevel(page, "≈ 4200-800 m")).toContainText("13 m/s 246°");
+    await expect(windLevel(page, "Maanpinta")).toContainText("4 m/s 194°");
     // Individual altitude forecasts are live data, with no DEV_ override.
 });
 
@@ -1143,7 +1190,7 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
         OM_DATA.value = { utc_offset_seconds: 0, hourly };
     });
 
-    const average = profile.getByRole("button", { name: /^≈ 4200-800 m/ });
+    const average = windLevel(page, "≈ 4200-800 m");
     await expect(average).toHaveAttribute("aria-pressed", "true");
     for (const label of [
         "≈ 4200 m",
@@ -1154,16 +1201,14 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
         "Maanpinta",
         "≈ 4200-800 m",
     ]) {
-        const button = profile.getByRole("button", {
-            name: new RegExp(`^${label}`),
-        });
+        const button = windLevel(page, label);
         await button.click();
         await expect(button).toHaveAttribute("aria-pressed", "true");
         await expect(
             profile.locator('.wind-level-button[aria-pressed="true"]'),
         ).toHaveCount(1);
     }
-    const altitude = profile.getByRole("button", { name: /^≈ 4200 m/ });
+    const altitude = windLevel(page, "≈ 4200 m");
     await altitude.focus();
     await page.keyboard.press("Enter");
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
@@ -1174,6 +1219,47 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     });
     await expect(altitude).toContainText("Ei tietoa");
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
+});
+
+test("full window wind menu selects the same altitude as the wind profile", async ({
+    page,
+}) => {
+    const jumpRunButtons = page.locator(
+        ".jump-run-controls button.arrow-action",
+    );
+    await expect(jumpRunButtons.nth(0)).toHaveAttribute(
+        "aria-label",
+        "Hyppylinjan asetukset",
+    );
+    await expect(jumpRunButtons.nth(1)).toHaveAttribute(
+        "aria-label",
+        "Tuulikorkeudet",
+    );
+    const expand = page.getByRole("button", {
+        name: "Laajenna Tuulikartta koko ikkunaan",
+    });
+    await expand.click();
+    const frame = page.locator("#dropzone-map .map-frame");
+    await expect(frame).toHaveClass(/full-window/);
+    await expect(frame.locator(".wind-profile")).toHaveCount(0);
+    await windTrigger(page).click();
+    const menu = windMenu(page);
+    await expect(menu).toBeVisible();
+    const choice = menu.locator("button.wind-level-choice", {
+        hasText: "≈ 1500 m",
+    });
+    await choice.click();
+    await expect(menu).toBeHidden();
+    await expect(windLevel(page, "≈ 1500 m")).toHaveAttribute(
+        "aria-pressed",
+        "true",
+    );
+    await expect(
+        page.locator('#dropzone-map .wind-level-button[aria-pressed="true"]'),
+    ).toHaveCount(1);
+    expect(new URL(page.url()).searchParams.get("map_wind")).toBe(
+        JSON.stringify("≈ 1500 m"),
+    );
 });
 
 test("freefall drift integrates altitude winds from 4000 to 800 metres", async ({
@@ -1579,9 +1665,7 @@ test.describe("upper wind forecast timezones", () => {
                 OM_DATA.value = { utc_offset_seconds: offset, hourly };
             }, offset);
 
-            const altitude = page.locator("#dropzone-map .wind-level").filter({
-                has: page.getByText("≈ 4200 m", { exact: true }),
-            });
+            const altitude = windLevel(page, "≈ 4200 m");
             await expect(altitude).toContainText("19 m/s 242°");
             const compact = page.locator(".upperwinds-compact");
             await expect(compact.locator("th.current-column")).toHaveText(
@@ -1785,10 +1869,8 @@ test("jump run redraws all jumpers and applies individual settings immediately",
         .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
         .not.toBe(movedStart);
     await expect(
-        page.getByRole("button", {
-            name: "Kierrä hyppylinjaa vapaasti vetämällä",
-        }),
-    ).toHaveAttribute("aria-pressed", "false");
+        directionControl(page, directionControls.drag),
+    ).toHaveAttribute("aria-checked", "false");
     const repositioned = await run.getAttribute("d");
     if (!isMobile) {
         const bounds = await map.boundingBox();
@@ -1913,12 +1995,11 @@ test("quarter-turn buttons rotate both ways around the opening center", async ({
     );
     await setUniformFreefallWind(page);
     const toolbar = page.locator(".freefall-toolbar");
-    const clockwise = toolbar.getByRole("button", {
-        name: "Kierrä hyppylinjaa 90° myötäpäivään",
-    });
-    const counterclockwise = toolbar.getByRole("button", {
-        name: "Kierrä hyppylinjaa 90° vastapäivään",
-    });
+    const clockwise = directionControl(page, directionControls.clockwise);
+    const counterclockwise = directionControl(
+        page,
+        directionControls.counterclockwise,
+    );
     await expect(clockwise).toBeDisabled();
     await expect(counterclockwise).toBeDisabled();
     const map = page.locator(".dz-map");
@@ -1927,15 +2008,15 @@ test("quarter-turn buttons rotate both ways around the opening center", async ({
     await page.getByRole("button", { name: "Pudota hyppääjät tähän" }).click();
     await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
     const opening = await middleOpening(page);
-    for (const [button, direction] of [
-        [clockwise, 46.6],
-        [counterclockwise, 316.6],
-        [counterclockwise, 226.6],
-        [counterclockwise, 136.6],
-        [counterclockwise, 46.6],
-        [counterclockwise, 316.6],
+    for (const [name, direction] of [
+        [directionControls.clockwise, 46.6],
+        [directionControls.counterclockwise, 316.6],
+        [directionControls.counterclockwise, 226.6],
+        [directionControls.counterclockwise, 136.6],
+        [directionControls.counterclockwise, 46.6],
+        [directionControls.counterclockwise, 316.6],
     ]) {
-        await button.click();
+        await clickDirection(page, name);
         expect(
             JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
                 .direction,
@@ -2193,10 +2274,8 @@ for (const input of ["mouse", "touch"]) {
             .fill("45");
         await page.keyboard.press("Escape");
         const opening = await middleOpening(page);
-        const button = page.getByRole("button", {
-            name: "Kierrä hyppylinjaa vapaasti vetämällä",
-        });
-        await button.click();
+        const button = directionControl(page, directionControls.drag);
+        await clickDirection(page, directionControls.drag);
         const bounds = await map.boundingBox();
         const x = bounds.x + 240;
         const y = bounds.y + 160;
@@ -2247,7 +2326,7 @@ for (const input of ["mouse", "touch"]) {
         await move(0);
         await expect.poll(direction).toBeCloseTo(45, 0);
         await release();
-        await expect(button).toHaveAttribute("aria-pressed", "true");
+        await expect(button).toHaveAttribute("aria-checked", "true");
         await start();
         expect(direction()).toBeCloseTo(45, 0);
         await move(60);
@@ -2255,7 +2334,7 @@ for (const input of ["mouse", "touch"]) {
             .poll(direction)
             .toBeCloseTo(45 + (Math.atan2(60, 120) * 180) / Math.PI, 0);
         await release();
-        await expect(button).toHaveAttribute("aria-pressed", "true");
+        await expect(button).toHaveAttribute("aria-checked", "true");
         expect(await openingDistance(page, opening)).toBeLessThan(1);
         await touch?.detach();
     });
@@ -2281,9 +2360,7 @@ test("direction dragging coalesces movements and commits the final position on r
         .fill("10");
     await page.keyboard.press("Escape");
     const opening = await middleOpening(page);
-    await page
-        .getByRole("button", { name: "Kierrä hyppylinjaa vapaasti vetämällä" })
-        .click();
+    await clickDirection(page, directionControls.drag);
     const writes = await map.evaluate(async (element) => {
         const original = history.replaceState;
         let writes = 0;
@@ -2449,11 +2526,7 @@ for (const jumperCount of [1, 5, 6]) {
         expect(distance).toBeLessThan(10);
         expect(await openingDistance(page, target)).toBeGreaterThan(100);
         const opening = await middleOpening(page);
-        await page
-            .getByRole("button", {
-                name: "Kierrä hyppylinjaa 90° myötäpäivään",
-            })
-            .click();
+        await clickDirection(page, directionControls.clockwise);
         expect(await openingDistance(page, opening)).toBeLessThan(1);
     });
 }
@@ -2516,9 +2589,7 @@ test("parachute landing at a tapped point reuses automatic positioning for the c
     expect(distance).toBeLessThan(10);
     await expectAutomaticOpeningsUpwind(page, target.lat);
     const opening = await middleOpening(page);
-    await page
-        .getByRole("button", { name: "Kierrä hyppylinjaa 90° myötäpäivään" })
-        .click();
+    await clickDirection(page, directionControls.clockwise);
     expect(await openingDistance(page, opening)).toBeLessThan(1);
 });
 
@@ -2802,19 +2873,17 @@ test("dragging sets jump run direction and clicking exits without moving the run
     await page.getByRole("button", { name: "Pudota hyppääjät tähän" }).click();
     const jumper = map.locator(".jump-run-jumper").first();
     await expect(jumper).toBeVisible();
-    const directionButton = page.getByRole("button", {
-        name: "Kierrä hyppylinjaa vapaasti vetämällä",
-    });
+    const directionButton = directionControl(page, directionControls.drag);
     const hint = page
         .getByRole("status")
         .filter({ hasText: "Vedä asettaaksesi hyppylinjan suunnan." });
     await expect(hint).toHaveCount(0);
-    await expect(directionButton).toHaveAttribute("aria-pressed", "false");
+    await expect(directionButton).toHaveAttribute("aria-checked", "false");
     const opening = await middleOpening(page);
     const placed = new URL(page.url()).searchParams.get("map_run_start");
-    await directionButton.click();
+    await clickDirection(page, directionControls.drag);
     await expect(hint).toBeVisible();
-    await expect(directionButton).toHaveAttribute("aria-pressed", "true");
+    await expect(directionButton).toHaveAttribute("aria-checked", "true");
     const bounds = await map.boundingBox();
     const originX = bounds.x + 100;
     const originY = bounds.y + 160;
@@ -2833,7 +2902,7 @@ test("dragging sets jump run direction and clicking exits without moving the run
     );
     await page.mouse.up();
     await expect(hint).toBeVisible();
-    await expect(directionButton).toHaveAttribute("aria-pressed", "true");
+    await expect(directionButton).toHaveAttribute("aria-checked", "true");
     const aimed = settings().direction;
     const start = new URL(page.url()).searchParams.get("map_run_start");
     await page.mouse.move(originX, originY + 140);
@@ -2845,7 +2914,7 @@ test("dragging sets jump run direction and clicking exits without moving the run
     await expect(hint).toHaveCount(0);
     expect(settings().direction).toBeCloseTo(aimed, 0);
     await expect(hint).toHaveCount(0);
-    await expect(directionButton).toHaveAttribute("aria-pressed", "false");
+    await expect(directionButton).toHaveAttribute("aria-checked", "false");
     await page.mouse.move(originX - 100, originY);
     await page.mouse.down();
     await page.mouse.move(originX - 100, originY + 80, { steps: 6 });
@@ -2865,9 +2934,7 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
     await map.scrollIntoViewIfNeeded();
     await map.click({ position: { x: 100, y: 160 } });
     await page.getByRole("button", { name: "Pudota hyppääjät tähän" }).click();
-    const directionButton = card.getByRole("button", {
-        name: "Kierrä hyppylinjaa vapaasti vetämällä",
-    });
+    const directionButton = directionControl(page, directionControls.drag);
     const zoom = () => new URL(page.url()).searchParams.get("map_zoom");
     const wheel = () => map.dispatchEvent("wheel", { deltaY: -500 });
     const initialZoom = zoom();
@@ -2875,9 +2942,9 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
     await page.waitForTimeout(400);
     expect(zoom()).toBe(initialZoom);
 
-    await directionButton.click();
+    await clickDirection(page, directionControls.drag);
     await page.keyboard.press("Escape");
-    await expect(directionButton).toHaveAttribute("aria-pressed", "false");
+    await expect(directionButton).toHaveAttribute("aria-checked", "false");
     await card
         .getByRole("button", {
             name: "Laajenna Tuulikartta koko ikkunaan",
@@ -2887,7 +2954,7 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
     await wheel();
     await expect.poll(zoom).not.toBe(initialZoom);
     const expandedZoom = zoom();
-    await directionButton.click();
+    await clickDirection(page, directionControls.drag);
     await wheel();
     await page.waitForTimeout(400);
     expect(zoom()).toBe(expandedZoom);
@@ -2898,9 +2965,9 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
     await expect(card.getByRole("dialog")).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(card.getByRole("dialog")).not.toBeVisible();
-    await expect(directionButton).toHaveAttribute("aria-pressed", "true");
+    await expect(directionButton).toHaveAttribute("aria-checked", "true");
     await page.keyboard.press("Escape");
-    await expect(directionButton).toHaveAttribute("aria-pressed", "false");
+    await expect(directionButton).toHaveAttribute("aria-checked", "false");
     await expect(frame).toHaveClass(/full-window/);
     await wheel();
     await expect.poll(zoom).not.toBe(expandedZoom);
@@ -2946,10 +3013,8 @@ test("map zoom is disabled during jump run direction setting and restored afterw
     await map.click({ position: { x: 100, y: 160 } });
     await page.getByRole("button", { name: "Pudota hyppääjät tähän" }).click();
     await expect(map.locator(".jump-run-jumper").first()).toBeVisible();
-    const directionButton = page.getByRole("button", {
-        name: "Kierrä hyppylinjaa vapaasti vetämällä",
-    });
-    await directionButton.click();
+    const directionButton = directionControl(page, directionControls.drag);
+    await clickDirection(page, directionControls.drag);
     const hint = page
         .getByRole("status")
         .filter({ hasText: "Vedä asettaaksesi hyppylinjan suunnan." });
@@ -3036,9 +3101,7 @@ test("full-window one-finger pan pauses while jump run direction mode is on", as
     const hint = page
         .getByRole("status")
         .filter({ hasText: "Vedä asettaaksesi hyppylinjan suunnan." });
-    const directionButton = page.getByRole("button", {
-        name: "Kierrä hyppylinjaa vapaasti vetämällä",
-    });
+    const directionButton = directionControl(page, directionControls.drag);
     const touch = await page.context().newCDPSession(page);
     const view = () => {
         const params = new URL(page.url()).searchParams;
@@ -3075,7 +3138,7 @@ test("full-window one-finger pan pauses while jump run direction mode is on", as
     await expect(hint).toHaveCount(0);
     const beforeDirection = view();
     const start = new URL(page.url()).searchParams.get("map_run_start");
-    await directionButton.click();
+    await clickDirection(page, directionControls.drag);
     await expect(hint).toBeVisible();
     const beforeSettings = new URL(page.url()).searchParams.get(
         "map_run_settings",
@@ -3088,7 +3151,7 @@ test("full-window one-finger pan pauses while jump run direction mode is on", as
     expect(new URL(page.url()).searchParams.get("map_run_settings")).not.toBe(
         beforeSettings,
     );
-    await directionButton.click();
+    await clickDirection(page, directionControls.drag);
     await expect(hint).toHaveCount(0);
     await drag();
     await expect.poll(view).not.toEqual(beforeDirection);
@@ -3112,13 +3175,11 @@ test("jump run direction follows touch dragging and stays on after release", asy
     const run = map.locator(".jump-run-line");
     const jumper = map.locator(".jump-run-jumper").first();
     await expect(jumper).toBeVisible();
-    const directionButton = page.getByRole("button", {
-        name: "Kierrä hyppylinjaa vapaasti vetämällä",
-    });
+    const directionButton = directionControl(page, directionControls.drag);
     const hint = page
         .getByRole("status")
         .filter({ hasText: "Vedä asettaaksesi hyppylinjan suunnan." });
-    await directionButton.click();
+    await clickDirection(page, directionControls.drag);
     await expect(hint).toBeVisible();
     const originalDirection = await run.getAttribute("d");
     const bounds = await map.boundingBox();
@@ -3141,7 +3202,7 @@ test("jump run direction follows touch dragging and stays on after release", asy
         touchPoints: [],
     });
     await expect(hint).toBeVisible();
-    await expect(directionButton).toHaveAttribute("aria-pressed", "true");
+    await expect(directionButton).toHaveAttribute("aria-checked", "true");
     await expect(run).toHaveAttribute("d", preview);
     // Release keeps the aimed track and stays in direction mode.
     await page.mouse.move(bounds.x + 100, bounds.y + 280);
@@ -3158,7 +3219,7 @@ test("jump run direction follows touch dragging and stays on after release", asy
         touchPoints: [],
     });
     await expect(hint).toHaveCount(0);
-    await expect(directionButton).toHaveAttribute("aria-pressed", "false");
+    await expect(directionButton).toHaveAttribute("aria-checked", "false");
     await expect(run).toHaveAttribute("d", preview);
     await page.waitForTimeout(400);
     expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
@@ -3650,11 +3711,7 @@ test("automatic positioning preserves the current direction and reset restores t
     );
     await setUniformFreefallWind(page);
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
-    await page
-        .getByRole("button", {
-            name: "Kierrä hyppylinjaa 90° myötäpäivään",
-        })
-        .click();
+    await clickDirection(page, directionControls.clockwise);
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs(
@@ -3684,16 +3741,10 @@ test("automatic positioning preserves the current direction and reset restores t
     });
     await expectAutomaticOpeningsUpwind(page);
     const opening = await middleOpening(page);
-    const directionMode = page.getByRole("button", {
-        name: "Kierrä hyppylinjaa vapaasti vetämällä",
-    });
-    await directionMode.click();
-    await page
-        .getByRole("button", {
-            name: "Palauta hyppylinjan oletussuunta",
-        })
-        .click();
-    await expect(directionMode).toHaveAttribute("aria-pressed", "false");
+    const directionMode = directionControl(page, directionControls.drag);
+    await clickDirection(page, directionControls.drag);
+    await clickDirection(page, directionControls.reset);
+    await expect(directionMode).toHaveAttribute("aria-checked", "false");
     const resetParams = new URL(page.url()).searchParams;
     expect(JSON.parse(resetParams.get("map_run_settings"))).toEqual({
         ...positionedSettings,
@@ -3742,9 +3793,7 @@ test("automatic positioning is disabled for an infeasible current direction and 
     });
     await expect(position).toBeDisabled();
     await expect(page.locator(".automatic-run-unavailable")).toBeVisible();
-    await page
-        .getByRole("button", { name: "Palauta hyppylinjan oletussuunta" })
-        .click();
+    await clickDirection(page, directionControls.reset);
     await expect(position).toBeEnabled();
     await expect(page.locator(".automatic-run-unavailable")).toHaveCount(0);
     const run = JSON.parse(

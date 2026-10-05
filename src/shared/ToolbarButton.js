@@ -12,6 +12,9 @@ export function ToolbarButton({
     pressed,
     disabled = false,
     hasPopup,
+    expanded,
+    controls,
+    popoverTarget,
     onClick,
 }) {
     const scope = useScope(css`
@@ -45,7 +48,10 @@ export function ToolbarButton({
             aria-label=${label}
             data-tooltip=${label}
             aria-pressed=${pressed}
+            aria-expanded=${expanded === undefined ? undefined : String(expanded)}
+            aria-controls=${controls}
             aria-haspopup=${hasPopup}
+            popovertarget=${popoverTarget}
             disabled=${disabled}
             onClick=${onClick}
         >

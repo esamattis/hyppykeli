@@ -56,8 +56,8 @@ import {
 /** @type {Readonly<JumpRunJumper>} */
 const DEFAULT_JUMPER = { speedKmh: 180, openingHeight: 800 };
 
-/** @param {{ wind: MapWindLevel, selected: boolean, onSelect: () => void }} props */
-function WindLevel({ wind, selected, onSelect }) {
+/** @param {MapWindLevel} wind */
+function windReading(wind) {
     const validSpeed =
         wind.speed !== null && Number.isFinite(wind.speed) && wind.speed >= 0;
     const validDirection =
@@ -65,9 +65,42 @@ function WindLevel({ wind, selected, onSelect }) {
     const direction = validDirection
         ? ((wind.direction ?? 0) + 360) % 360
         : null;
-    const label = validSpeed
+    const speedLabel = validSpeed
         ? `${Math.round(wind.speed ?? 0)} m/s`
         : t("common.noData");
+    const text =
+        validSpeed && direction !== null
+            ? `${speedLabel} ${Math.round(direction) % 360}°`
+            : speedLabel;
+    const graphic =
+        validSpeed && wind.speed === 0
+            ? h(Icon, {
+                  name: "calm",
+                  size: 20,
+                  label: t("map.windLabelCalm", wind.label),
+              })
+            : validSpeed && direction !== null
+              ? h(WindArrow, {
+                    direction,
+                    size: 20,
+                    label: t(
+                        "map.windLabel",
+                        wind.label,
+                        speedLabel,
+                        direction,
+                    ),
+                })
+              : h(Icon, {
+                    name: "missing",
+                    size: 20,
+                    label: t("map.windLabelMissing", wind.label),
+                });
+    return { text, graphic };
+}
+
+/** @param {{ wind: MapWindLevel, selected: boolean, onSelect: () => void }} props */
+function WindLevel({ wind, selected, onSelect }) {
+    const reading = windReading(wind);
     return html`
         <li class="wind-level">
             <button
@@ -78,39 +111,9 @@ function WindLevel({ wind, selected, onSelect }) {
             >
                 <div>
                     <strong>${wind.label}</strong>
-                    <div>
-                        ${label}${validSpeed && direction !== null ? ` ${Math.round(direction) % 360}°` : ""}
-                    </div>
+                    <div>${reading.text}</div>
                 </div>
-                <span class="wind-level-arrow">
-                    ${
-                        validSpeed && wind.speed === 0
-                            ? h(Icon, {
-                                  name: "calm",
-                                  size: 20,
-                                  label: t("map.windLabelCalm", wind.label),
-                              })
-                            : validSpeed && direction !== null
-                              ? h(WindArrow, {
-                                    direction,
-                                    size: 20,
-                                    label: t(
-                                        "map.windLabel",
-                                        wind.label,
-                                        label,
-                                        direction,
-                                    ),
-                                })
-                              : h(Icon, {
-                                    name: "missing",
-                                    size: 20,
-                                    label: t(
-                                        "map.windLabelMissing",
-                                        wind.label,
-                                    ),
-                                })
-                    }
-                </span>
+                <span class="wind-level-arrow">${reading.graphic}</span>
             </button>
         </li>
     `;
@@ -1517,6 +1520,18 @@ export function DropzoneMap() {
                             },
                             onAdd: () =>
                                 applyJumpers([...jumpers, { ...nextJumper }]),
+                        },
+                        windLevels: {
+                            levels: winds.map((wind) => {
+                                const reading = windReading(wind);
+                                return {
+                                    label: wind.label,
+                                    text: reading.text,
+                                    graphic: reading.graphic,
+                                    selected: wind.label === selectedWind.label,
+                                };
+                            }),
+                            onSelect: setSelectedLabel,
                         },
                         arrowCount: jumpRunStart ? Math.max(1, jumperCount) : 0,
                         onClear: () => {

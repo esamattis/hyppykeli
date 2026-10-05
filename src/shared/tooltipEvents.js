@@ -43,8 +43,11 @@ export function startTooltips() {
         tooltip.hidden = true;
     }
 
-    /** @param {HTMLElement} target */
-    function show(target) {
+    /**
+     * @param {HTMLElement} target
+     * @param {boolean} [retry]
+     */
+    function show(target, retry = true) {
         if (touchTarget && target !== touchTarget) return;
         const tooltip = document.getElementById("tooltip");
         const text = tooltip?.querySelector("[data-tooltip-text]");
@@ -61,7 +64,24 @@ export function startTooltips() {
         descriptions.add("tooltip");
         target.setAttribute("aria-describedby", [...descriptions].join(" "));
         tooltip.hidden = false;
-        if (!tooltip.matches(":popover-open")) tooltip.showPopover();
+        // Closing a menu focuses its trigger during that popover toggle.
+        // Showing the tooltip has to wait until the toggle finishes.
+        if (!tooltip.matches(":popover-open")) {
+            try {
+                tooltip.showPopover();
+            } catch (error) {
+                if (
+                    !(error instanceof DOMException) ||
+                    error.name !== "InvalidStateError"
+                )
+                    throw error;
+                if (retry)
+                    requestAnimationFrame(() => {
+                        if (activeTarget === target) show(target, false);
+                    });
+                return;
+            }
+        }
 
         const rect = target.getBoundingClientRect();
         const tooltipRect = tooltip.getBoundingClientRect();

@@ -1,4 +1,5 @@
 // @ts-check
+import { DropdownMenu } from "#app/shared/DropdownMenu.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
@@ -16,6 +17,7 @@ export function FreefallToolbar({
     onClear,
     onUndo,
     jumpRun,
+    windLevels,
 }) {
     const scope = useScope(css`
         :scope {
@@ -67,6 +69,57 @@ export function FreefallToolbar({
             margin-left: auto;
             flex-shrink: 0;
         }
+        .wind-level-menu:popover-open {
+            min-width: min(16rem, calc(100vw - 16px));
+        }
+        .wind-level-menu-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin: 0;
+            padding: 0;
+        }
+        .wind-level-choice {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+            min-height: 40px;
+            padding: 6px 8px;
+            border: 0;
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: inherit;
+            box-shadow: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            line-height: 1.2;
+            text-align: start;
+        }
+        .wind-level-choice:hover,
+        .wind-level-choice[aria-pressed="true"] {
+            background: var(--color-surface-hover);
+        }
+        .wind-level-choice > span:not(.wind-level-choice-arrow) {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .wind-level-choice > span > span {
+            color: var(--color-muted);
+            font-size: 0.75rem;
+            font-weight: 400;
+        }
+        .wind-level-choice-arrow {
+            display: flex;
+            flex-shrink: 0;
+            color: var(--color-primary);
+        }
+        .wind-level-choice-arrow svg {
+            width: 20px;
+            height: 20px;
+        }
     `);
     return html`
         <div
@@ -77,7 +130,49 @@ export function FreefallToolbar({
             ${scope.style}
             <div class="toolbar-actions">
                 <div class="toolbar-controls">
-                    ${h(JumpRunControls, { ...jumpRun, canPosition, onPosition })}
+                    ${h(
+                        JumpRunControls,
+                        { ...jumpRun, canPosition, onPosition },
+                        h(
+                            DropdownMenu,
+                            {
+                                id: "wind-level-menu",
+                                label: t("toolbar.windLevels"),
+                                icon: "windLevels",
+                                size: 20,
+                                menuClass: "wind-level-menu",
+                            },
+                            html`
+                                <div class="wind-level-menu-list">
+                                    ${windLevels.levels.map(
+                                        (level) => html`
+                                            <button
+                                                type="button"
+                                                class="wind-level-choice"
+                                                aria-pressed=${level.selected}
+                                                onClick=${() =>
+                                                    windLevels.onSelect(
+                                                        level.label,
+                                                    )}
+                                            >
+                                                <span>
+                                                    <strong>
+                                                        ${level.label}
+                                                    </strong>
+                                                    <span>${level.text}</span>
+                                                </span>
+                                                <span
+                                                    class="wind-level-choice-arrow"
+                                                >
+                                                    ${level.graphic}
+                                                </span>
+                                            </button>
+                                        `,
+                                    )}
+                                </div>
+                            `,
+                        ),
+                    )}
                     <div class="toolbar-map-actions">
                         ${h(ToolbarButton, {
                             label: t("toolbar.removeJumper"),

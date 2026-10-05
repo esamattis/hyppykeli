@@ -143,6 +143,14 @@ interface JumpRunControlsProps {
 interface JumpRunPositionControlsProps extends JumpRunControlsProps {
     canPosition: boolean;
     onPosition: () => void;
+    children?: import("preact").ComponentChildren;
+}
+
+interface ToolbarWindLevel {
+    label: string;
+    text: string;
+    graphic: import("preact").ComponentChildren;
+    selected: boolean;
 }
 
 interface FreefallToolbarProps {
@@ -155,6 +163,10 @@ interface FreefallToolbarProps {
     arrowCount: number;
     onClear: () => void;
     onUndo: () => void;
+    windLevels: {
+        levels: ToolbarWindLevel[];
+        onSelect: (label: string) => void;
+    };
 }
 
 interface MapWindMotion {
@@ -585,6 +597,7 @@ interface IconProps {
         | "up"
         | "chart"
         | "wind"
+        | "windLevels"
         | "pen"
         | "undo"
         | "trash"
@@ -650,8 +663,38 @@ interface ToolbarButtonProps {
     className?: string;
     pressed?: boolean;
     disabled?: boolean;
-    hasPopup?: "dialog";
-    onClick: () => void;
+    hasPopup?: "dialog" | "menu";
+    expanded?: boolean;
+    controls?: string;
+    popoverTarget?: string;
+    onClick?: () => void;
+}
+
+interface DropdownMenuItem {
+    label: string;
+    icon: IconProps["name"];
+    size?: IconProps["size"];
+    disabled?: boolean;
+    /** Set for a checkable action. Omit for a normal action. */
+    pressed?: boolean;
+    /** Close the menu after selection. Defaults to true. */
+    closeOnSelect?: boolean;
+    onSelect: () => void;
+}
+
+interface DropdownMenuProps {
+    id?: string;
+    label: string;
+    icon?: IconProps["name"];
+    size?: IconProps["size"];
+    disabled?: boolean;
+    /** Pressed style for the trigger, separate from whether the menu is open. */
+    pressed?: boolean;
+    items?: DropdownMenuItem[];
+    menuClass?: string;
+    /** Replaces the icon trigger. The accessible name stays `label`. */
+    trigger?: import("preact").ComponentChildren;
+    children?: import("preact").ComponentChildren;
 }
 
 interface DataSourceProps {

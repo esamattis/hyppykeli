@@ -62,6 +62,11 @@ const artwork = {
             d="M3 8h13a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h6a2 2 0 1 1-2 2"
         />
     `,
+    windLevels: html`
+        <path d="m12 3 8 4-8 4-8-4 8-4Z" />
+        <path d="m4 12 8 4 8-4" />
+        <path d="m4 17 8 4 8-4" />
+    `,
     menu: html`
         <path d="M4 6h16M4 12h16M4 18h16" />
     `,

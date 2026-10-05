@@ -210,7 +210,7 @@ export const english = {
     "map.selectWind": "Select an altitude to show its wind on the map.",
     "map.navigationHelp": "Pan and zoom the map with two fingers.",
     "map.jumpRunHelp":
-        "On load, automatic placement uses the default axis facing the average 4200–800 m wind. Every predicted opening is placed at least 50 m upwind of the landing coordinates relative to each non-calm wind layer below that opening. The preferred offset estimates canopy wind drift with a constant descent speed of 5 m/s, using ground, 110 m, 800 m and any higher layers below opening. These are nominal forecast heights; the estimate does not model canopy glide or guarantee landing-area reachability. Automatic placement requires a ground observation no older than one hour and current upper winds; conflicting wind directions can prevent placement. The positioning button repeats this calculation using the current jump-run direction. The reset direction button restores the default axis facing the average wind while keeping the group’s opening point. Manual edits can move openings outside these limits. Click or tap the map, then choose a callout option to place the group’s opening point or the middle of the jump run there, or use that point as the parachute landing target with the automatic positioning calculation and current jump-run direction. Clicking anywhere else cancels positioning. Press Enter on the focused map to place the group’s opening point at the map centre. The direction button turns on direction mode; drag with the mouse or a finger to rotate the run around that opening point, and press the button again to leave it. The rotation buttons turn the run 90° clockwise or counterclockwise around the opening point. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
+        "On load, automatic placement uses the default axis facing the average 4200–800 m wind. Every predicted opening is placed at least 50 m upwind of the landing coordinates relative to each non-calm wind layer below that opening. The preferred offset estimates canopy wind drift with a constant descent speed of 5 m/s, using ground, 110 m, 800 m and any higher layers below opening. These are nominal forecast heights; the estimate does not model canopy glide or guarantee landing-area reachability. Automatic placement requires a ground observation no older than one hour and current upper winds; conflicting wind directions can prevent placement. The positioning button repeats this calculation using the current jump-run direction. The reset direction button restores the default axis facing the average wind while keeping the group’s opening point. Manual edits can move openings outside these limits. Click or tap the map, then choose a callout option to place the group’s opening point or the middle of the jump run there, or use that point as the parachute landing target with the automatic positioning calculation and current jump-run direction. Clicking anywhere else cancels positioning. Press Enter on the focused map to place the group’s opening point at the map centre. The direction menu contains direction mode, 90° rotation, and reset. Direction mode rotates the run around that opening point when you drag with the mouse or a finger; open the menu and press that button again to leave it. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
     "map.legendHelp":
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
@@ -229,7 +229,7 @@ export const english = {
     "map.jumpRunUnavailable":
         "Jump-run positions unavailable: exit-altitude wind is missing or the selected track cannot be flown at this airspeed.",
     "map.directionHint":
-        "Drag with the mouse or a finger. Press the direction button again to finish.",
+        "Drag with the mouse or a finger. Open the direction menu and press the direction button again to finish.",
     "toolbar.freefallValues": "Freefall values",
     "toolbar.jumpRun": "Jump run",
     "toolbar.removeJumper": "Remove jumper",
@@ -241,6 +241,7 @@ export const english = {
     "toolbar.exit": "Exit",
     "toolbar.opening": "Opening",
     "toolbar.speed": "Speed",
+    "toolbar.windLevels": "Wind levels",
     "settings.jumpRun": "Jump run settings",
     "settings.jumpRunDirection": "Jump run direction",
     "settings.defaultJumperCount": "Default jump group count",
@@ -565,7 +566,7 @@ const finnish = {
     "map.selectWind": "Valitse korkeus nähdäksesi sen tuulen kartalla.",
     "map.navigationHelp": "Karttaa voi liikuttaa ja zoomata kahdella sormella.",
     "map.jumpRunHelp":
-        "Automaattinen sijoitus käyttää ladattaessa oletussuuntaa vasten 4200–800 m keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskoordinaattien tuulenpuolelle suhteessa jokaiseen avautumisen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin käyttäen maanpinnan, 110 m:n, 800 m:n ja avautumisen alapuolisten ylempien kerrosten tuulia. Korkeudet ovat ennusteen nimelliskorkeuksia; arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä. Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ylätuulet; ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike toistaa laskennan hyppylinjan nykyisellä suunnalla. Suunnan palautuspainike palauttaa oletussuunnan vasten keskituulta säilyttäen ryhmän avautumiskohdan. Käsin tehdyt muutokset voivat siirtää avautumiskohtia näiden rajojen ulkopuolelle. Klikkaa tai napauta karttaa ja valitse puhekuplasta ryhmän avautumiskohdan tai hyppylinjan keskikohdan sijoittaminen siihen tai käytä kohtaa varjojen laskeutumiskohteena automaattisella sijoituslaskennalla ja hyppylinjan nykyisellä suunnalla. Klikkaus muualle peruu sijoittamisen. Enter kohdistetulla kartalla sijoittaa ryhmän avautumiskohdan kartan keskikohtaan. Suuntapainike käynnistää suunnan asetuksen; vedä hiirellä tai sormella kiertääksesi hyppylinjan tuon avautumiskohdan ympäri ja paina painiketta uudelleen poistuaksesi. Kiertopainikkeet kääntävät hyppylinjaa 90° myötä- tai vastapäivään avautumiskohdan ympäri. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
+        "Automaattinen sijoitus käyttää ladattaessa oletussuuntaa vasten 4200–800 m keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskoordinaattien tuulenpuolelle suhteessa jokaiseen avautumisen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin käyttäen maanpinnan, 110 m:n, 800 m:n ja avautumisen alapuolisten ylempien kerrosten tuulia. Korkeudet ovat ennusteen nimelliskorkeuksia; arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä. Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ylätuulet; ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike toistaa laskennan hyppylinjan nykyisellä suunnalla. Suunnan palautuspainike palauttaa oletussuunnan vasten keskituulta säilyttäen ryhmän avautumiskohdan. Käsin tehdyt muutokset voivat siirtää avautumiskohtia näiden rajojen ulkopuolelle. Klikkaa tai napauta karttaa ja valitse puhekuplasta ryhmän avautumiskohdan tai hyppylinjan keskikohdan sijoittaminen siihen tai käytä kohtaa varjojen laskeutumiskohteena automaattisella sijoituslaskennalla ja hyppylinjan nykyisellä suunnalla. Klikkaus muualle peruu sijoittamisen. Enter kohdistetulla kartalla sijoittaa ryhmän avautumiskohdan kartan keskikohtaan. Suuntavalikko sisältää suunnan asetuksen, 90° kierrot ja palautuksen. Suunnan asetus kiertää hyppylinjaa tuon avautumiskohdan ympäri, kun vedät hiirellä tai sormella; avaa valikko ja paina painiketta uudelleen poistuaksesi. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
     "map.legendHelp":
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
@@ -584,7 +585,7 @@ const finnish = {
     "map.jumpRunUnavailable":
         "Hyppylinjan paikat eivät ole saatavilla: uloshyppykorkeuden tuulitieto puuttuu tai valittua lentorataa ei voi lentää tällä ilmanopeudella.",
     "map.directionHint":
-        "Vedä hiirellä tai sormella. Paina suuntapainiketta uudelleen lopettaaksesi.",
+        "Vedä hiirellä tai sormella. Avaa suuntavalikko ja paina suuntapainiketta uudelleen lopettaaksesi.",
     "toolbar.freefallValues": "Vapaapudotuksen arvot",
     "toolbar.jumpRun": "Hyppylinja",
     "toolbar.removeJumper": "Poista hyppääjä",
@@ -596,6 +597,7 @@ const finnish = {
     "toolbar.exit": "Uloshyppy",
     "toolbar.opening": "Avaus",
     "toolbar.speed": "Nopeus",
+    "toolbar.windLevels": "Tuulikorkeudet",
     "settings.jumpRun": "Hyppylinjan asetukset",
     "settings.jumpRunDirection": "Hyppylinjan suunta",
     "settings.defaultJumperCount": "Hyppyryhmien oletusmäärä",

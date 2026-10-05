@@ -1,5 +1,6 @@
 // @ts-check
 import { Dialog } from "#app/shared/Dialog.js";
+import { DropdownMenu } from "#app/shared/DropdownMenu.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { Icon, WindArrow } from "#app/shared/icons.js";
 import { settingsDialogStyles } from "#app/styles.js";
@@ -27,6 +28,7 @@ export function JumpRunControls({
     onToggleDirection,
     onResetDirection,
     onAdd,
+    children,
 }) {
     const scope = useScope(css`
         :scope.jump-run-controls {
@@ -37,9 +39,6 @@ export function JumpRunControls({
             font-size: 0.8rem;
         }
         ${settingsDialogStyles}
-        .direction-toggle[aria-pressed="true"] {
-            background: var(--color-surface-hover);
-        }
         fieldset {
             margin-top: 14px;
             border: 1px solid var(--color-border);
@@ -154,48 +153,57 @@ export function JumpRunControls({
                 hasPopup: "dialog",
                 onClick: open,
             })}
+            ${children}
             ${h(ToolbarButton, {
                 label: t("toolbar.positionJumpRun"),
                 icon: "location",
                 disabled: !canPosition,
                 onClick: onPosition,
             })}
-            ${h(ToolbarButton, {
-                label: t("settings.setJumpRunDirection"),
+            ${h(DropdownMenu, {
+                id: "jump-run-direction-menu",
+                label: t("settings.jumpRunDirection"),
                 icon: "heading",
                 size: 24,
-                className: "direction-toggle",
                 pressed: directionActive,
-                disabled: !canAim,
-                onClick: onToggleDirection,
-            })}
-            ${h(ToolbarButton, {
-                label: t("settings.rotateJumpRunCounterclockwise"),
-                icon: "rotateCounterclockwise",
-                size: 24,
-                disabled: !canAim,
-                onClick: () =>
-                    onChange({
-                        ...settings,
-                        direction: (settings.direction + 270) % 360,
-                    }),
-            })}
-            ${h(ToolbarButton, {
-                label: t("settings.rotateJumpRunClockwise"),
-                icon: "rotateClockwise",
-                size: 24,
-                disabled: !canAim,
-                onClick: () =>
-                    onChange({
-                        ...settings,
-                        direction: (settings.direction + 90) % 360,
-                    }),
-            })}
-            ${h(ToolbarButton, {
-                label: t("settings.resetJumpRunDirection"),
-                icon: "undo",
-                disabled: !canAim,
-                onClick: onResetDirection,
+                items: [
+                    {
+                        label: t("settings.setJumpRunDirection"),
+                        icon: "heading",
+                        size: 20,
+                        pressed: directionActive,
+                        disabled: !canAim,
+                        onSelect: onToggleDirection,
+                    },
+                    {
+                        label: t("settings.rotateJumpRunCounterclockwise"),
+                        icon: "rotateCounterclockwise",
+                        size: 20,
+                        disabled: !canAim,
+                        onSelect: () =>
+                            onChange({
+                                ...settings,
+                                direction: (settings.direction + 270) % 360,
+                            }),
+                    },
+                    {
+                        label: t("settings.rotateJumpRunClockwise"),
+                        icon: "rotateClockwise",
+                        size: 20,
+                        disabled: !canAim,
+                        onSelect: () =>
+                            onChange({
+                                ...settings,
+                                direction: (settings.direction + 90) % 360,
+                            }),
+                    },
+                    {
+                        label: t("settings.resetJumpRunDirection"),
+                        icon: "undo",
+                        disabled: !canAim,
+                        onSelect: onResetDirection,
+                    },
+                ],
             })}
             ${h(ToolbarButton, {
                 label: t("settings.addJumper"),
