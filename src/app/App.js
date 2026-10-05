@@ -38,6 +38,7 @@ import { FloatingMenuButton, SideMenu } from "#app/app/SideMenu.js";
 import { Title } from "#app/app/Title.js";
 import { h, html } from "htm/preact";
 import { useRef } from "preact/hooks";
+import { Tooltips } from "#app/shared/Tooltips.js";
 
 export function App() {
     const developerEditorRef = useRef(
@@ -269,5 +270,6 @@ export function App() {
         <${FloatingMenuButton} />
 
         <${RenderInjectedCSS} />
+        <${Tooltips} />
     `;
 }

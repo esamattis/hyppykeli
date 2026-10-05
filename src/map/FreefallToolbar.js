@@ -80,14 +80,14 @@ export function FreefallToolbar({
                     ${h(JumpRunControls, { ...jumpRun, canPosition, onPosition })}
                     <div class="toolbar-map-actions">
                         ${h(ToolbarButton, {
-                            label: t("toolbar.undoArrow"),
+                            label: t("toolbar.removeJumper"),
                             icon: "minus",
                             className: "undo-arrow",
                             disabled: arrowCount === 0,
                             onClick: onUndo,
                         })}
                         ${h(ToolbarButton, {
-                            label: t("toolbar.clearArrows"),
+                            label: t("toolbar.removeJumpRun"),
                             icon: "trash",
                             className: "clear-arrows",
                             disabled: arrowCount === 0,

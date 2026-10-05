@@ -4,12 +4,14 @@ import { HOVERED_OBSERVATION, NAME, addError } from "#app/weather/state.js";
 import { MENU_OPEN } from "#app/app/menuState.js";
 import { QUERY_PARAMS, navigateQs, saveCurrentDz } from "#app/app/settings.js";
 import { computed, effect } from "@preact/signals";
+import { startTooltips } from "#app/shared/tooltipEvents.js";
 
 let started = false;
 
 export function startApp() {
     if (started) return;
     started = true;
+    startTooltips();
     /** @type {ReturnType<typeof setTimeout>} */
     let timer;
 

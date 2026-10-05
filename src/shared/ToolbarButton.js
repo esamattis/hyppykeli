@@ -43,7 +43,7 @@ export function ToolbarButton({
             type="button"
             class=${`arrow-action${className ? ` ${className}` : ""}`}
             aria-label=${label}
-            title=${label}
+            data-tooltip=${label}
             aria-pressed=${pressed}
             aria-haspopup=${hasPopup}
             disabled=${disabled}
