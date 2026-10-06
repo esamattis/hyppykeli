@@ -9,6 +9,7 @@ import {
 } from "#app/app/settings.js";
 import { Help } from "#app/shared/Help.js";
 import { formatClock } from "#app/shared/dates.js";
+import { isValidPosition, parseCoordinates } from "#app/shared/coordinates.js";
 import { Icon, WindArrow } from "#app/shared/icons.js";
 import { cardHeadingStyles, getTheme } from "#app/styles.js";
 import { t } from "#app/translations.js";
@@ -17,6 +18,7 @@ import { DataSource } from "#app/weather/DataSource.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
 import {
     FORECAST_COORDINATES,
+    LANDING_COORDINATES,
     NAME,
     STATION_COORDINATES,
     STATION_NAME,
@@ -30,7 +32,6 @@ import {
     isFiniteNumber,
     isValidJumpRunSettings,
     isValidJumper,
-    isValidPosition,
     useMapState,
 } from "#app/map/mapState.js";
 import {
@@ -411,11 +412,11 @@ export function DropzoneMap() {
             ? "map.fintrafficStation"
             : "map.fmiStation",
     );
-    const { lat: landingLat, lon: landingLon } = QUERY_PARAMS.value;
-    const hasLandingCoordinates =
-        !!landingLat?.trim() &&
-        !!landingLon?.trim() &&
-        isValidPosition({ lat: Number(landingLat), lng: Number(landingLon) });
+    const landingCoordinates = LANDING_COORDINATES.value;
+    const hasSeparateLandingCoordinates = !!parseCoordinates(
+        QUERY_PARAMS.value.lat,
+        QUERY_PARAMS.value.lon,
+    );
     const name = NAME.value ?? "DZ";
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -593,7 +594,7 @@ export function DropzoneMap() {
         if (
             !leafletInstance ||
             activeLeafletRef.current !== leafletInstance ||
-            !hasLandingCoordinates ||
+            !hasSeparateLandingCoordinates ||
             !stationCoordinates ||
             !stationName
         )
@@ -627,7 +628,7 @@ export function DropzoneMap() {
         };
     }, [
         leafletInstance,
-        hasLandingCoordinates,
+        hasSeparateLandingCoordinates,
         stationCoordinates,
         stationName,
         stationLabel,
@@ -766,17 +767,16 @@ export function DropzoneMap() {
     };
     const automaticGroup = placementGroup();
     const automaticPlacementKey = JSON.stringify([
-        landingLat,
-        landingLon,
+        landingCoordinates,
         automaticSettings,
         automaticGroup,
         canopyWinds,
     ]);
     const automaticStart = useMemo(
         () =>
-            hasLandingCoordinates
+            landingCoordinates
                 ? startForAutomaticRun(
-                      { lat: Number(landingLat), lng: Number(landingLon) },
+                      landingCoordinates,
                       automaticSettings,
                       automaticGroup,
                       calculateAutomaticRun(freefallWinds, automaticSettings),
@@ -834,8 +834,7 @@ export function DropzoneMap() {
         const leafletMap = activeLeafletRef.current;
         if (!leafletMap || !calculation.velocity) return;
         const bounds = latLngBounds([start]);
-        if (hasLandingCoordinates)
-            bounds.extend({ lat: Number(landingLat), lng: Number(landingLon) });
+        if (landingCoordinates) bounds.extend(landingCoordinates);
         for (const [index, jumper] of group.entries()) {
             const exit = latLng(
                 jumpRunCoordinates(

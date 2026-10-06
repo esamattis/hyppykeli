@@ -81,8 +81,6 @@ async function fetchObservations(cacheOnly, signal) {
             if (signal.aborted) return;
             STATION_NAME.value = station.name;
             STATION_COORDINATES.value = station.coordinates;
-            FORECAST_COORDINATES.value =
-                explicitForecastCoordinates() ?? station.coordinates;
             if (useObservations(station.observations)) return;
         } catch (error) {
             if (!cacheOnly && !signal.aborted) reportProviderError(error);
@@ -112,8 +110,6 @@ async function fetchObservations(cacheOnly, signal) {
                 .then((station) => {
                     if (!station || signal.aborted) return;
                     STATION_COORDINATES.value = station.coordinates;
-                    FORECAST_COORDINATES.value =
-                        explicitForecastCoordinates() ?? station.coordinates;
                     STATION_NAME.value = station.name;
                 })
                 .catch((error) => {
@@ -163,24 +159,6 @@ async function fetchForecasts(coordinates, cacheOnly, signal) {
     return true;
 }
 
-function explicitForecastCoordinates() {
-    const lat = Number(QUERY_PARAMS.value.lat);
-    const lon = Number(QUERY_PARAMS.value.lon);
-    if (
-        !QUERY_PARAMS.value.lat?.trim() ||
-        !QUERY_PARAMS.value.lon?.trim() ||
-        !Number.isFinite(lat) ||
-        !Number.isFinite(lon) ||
-        lat < -90 ||
-        lat > 90 ||
-        lon < -180 ||
-        lon > 180
-    ) {
-        return null;
-    }
-    return `${lat},${lon}`;
-}
-
 /** @param {OpenMeteoWeatherData} data */
 function useOpenMeteoSurfaceWeather(data) {
     const weather = getOpenMeteoSurfaceWeather(data);
@@ -219,7 +197,6 @@ async function refreshWeather(cacheOnly, signal) {
         STATION_COORDINATES.value = null;
         STATION_NAME.value = undefined;
         FMI_FORECAST_NAME.value = undefined;
-        FORECAST_COORDINATES.value = explicitForecastCoordinates();
     }
 
     await Promise.all([

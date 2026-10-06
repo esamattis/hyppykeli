@@ -218,8 +218,7 @@ export function App() {
                 ${h(Compass, { floating: false })}
             </div>
 
-            ${h(LazyDropzoneMap, {})}
-            ${h(Compass, { floating: true })}
+            ${h(LazyDropzoneMap, {})} ${h(Compass, { floating: true })}
             ${h(Graph, {
                 observationsTable: h(TableDialog, {
                     id: "observations-table",

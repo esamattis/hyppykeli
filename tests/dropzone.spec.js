@@ -6,9 +6,17 @@ const developerPath =
 /** @param {import("@playwright/test").Page} page */
 async function setUniformFreefallWind(page) {
     await page.evaluate(async () => {
-        const { FORECAST_COORDINATES, OM_DATA } =
+        const { QUERY_PARAMS, navigateQs } =
+            await import("#app/app/settings.js");
+        const params = QUERY_PARAMS.value;
+        // Manual-placement tests supply a station only to make the map available.
+        // Explicitly clear the run so the station fallback does not place it first.
+        if (!params.lat && !params.lon && !params.map_run_start) {
+            navigateQs({ map_run_start: "null" }, { replace: true });
+        }
+        const { STATION_COORDINATES, OM_DATA } =
             await import("#app/weather/state.js");
-        FORECAST_COORDINATES.value = "62.4,25.6";
+        STATION_COORDINATES.value = "62.4,25.6";
         const hourly = {
             time: [new Date().toISOString().slice(0, 13) + ":00"],
         };
@@ -1204,10 +1212,10 @@ test("map toolbar expands only the map in both modes and restores", async ({
     page,
 }) => {
     const card = page.locator("#dropzone-map");
-    const heading = card.getByRole("heading", { name: "Tuulikartta" });
+    const heading = card.getByRole("heading", { name: "Hyppylinja" });
     const help = card.getByRole("button", { name: "Ohje", exact: true });
     const expand = card.getByRole("button", {
-        name: "Laajenna Tuulikartta koko ikkunaan",
+        name: "Laajenna Hyppylinja koko ikkunaan",
     });
     await expect(heading).toBeVisible();
     await expect(help).toBeVisible();
@@ -1226,7 +1234,7 @@ test("map toolbar expands only the map in both modes and restores", async ({
     expect(bounds.y).toBe(0);
     expect(bounds.width).toBe(page.viewportSize().width);
     expect(bounds.height).toBe(page.viewportSize().height);
-    const restore = card.getByRole("button", { name: "Palauta Tuulikartta" });
+    const restore = card.getByRole("button", { name: "Palauta Hyppylinja" });
     await expect(restore).toHaveAttribute("aria-pressed", "true");
     await expect(card.locator(".wind-profile")).toBeHidden();
     await expect(frame.locator(".wind-level-icons")).toBeVisible();
@@ -1300,9 +1308,9 @@ for (const settingDirection of [false, true]) {
         }
 
         await page.evaluate(async () => {
-            const { FORECAST_COORDINATES } =
+            const { STATION_COORDINATES } =
                 await import("#app/weather/state.js");
-            FORECAST_COORDINATES.value = "62.5,25.7";
+            STATION_COORDINATES.value = "62.5,25.7";
             await new Promise((resolve) =>
                 requestAnimationFrame(() => requestAnimationFrame(resolve)),
             );
@@ -1474,7 +1482,7 @@ test("map wind icons update the selected reading in full window", async ({
         "≈ 3000 m · 14 m/s 270°",
     );
     await page
-        .getByRole("button", { name: "Laajenna Tuulikartta koko ikkunaan" })
+        .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
         .click();
     await expect(page.locator("#dropzone-map .map-frame")).toHaveClass(
         /full-window/,
@@ -2655,7 +2663,7 @@ test("jump run turns into the selected wind around the opening center", async ({
 
     await page
         .getByRole("button", {
-            name: "Laajenna Tuulikartta koko ikkunaan",
+            name: "Laajenna Hyppylinja koko ikkunaan",
         })
         .click();
     await windIcon(page, "≈ 1500 m").click();
@@ -2930,7 +2938,7 @@ test("a feasible selected direction allows placement after the default track fai
     await map.click({ position: { x: 120, y: 160 } });
     await page.getByRole("button", { name: "Avaus" }).click();
     await expect(page.locator(".jump-run-unavailable")).toBeVisible();
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBeNull();
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe("null");
     await page
         .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
         .click();
@@ -2977,6 +2985,10 @@ for (const input of ["mouse", "touch"]) {
         await expect(page.getByText(/Koordinaatit puuttuvat/)).toBeVisible();
         await page.clock.setFixedTime(new Date());
         await setUniformFreefallWind(page);
+        await page.evaluate(async () => {
+            const { navigateQs } = await import("#app/app/settings.js");
+            navigateQs({ DEV_upper_winds: "10,0;10,0;10,0;10,0;10,0" });
+        });
         const map = page.locator(".dz-map");
         await map.scrollIntoViewIfNeeded();
         await map.click({ position: { x: 120, y: 160 } });
@@ -3161,7 +3173,7 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
     await expect(
         map.getByRole("button", { name: "Laskeutuminen" }),
     ).toBeVisible();
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBeNull();
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe("null");
     await expect(map.locator(".jump-run-jumper")).toHaveCount(0);
 
     // Another map click dismisses the callout without choosing a new point.
@@ -3169,7 +3181,7 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
     await expect(confirm).toHaveCount(0);
     await page.waitForTimeout(400);
     await expect(confirm).toHaveCount(0);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBeNull();
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe("null");
 
     await map.click({ position: { x: 120, y: 160 } });
     await confirm.click();
@@ -3348,10 +3360,10 @@ for (const [description, ground] of [
             start,
         );
         await page
-            .getByRole("button", { name: "Laajenna Tuulikartta koko ikkunaan" })
+            .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
             .click();
         await expect(error).toBeVisible();
-        await page.getByRole("button", { name: "Palauta Tuulikartta" }).click();
+        await page.getByRole("button", { name: "Palauta Hyppylinja" }).click();
         expect(errors).toEqual([message]);
         await map.scrollIntoViewIfNeeded();
         await map.click({ position: { x: 180, y: 200 } });
@@ -3700,7 +3712,7 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
     await expect(directionButton).toHaveAttribute("aria-checked", "false");
     await card
         .getByRole("button", {
-            name: "Laajenna Tuulikartta koko ikkunaan",
+            name: "Laajenna Hyppylinja koko ikkunaan",
         })
         .click();
     const frame = card.locator(".map-frame");
@@ -3848,7 +3860,7 @@ test("full-window one-finger pan pauses while jump run direction mode is on", as
     test.skip(!isMobile, "Requires mobile touch input");
     await setUniformFreefallWind(page);
     await page
-        .getByRole("button", { name: "Laajenna Tuulikartta koko ikkunaan" })
+        .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
         .click();
     const map = page.locator(".dz-map");
     const hint = page
@@ -3884,7 +3896,7 @@ test("full-window one-finger pan pauses while jump run direction mode is on", as
     await drag();
     await expect.poll(view).not.toEqual(initial);
     await expect(hint).toHaveCount(0);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBeNull();
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe("null");
     await map.tap({ position: { x: 100, y: 160 } });
     await page.getByRole("button", { name: "Avaus" }).click();
     await expect(map.locator(".jump-run-jumper").first()).toBeVisible();
@@ -4127,7 +4139,7 @@ test("map setup survives URL reload and shares in full-window mode", async ({
     await page.goto(shared.url);
     await setUniformFreefallWind(page);
     await expect(
-        toolbar.getByRole("button", { name: "Palauta Tuulikartta" }),
+        toolbar.getByRole("button", { name: "Palauta Hyppylinja" }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(map.locator(".freefall-drift-line")).toHaveCount(7);
     await expect(map.locator(".freefall-drift-line")).toHaveCount(7);
@@ -4159,18 +4171,19 @@ test("map query state handles invalid input and browser history", async ({
     await setUniformFreefallWind(page);
     const toolbar = page.locator(".freefall-toolbar");
     await expect(
-        toolbar.getByRole("button", { name: "Palauta Tuulikartta" }),
+        toolbar.getByRole("button", { name: "Palauta Hyppylinja" }),
     ).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator(".freefall-drift-line")).toHaveCount(0);
+    // Invalid run coordinates fall back to automatic placement at the station.
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(6);
     await page.goBack();
     await expect(
         toolbar.getByRole("button", {
-            name: "Laajenna Tuulikartta koko ikkunaan",
+            name: "Laajenna Hyppylinja koko ikkunaan",
         }),
     ).toHaveAttribute("aria-pressed", "false");
     await page.goForward();
     await expect(
-        toolbar.getByRole("button", { name: "Palauta Tuulikartta" }),
+        toolbar.getByRole("button", { name: "Palauta Hyppylinja" }),
     ).toHaveAttribute("aria-pressed", "true");
 });
 

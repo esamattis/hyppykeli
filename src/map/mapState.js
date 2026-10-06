@@ -46,13 +46,6 @@ export function useMapState(key, fallback, valid) {
 /** @param {number} value */
 export const isFiniteNumber = (value) =>
     typeof value === "number" && Number.isFinite(value);
-/** @param {{ lat: number, lng: number } | null} value */
-export const isValidPosition = (value) =>
-    !!value &&
-    isFiniteNumber(value.lat) &&
-    isFiniteNumber(value.lng) &&
-    Math.abs(value.lat) <= 90 &&
-    Math.abs(value.lng) <= 180;
 /** @param {JumpRunJumper} value */
 export const isValidJumper = (value) =>
     !!value &&

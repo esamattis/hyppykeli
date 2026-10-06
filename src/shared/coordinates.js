@@ -45,3 +45,23 @@ export function coordinateDistance(coord1, coord2) {
 
     return R * c; // Distance in meters
 }
+
+/** @param {GeographicPosition | null} value */
+export const isValidPosition = (value) =>
+    !!value &&
+    Number.isFinite(value.lat) &&
+    Number.isFinite(value.lng) &&
+    Math.abs(value.lat) <= 90 &&
+    Math.abs(value.lng) <= 180;
+
+/**
+ * Parse a complete coordinate pair; blank values must not become zero.
+ * @param {string | undefined} latitude
+ * @param {string | undefined} longitude
+ * @returns {GeographicPosition | null}
+ */
+export function parseCoordinates(latitude, longitude) {
+    if (!latitude?.trim() || !longitude?.trim()) return null;
+    const position = { lat: Number(latitude), lng: Number(longitude) };
+    return isValidPosition(position) ? position : null;
+}

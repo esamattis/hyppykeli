@@ -2,6 +2,7 @@
 import { QUERY_PARAMS } from "#app/app/settings.js";
 import { parseGroundObservations } from "#app/developer/overrides.js";
 import { isNullish } from "#app/shared/values.js";
+import { parseCoordinates } from "#app/shared/coordinates.js";
 import { t } from "#app/translations.js";
 import {
     hasValidAverageWindData,
@@ -193,13 +194,25 @@ export const METARS = computed(() => {
 export const STATION_COORDINATES = signal(null);
 
 /**
- * @type {Signal<string|null>}
+ * Shared target for forecasts, map centring, and automatic jump-run placement.
+ * Prefer a valid query coordinate pair, then the FMI or Fintraffic station.
+ * @type {ReadonlySignal<GeographicPosition | null>}
  */
-export const FORECAST_COORDINATES = signal(null);
+export const LANDING_COORDINATES = computed(() => {
+    const { lat, lon } = QUERY_PARAMS.value;
+    const explicit = parseCoordinates(lat, lon);
+    if (explicit) return explicit;
+    const station = STATION_COORDINATES.value?.split(",");
+    return station?.length === 2
+        ? parseCoordinates(station[0], station[1])
+        : null;
+});
 
-if (QUERY_PARAMS.value.lat && QUERY_PARAMS.value.lon) {
-    FORECAST_COORDINATES.value = `${QUERY_PARAMS.value.lat},${QUERY_PARAMS.value.lon}`;
-}
+/** @type {ReadonlySignal<string | null>} */
+export const FORECAST_COORDINATES = computed(() => {
+    const coordinates = LANDING_COORDINATES.value;
+    return coordinates ? `${coordinates.lat},${coordinates.lng}` : null;
+});
 
 /**
  * @type {Signal<string|null>}

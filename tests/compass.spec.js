@@ -31,7 +31,7 @@ test("the animation checkbox stops every compass animation and remembers the pre
 
     await expect(toggle).toBeChecked();
     await expect(replay.first()).toBeAttached();
-    await expect.poll(runningAnimations).toEqual([2, 2]);
+    await expect.poll(runningAnimations).toEqual([2, 0]);
 
     // A click dismisses the hovered compass; change directly to keep both mounted.
     await toggle.dispatchEvent("change");

@@ -1,6 +1,11 @@
 type Signal<T> = import("@preact/signals").Signal<T>;
 type ReadonlySignal<T> = import("@preact/signals").ReadonlySignal<T>;
 
+interface GeographicPosition {
+    lat: number;
+    lng: number;
+}
+
 type TranslationCatalog<T> = {
     [K in keyof T]: T[K] extends (...args: infer A) => string
         ? (...args: A) => string
