@@ -201,18 +201,18 @@ async function clickDirection(page, name) {
     await directionControl(page, name).click();
 }
 
-/** @param {import("@playwright/test").Page} page */
-function windMenu(page) {
-    return page.locator("#wind-level-menu");
-}
-
-/** @param {import("@playwright/test").Page} page */
-function windTrigger(page) {
-    return page.getByRole("button", { name: "Tuulikorkeudet", exact: true });
+/**
+ * @param {import("@playwright/test").Page} page
+ * @param {string} label
+ */
+function windIcon(page, label) {
+    return page.locator(
+        `.wind-level-icons .wind-level-choice[aria-label^="${label}:"]`,
+    );
 }
 
 /**
- * The altitude row stays on the page. The toolbar menu repeats it for full window.
+ * The altitude row stays on the page alongside the map icons.
  * @param {import("@playwright/test").Page} page
  * @param {string} label
  */
@@ -1234,8 +1234,8 @@ test("map toolbar expands only the map in both modes and restores", async ({
     const restore = card.getByRole("button", { name: "Palauta Tuulikartta" });
     await expect(restore).toHaveAttribute("aria-pressed", "true");
     await expect(card.locator(".wind-level-button").first()).toBeVisible();
-    await expect(frame.locator("#wind-level-menu")).toHaveCount(1);
-    await expect(windTrigger(page)).toBeVisible();
+    await expect(frame.locator(".wind-level-icons")).toBeVisible();
+    await expect(windIcon(page, "≈ 4200 m")).toBeVisible();
     await restore.click();
     await expect(heading).toBeVisible();
     await expect(help).toBeVisible();
@@ -1409,45 +1409,106 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
 });
 
-test("full window wind menu selects the same altitude as the wind profile", async ({
+test("map wind icons select the same altitude as the wind profile in full window", async ({
     page,
 }) => {
-    const jumpRunButtons = page.locator(
-        ".jump-run-controls button.arrow-action",
+    await setUniformFreefallWind(page);
+    const icons = page.locator(".wind-level-icons .wind-level-choice");
+    await expect(icons).toHaveCount(7);
+    await expect(icons.nth(1)).toHaveAttribute("data-tooltip", /^≈ 4200 m:/);
+    await expect(icons.last()).toHaveAttribute("data-tooltip", /^Maanpinta:/);
+    await expect(
+        page.getByRole("button", { name: "Tuulikorkeudet", exact: true }),
+    ).toHaveCount(0);
+    const choice = windIcon(page, "≈ 1500 m");
+    await choice.focus();
+    await expect(page.locator("[data-tooltip-text]")).toHaveText(
+        (await choice.getAttribute("aria-label")) ?? "",
     );
-    await expect(jumpRunButtons.nth(4)).toHaveAttribute(
-        "aria-label",
-        "Hyppylinjan asetukset",
-    );
-    await expect(jumpRunButtons.nth(5)).toHaveAttribute(
-        "aria-label",
-        "Tuulikorkeudet",
-    );
-    const expand = page.getByRole("button", {
-        name: "Laajenna Tuulikartta koko ikkunaan",
-    });
-    await expand.click();
-    const frame = page.locator("#dropzone-map .map-frame");
-    await expect(frame).toHaveClass(/full-window/);
-    await expect(frame.locator(".wind-profile")).toHaveCount(0);
-    await windTrigger(page).click();
-    const menu = windMenu(page);
-    await expect(menu).toBeVisible();
-    const choice = menu.locator("button.wind-level-choice", {
-        hasText: "≈ 1500 m",
-    });
+    await expect(page.locator("[data-tooltip-text]")).toContainText("10 m/s");
     await choice.click();
-    await expect(menu).toBeHidden();
+    await expect(windLevel(page, "≈ 1500 m")).toHaveAttribute(
+        "aria-pressed",
+        "true",
+    );
+    await expect(choice).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".selected-wind-summary")).toContainText(
+        "≈ 1500 m · 10 m/s 0°",
+    );
+    await windLevel(page, "≈ 3000 m").click();
+    await expect(windIcon(page, "≈ 3000 m")).toHaveAttribute(
+        "aria-pressed",
+        "true",
+    );
+    await expect(choice).toHaveAttribute("aria-pressed", "false");
+    await expect(page.locator(".selected-wind-summary")).toContainText(
+        "≈ 3000 m · 10 m/s 0°",
+    );
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const data = OM_DATA.value;
+        OM_DATA.value = {
+            ...data,
+            hourly: {
+                ...data.hourly,
+                windspeed_700hPa: [14],
+                winddirection_700hPa: [270],
+            },
+        };
+    });
+    await expect(page.locator(".selected-wind-summary")).toContainText(
+        "≈ 3000 m · 14 m/s 270°",
+    );
+    await page
+        .getByRole("button", { name: "Laajenna Tuulikartta koko ikkunaan" })
+        .click();
+    await expect(page.locator("#dropzone-map .map-frame")).toHaveClass(
+        /full-window/,
+    );
+    await choice.focus();
+    await page.keyboard.press("Enter");
+    await expect(choice).toHaveAttribute("aria-pressed", "true");
     await expect(windLevel(page, "≈ 1500 m")).toHaveAttribute(
         "aria-pressed",
         "true",
     );
     await expect(
-        page.locator('#dropzone-map .wind-level-button[aria-pressed="true"]'),
+        page.locator('.wind-level-icons [aria-pressed="true"]'),
     ).toHaveCount(1);
     expect(new URL(page.url()).searchParams.get("map_wind")).toBe(
         JSON.stringify("≈ 1500 m"),
     );
+    await page.reload();
+    await expect(windIcon(page, "≈ 1500 m")).toHaveAttribute(
+        "aria-pressed",
+        "true",
+    );
+});
+
+test("wind barb help explains direction and speed markings in both languages", async ({
+    page,
+}) => {
+    const help = page.locator("#wind-barb-help");
+    await help.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText("josta tuuli tulee");
+    await expect(dialog).toContainText("5 solmua");
+    await expect(dialog).toContainText("10 solmua");
+    await expect(dialog).toContainText("50 solmua");
+    await expect(dialog).toContainText("10 + 5 = 15 solmua");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(help).toBeFocused();
+    await page.evaluate(async () => {
+        const { setLanguage } = await import("#app/translations.js");
+        setLanguage("en");
+    });
+    await help.click();
+    await expect(dialog).toContainText("the direction the wind comes from");
+    await expect(dialog).toContainText("5 knots");
+    await expect(dialog).toContainText("10 knots");
+    await expect(dialog).toContainText("50 knots");
+    await expect(dialog).toContainText("10 + 5 = 15 knots");
 });
 
 test("freefall drift integrates altitude winds from 4000 to 800 metres", async ({
@@ -2566,12 +2627,7 @@ test("jump run turns into the selected wind around the opening center", async ({
             name: "Laajenna Tuulikartta koko ikkunaan",
         })
         .click();
-    await windTrigger(page).click();
-    await windMenu(page)
-        .locator("button.wind-level-choice", {
-            hasText: "≈ 1500 m",
-        })
-        .click();
+    await windIcon(page, "≈ 1500 m").click();
     await clickDirection(page, directionControls.intoWind);
     expect(
         JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))

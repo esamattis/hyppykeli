@@ -18,7 +18,7 @@ test("every map toolbar button exposes its tooltip on hover, including disabled 
     await page.locator(".freefall-toolbar").scrollIntoViewIfNeeded();
     // Finish scrolling before hovering: scroll events dismiss the tooltip.
     await page.evaluate(() => new Promise(requestAnimationFrame));
-    expect(await buttons.count()).toBe(10);
+    expect(await buttons.count()).toBe(9);
     for (const button of await buttons.all()) {
         const label = await button.getAttribute("aria-label");
         await button.scrollIntoViewIfNeeded();

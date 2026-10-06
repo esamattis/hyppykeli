@@ -22,6 +22,7 @@ import {
     STATION_NAME,
     weatherSourceLabel,
 } from "#app/weather/state.js";
+import { WindBarb } from "#app/map/WindBarb.js";
 import { FreefallToolbar } from "#app/map/FreefallToolbar.js";
 import { MapWindOverlay } from "#app/map/MapWindOverlay.js";
 import { driftCoordinates, jumpRunCoordinates } from "#app/map/freefall.js";
@@ -1696,7 +1697,10 @@ export function DropzoneMap() {
                                 return {
                                     label: wind.label,
                                     text: reading.text,
-                                    graphic: reading.graphic,
+                                    graphic: h(WindBarb, {
+                                        speed: wind.speed,
+                                        direction: wind.direction,
+                                    }),
                                     selected: wind.label === selectedWind.label,
                                 };
                             }),

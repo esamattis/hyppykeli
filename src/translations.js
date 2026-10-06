@@ -277,6 +277,19 @@ export const english = {
     "toolbar.opening": "Opening",
     "toolbar.speed": "Speed",
     "toolbar.windLevels": "Wind levels",
+    "toolbar.wind": "Wind",
+    "map.windBarbHelpTitle": "Reading wind barbs",
+    "map.windBarbDirectionHelp":
+        "The shaft points from the circle toward the direction the wind comes from. Hover or focus a level to see its altitude; select it to show that wind on the map. The lowest wind is at the bottom, with the average freefall wind above the altitude levels.",
+    "map.windBarbSpeedHelp":
+        "Add the markings to read the speed in knots. Speeds are rounded to the nearest 5 knots. 1 knot is approximately 0.51 m/s.",
+    "map.windBarbHalfHelp": "Short barb: 5 knots (≈ 2.6 m/s).",
+    "map.windBarbFullHelp": "Long barb: 10 knots (≈ 5.1 m/s).",
+    "map.windBarbFlagHelp": "Triangle: 50 knots (≈ 25.7 m/s).",
+    "map.windBarbCombinedHelp":
+        "A long and a short barb: 10 + 5 = 15 knots (≈ 7.7 m/s).",
+    "map.windBarbStatesHelp":
+        "A circle without a shaft means calm wind. A question mark means wind data is unavailable.",
 
     "settings.jumpRunDirectionHelp":
         "Direction of travel over the ground: 0°/360° north, 90° east, 180° south, and 270° west. Wind correction determines the aircraft heading needed to follow this track. Changing direction here keeps the central predicted opening point fixed (the midpoint of the two middle openings for an even number of groups). Free rotation by dragging keeps the middle of the exit sequence fixed. Missing wind data or a track that cannot be flown at the selected airspeed can prevent the calculation.",
@@ -683,6 +696,19 @@ const finnish = {
     "toolbar.opening": "Avaus",
     "toolbar.speed": "Nopeus",
     "toolbar.windLevels": "Tuulikorkeudet",
+    "toolbar.wind": "Tuuli",
+    "map.windBarbHelpTitle": "Tuuliväkästen lukeminen",
+    "map.windBarbDirectionHelp":
+        "Varsi osoittaa ympyrästä suuntaan, josta tuuli tulee. Vie osoitin korkeuden päälle tai siirrä siihen kohdistus nähdäksesi korkeuden. Valitse korkeus näyttääksesi sen tuulen kartalla. Alin tuuli on alimpana ja vapaapudotuksen keskituuli korkeuksien yläpuolella.",
+    "map.windBarbSpeedHelp":
+        "Laske merkkien arvot yhteen saadaksesi nopeuden solmuina. Nopeus pyöristetään lähimpään 5 solmuun. 1 solmu on noin 0,51 m/s.",
+    "map.windBarbHalfHelp": "Lyhyt väkänen: 5 solmua (≈ 2,6 m/s).",
+    "map.windBarbFullHelp": "Pitkä väkänen: 10 solmua (≈ 5,1 m/s).",
+    "map.windBarbFlagHelp": "Kolmio: 50 solmua (≈ 25,7 m/s).",
+    "map.windBarbCombinedHelp":
+        "Pitkä ja lyhyt väkänen: 10 + 5 = 15 solmua (≈ 7,7 m/s).",
+    "map.windBarbStatesHelp":
+        "Ympyrä ilman vartta tarkoittaa tyyntä. Kysymysmerkki tarkoittaa, ettei tuulitietoa ole saatavilla.",
     "settings.jumpRunDirectionHelp":
         "Lentoradan suunta maan suhteen: 0°/360° pohjoinen, 90° itä, 180° etelä ja 270° länsi. Tuulikorjaus määrittää lentokoneen nokan suunnan, jolla tätä lentorataa seurataan. Suunnan muuttaminen tässä pitää keskimmäisen ennustetun avautumiskohdan paikallaan (parillisella ryhmämäärällä kahden keskimmäisen avautumiskohdan puoliväli). Vapaa kierto vetämällä pitää uloshyppyjonon keskikohdan paikallaan. Puuttuvat tuulitiedot tai lentorata, jota ei voi lentää valitulla ilmanopeudella, voivat estää laskennan.",
     "settings.elevation": "Hyppypaikan korkeus merenpinnasta (m)",

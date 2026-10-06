@@ -1,5 +1,6 @@
 // @ts-check
-import { DropdownMenu } from "#app/shared/DropdownMenu.js";
+import { Help } from "#app/shared/Help.js";
+import { WindBarb } from "#app/map/WindBarb.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
@@ -113,55 +114,43 @@ export function FreefallToolbar({
         .window-toggle {
             flex-shrink: 0;
         }
-        .wind-level-menu-list {
+        .wind-level-icons {
+            position: absolute;
+            top: 56px;
+            right: 12px;
             display: flex;
             flex-direction: column;
             gap: 2px;
-            margin: 0;
+            pointer-events: auto;
+            box-sizing: border-box;
+            width: 36px;
             padding: 0;
+        }
+        .wind-barb-legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .wind-level-choice {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+            justify-content: center;
+            flex-shrink: 0;
             width: 100%;
-            min-height: 40px;
-            padding: 6px 8px;
+            height: 36px;
+            padding: 0;
             border: 0;
             border-radius: var(--radius-sm);
             background: transparent;
-            color: inherit;
+            color: var(--color-text);
             box-shadow: none;
-            font-size: 0.8rem;
-            font-weight: 600;
-            line-height: 1.2;
-            text-align: start;
         }
-        .wind-level-choice:hover,
         .wind-level-choice[aria-pressed="true"] {
-            background: var(--color-surface-hover);
-        }
-        .wind-level-choice > span:not(.wind-level-choice-arrow) {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-        .wind-level-choice > span > span {
-            color: var(--color-muted);
-            font-size: 0.75rem;
-            font-weight: 400;
-        }
-        .wind-level-choice-arrow {
-            display: flex;
-            flex-shrink: 0;
-            color: var(--color-primary);
-        }
-        .wind-level-choice-arrow svg {
-            width: 20px;
-            height: 20px;
+            background: #000;
+            color: #fff;
         }
     `);
+    const selectedWind = windLevels.levels.find((level) => level.selected);
     return html`
         <div
             class="freefall-toolbar"
@@ -170,53 +159,13 @@ export function FreefallToolbar({
         >
             ${scope.style}
             <div class="toolbar-controls">
-                ${h(
-                    JumpRunControls,
-                    {
-                        ...jumpRun,
-                        canPosition,
-                        onPosition,
-                        arrowCount,
-                        onUndo,
-                    },
-                    h(
-                        DropdownMenu,
-                        {
-                            id: "wind-level-menu",
-                            label: t("toolbar.windLevels"),
-                            icon: "windLevels",
-                            size: 20,
-                            menuClass: "wind-level-menu",
-                        },
-                        html`
-                            <div class="wind-level-menu-list">
-                                ${windLevels.levels.map(
-                                    (level) => html`
-                                        <button
-                                            type="button"
-                                            class="wind-level-choice"
-                                            aria-pressed=${level.selected}
-                                            onClick=${() =>
-                                                windLevels.onSelect(
-                                                    level.label,
-                                                )}
-                                        >
-                                            <span>
-                                                <strong>${level.label}</strong>
-                                                <span>${level.text}</span>
-                                            </span>
-                                            <span
-                                                class="wind-level-choice-arrow"
-                                            >
-                                                ${level.graphic}
-                                            </span>
-                                        </button>
-                                    `,
-                                )}
-                            </div>
-                        `,
-                    ),
-                )}
+                ${h(JumpRunControls, {
+                    ...jumpRun,
+                    canPosition,
+                    onPosition,
+                    arrowCount,
+                    onUndo,
+                })}
                 <div class="toolbar-map-actions">
                     ${h(ToolbarButton, {
                         label: t("toolbar.positionView"),
@@ -295,8 +244,70 @@ export function FreefallToolbar({
                         </span>
                     </strong>
                 </span>
+                ${
+                    selectedWind &&
+                    html`
+                        <span class="selected-wind-summary">
+                            <span class="value-label">
+                                ${t("toolbar.wind")}
+                            </span>
+                            <strong class="value-number">
+                                ${selectedWind.label} · ${selectedWind.text}
+                            </strong>
+                        </span>
+                    `
+                }
             </div>
             <div class="toolbar-actions">
+                <div
+                    class="wind-level-icons"
+                    role="group"
+                    aria-label=${t("toolbar.windLevels")}
+                >
+                    ${windLevels.levels.map(
+                        (level) => html`
+                            <button
+                                type="button"
+                                class="wind-level-choice"
+                                aria-label=${`${level.label}: ${level.text}`}
+                                data-tooltip=${`${level.label}: ${level.text}`}
+                                aria-pressed=${level.selected}
+                                onClick=${() => windLevels.onSelect(level.label)}
+                            >
+                                ${level.graphic}
+                            </button>
+                        `,
+                    )}
+                    ${h(
+                        Help,
+                        {
+                            id: "wind-barb-help",
+                            label: t("map.windBarbHelpTitle"),
+                        },
+                        html`
+                            <h3>${t("map.windBarbHelpTitle")}</h3>
+                            <p>${t("map.windBarbDirectionHelp")}</p>
+                            <p>${t("map.windBarbSpeedHelp")}</p>
+                            <p class="wind-barb-legend">
+                                ${h(WindBarb, { speed: 2.572222, direction: 0 })}
+                                ${t("map.windBarbHalfHelp")}
+                            </p>
+                            <p class="wind-barb-legend">
+                                ${h(WindBarb, { speed: 5.144444, direction: 0 })}
+                                ${t("map.windBarbFullHelp")}
+                            </p>
+                            <p class="wind-barb-legend">
+                                ${h(WindBarb, { speed: 25.72222, direction: 0 })}
+                                ${t("map.windBarbFlagHelp")}
+                            </p>
+                            <p class="wind-barb-legend">
+                                ${h(WindBarb, { speed: 7.716666, direction: 0 })}
+                                ${t("map.windBarbCombinedHelp")}
+                            </p>
+                            <p>${t("map.windBarbStatesHelp")}</p>
+                        `,
+                    )}
+                </div>
                 <div class="toolbar-window-actions">
                     ${h(ToolbarButton, {
                         label: t("toolbar.shareMap"),
