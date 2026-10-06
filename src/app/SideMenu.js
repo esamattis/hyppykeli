@@ -39,6 +39,7 @@ export function SideMenu({ developerEditorRef }) {
             overflow-y: auto;
             overscroll-behavior: contain;
             transform: translateX(100%);
+            will-change: transform;
             visibility: hidden;
             transition:
                 transform 0.25s ease,

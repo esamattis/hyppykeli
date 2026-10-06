@@ -6,12 +6,30 @@ import { MENU_OPEN } from "#app/app/menuState.js";
 import { QUERY_PARAMS, navigateQs, saveCurrentDz } from "#app/app/settings.js";
 import { computed, effect } from "@preact/signals";
 import { startTooltips } from "#app/shared/tooltipEvents.js";
+import { ANIMATIONS_RUNNING, holdAnimations } from "#app/app/animationState.js";
 
 let started = false;
 
 export function startApp() {
     if (started) return;
     started = true;
+    effect(() => {
+        document.documentElement.style.setProperty(
+            "--animation-play-state",
+            ANIMATIONS_RUNNING.value ? "running" : "paused",
+        );
+    });
+    /** @type {(() => void) | undefined} */
+    let releaseHidden;
+    const updateAnimationVisibility = () => {
+        if (document.hidden) releaseHidden ??= holdAnimations();
+        else {
+            releaseHidden?.();
+            releaseHidden = undefined;
+        }
+    };
+    document.addEventListener("visibilitychange", updateAnimationVisibility);
+    updateAnimationVisibility();
     document.addEventListener("apicacheerror", (event) => {
         if (!(event instanceof CustomEvent)) return;
         const { provider, error, cached } = event.detail;

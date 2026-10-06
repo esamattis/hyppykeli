@@ -1,5 +1,6 @@
 // @ts-check
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
+import { holdAnimations } from "#app/app/animationState.js";
 import { getCanopyDrift } from "#app/map/canopy.js";
 import {
     DROPZONE_ELEVATION,
@@ -139,6 +140,7 @@ export function DropzoneMap() {
         .jump-run-line {
             stroke: var(--map-direction-color, #2563eb);
             animation: dropzone-map-direction-dashes 700ms linear infinite;
+            animation-play-state: var(--animation-play-state, running);
         }
         .freefall-drift-line,
         .parachute-drift-line {
@@ -257,6 +259,7 @@ export function DropzoneMap() {
             stroke-width: 3;
             stroke-dasharray: 8 6;
             animation: var(--map-direction-animation);
+            animation-play-state: var(--animation-play-state, running);
         }
         @keyframes dropzone-map-direction-dashes {
             to {
@@ -531,12 +534,26 @@ export function DropzoneMap() {
             setZoom(leafletMap.getZoom());
         };
         leafletMap.on("moveend", saveView);
+        /** @type {(() => void) | undefined} */
+        let releaseZoom;
+        const pauseMapAnimations = () => {
+            releaseZoom ??= holdAnimations();
+        };
+        const releaseMapAnimations = () => {
+            releaseZoom?.();
+            releaseZoom = undefined;
+        };
+        leafletMap.on("zoomstart", pauseMapAnimations);
+        leafletMap.on("zoomend", releaseMapAnimations);
         saveView();
         const observer = new ResizeObserver(() =>
             leafletMap.invalidateSize({ pan: false }),
         );
         observer.observe(mapRef.current);
         return () => {
+            leafletMap.off("zoomstart", pauseMapAnimations);
+            leafletMap.off("zoomend", releaseMapAnimations);
+            releaseMapAnimations();
             if (activeLeafletRef.current === leafletMap)
                 activeLeafletRef.current = null;
             observer.disconnect();

@@ -1,5 +1,6 @@
 // @ts-check
 import { QUERY_PARAMS } from "#app/app/settings.js";
+import { ANIMATIONS_RUNNING } from "#app/app/animationState.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { Help } from "#app/shared/Help.js";
 import { isNullish } from "#app/shared/values.js";
@@ -16,6 +17,13 @@ import {
 } from "#app/weather/state.js";
 import { signal } from "@preact/signals";
 import { h, html } from "htm/preact";
+import {
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "preact/hooks";
 
 const COMPASS_ANIMATION_ENABLED = signal(
     localStorage.getItem("compass-animation") !== "false",
@@ -90,6 +98,26 @@ function calculateNeedleLength(gust) {
 /** @param {{ floating?: boolean }} props */
 export function Compass({ floating = false } = {}) {
     const animated = !floating && COMPASS_ANIMATION_ENABLED.value;
+    /** @type {import('preact').RefObject<HTMLDivElement>} */
+    const compassRef = useRef(null);
+    const [running, setRunning] = useState(false);
+    useEffect(() => {
+        const compass = compassRef.current;
+        if (!compass || floating) return;
+        let visible = false;
+        const update = () => setRunning(visible && !document.hidden);
+        const observer = new IntersectionObserver(([entry]) => {
+            visible = entry?.isIntersecting ?? false;
+            update();
+        });
+        observer.observe(compass);
+        document.addEventListener("visibilitychange", update);
+        return () => {
+            observer.disconnect();
+            document.removeEventListener("visibilitychange", update);
+        };
+    }, [floating]);
+    const active = running && ANIMATIONS_RUNNING.value;
     const scope = useScope(css`
         svg,
         text {
@@ -120,6 +148,20 @@ export function Compass({ floating = false } = {}) {
             animation:
                 compass-bounce 1.2s ease-in-out infinite,
                 compass-spin 2s linear infinite;
+        }
+        :scope:not(.animations-running) > svg {
+            animation-play-state: paused;
+        }
+        :scope.animations-running > svg.bouncing,
+        :scope.animations-running > svg.spinning {
+            will-change: translate, rotate;
+        }
+        .gust-needle > polygon.animated {
+            transform-box: view-box;
+            transform-origin: 200px 200px;
+        }
+        :scope.animations-running .gust-needle > polygon.animated {
+            will-change: transform;
         }
         @keyframes compass-bounce {
             0%,
@@ -229,7 +271,7 @@ export function Compass({ floating = false } = {}) {
 
     // prettier-ignore
     return html`
-        <div id=${floating ? "hovered-compass" : "compass"} class=${["compass", floating && "floating", animated && "animations-enabled"].filter(Boolean).join(" ")}>
+        <div ref=${compassRef} id=${floating ? "hovered-compass" : "compass"} class=${["compass", floating && "floating", animated && "animations-enabled", animated && active && "animations-running"].filter(Boolean).join(" ")}>
             ${scope.style}
             <svg
                 class=${[bouncing && "bouncing", spinning && "spinning"].filter(Boolean).join(" ")}
@@ -255,7 +297,7 @@ export function Compass({ floating = false } = {}) {
                   </g>
               `}
               ${h(HistoryNeedles, { observations: history })}
-              ${h(GustNeedle, { observation, history: floating, animation: animated ? history : undefined })}
+              ${h(GustNeedle, { observation, history: floating, animation: animated ? history : undefined, paused: !active })}
               <text
                     x="200"
                     y="170"
@@ -314,13 +356,57 @@ export function Compass({ floating = false } = {}) {
  * @param {number} props.gust
  * @param {string} props.color
  * @param {CompassWindSample[]} [props.animation]
+ * @param {boolean} [props.paused]
  */
 function NeedlePolygon(props) {
     const frames = props.animation ?? [];
+    // Weather signals can rerender the compass with an equivalent history.
+    // Keep its timeline and playback position until the readings change.
+    const animationKey = JSON.stringify(frames);
+    const timeline = useMemo(() => needleKeyframes(frames), [animationKey]);
+    /** @type {import('preact').RefObject<SVGPolygonElement>} */
+    const polygonRef = useRef(null);
+    /** @type {import('preact').RefObject<Animation[]>} */
+    const animationsRef = useRef([]);
+    useLayoutEffect(() => {
+        const polygon = polygonRef.current;
+        if (!polygon || !timeline) return;
+        const options = { duration: 3000, iterations: Infinity };
+        const animations = [
+            polygon.animate(timeline.transforms, options),
+            polygon.animate(timeline.colors, options),
+        ];
+        animationsRef.current = animations;
+        return () => {
+            animations.forEach((animation) => animation.cancel());
+            animationsRef.current = [];
+        };
+    }, [timeline]);
+    useLayoutEffect(() => {
+        for (const animation of animationsRef.current ?? []) {
+            if (props.paused) animation.pause();
+            else animation.play();
+        }
+    }, [props.paused, timeline]);
+
+    return html`
+        <polygon
+            ref=${polygonRef}
+            class=${timeline ? "animated" : ""}
+            points=${timeline ? polygonPoints(MIN_NEEDLE_LENGTH) : needlePoints(props.gust)}
+            fill=${props.color}
+            transform=${`rotate(${props.direction - 180}, 200, 200)`}
+        />
+    `;
+}
+
+/** @param {CompassWindSample[]} frames */
+function needleKeyframes(frames) {
     const first = frames[0];
     const last = frames.at(-1);
     const span = first && last ? last.time.getTime() - first.time.getTime() : 0;
-    let angle = (first?.direction ?? props.direction) - 180;
+    if (!first || frames.length < 2 || span <= 0) return null;
+    let angle = first.direction - 180;
     const rotations = frames.map((frame) => {
         // Take the shortest path, including when the direction crosses north.
         angle +=
@@ -328,19 +414,14 @@ function NeedlePolygon(props) {
         return angle;
     });
     const lengths = frames.map((frame) => calculateNeedleLength(frame.gust));
-    const times = frames.map((frame) =>
-        span > 0 && first
-            ? ((frame.time.getTime() - first.time.getTime()) / span) * 0.5
-            : 0,
+    const times = frames.map(
+        (frame) => ((frame.time.getTime() - first.time.getTime()) / span) * 0.5,
     );
-    const canAnimate = frames.length > 1 && span > 0;
-    if (canAnimate) {
-        // Retrace every reading so the loop never shortcuts back to the start.
-        for (let index = frames.length - 2; index >= 0; index--) {
-            rotations.push(rotations[index] ?? angle);
-            lengths.push(lengths[index] ?? MIN_NEEDLE_LENGTH);
-            times.push(1 - (times[index] ?? 0));
-        }
+    // Retrace every reading so the loop never shortcuts back to the start.
+    for (let index = frames.length - 2; index >= 0; index--) {
+        rotations.push(rotations[index] ?? angle);
+        lengths.push(lengths[index] ?? MIN_NEEDLE_LENGTH);
+        times.push(1 - (times[index] ?? 0));
     }
     const bouncedRotations = bounceKeyframes(rotations, times);
     const bouncedLengths = bounceKeyframes(lengths, times);
@@ -348,57 +429,19 @@ function NeedlePolygon(props) {
         bouncedLengths.values,
         bouncedLengths.times,
     );
-    const rotationValues = bouncedRotations.values
-        .map((value) => `${value} 200 200`)
-        .join(";");
-    const pointValues = bouncedLengths.values.map(polygonPoints).join(";");
-    const bounceTimes = bouncedRotations.times.join(";");
-    const splines = bouncedRotations.times
-        .slice(1)
-        .map(() => "0.2 0 0.2 1")
-        .join(";");
-    return html`
-        <polygon
-            key=${canAnimate ? JSON.stringify(frames) : undefined}
-            class=${canAnimate ? "animated" : ""}
-            points=${needlePoints(props.gust)}
-            fill=${props.color}
-            transform=${`rotate(${props.direction - 180}, 200, 200)`}
-        >
-            ${
-                canAnimate &&
-                html`
-                    <animateTransform
-                        attributeName="transform"
-                        type="rotate"
-                        values=${rotationValues}
-                        keyTimes=${bounceTimes}
-                        calcMode="spline"
-                        keySplines=${splines}
-                        dur="3s"
-                        repeatCount="indefinite"
-                    />
-                    <animate
-                        attributeName="points"
-                        values=${pointValues}
-                        keyTimes=${bounceTimes}
-                        calcMode="spline"
-                        keySplines=${splines}
-                        dur="3s"
-                        repeatCount="indefinite"
-                    />
-                    <animate
-                        attributeName="fill"
-                        values=${colors.values.join(";")}
-                        keyTimes=${colors.times.join(";")}
-                        calcMode="linear"
-                        dur="3s"
-                        repeatCount="indefinite"
-                    />
-                `
-            }
-        </polygon>
-    `;
+    return {
+        // Scaling a fixed polygon keeps its base and tip widths unchanged,
+        // while moving its tip exactly as the previous geometry animation did.
+        transforms: bouncedRotations.values.map((rotation, index) => ({
+            transform: `rotate(${rotation}deg) scaleY(${(bouncedLengths.values[index] ?? MIN_NEEDLE_LENGTH) / MIN_NEEDLE_LENGTH})`,
+            offset: bouncedRotations.times[index],
+            easing: "cubic-bezier(0.2, 0, 0.2, 1)",
+        })),
+        colors: colors.values.map((fill, index) => ({
+            fill,
+            offset: colors.times[index],
+        })),
+    };
 }
 
 /**
@@ -518,9 +561,9 @@ function polygonPoints(length) {
 }
 
 /**
- * @param {{ observation: WeatherData | undefined, history: boolean, animation?: CompassWindSample[] }} props
+ * @param {{ observation: WeatherData | undefined, history: boolean, animation?: CompassWindSample[], paused?: boolean }} props
  */
-function GustNeedle({ observation: obs, history, animation }) {
+function GustNeedle({ observation: obs, history, animation, paused }) {
     // When using metar based observations, gust might not be available.
     // Fall back to speed in that case.
     const gust = obs?.gust ?? obs?.speed;
@@ -540,6 +583,7 @@ function GustNeedle({ observation: obs, history, animation }) {
                 direction: obs.direction,
                 color: needleColor(calculateNeedleLength(gust)),
                 animation,
+                paused,
             })}
             <!-- Center Point -->
             <circle cx="200" cy="200" r="10" fill="black" />
