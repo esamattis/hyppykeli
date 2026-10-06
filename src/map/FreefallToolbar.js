@@ -126,6 +126,12 @@ export function FreefallToolbar({
             width: 36px;
             padding: 0;
         }
+        .wind-level-bar {
+            display: flex;
+            flex-direction: column;
+            border-radius: var(--radius-sm);
+            background: rgb(255 255 255 / 70%);
+        }
         .wind-barb-legend {
             display: flex;
             align-items: center;
@@ -171,10 +177,16 @@ export function FreefallToolbar({
             height: 36px;
             padding: 0;
             border: 0;
-            border-radius: var(--radius-sm);
-            background: rgb(255 255 255 / 70%);
+            border-radius: 0;
+            background: transparent;
             color: var(--color-text);
             box-shadow: none;
+        }
+        .wind-level-choice:first-child {
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        }
+        .wind-level-choice:last-child {
+            border-radius: 0 0 var(--radius-sm) var(--radius-sm);
         }
         .wind-level-choice[aria-pressed="true"] {
             background: #000;
@@ -307,20 +319,23 @@ export function FreefallToolbar({
                     role="group"
                     aria-label=${t("toolbar.windLevels")}
                 >
-                    ${windLevels.levels.map(
-                        (level) => html`
-                            <button
-                                type="button"
-                                class="wind-level-choice"
-                                aria-label=${`${level.label}: ${level.text}`}
-                                data-tooltip=${`${level.label}: ${level.text}`}
-                                aria-pressed=${level.selected}
-                                onClick=${() => windLevels.onSelect(level.label)}
-                            >
-                                ${level.graphic}
-                            </button>
-                        `,
-                    )}
+                    <div class="wind-level-bar">
+                        ${windLevels.levels.map(
+                            (level) => html`
+                                <button
+                                    type="button"
+                                    class="wind-level-choice"
+                                    aria-label=${`${level.label}: ${level.text}`}
+                                    data-tooltip=${`${level.label}: ${level.text}`}
+                                    aria-pressed=${level.selected}
+                                    onClick=${() =>
+                                        windLevels.onSelect(level.label)}
+                                >
+                                    ${level.graphic}
+                                </button>
+                            `,
+                        )}
+                    </div>
                     ${h(
                         Help,
                         {
