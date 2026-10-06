@@ -166,6 +166,7 @@ interface FreefallToolbarProps {
     onToggleFullWindow: () => void;
     onShare: () => void;
     jumpRun: JumpRunControlsProps;
+    jumpRunLengthMeters: number | null;
     arrowCount: number;
     onClear: () => void;
     onUndo: () => void;

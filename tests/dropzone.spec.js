@@ -160,11 +160,11 @@ async function mapPoint(page, coordinates) {
 }
 
 const directionControls = {
-    drag: "Kierrä hyppylinjaa vapaasti vetämällä",
-    intoWind: "Käännä hyppylinja vastatuuleen valitulla tuulikorkeudella",
-    clockwise: "Kierrä hyppylinjaa 90° myötäpäivään",
-    counterclockwise: "Kierrä hyppylinjaa 90° vastapäivään",
-    reset: "Palauta hyppylinjan oletussuunta",
+    drag: "Kierrä vetämällä",
+    intoWind: "Käännä valittuun tuuleen",
+    clockwise: "Kierrä 90° oikealle",
+    counterclockwise: "Kierrä 90° vasemmalle",
+    reset: "Palauta oletussuunta",
 };
 
 /** @param {import("@playwright/test").Page} page */
@@ -1771,7 +1771,9 @@ test("jump-run positions react to forecast changes and recover from missing or i
     const jumpers = page.locator(".jump-run-jumper");
     const arrows = page.locator(".freefall-drift-line");
     const unavailable = page.locator(".jump-run-unavailable");
+    const length = page.locator(".jump-run-summary [data-tooltip]").nth(3);
     await expect(jumpers).toHaveCount(6);
+    const initialLength = await length.innerText();
     const second = await jumpers.nth(1).getAttribute("d");
     const start = new URL(page.url()).searchParams.get("map_run_start");
     await page.evaluate(async () => {
@@ -1782,6 +1784,7 @@ test("jump-run positions react to forecast changes and recover from missing or i
         OM_DATA.value = data;
     });
     await expect(jumpers.nth(1)).not.toHaveAttribute("d", second);
+    await expect(length).not.toHaveText(initialLength);
     expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
     await page.evaluate(async () => {
         const { OM_DATA } = await import("#app/weather/state.js");
@@ -1790,6 +1793,7 @@ test("jump-run positions react to forecast changes and recover from missing or i
         OM_DATA.value = data;
     });
     await expect(unavailable).toBeVisible();
+    await expect(length).toContainText("—");
     await expect(jumpers).toHaveCount(0);
     await expect(arrows).toHaveCount(0);
     await setUniformFreefallWind(page);
@@ -1932,12 +1936,15 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     page,
     isMobile,
 }) => {
-    await page.goto(`${developerPath}&default_jump_group_count=1`);
+    await page.goto(
+        `${developerPath}&default_jump_group_count=1&default_jump_run_direction=0`,
+    );
     await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
     const summary = page.locator(".toolbar-summary");
+    const length = summary.locator(".jump-run-summary [data-tooltip]").nth(3);
     await expect(summary).toContainText(/Hyppylinja\s*\d+° · 157 km\/h/);
-    await expect(summary).toContainText(/Hyppääjien väli\s*5 s/);
+    await expect(summary).toContainText(/157 km\/h · 5s · —/);
     const place = async (x = 100, y = 160) => {
         await map.scrollIntoViewIfNeeded();
         if (isMobile) await map.tap({ position: { x, y } });
@@ -1949,6 +1956,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     const jumpers = map.locator(".jump-run-jumper");
     const arrows = map.locator(".freefall-drift-line");
     await expect(jumpers).toHaveCount(1);
+    await expect(length).toHaveText("0 m");
     const firstStart = new URL(page.url()).searchParams.get("map_run_start");
     await place(100, 80);
     await expect
@@ -1963,6 +1971,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await expect(jumpers).toHaveCount(3);
+    await expect(length).toHaveText("336 m");
     await expect(arrows).toHaveCount(3);
     const edit = page.getByRole("button", {
         name: "Hyppylinjan asetukset",
@@ -2023,12 +2032,14 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(run).toHaveAttribute("d", runPath);
     await speed.fill("180");
     await expect(summary).toContainText(/Hyppylinja\s*\d+° · 180 km\/h/);
+    await expect(length).toHaveText("400 m");
     await expect(run).toHaveAttribute("d", runPath);
     await expect(arrows.nth(1)).not.toHaveAttribute("d", secondArrow);
     await settings
         .getByRole("spinbutton", { name: "Hyppääjien porrastus (s)" })
         .fill("10");
-    await expect(summary).toContainText(/Hyppääjien väli\s*10 s/);
+    await expect(summary).toContainText(/180 km\/h · 10s · 800 m/);
+    await expect(length).toHaveText("800 m");
     await page.keyboard.press("Escape");
     const previous = await run.getAttribute("d");
     await place(170, 200);
@@ -2078,6 +2089,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
         .getByRole("button", { name: "Poista hyppääjä 2", exact: true })
         .click();
     await expect(jumpers).toHaveCount(2);
+    await expect(length).toHaveText("400 m");
     await expect(arrows).toHaveCount(2);
     await expect(
         second.getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
@@ -2174,7 +2186,7 @@ test("jumper inputs step opening altitude by 100 m and freefall speed by 20 km/h
         await speed.press("ArrowUp");
         await expect(speed).toHaveValue("200");
     }
-    await expect(page.locator(".toolbar-summary")).toContainText("900 m");
+    await expect(page.locator(".jump-summary")).toContainText("4000-900m");
     await expect(page.locator(".toolbar-summary")).toContainText("200 km/h");
     await expect
         .poll(
@@ -3887,13 +3899,13 @@ test("jump run adds jumpers using immediately applied template settings", async 
     isMobile,
 }) => {
     await setUniformFreefallWind(page);
-    const template = page.locator(".toolbar-summary");
+    const template = page.locator(".jump-summary");
     const edit = page.getByRole("button", {
         name: "Hyppylinjan asetukset",
         exact: true,
     });
     await expect(page.getByRole("button", { name: /Muokkaa:/ })).toHaveCount(0);
-    await expect(template).toContainText("4000 m");
+    await expect(template).toContainText("4000-800m · 180 km/h");
     await edit.click();
     const settings = page.getByRole("dialog", {
         name: "Hyppylinjan asetukset",
@@ -3911,10 +3923,10 @@ test("jump run adds jumpers using immediately applied template settings", async 
         name: "Avauskorkeus (m)",
     });
     await opening.fill("4000");
-    await expect(template).toContainText("800 m");
+    await expect(template).toContainText("4000-800m");
     await opening.fill("1200");
     await dialog.getByRole("button", { name: /^Freefly/ }).click();
-    await expect(template).toContainText("1200 m");
+    await expect(template).toContainText("4000-1200m");
     await expect(template).toContainText("240 km/h");
     await dialog.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await expect(settings).toBeVisible();
@@ -3944,10 +3956,10 @@ test("jump run adds jumpers using immediately applied template settings", async 
     await page.keyboard.press("Escape");
     await edit.click();
     await opening.fill("3500");
-    await expect(template).toContainText("1200 m");
+    await expect(template).toContainText("3500-1200m");
     await opening.fill("1500");
     await dialog.getByRole("button", { name: /^Wingsuit/ }).click();
-    await expect(template).toContainText("1500 m");
+    await expect(template).toContainText("3500-1500m");
     await expect(template).toContainText("80 km/h");
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();

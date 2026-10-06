@@ -138,14 +138,16 @@ test("moving to another tooltip target starts a fresh hover delay", async ({
 test("map summary values explain their meaning on hover and keyboard focus", async ({
     page,
 }) => {
-    const values = page.locator(".toolbar-summary > span");
+    const values = page.locator(".toolbar-summary [data-tooltip]");
     const tooltip = page.getByRole("tooltip");
     const explanations = [
         "Kaikkien hyppylinjan hyppääjien uloshyppykorkeus.",
         "Seuraavaksi lisättävän hyppääjän avauskorkeus.",
         "Seuraavaksi lisättävän hyppääjän vapaapudotusnopeus.",
-        "Hyppylinjan suunta maan suhteen ja lentokoneen todellinen ilmanopeus. Tuuli huomioidaan maanopeuden laskennassa.",
+        "Hyppylinjan suunta maan suhteen.",
+        "Lentokoneen todellinen ilmanopeus. Tuuli huomioidaan maanopeuden laskennassa.",
         "Peräkkäisten uloshyppyjen välinen aika hyppylinjalla.",
+        "Ensimmäisen ja viimeisen uloshypyn välinen matka maan suhteen. Laskenta huomioi tuulikorjatun maanopeuden ja uloshyppyjen välisen ajan.",
     ];
     await expect(values).toHaveCount(explanations.length);
     await page.locator(".toolbar-summary").scrollIntoViewIfNeeded();

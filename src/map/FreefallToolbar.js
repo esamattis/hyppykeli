@@ -19,6 +19,7 @@ export function FreefallToolbar({
     onClear,
     onUndo,
     jumpRun,
+    jumpRunLengthMeters,
     windLevels,
 }) {
     const scope = useScope(css`
@@ -233,37 +234,65 @@ export function FreefallToolbar({
                 </div>
             </div>
             <div class="toolbar-summary">
-                <span tabindex="0" data-tooltip=${t("toolbar.exitTooltip")}>
-                    <span class="value-label">${t("toolbar.exit")}</span>
+                <span class="jump-summary">
+                    <span class="value-label">${t("toolbar.jump")}</span>
                     <strong class="value-number">
-                        ${`${jumpRun.settings.exitHeight} m`}
+                        <span
+                            tabindex="0"
+                            data-tooltip=${t("toolbar.exitTooltip")}
+                        >
+                            ${jumpRun.settings.exitHeight}
+                        </span>
+                        ${"-"}
+                        <span
+                            tabindex="0"
+                            data-tooltip=${t("toolbar.openingTooltip")}
+                        >
+                            ${`${jumpRun.nextJumper.openingHeight}m`}
+                        </span>
+                        ${" · "}
+                        <span
+                            tabindex="0"
+                            data-tooltip=${t("toolbar.speedTooltip")}
+                        >
+                            ${`${jumpRun.nextJumper.speedKmh} km/h`}
+                        </span>
                     </strong>
                 </span>
-                <span tabindex="0" data-tooltip=${t("toolbar.openingTooltip")}>
-                    <span class="value-label">${t("toolbar.opening")}</span>
-                    <strong class="value-number">
-                        ${`${jumpRun.nextJumper.openingHeight} m`}
-                    </strong>
-                </span>
-                <span tabindex="0" data-tooltip=${t("toolbar.speedTooltip")}>
-                    <span class="value-label">${t("toolbar.speed")}</span>
-                    <strong class="value-number">
-                        ${`${jumpRun.nextJumper.speedKmh} km/h`}
-                    </strong>
-                </span>
-                <span tabindex="0" data-tooltip=${t("toolbar.jumpRunTooltip")}>
+                <span class="jump-run-summary">
                     <span class="value-label">${t("toolbar.jumpRun")}</span>
                     <strong class="value-number">
-                        ${`${Math.round(jumpRun.settings.direction)}° · ${jumpRun.settings.speedKmh} km/h`}
-                    </strong>
-                </span>
-                <span
-                    tabindex="0"
-                    data-tooltip=${t("toolbar.separationTooltip")}
-                >
-                    <span class="value-label">${t("toolbar.separation")}</span>
-                    <strong class="value-number">
-                        ${`${jumpRun.settings.separationSeconds} s`}
+                        <span
+                            tabindex="0"
+                            data-tooltip=${t("toolbar.jumpRunDirectionTooltip")}
+                        >
+                            ${`${Math.round(jumpRun.settings.direction)}°`}
+                        </span>
+                        ${" · "}
+                        <span
+                            tabindex="0"
+                            data-tooltip=${t("toolbar.jumpRunSpeedTooltip")}
+                        >
+                            ${`${jumpRun.settings.speedKmh} km/h`}
+                        </span>
+                        ${" · "}
+                        <span
+                            tabindex="0"
+                            data-tooltip=${t("toolbar.separationTooltip")}
+                        >
+                            ${`${jumpRun.settings.separationSeconds}s`}
+                        </span>
+                        ${" · "}
+                        <span
+                            tabindex="0"
+                            data-tooltip=${t("toolbar.jumpRunLengthTooltip")}
+                        >
+                            ${
+                                jumpRunLengthMeters === null
+                                    ? "—"
+                                    : `${Math.round(jumpRunLengthMeters)} m`
+                            }
+                        </span>
                     </strong>
                 </span>
             </div>

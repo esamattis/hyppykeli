@@ -251,7 +251,11 @@ export const english = {
     "map.directionHint":
         "Drag with the mouse or a finger. Open the direction menu and press the direction button again to finish.",
     "toolbar.freefallValues": "Freefall values",
+    "toolbar.jump": "Jump",
     "toolbar.jumpRun": "Jump run",
+    "toolbar.jumpRunLength": "Jump run length",
+    "toolbar.jumpRunLengthTooltip":
+        "Distance over the ground from the first exit to the last, using wind-adjusted ground speed and the time between exits.",
     "toolbar.removeJumper": "Remove jumper",
     "toolbar.removeJumpRun": "Remove jump run",
     "toolbar.positionJumpRun": "Automatic jump run position",
@@ -264,8 +268,9 @@ export const english = {
         "Exit altitude used for all jumpers on the jump run.",
     "toolbar.openingTooltip": "Opening altitude for the next jumper you add.",
     "toolbar.speedTooltip": "Freefall speed for the next jumper you add.",
-    "toolbar.jumpRunTooltip":
-        "Jump-run ground track and aircraft true airspeed. Wind is accounted for when calculating ground speed.",
+    "toolbar.jumpRunDirectionTooltip": "Jump-run direction over the ground.",
+    "toolbar.jumpRunSpeedTooltip":
+        "Aircraft true airspeed. Wind is accounted for when calculating ground speed.",
     "toolbar.separation": "Separation",
     "toolbar.separationTooltip":
         "Time between consecutive jumper exits on the jump run.",
@@ -299,12 +304,11 @@ export const english = {
     "settings.nextJumper": "Settings for the next jumper",
     "settings.currentJumpers": "Current jumpers",
     "settings.jumpers": "Jumpers / jump groups",
-    "settings.setJumpRunDirection": "Freely rotate the jump run by dragging",
-    "settings.turnJumpRunIntoWind": "Turn jump run into wind at selected level",
-    "settings.resetJumpRunDirection": "Reset jump run to default direction",
-    "settings.rotateJumpRunClockwise": "Rotate jump run 90° clockwise",
-    "settings.rotateJumpRunCounterclockwise":
-        "Rotate jump run 90° counterclockwise",
+    "settings.setJumpRunDirection": "Rotate by dragging",
+    "settings.turnJumpRunIntoWind": "Turn into selected wind",
+    "settings.resetJumpRunDirection": "Reset to default",
+    "settings.rotateJumpRunClockwise": "Rotate 90° right",
+    "settings.rotateJumpRunCounterclockwise": "Rotate 90° left",
     "settings.addJumper": "Add jumper",
     "settings.jumper": (/** @type {number} */ number) => `Jumper ${number}`,
     "settings.removeJumper": (/** @type {number} */ number) =>
@@ -653,7 +657,11 @@ const finnish = {
     "map.directionHint":
         "Vedä hiirellä tai sormella. Avaa suuntavalikko ja paina suuntapainiketta uudelleen lopettaaksesi.",
     "toolbar.freefallValues": "Vapaapudotuksen arvot",
+    "toolbar.jump": "Hyppy",
     "toolbar.jumpRun": "Hyppylinja",
+    "toolbar.jumpRunLength": "Hyppylinjan pituus",
+    "toolbar.jumpRunLengthTooltip":
+        "Ensimmäisen ja viimeisen uloshypyn välinen matka maan suhteen. Laskenta huomioi tuulikorjatun maanopeuden ja uloshyppyjen välisen ajan.",
     "toolbar.removeJumper": "Poista hyppääjä",
     "toolbar.removeJumpRun": "Poista hyppylinja",
     "toolbar.positionJumpRun": "Hyppylinjan automaattinen sijoitus",
@@ -666,9 +674,10 @@ const finnish = {
     "toolbar.openingTooltip": "Seuraavaksi lisättävän hyppääjän avauskorkeus.",
     "toolbar.speedTooltip":
         "Seuraavaksi lisättävän hyppääjän vapaapudotusnopeus.",
-    "toolbar.jumpRunTooltip":
-        "Hyppylinjan suunta maan suhteen ja lentokoneen todellinen ilmanopeus. Tuuli huomioidaan maanopeuden laskennassa.",
-    "toolbar.separation": "Hyppääjien väli",
+    "toolbar.jumpRunDirectionTooltip": "Hyppylinjan suunta maan suhteen.",
+    "toolbar.jumpRunSpeedTooltip":
+        "Lentokoneen todellinen ilmanopeus. Tuuli huomioidaan maanopeuden laskennassa.",
+    "toolbar.separation": "Väli",
     "toolbar.separationTooltip":
         "Peräkkäisten uloshyppyjen välinen aika hyppylinjalla.",
     "toolbar.opening": "Avaus",
@@ -700,13 +709,11 @@ const finnish = {
     "settings.nextJumper": "Lisättävän hyppääjän asetukset",
     "settings.currentJumpers": "Nykyiset hyppääjät",
     "settings.jumpers": "Hyppääjät / hyppyryhmät",
-    "settings.setJumpRunDirection": "Kierrä hyppylinjaa vapaasti vetämällä",
-    "settings.turnJumpRunIntoWind":
-        "Käännä hyppylinja vastatuuleen valitulla tuulikorkeudella",
-    "settings.resetJumpRunDirection": "Palauta hyppylinjan oletussuunta",
-    "settings.rotateJumpRunClockwise": "Kierrä hyppylinjaa 90° myötäpäivään",
-    "settings.rotateJumpRunCounterclockwise":
-        "Kierrä hyppylinjaa 90° vastapäivään",
+    "settings.setJumpRunDirection": "Kierrä vetämällä",
+    "settings.turnJumpRunIntoWind": "Käännä valittuun tuuleen",
+    "settings.resetJumpRunDirection": "Palauta oletussuunta",
+    "settings.rotateJumpRunClockwise": "Kierrä 90° oikealle",
+    "settings.rotateJumpRunCounterclockwise": "Kierrä 90° vasemmalle",
     "settings.addJumper": "Lisää hyppääjä",
     "settings.jumper": (number) => `Hyppääjä ${number}`,
     "settings.removeJumper": (number) => `Poista hyppääjä ${number}`,

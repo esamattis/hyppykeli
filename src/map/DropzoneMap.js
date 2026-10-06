@@ -1652,6 +1652,15 @@ export function DropzoneMap() {
                         },
                         onToggleFullWindow: () =>
                             setFullWindow((expanded) => !expanded),
+                        jumpRunLengthMeters:
+                            jumpRunStart && jumpRunVelocity && jumperCount > 0
+                                ? Math.hypot(
+                                      jumpRunVelocity.ground.east,
+                                      jumpRunVelocity.ground.north,
+                                  ) *
+                                  jumpRunSettings.separationSeconds *
+                                  (jumperCount - 1)
+                                : null,
                         jumpRun: {
                             settings: jumpRunSettings,
                             defaultJumperCount,
