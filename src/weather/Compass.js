@@ -14,8 +14,12 @@ import {
     LATEST_OBSERVATION,
     OBSERVATIONS,
 } from "#app/weather/state.js";
+import { signal } from "@preact/signals";
 import { h, html } from "htm/preact";
-import { useState } from "preact/hooks";
+
+const COMPASS_ANIMATION_ENABLED = signal(
+    localStorage.getItem("compass-animation") !== "false",
+);
 
 // Constants for needle length calculation
 const MIN_NEEDLE_LENGTH = 30;
@@ -25,6 +29,9 @@ const INSTRUCTOR_LIMIT_LENGTH = 150;
 const STUDENT_WIND_SPEED = 8;
 const INSTRUCTOR_WIND_SPEED = 11;
 const MAX_WIND_SPEED = 11.9;
+const COLOR_FADE_LENGTH = 5;
+const COMPASS_BOUNCE_GUST = 11;
+const COMPASS_SPIN_GUST = 14;
 
 /**
  * Linearly converts a value from one range to another range.
@@ -82,9 +89,7 @@ function calculateNeedleLength(gust) {
 
 /** @param {{ floating?: boolean }} props */
 export function Compass({ floating = false } = {}) {
-    const [animated, setAnimated] = useState(
-        () => localStorage.getItem("compass-animation") !== "false",
-    );
+    const animated = COMPASS_ANIMATION_ENABLED.value;
     const scope = useScope(css`
         svg,
         text {
@@ -97,6 +102,37 @@ export function Compass({ floating = false } = {}) {
         }
         :scope:not(.floating) svg {
             margin-block: auto;
+        }
+        svg.bouncing {
+            animation: compass-bounce 1.2s ease-in-out infinite;
+        }
+        svg.spinning {
+            animation: compass-spin 2s linear infinite;
+        }
+        svg.bouncing.spinning {
+            animation:
+                compass-bounce 1.2s ease-in-out infinite,
+                compass-spin 2s linear infinite;
+        }
+        @keyframes compass-bounce {
+            0%,
+            100% {
+                translate: 0 0;
+            }
+            40% {
+                translate: 0 -4px;
+            }
+            65% {
+                translate: 0 1px;
+            }
+            80% {
+                translate: 0 -1px;
+            }
+        }
+        @keyframes compass-spin {
+            to {
+                rotate: 360deg;
+            }
         }
 
         :scope {
@@ -132,6 +168,10 @@ export function Compass({ floating = false } = {}) {
             display: none;
         }
 
+        :scope.animations-enabled .gust-needle > polygon:not(.animated) {
+            transition: fill 0.2s ease;
+        }
+
         .compass-controls {
             display: grid;
             grid-template-columns: auto minmax(0, 1fr) auto;
@@ -165,9 +205,13 @@ export function Compass({ floating = false } = {}) {
     const rotation = isNaN(rc) ? 0 : rc; // Default to 0 degrees if invalid
     const circle = INSTRUCTOR_LIMIT_LENGTH;
     const studentCircle = STUDENT_LIMIT_LENGTH;
+    const latestObservation = LATEST_OBSERVATION.value;
+    const latestGust = latestObservation?.gust ?? 0;
+    const bouncing = animated && latestGust >= COMPASS_BOUNCE_GUST;
+    const spinning = animated && latestGust > COMPASS_SPIN_GUST;
     const observation = floating
         ? HOVERED_OBSERVATION.value
-        : LATEST_OBSERVATION.value;
+        : latestObservation;
     const history = getHistoryObservations();
 
     if (floating && !observation) {
@@ -176,9 +220,10 @@ export function Compass({ floating = false } = {}) {
 
     // prettier-ignore
     return html`
-        <div id=${floating ? "hovered-compass" : "compass"} class=${floating ? "compass floating" : "compass"}>
+        <div id=${floating ? "hovered-compass" : "compass"} class=${["compass", floating && "floating", animated && "animations-enabled"].filter(Boolean).join(" ")}>
             ${scope.style}
             <svg
+                class=${[bouncing && "bouncing", spinning && "spinning"].filter(Boolean).join(" ")}
                 style="transform: rotate(${rotation}deg); "
                 viewBox="0 0 400 400"
                 xmlns="http://www.w3.org/2000/svg">
@@ -228,7 +273,7 @@ export function Compass({ floating = false } = {}) {
                         checked=${animated}
                         onChange=${() => {
                             const enabled = !animated;
-                            setAnimated(enabled);
+                            COMPASS_ANIMATION_ENABLED.value = enabled;
                             localStorage.setItem("compass-animation", String(enabled));
                         }}
                     />
@@ -266,9 +311,6 @@ function NeedlePolygon(props) {
         return angle;
     });
     const lengths = frames.map((frame) => calculateNeedleLength(frame.gust));
-    const colors = frames.map((frame) =>
-        frame.gust > MAX_WIND_SPEED ? "black" : "red",
-    );
     const times = frames.map((frame) =>
         span > 0 && first
             ? ((frame.time.getTime() - first.time.getTime()) / span) * 0.5
@@ -280,12 +322,15 @@ function NeedlePolygon(props) {
         for (let index = frames.length - 2; index >= 0; index--) {
             rotations.push(rotations[index] ?? angle);
             lengths.push(lengths[index] ?? MIN_NEEDLE_LENGTH);
-            colors.push(colors[index] ?? "red");
             times.push(1 - (times[index] ?? 0));
         }
     }
     const bouncedRotations = bounceKeyframes(rotations, times);
     const bouncedLengths = bounceKeyframes(lengths, times);
+    const colors = needleColorKeyframes(
+        bouncedLengths.values,
+        bouncedLengths.times,
+    );
     const rotationValues = bouncedRotations.values
         .map((value) => `${value} 200 200`)
         .join(";");
@@ -297,6 +342,8 @@ function NeedlePolygon(props) {
         .join(";");
     return html`
         <polygon
+            key=${canAnimate ? JSON.stringify(frames) : undefined}
+            class=${canAnimate ? "animated" : ""}
             points=${needlePoints(props.gust)}
             fill=${props.color}
             transform=${`rotate(${props.direction - 180}, 200, 200)`}
@@ -305,7 +352,6 @@ function NeedlePolygon(props) {
                 canAnimate &&
                 html`
                     <animateTransform
-                        key=${rotationValues}
                         attributeName="transform"
                         type="rotate"
                         values=${rotationValues}
@@ -316,7 +362,6 @@ function NeedlePolygon(props) {
                         repeatCount="indefinite"
                     />
                     <animate
-                        key=${pointValues}
                         attributeName="points"
                         values=${pointValues}
                         keyTimes=${bounceTimes}
@@ -326,11 +371,10 @@ function NeedlePolygon(props) {
                         repeatCount="indefinite"
                     />
                     <animate
-                        key=${colors.join(";")}
                         attributeName="fill"
-                        values=${colors.join(";")}
-                        keyTimes=${times.join(";")}
-                        calcMode="discrete"
+                        values=${colors.values.join(";")}
+                        keyTimes=${colors.times.join(";")}
+                        calcMode="linear"
                         dur="3s"
                         repeatCount="indefinite"
                     />
@@ -363,6 +407,89 @@ function bounceKeyframes(values, times) {
     return bounced;
 }
 
+/** @param {number} length */
+function needleColor(length) {
+    const studentFade = Math.max(
+        0,
+        Math.min(
+            1,
+            (length - STUDENT_LIMIT_LENGTH + COLOR_FADE_LENGTH) /
+                COLOR_FADE_LENGTH,
+        ),
+    );
+    const instructorFade = Math.max(
+        0,
+        Math.min(
+            1,
+            (length - INSTRUCTOR_LIMIT_LENGTH + COLOR_FADE_LENGTH) /
+                COLOR_FADE_LENGTH,
+        ),
+    );
+    // Bright green (0, 255, 0), orange (255, 165, 0), then red (255, 0, 0).
+    const red = Math.round(255 * studentFade);
+    const green = Math.round((255 - 90 * studentFade) * (1 - instructorFade));
+    return `rgb(${red}, ${green}, 0)`;
+}
+
+/**
+ * Find the time at which the needle's "0.2 0 0.2 1" spline reaches a value.
+ * @param {number} progress
+ */
+function needleAnimationTime(progress) {
+    let low = 0;
+    let high = 1;
+    for (let index = 0; index < 30; index++) {
+        const t = (low + high) / 2;
+        const value = t * t * (3 - 2 * t);
+        if (value < progress) low = t;
+        else high = t;
+    }
+    const t = (low + high) / 2;
+    return 0.6 * t * (1 - t) + t * t * t;
+}
+
+/**
+ * Fade immediately before each limit, reaching its color at the circle even
+ * during overshoot and recoil. Use the same eased timeline as the length.
+ * @param {number[]} lengths
+ * @param {number[]} times
+ */
+function needleColorKeyframes(lengths, times) {
+    const colors = {
+        values: lengths.slice(0, 1).map(needleColor),
+        times: times.slice(0, 1),
+    };
+    for (let index = 1; index < lengths.length; index++) {
+        const start = lengths[index - 1] ?? 0;
+        const end = lengths[index] ?? start;
+        const startTime = times[index - 1] ?? 0;
+        const endTime = times[index] ?? startTime;
+        const crossings = [
+            STUDENT_LIMIT_LENGTH - COLOR_FADE_LENGTH,
+            STUDENT_LIMIT_LENGTH,
+            INSTRUCTOR_LIMIT_LENGTH - COLOR_FADE_LENGTH,
+            INSTRUCTOR_LIMIT_LENGTH,
+        ]
+            .filter(
+                (length) =>
+                    length > Math.min(start, end) &&
+                    length < Math.max(start, end),
+            )
+            .sort((a, b) => (end > start ? a - b : b - a));
+        for (const length of crossings) {
+            const progress = (length - start) / (end - start);
+            colors.values.push(needleColor(length));
+            colors.times.push(
+                startTime +
+                    (endTime - startTime) * needleAnimationTime(progress),
+            );
+        }
+        colors.values.push(needleColor(end));
+        colors.times.push(endTime);
+    }
+    return colors;
+}
+
 /** @param {number} gust */
 function needlePoints(gust) {
     return polygonPoints(calculateNeedleLength(gust));
@@ -389,14 +516,12 @@ function GustNeedle({ observation: obs, history, animation }) {
         return null;
     }
 
-    const needleColor = gust > MAX_WIND_SPEED ? "black" : "red";
-
     return html`
-        <g className="${history ? "historic" : ""}">
+        <g className="gust-needle ${history ? "historic" : ""}">
             ${h(NeedlePolygon, {
                 gust,
                 direction: obs.direction,
-                color: needleColor,
+                color: needleColor(calculateNeedleLength(gust)),
                 animation,
             })}
             <!-- Center Point -->
