@@ -3,7 +3,7 @@ import { QUERY_PARAMS } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { Help } from "#app/shared/Help.js";
 import { isNullish } from "#app/shared/values.js";
-import { t } from "#app/translations.js";
+import { LANGUAGE, t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import {
     hasValidAverageWindData,
@@ -102,6 +102,13 @@ export function Compass({ floating = false } = {}) {
         }
         :scope:not(.floating) svg {
             margin-block: auto;
+        }
+        .compass-intercardinal text {
+            font-family: monospace;
+            font-size: 12px;
+            text-anchor: middle;
+            dominant-baseline: middle;
+            fill: black;
         }
         svg.bouncing {
             animation: compass-bounce 1.2s ease-in-out infinite;
@@ -237,6 +244,14 @@ export function Compass({ floating = false } = {}) {
               <text x="20" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">W</text>
               <text x="200" y="390" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">S</text>
               <text x="380" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">E</text>
+              ${LANGUAGE.value === "fi" && html`
+                  <g class="compass-intercardinal">
+                      <text x="327" y="73">koillinen</text>
+                      <text x="327" y="327">kaakko</text>
+                      <text x="73" y="327">lounas</text>
+                      <text x="73" y="73">luode</text>
+                  </g>
+              `}
               ${h(HistoryNeedles, { observations: history })}
               ${h(GustNeedle, { observation, history: floating, animation: !floating && animated ? history : undefined })}
               <text
