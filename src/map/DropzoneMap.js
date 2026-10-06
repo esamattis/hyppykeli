@@ -747,23 +747,24 @@ export function DropzoneMap() {
     positionJumpRunAtRef.current = positionJumpRunAt;
     // Wind directions describe where the wind comes from. Pick the end
     // of the configured axis with a headwind; keep the axis in a crosswind.
-    const intoWindDirection =
+    /** @param {number} direction */
+    const directionIntoWind = (direction) =>
         averageWind.speed !== null &&
         averageWind.speed > 0 &&
         averageWind.direction !== null &&
-        Math.cos(
-            ((defaultJumpRunDirection - averageWind.direction) * Math.PI) / 180,
-        ) < -1e-10
-            ? (defaultJumpRunDirection + 180) % 360
-            : defaultJumpRunDirection;
+        Math.cos(((direction - averageWind.direction) * Math.PI) / 180) < -1e-10
+            ? (direction + 180) % 360
+            : direction;
+    const intoWindDirection = directionIntoWind(defaultJumpRunDirection);
     const automaticSettings = {
         ...jumpRunSettings,
-        direction:
+        direction: directionIntoWind(
             jumpRunStart ||
-            (QUERY_PARAMS.value.map_run_settings &&
-                QUERY_PARAMS.value.map_run_start !== "null")
+                (QUERY_PARAMS.value.map_run_settings &&
+                    QUERY_PARAMS.value.map_run_start !== "null")
                 ? jumpRunSettings.direction
-                : intoWindDirection,
+                : defaultJumpRunDirection,
+        ),
     };
     const automaticGroup = placementGroup();
     const automaticPlacementKey = JSON.stringify([

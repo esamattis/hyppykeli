@@ -4482,6 +4482,32 @@ for (const [axis, wind, speed, expected] of [
             JSON.parse(restoredParams.get("map_run_settings")).direction,
         ).toBe(expected);
         expect(restoredParams.get("map_run_start")).toBe(start);
+        // Repositioning an existing run applies the same reversal to its
+        // current axis.
+        await page.evaluate(async (direction) => {
+            const { navigateQs, QUERY_PARAMS } =
+                await import("#app/app/settings.js");
+            const settings = JSON.parse(QUERY_PARAMS.value.map_run_settings);
+            navigateQs(
+                {
+                    map_run_settings: JSON.stringify({
+                        ...settings,
+                        direction,
+                    }),
+                },
+                { replace: true },
+            );
+        }, axis);
+        await page
+            .getByRole("button", {
+                name: "Hyppylinjan automaattinen sijoitus",
+            })
+            .click();
+        expect(
+            JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+                .direction,
+        ).toBe(expected);
+        await expectAutomaticOpeningsUpwind(page);
     });
 }
 
@@ -4678,7 +4704,7 @@ test("viewport positioning fits a saved run without landing coordinates and disa
     await expect(fit).toBeDisabled();
 });
 
-test("automatic positioning preserves the current direction and reset restores the default into current wind", async ({
+test("automatic positioning reverses the current axis into wind and reset restores the default axis", async ({
     page,
 }) => {
     await page.goto(
@@ -4688,11 +4714,17 @@ test("automatic positioning preserves the current direction and reset restores t
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
     await clickDirection(page, directionControls.clockwise);
     await page.evaluate(async () => {
-        const { navigateQs } = await import("#app/app/settings.js");
+        const { navigateQs, QUERY_PARAMS } =
+            await import("#app/app/settings.js");
+        const settings = JSON.parse(QUERY_PARAMS.value.map_run_settings);
         navigateQs(
             {
                 DEV_upper_winds: "10,0;10,0;10,0;10,0;10,0",
                 map_run_start: JSON.stringify({ lat: 62.41, lng: 25.61 }),
+                map_run_settings: JSON.stringify({
+                    ...settings,
+                    direction: 225,
+                }),
             },
             { replace: true },
         );
@@ -4708,7 +4740,7 @@ test("automatic positioning preserves the current direction and reset restores t
     const positionedSettings = JSON.parse(
         positionedParams.get("map_run_settings"),
     );
-    expect(positionedSettings.direction).toBe(270);
+    expect(positionedSettings.direction).toBe(45);
     expect(JSON.parse(positionedParams.get("map_run_start"))).not.toEqual({
         lat: 62.41,
         lng: 25.61,
