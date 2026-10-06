@@ -150,6 +150,8 @@ export function Compass({ floating = false } = {}) {
             margin: 0;
             position: relative;
             padding: 2px;
+            /* Keep animated SVG bounds from widening the page. */
+            overflow: clip;
 
             border-radius: var(--radius-panel);
             background: var(--color-surface);
