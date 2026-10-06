@@ -135,6 +135,7 @@ interface JumpRunControlsProps {
     onDefaultJumperCountChange: (count: number) => void;
     directionActive: boolean;
     canAim: boolean;
+    selectedWindDirection: number | null;
     onToggleDirection: () => void;
     onResetDirection: () => void;
     onAdd: () => void;

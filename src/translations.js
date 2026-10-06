@@ -299,6 +299,7 @@ export const english = {
     "settings.currentJumpers": "Current jumpers",
     "settings.jumpers": "Jumpers / jump groups",
     "settings.setJumpRunDirection": "Freely rotate the jump run by dragging",
+    "settings.turnJumpRunIntoWind": "Turn jump run into wind at selected level",
     "settings.resetJumpRunDirection": "Reset jump run to default direction",
     "settings.rotateJumpRunClockwise": "Rotate jump run 90° clockwise",
     "settings.rotateJumpRunCounterclockwise":
@@ -698,6 +699,8 @@ const finnish = {
     "settings.currentJumpers": "Nykyiset hyppääjät",
     "settings.jumpers": "Hyppääjät / hyppyryhmät",
     "settings.setJumpRunDirection": "Kierrä hyppylinjaa vapaasti vetämällä",
+    "settings.turnJumpRunIntoWind":
+        "Käännä hyppylinja vastatuuleen valitulla tuulikorkeudella",
     "settings.resetJumpRunDirection": "Palauta hyppylinjan oletussuunta",
     "settings.rotateJumpRunClockwise": "Kierrä hyppylinjaa 90° myötäpäivään",
     "settings.rotateJumpRunCounterclockwise":

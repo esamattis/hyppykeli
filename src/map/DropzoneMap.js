@@ -1415,6 +1415,16 @@ export function DropzoneMap() {
     ]);
     const selectedWind =
         winds.find((wind) => wind.label === selectedLabel) ?? averageWind;
+    const selectedWindDirection =
+        selectedWind.speed !== null &&
+        isFiniteNumber(selectedWind.speed) &&
+        selectedWind.speed > 0 &&
+        selectedWind.direction !== null &&
+        isFiniteNumber(selectedWind.direction) &&
+        selectedWind.direction >= 0 &&
+        selectedWind.direction <= 360
+            ? selectedWind.direction % 360
+            : null;
 
     return html`
         <section id="dropzone-map" aria-label=${t("map.region")}>
@@ -1561,6 +1571,7 @@ export function DropzoneMap() {
                                 ),
                             directionActive: placingJumpRunDirection,
                             canAim: !!jumpRunStart,
+                            selectedWindDirection,
                             onResetDirection: () => {
                                 setPlacingJumpRunDirection(false);
                                 applyJumpRunSettings({

@@ -125,6 +125,7 @@ async function mapPoint(page, coordinates) {
 
 const directionControls = {
     drag: "Kierrä hyppylinjaa vapaasti vetämällä",
+    intoWind: "Käännä hyppylinja vastatuuleen valitulla tuulikorkeudella",
     clockwise: "Kierrä hyppylinjaa 90° myötäpäivään",
     counterclockwise: "Kierrä hyppylinjaa 90° vastapäivään",
     reset: "Palauta hyppylinjan oletussuunta",
@@ -2394,6 +2395,118 @@ test("quarter-turn buttons rotate both ways around the opening center", async ({
     await toolbar.getByRole("button", { name: "Poista hyppylinja" }).click();
     await expect(clockwise).toBeDisabled();
     await expect(counterclockwise).toBeDisabled();
+});
+
+test("jump run turns into the selected wind around the opening center", async ({
+    page,
+}) => {
+    await page.goto(
+        `${developerPath}&lat=62.4&lon=25.6&DEV_upper_winds=10,225;10,270;10,315;10,360;10,90`,
+    );
+    const intoWind = directionControl(page, directionControls.intoWind);
+    await expect(intoWind).toBeDisabled();
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 120, y: 160 } });
+    await page.getByRole("button", { name: "Avaus" }).click();
+    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
+    const opening = await middleOpening(page);
+    for (const [label, direction] of [
+        ["≈ 4200-800 m", 292.5],
+        ["≈ 4200 m", 225],
+        ["≈ 3000 m", 270],
+        ["≈ 1500 m", 315],
+        ["≈ 800 m", 0],
+        ["≈ 110 m", 90],
+        ["Maanpinta", 194],
+    ]) {
+        const previous = new URL(page.url()).searchParams.get(
+            "map_run_settings",
+        );
+        await windLevel(page, label).click();
+        expect(new URL(page.url()).searchParams.get("map_run_settings")).toBe(
+            previous,
+        );
+        await clickDirection(page, directionControls.intoWind);
+        expect(
+            JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+                .direction,
+        ).toBeCloseTo(direction, 8);
+        expect(await openingDistance(page, opening)).toBeLessThan(1);
+    }
+
+    await page
+        .getByRole("button", {
+            name: "Laajenna Tuulikartta koko ikkunaan",
+        })
+        .click();
+    await windTrigger(page).click();
+    await windMenu(page)
+        .locator("button.wind-level-choice", {
+            hasText: "≈ 1500 m",
+        })
+        .click();
+    await clickDirection(page, directionControls.intoWind);
+    expect(
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+            .direction,
+    ).toBe(315);
+    expect(await openingDistance(page, opening)).toBeLessThan(1);
+    await page.reload();
+    await expect(page.locator(".toolbar-summary")).toContainText("315°");
+    await expect(intoWind).toBeEnabled();
+    await page.getByRole("button", { name: "Poista hyppylinja" }).click();
+    await expect(intoWind).toBeDisabled();
+});
+
+test("turning into wind requires a valid selected wind and uses refreshed data", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 120, y: 160 } });
+    await page.getByRole("button", { name: "Avaus" }).click();
+    await windLevel(page, "≈ 4200 m").click();
+    const intoWind = directionControl(page, directionControls.intoWind);
+    await expect(intoWind).toBeEnabled();
+    for (const [speed, direction] of [
+        [0, 90],
+        [null, 90],
+        [10, null],
+        [10, NaN],
+        [Infinity, 90],
+        [10, -1],
+        [10, 361],
+        [10, 270],
+    ]) {
+        await page.evaluate(
+            async ({ speed, direction }) => {
+                const { OM_DATA } = await import("#app/weather/state.js");
+                OM_DATA.value = {
+                    ...OM_DATA.value,
+                    hourly: {
+                        ...OM_DATA.value.hourly,
+                        windspeed_600hPa: [speed],
+                        winddirection_600hPa: [direction],
+                    },
+                };
+            },
+            { speed, direction },
+        );
+        if (direction === 270) await expect(intoWind).toBeEnabled();
+        else await expect(intoWind).toBeDisabled();
+    }
+    await clickDirection(page, directionControls.intoWind);
+    expect(
+        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
+            .direction,
+    ).toBe(270);
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        OM_DATA.value = null;
+    });
+    await expect(intoWind).toBeDisabled();
 });
 
 test("default direction is used only when creating a jump run", async ({

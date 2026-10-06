@@ -28,6 +28,7 @@ export function JumpRunControls({
     onJumpersChange,
     directionActive,
     canAim,
+    selectedWindDirection,
     onToggleDirection,
     onResetDirection,
     onAdd,
@@ -266,6 +267,18 @@ export function JumpRunControls({
                         pressed: directionActive,
                         disabled: !canAim,
                         onSelect: onToggleDirection,
+                    },
+                    {
+                        label: t("settings.turnJumpRunIntoWind"),
+                        icon: "wind",
+                        disabled: !canAim || selectedWindDirection === null,
+                        onSelect: () => {
+                            if (selectedWindDirection === null) return;
+                            onChange({
+                                ...settings,
+                                direction: selectedWindDirection,
+                            });
+                        },
                     },
                     {
                         label: t("settings.rotateJumpRunCounterclockwise"),
