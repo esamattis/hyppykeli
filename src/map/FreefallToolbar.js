@@ -5,6 +5,7 @@ import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { JumpRunControls } from "#app/map/JumpRunControls.js";
+import { JumpRunSettingsButton } from "#app/map/JumpRunSettingsButton.js";
 import { h, html } from "htm/preact";
 
 /** @param {FreefallToolbarProps} props */
@@ -109,16 +110,25 @@ export function FreefallToolbar({
         }
         .toolbar-summary {
             display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 12px;
+            border-top: 1px solid var(--color-border);
+        }
+        .toolbar-summary > .arrow-action {
+            flex-shrink: 0;
+        }
+        .toolbar-summary-values {
+            display: flex;
             align-items: baseline;
             flex-wrap: wrap;
             gap: 4px 14px;
-            padding: 4px 12px;
-            border-top: 1px solid var(--color-border);
+            min-width: 0;
             color: var(--color-muted);
             font-size: 0.65rem;
             line-height: 1.4;
         }
-        .toolbar-summary > span {
+        .toolbar-summary-values > span {
             white-space: nowrap;
         }
         .value-number {
@@ -254,80 +264,85 @@ export function FreefallToolbar({
                 </div>
             </div>
             <div class="toolbar-summary">
-                <span class="jump-summary">
-                    <span class="value-label">${t("toolbar.freefall")}</span>
-                    <strong class="value-number">
-                        <span
-                            tabindex="0"
-                            data-tooltip=${t("toolbar.exitTooltip")}
-                        >
-                            ${jumpRun.settings.exitHeight}
+                ${h(JumpRunSettingsButton, jumpRun)}
+                <div class="toolbar-summary-values">
+                    <span class="jump-summary">
+                        <span class="value-label">
+                            ${t("toolbar.freefall")}
                         </span>
-                        ${"-"}
-                        <span
-                            tabindex="0"
-                            data-tooltip=${t("toolbar.openingTooltip")}
-                        >
-                            ${`${jumpRun.nextJumper.openingHeight}m`}
-                        </span>
-                        ${" · "}
-                        <span
-                            tabindex="0"
-                            data-tooltip=${t("toolbar.speedTooltip")}
-                        >
-                            ${`${jumpRun.nextJumper.speedKmh} km/h`}
-                        </span>
-                    </strong>
-                </span>
-                <span class="jump-run-summary">
-                    <span class="value-label">${t("toolbar.jumpRun")}</span>
-                    <strong class="value-number">
-                        <span
-                            tabindex="0"
-                            data-tooltip=${t("toolbar.jumpRunDirectionTooltip")}
-                        >
-                            ${`${Math.round(jumpRun.settings.direction)}°`}
-                        </span>
-                        ${" · "}
-                        <span
-                            tabindex="0"
-                            data-tooltip=${t("toolbar.jumpRunSpeedTooltip")}
-                        >
-                            ${`${jumpRun.settings.speedKmh} km/h`}
-                        </span>
-                        ${" · "}
-                        <span
-                            tabindex="0"
-                            data-tooltip=${t("toolbar.separationTooltip")}
-                        >
-                            ${`${jumpRun.settings.separationSeconds}s`}
-                        </span>
-                        ${" · "}
-                        <span
-                            tabindex="0"
-                            data-tooltip=${t("toolbar.jumpRunLengthTooltip")}
-                        >
-                            ${
-                                jumpRunLengthMeters === null
-                                    ? "—"
-                                    : `${Math.round(jumpRunLengthMeters)} m`
-                            }
-                        </span>
-                    </strong>
-                </span>
-                ${
-                    selectedWind &&
-                    html`
-                        <span class="selected-wind-summary">
-                            <span class="value-label">
-                                ${t("toolbar.wind")}
+                        <strong class="value-number">
+                            <span
+                                tabindex="0"
+                                data-tooltip=${t("toolbar.exitTooltip")}
+                            >
+                                ${jumpRun.settings.exitHeight}
                             </span>
-                            <strong class="value-number">
-                                ${selectedWind.label} · ${selectedWind.text}
-                            </strong>
-                        </span>
-                    `
-                }
+                            ${"-"}
+                            <span
+                                tabindex="0"
+                                data-tooltip=${t("toolbar.openingTooltip")}
+                            >
+                                ${`${jumpRun.nextJumper.openingHeight}m`}
+                            </span>
+                            ${" · "}
+                            <span
+                                tabindex="0"
+                                data-tooltip=${t("toolbar.speedTooltip")}
+                            >
+                                ${`${jumpRun.nextJumper.speedKmh} km/h`}
+                            </span>
+                        </strong>
+                    </span>
+                    <span class="jump-run-summary">
+                        <span class="value-label">${t("toolbar.jumpRun")}</span>
+                        <strong class="value-number">
+                            <span
+                                tabindex="0"
+                                data-tooltip=${t("toolbar.jumpRunDirectionTooltip")}
+                            >
+                                ${`${Math.round(jumpRun.settings.direction)}°`}
+                            </span>
+                            ${" · "}
+                            <span
+                                tabindex="0"
+                                data-tooltip=${t("toolbar.jumpRunSpeedTooltip")}
+                            >
+                                ${`${jumpRun.settings.speedKmh} km/h`}
+                            </span>
+                            ${" · "}
+                            <span
+                                tabindex="0"
+                                data-tooltip=${t("toolbar.separationTooltip")}
+                            >
+                                ${`${jumpRun.settings.separationSeconds}s`}
+                            </span>
+                            ${" · "}
+                            <span
+                                tabindex="0"
+                                data-tooltip=${t("toolbar.jumpRunLengthTooltip")}
+                            >
+                                ${
+                                    jumpRunLengthMeters === null
+                                        ? "—"
+                                        : `${Math.round(jumpRunLengthMeters)} m`
+                                }
+                            </span>
+                        </strong>
+                    </span>
+                    ${
+                        selectedWind &&
+                        html`
+                            <span class="selected-wind-summary">
+                                <span class="value-label">
+                                    ${t("toolbar.wind")}
+                                </span>
+                                <strong class="value-number">
+                                    ${selectedWind.label} · ${selectedWind.text}
+                                </strong>
+                            </span>
+                        `
+                    }
+                </div>
             </div>
             <div class="toolbar-actions">
                 <div
