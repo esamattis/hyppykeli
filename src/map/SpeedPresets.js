@@ -12,21 +12,23 @@ const presets = [
 export function SpeedPresets({ onSelect }) {
     const scope = useScope(css`
         :scope {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 16px 0;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 4px;
+            margin: 0;
         }
         button {
-            flex: 1;
-            padding: 10px;
+            min-width: 0;
+            min-height: 40px;
+            padding: 4px;
             background: var(--color-surface-hover);
             color: var(--color-text);
             box-shadow: none;
+            font-size: 0.7rem;
         }
         .preset-speed {
             display: block;
-            font-size: 0.75rem;
+            font-size: 0.6rem;
             font-weight: 400;
             white-space: nowrap;
         }

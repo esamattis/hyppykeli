@@ -203,28 +203,37 @@ export function FreefallToolbar({
                 })}
             </div>
             <div class="toolbar-summary">
-                <span>
+                <span tabindex="0" data-tooltip=${t("toolbar.exitTooltip")}>
                     <span class="value-label">${t("toolbar.exit")}</span>
                     <strong class="value-number">
                         ${`${jumpRun.settings.exitHeight} m`}
                     </strong>
                 </span>
-                <span>
+                <span tabindex="0" data-tooltip=${t("toolbar.openingTooltip")}>
                     <span class="value-label">${t("toolbar.opening")}</span>
                     <strong class="value-number">
                         ${`${jumpRun.nextJumper.openingHeight} m`}
                     </strong>
                 </span>
-                <span>
+                <span tabindex="0" data-tooltip=${t("toolbar.speedTooltip")}>
                     <span class="value-label">${t("toolbar.speed")}</span>
                     <strong class="value-number">
                         ${`${jumpRun.nextJumper.speedKmh} km/h`}
                     </strong>
                 </span>
-                <span>
+                <span tabindex="0" data-tooltip=${t("toolbar.jumpRunTooltip")}>
                     <span class="value-label">${t("toolbar.jumpRun")}</span>
                     <strong class="value-number">
                         ${`${Math.round(jumpRun.settings.direction)}° · ${jumpRun.settings.speedKmh} km/h`}
+                    </strong>
+                </span>
+                <span
+                    tabindex="0"
+                    data-tooltip=${t("toolbar.separationTooltip")}
+                >
+                    <span class="value-label">${t("toolbar.separation")}</span>
+                    <strong class="value-number">
+                        ${`${jumpRun.settings.separationSeconds} s`}
                     </strong>
                 </span>
             </div>

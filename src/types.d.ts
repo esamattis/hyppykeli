@@ -653,7 +653,7 @@ interface FreefallFieldsProps {
     openingDraft: string;
     speedDraft: string;
     openingRef?: import("preact").RefObject<HTMLInputElement>;
-    speedFirst?: boolean;
+    tableCells?: boolean;
     onDraftChange: (field: keyof JumpRunJumper, value: string) => void;
     onChange: (field: keyof JumpRunJumper, value: number) => void;
 }

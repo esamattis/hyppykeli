@@ -10,7 +10,7 @@ export function FreefallFields({
     openingDraft,
     speedDraft,
     openingRef,
-    speedFirst = false,
+    tableCells = false,
     onDraftChange,
     onChange,
     children,
@@ -23,13 +23,14 @@ export function FreefallFields({
     };
     const opening = html`
         <label>
-            ${t("settings.openingHeight")}
+            ${tableCells ? null : t("settings.openingHeight")}
             <input
+                aria-label=${tableCells ? t("settings.openingHeight") : undefined}
                 type="number"
                 required
                 min="800"
                 max=${exitHeight - 1}
-                step="1"
+                step="100"
                 ref=${openingRef}
                 value=${openingDraft}
                 onInput=${/** @param {Event} event */ (event) => update("openingHeight", event)}
@@ -38,22 +39,24 @@ export function FreefallFields({
     `;
     const speed = html`
         <label>
-            ${t("settings.freefallSpeed")}
+            ${tableCells ? null : t("settings.freefallSpeed")}
             <input
+                aria-label=${tableCells ? t("settings.freefallSpeed") : undefined}
                 type="number"
                 required
-                min="1"
-                step="1"
+                min="20"
+                step="20"
                 value=${speedDraft}
                 onInput=${/** @param {Event} event */ (event) => update("speedKmh", event)}
             />
         </label>
     `;
-    return speedFirst
-        ? html`
-              ${speed}${opening}
-          `
-        : html`
-              ${opening}${children}${speed}
-          `;
+    if (tableCells)
+        return html`
+            <td>${speed}</td>
+            <td>${opening}</td>
+        `;
+    return html`
+        ${opening}${children}${speed}
+    `;
 }

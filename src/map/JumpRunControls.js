@@ -1,6 +1,7 @@
 // @ts-check
 import { Dialog } from "#app/shared/Dialog.js";
 import { DropdownMenu } from "#app/shared/DropdownMenu.js";
+import { Help } from "#app/shared/Help.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { Icon, WindArrow } from "#app/shared/icons.js";
 import { settingsDialogStyles } from "#app/styles.js";
@@ -41,10 +42,59 @@ export function JumpRunControls({
             font-size: 0.8rem;
         }
         ${settingsDialogStyles}
+        :scope:is(dialog) {
+            width: min(640px, calc(100vw - 32px));
+        }
+        .setting-with-help {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 6rem;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .setting-label {
+            display: flex;
+            align-items: center;
+        }
+        .setting-label > label {
+            display: block;
+            margin: 0;
+        }
+        @media (max-width: 480px) {
+            .setting-with-help,
+            form > label {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .setting-label {
+                justify-content: space-between;
+            }
+        }
         fieldset {
             margin-top: 14px;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
+        }
+        .next-jumper {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px 8px;
+            padding: 8px 10px 10px;
+        }
+        .next-jumper legend {
+            padding: 0 4px;
+            font-size: 0.8rem;
+        }
+        .next-jumper > label {
+            grid-template-columns: minmax(0, 1fr);
+            align-self: end;
+            gap: 4px;
+            margin: 0;
+            font-size: 0.7rem;
+            line-height: 1.3;
+        }
+        .next-jumper > .presets,
+        .next-jumper > .add-jumper {
+            grid-column: 1 / -1;
         }
         .direction-field {
             grid-template-columns: minmax(0, 1fr);
@@ -69,17 +119,57 @@ export function JumpRunControls({
         .direction-value {
             font-variant-numeric: tabular-nums;
         }
-        .add-jumper,
-        .remove-jumper {
+        .add-jumper {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            margin-top: 14px;
+            justify-content: center;
+            min-height: 36px;
+            padding: 6px 8px;
+            font-size: 0.8rem;
         }
         .remove-jumper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border: 0;
             background: var(--color-surface-hover);
             color: var(--color-text);
             box-shadow: none;
+        }
+        .jumper-table {
+            width: 100%;
+            margin-top: 14px;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 0.8rem;
+        }
+        .jumper-table th,
+        .jumper-table td {
+            padding: 4px;
+            border-bottom: 1px solid var(--color-border);
+            text-align: start;
+        }
+        .jumper-table thead th {
+            color: var(--color-muted);
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .jumper-table tr > :first-child {
+            width: 3ch;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+        .jumper-table tr > :last-child {
+            width: 36px;
+            text-align: end;
+        }
+        .jumper-table label {
+            display: block;
+            margin: 0;
         }
     `);
     const titleId = useId();
@@ -262,9 +352,121 @@ export function JumpRunControls({
                             </span>
                         </span>
                     </label>
-                    <label>
-                        ${t("settings.defaultJumperCount")}
+                    <div class="setting-with-help">
+                        <div class="setting-label">
+                            <label for=${`${titleId}-exit`}>
+                                ${t("settings.exitHeight")}
+                            </label>
+                            <div class=${scope.end}>
+                                ${h(
+                                    Help,
+                                    {
+                                        label: `${t("settings.exitHeight")}: ${t("common.help")}`,
+                                    },
+                                    html`
+                                        <h3>${t("settings.exitHeight")}</h3>
+                                        <p>${t("settings.exitExplanation")}</p>
+                                        <p>${t("settings.profileRange")}</p>
+                                    `,
+                                )}
+                            </div>
+                        </div>
                         <input
+                            id=${`${titleId}-exit`}
+                            type="number"
+                            required
+                            min=${Math.max(800, nextJumper.openingHeight, ...jumpers.map((jumper) => jumper.openingHeight)) + 1}
+                            max="4200"
+                            step="1"
+                            value=${exitDraft}
+                            onInput=${/** @param {Event} event */ (event) => updateSettings("exitHeight", event)}
+                        />
+                    </div>
+                    <div class="setting-with-help">
+                        <div class="setting-label">
+                            <label for=${`${titleId}-speed`}>
+                                ${t("settings.jumpRunSpeed")}
+                            </label>
+                            <div class=${scope.end}>
+                                ${h(
+                                    Help,
+                                    {
+                                        label: `${t("settings.jumpRunSpeed")}: ${t("common.help")}`,
+                                        wide: true,
+                                    },
+                                    html`
+                                        <h3>${t("settings.jumpRunSpeed")}</h3>
+                                        <p>${t("settings.speedExplanation")}</p>
+                                    `,
+                                )}
+                            </div>
+                        </div>
+                        <input
+                            id=${`${titleId}-speed`}
+                            type="number"
+                            required
+                            min="1"
+                            max="1000"
+                            step="1"
+                            value=${speedDraft}
+                            onInput=${/** @param {Event} event */ (event) => updateSettings("speedKmh", event)}
+                        />
+                    </div>
+                    <div class="setting-with-help">
+                        <div class="setting-label">
+                            <label for=${`${titleId}-interval`}>
+                                ${t("settings.jumperInterval")}
+                            </label>
+                            <div class=${scope.end}>
+                                ${h(
+                                    Help,
+                                    {
+                                        label: `${t("settings.jumperInterval")}: ${t("common.help")}`,
+                                    },
+                                    html`
+                                        <h3>${t("settings.jumperInterval")}</h3>
+                                        <p>
+                                            ${t("settings.jumperIntervalHelp")}
+                                        </p>
+                                    `,
+                                )}
+                            </div>
+                        </div>
+                        <input
+                            id=${`${titleId}-interval`}
+                            type="number"
+                            required
+                            min="1"
+                            max="120"
+                            step="1"
+                            value=${separationDraft}
+                            onInput=${/** @param {Event} event */ (event) => updateSettings("separationSeconds", event)}
+                        />
+                    </div>
+                    <div class="setting-with-help">
+                        <div class="setting-label">
+                            <label for=${`${titleId}-count`}>
+                                ${t("settings.defaultJumperCount")}
+                            </label>
+                            <div class=${scope.end}>
+                                ${h(
+                                    Help,
+                                    {
+                                        label: `${t("settings.defaultJumperCount")}: ${t("common.help")}`,
+                                    },
+                                    html`
+                                        <h3>
+                                            ${t("settings.defaultJumperCount")}
+                                        </h3>
+                                        <p>
+                                            ${t("settings.defaultJumperCountHelp")}
+                                        </p>
+                                    `,
+                                )}
+                            </div>
+                        </div>
+                        <input
+                            id=${`${titleId}-count`}
                             type="number"
                             min="1"
                             max="100"
@@ -283,49 +485,8 @@ export function JumpRunControls({
                                 }
                             }
                         />
-                    </label>
-                    <label>
-                        ${t("settings.exitHeight")}
-                        <input
-                            type="number"
-                            required
-                            min=${Math.max(800, nextJumper.openingHeight, ...jumpers.map((jumper) => jumper.openingHeight)) + 1}
-                            max="4200"
-                            step="1"
-                            value=${exitDraft}
-                            onInput=${/** @param {Event} event */ (event) => updateSettings("exitHeight", event)}
-                        />
-                    </label>
-                    <label>
-                        ${t("settings.jumpRunSpeed")}
-                        <input
-                            type="number"
-                            required
-                            min="1"
-                            max="1000"
-                            step="1"
-                            value=${speedDraft}
-                            onInput=${/** @param {Event} event */ (event) => updateSettings("speedKmh", event)}
-                        />
-                    </label>
-                    <label>
-                        ${t("settings.jumperInterval")}
-                        <input
-                            type="number"
-                            required
-                            min="1"
-                            max="120"
-                            step="1"
-                            value=${separationDraft}
-                            onInput=${/** @param {Event} event */ (event) => updateSettings("separationSeconds", event)}
-                        />
-                    </label>
-                    <p>${t("settings.speedExplanation")}</p>
-                    <p>
-                        ${t("settings.exitExplanation")}
-                        ${t("settings.profileRange")}
-                    </p>
-                    <fieldset>
+                    </div>
+                    <fieldset class="next-jumper">
                         <legend>${t("settings.nextJumper")}</legend>
                         ${h(FreefallFields, {
                             exitHeight: settings.exitHeight,
@@ -363,40 +524,102 @@ export function JumpRunControls({
                             ${t("settings.addJumper")}
                         </button>
                     </fieldset>
-                    ${jumperDrafts.map(
-                        (jumper, index) => html`
-                            <fieldset>
-                                <legend>
-                                    ${t("settings.jumper", index + 1)}
-                                </legend>
-                                ${h(FreefallFields, {
-                                    exitHeight: settings.exitHeight,
-                                    openingDraft: jumper.openingHeight,
-                                    speedDraft: jumper.speedKmh,
-                                    speedFirst: true,
-                                    onDraftChange: (key, value) =>
-                                        setJumperDrafts((drafts) =>
-                                            drafts.map((draft, i) =>
-                                                i === index
-                                                    ? { ...draft, [key]: value }
-                                                    : draft,
-                                            ),
-                                        ),
-                                    onChange: (key, value) =>
-                                        updateJumper(index, key, value),
-                                })}
-                                <button
-                                    type="button"
-                                    class="remove-jumper"
-                                    aria-label=${t("settings.removeJumper", index + 1)}
-                                    onClick=${() => removeJumper(index)}
-                                >
-                                    ${h(Icon, { name: "trash", size: 16 })}
-                                    ${t("common.remove")}
-                                </button>
-                            </fieldset>
-                        `,
-                    )}
+                    ${
+                        jumperDrafts.length > 0 &&
+                        html`
+                            <table
+                                class="jumper-table"
+                                aria-label=${t("settings.jumpers")}
+                            >
+                                <thead>
+                                    <tr>
+                                        <th
+                                            scope="col"
+                                            aria-label=${t("settings.jumpers")}
+                                        >
+                                            #
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            tabindex="0"
+                                            data-tooltip=${t("settings.freefallSpeed")}
+                                        >
+                                            ${t("toolbar.speed")} (km/h)
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            tabindex="0"
+                                            data-tooltip=${t("settings.openingHeight")}
+                                        >
+                                            ${t("toolbar.opening")} (m)
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            aria-label=${t("common.remove")}
+                                        ></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${jumperDrafts.map(
+                                        (jumper, index) => html`
+                                            <tr
+                                                aria-label=${t("settings.jumper", index + 1)}
+                                            >
+                                                <th scope="row">
+                                                    ${index + 1}
+                                                </th>
+                                                ${h(FreefallFields, {
+                                                    exitHeight:
+                                                        settings.exitHeight,
+                                                    openingDraft:
+                                                        jumper.openingHeight,
+                                                    speedDraft: jumper.speedKmh,
+                                                    tableCells: true,
+                                                    onDraftChange: (
+                                                        key,
+                                                        value,
+                                                    ) =>
+                                                        setJumperDrafts(
+                                                            (drafts) =>
+                                                                drafts.map(
+                                                                    (
+                                                                        draft,
+                                                                        i,
+                                                                    ) =>
+                                                                        i ===
+                                                                        index
+                                                                            ? {
+                                                                                  ...draft,
+                                                                                  [key]: value,
+                                                                              }
+                                                                            : draft,
+                                                                ),
+                                                        ),
+                                                    onChange: (key, value) =>
+                                                        updateJumper(
+                                                            index,
+                                                            key,
+                                                            value,
+                                                        ),
+                                                })}
+                                                <td>
+                                                    <button
+                                                        type="button"
+                                                        class="remove-jumper"
+                                                        aria-label=${t("settings.removeJumper", index + 1)}
+                                                        data-tooltip=${t("settings.removeJumper", index + 1)}
+                                                        onClick=${() => removeJumper(index)}
+                                                    >
+                                                        ${h(Icon, { name: "trash", size: 16 })}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `,
+                                    )}
+                                </tbody>
+                            </table>
+                        `
+                    }
                 </form>
             `,
         )}

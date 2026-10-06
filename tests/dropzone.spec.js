@@ -1841,6 +1841,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     const map = page.locator(".dz-map");
     const summary = page.locator(".toolbar-summary");
     await expect(summary).toContainText(/Hyppylinja\s*\d+° · 157 km\/h/);
+    await expect(summary).toContainText(/Hyppääjien väli\s*5 s/);
     const place = async (x = 100, y = 160) => {
         await map.scrollIntoViewIfNeeded();
         if (isMobile) await map.tap({ position: { x, y } });
@@ -1874,11 +1875,11 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     const settings = page.getByRole("dialog", {
         name: "Hyppylinjan asetukset",
     });
-    const first = settings.getByRole("group", {
+    const first = settings.getByRole("row", {
         name: "Hyppääjä 1",
         exact: true,
     });
-    const second = settings.getByRole("group", {
+    const second = settings.getByRole("row", {
         name: "Hyppääjä 2",
         exact: true,
     });
@@ -1931,6 +1932,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await settings
         .getByRole("spinbutton", { name: "Hyppääjien väli (s)" })
         .fill("10");
+    await expect(summary).toContainText(/Hyppääjien väli\s*10 s/);
     await page.keyboard.press("Escape");
     const previous = await run.getAttribute("d");
     await place(170, 200);
@@ -1987,7 +1989,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await page.keyboard.press("Escape");
     await edit.click();
     await expect(
-        settings.getByRole("group", { name: /^Hyppääjä \d+$/ }),
+        settings.getByRole("row", { name: /^Hyppääjä \d+$/ }),
     ).toHaveCount(2);
     await settings
         .getByRole("button", { name: "Poista hyppääjä 1", exact: true })
@@ -2044,6 +2046,122 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await place();
     await expect(jumpers).toHaveCount(1);
     await expect(arrows).toHaveCount(1);
+});
+
+test("jumper inputs step opening altitude by 100 m and freefall speed by 20 km/h", async ({
+    page,
+}) => {
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    const settings = page.getByRole("dialog", {
+        name: "Hyppylinjan asetukset",
+    });
+    const next = settings.getByRole("group", {
+        name: "Lisättävän hyppääjän asetukset",
+    });
+    const first = settings.getByRole("row", {
+        name: "Hyppääjä 1",
+        exact: true,
+    });
+    for (const group of [next, first]) {
+        const opening = group.getByRole("spinbutton", {
+            name: "Avauskorkeus (m)",
+            exact: true,
+        });
+        const speed = group.getByRole("spinbutton", {
+            name: "Vapaapudotusnopeus (km/h)",
+            exact: true,
+        });
+        await opening.press("ArrowUp");
+        await expect(opening).toHaveValue("900");
+        await speed.press("ArrowUp");
+        await expect(speed).toHaveValue("200");
+    }
+    await expect(page.locator(".toolbar-summary")).toContainText("900 m");
+    await expect(page.locator(".toolbar-summary")).toContainText("200 km/h");
+    await expect
+        .poll(
+            () =>
+                JSON.parse(
+                    new URL(page.url()).searchParams.get("map_jumpers"),
+                )[0],
+        )
+        .toEqual({ openingHeight: 900, speedKmh: 200 });
+});
+
+test("jump run explanations open in help dialogs and return to the settings", async ({
+    page,
+}) => {
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    const settings = page.getByRole("dialog", {
+        name: "Hyppylinjan asetukset",
+    });
+    const exitExplanation = page.getByText(
+        "Uloshyppykorkeus on yhteinen kaikille hyppääjille.",
+        { exact: true },
+    );
+    const speedExplanation = page.getByText(
+        /^Syötä todellinen ilmanopeus \(TAS\), ei mittarinopeutta \(IAS\)\./,
+    );
+    await expect(exitExplanation).toBeHidden();
+    await expect(speedExplanation).toBeHidden();
+
+    await settings
+        .getByRole("button", {
+            name: "Uloshyppykorkeus (m): Ohje",
+            exact: true,
+        })
+        .click();
+    await expect(exitExplanation).toBeVisible();
+    await expect(
+        page.getByText("Tuuliprofiili kattaa 800–4200 m.", { exact: true }),
+    ).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(exitExplanation).toBeHidden();
+    await expect(settings).toBeVisible();
+
+    await settings
+        .getByRole("button", {
+            name: "Todellinen ilmanopeus (km/h): Ohje",
+            exact: true,
+        })
+        .click();
+    await expect(speedExplanation).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(speedExplanation).toBeHidden();
+    await expect(settings).toBeVisible();
+    for (const [label, explanation] of [
+        [
+            "Hyppääjien väli (s): Ohje",
+            /^Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina\./,
+        ],
+        [
+            "Hyppyryhmien oletusmäärä: Ohje",
+            /^Hyppyryhmien määrä, kun hyppylinja sijoitetaan ensimmäisen kerran/,
+        ],
+    ]) {
+        const text = page.getByText(explanation);
+        await expect(text).toBeHidden();
+        await settings
+            .getByRole("button", { name: label, exact: true })
+            .click();
+        await expect(text).toBeVisible();
+        await page.keyboard.press("Escape");
+        await expect(text).toBeHidden();
+        await expect(settings).toBeVisible();
+    }
+    await settings
+        .getByRole("spinbutton", {
+            name: "Todellinen ilmanopeus (km/h)",
+            exact: true,
+        })
+        .fill("180");
+    await expect(page.locator(".toolbar-summary")).toContainText(
+        /Hyppylinja\s*\d+° · 180 km\/h/,
+    );
 });
 
 test("jump run heading displays whole degrees without changing its precision", async ({
@@ -2285,7 +2403,7 @@ test("rotation preserves the current opening after settings, group, and wind edi
         await direction.fill(String(++degrees));
         expect(await openingDistance(page, opening)).toBeLessThan(1);
     }
-    const middleJumper = dialog.getByRole("group", {
+    const middleJumper = dialog.getByRole("row", {
         name: "Hyppääjä 3",
         exact: true,
     });
@@ -3367,11 +3485,11 @@ test("jump run adds jumpers using immediately applied template settings", async 
     await expect(template).toContainText("240 km/h");
     await dialog.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await expect(settings).toBeVisible();
-    const first = settings.getByRole("group", {
+    const first = settings.getByRole("row", {
         name: "Hyppääjä 1",
         exact: true,
     });
-    const second = settings.getByRole("group", {
+    const second = settings.getByRole("row", {
         name: "Hyppääjä 2",
         exact: true,
     });
@@ -3413,7 +3531,7 @@ test("jump run adds jumpers using immediately applied template settings", async 
     await expect(
         second.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
     ).toHaveValue("240");
-    const third = settings.getByRole("group", {
+    const third = settings.getByRole("row", {
         name: "Hyppääjä 3",
         exact: true,
     });

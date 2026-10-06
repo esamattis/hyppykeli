@@ -57,6 +57,39 @@ test("keyboard focus shows tooltips and Escape dismisses them", async ({
     await expect(tooltip).toBeVisible();
 });
 
+test("map summary values explain their meaning on hover and keyboard focus", async ({
+    page,
+}) => {
+    const values = page.locator(".toolbar-summary > span");
+    const tooltip = page.getByRole("tooltip");
+    const explanations = [
+        "Kaikkien hyppylinjan hyppääjien uloshyppykorkeus.",
+        "Seuraavaksi lisättävän hyppääjän avauskorkeus.",
+        "Seuraavaksi lisättävän hyppääjän vapaapudotusnopeus.",
+        "Hyppylinjan suunta ja lentokoneen todellinen ilmanopeus. Tuuli huomioidaan maanopeuden laskennassa.",
+        "Peräkkäisten uloshyppyjen välinen aika hyppylinjalla.",
+    ];
+    await expect(values).toHaveCount(explanations.length);
+    await page.locator(".toolbar-summary").scrollIntoViewIfNeeded();
+    await page.evaluate(() => new Promise(requestAnimationFrame));
+    for (const [index, explanation] of explanations.entries()) {
+        const value = values.nth(index);
+        await value.hover();
+        await expect(tooltip).toBeVisible();
+        await expect(tooltip.locator("[data-tooltip-text]")).toHaveText(
+            explanation,
+        );
+        await page.mouse.move(0, 0);
+        await value.focus();
+        await expect(tooltip).toBeVisible();
+        await expect(tooltip.locator("[data-tooltip-text]")).toHaveText(
+            explanation,
+        );
+        await page.keyboard.press("Escape");
+        await expect(tooltip).toBeHidden();
+    }
+});
+
 test("touch tooltips stay open until the next touch starts", async ({
     page,
 }) => {
