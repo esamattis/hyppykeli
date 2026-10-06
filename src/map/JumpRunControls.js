@@ -76,6 +76,7 @@ export function JumpRunControls({
                         icon: "rotateCounterclockwise",
                         size: 20,
                         disabled: !canAim,
+                        closeOnSelect: false,
                         onSelect: () =>
                             onChange({
                                 ...settings,
@@ -87,6 +88,7 @@ export function JumpRunControls({
                         icon: "rotateClockwise",
                         size: 20,
                         disabled: !canAim,
+                        closeOnSelect: false,
                         onSelect: () =>
                             onChange({
                                 ...settings,

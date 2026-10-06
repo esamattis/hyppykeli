@@ -1786,10 +1786,33 @@ for (const jumperCount of [1, 4]) {
         const landing = await middleOpening(page, true);
         const expectLanding = async () =>
             expect(await openingDistance(page, landing, true)).toBeLessThan(1);
-        await clickDirection(page, directionControls.clockwise);
-        await expectLanding();
-        await clickDirection(page, directionControls.counterclockwise);
-        await expectLanding();
+        await directionTrigger(page).click();
+        for (const [control, directions] of [
+            [directionControls.clockwise, [90, 180, 270, 0]],
+            [directionControls.counterclockwise, [270, 180, 90, 0]],
+        ]) {
+            for (const direction of directions) {
+                await directionControl(page, control).click();
+                await expect(directionMenu(page)).toBeVisible();
+                await expect(directionTrigger(page)).toHaveAttribute(
+                    "aria-expanded",
+                    "true",
+                );
+                await expect
+                    .poll(
+                        () =>
+                            JSON.parse(
+                                new URL(page.url()).searchParams.get(
+                                    "map_run_settings",
+                                ),
+                            ).direction,
+                    )
+                    .toBe(direction);
+                await expectLanding();
+            }
+        }
+        await page.keyboard.press("Escape");
+        await expect(directionMenu(page)).toBeHidden();
         await page
             .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
             .click();
