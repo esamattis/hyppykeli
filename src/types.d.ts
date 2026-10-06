@@ -329,6 +329,7 @@ interface QueryParams {
     map_full_window?: string;
     map_wind?: string;
     map_run_start?: string;
+    map_run_automatic?: string;
     map_jumpers?: string;
     map_next_jumper?: string;
     map_run_settings?: string;

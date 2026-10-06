@@ -3716,8 +3716,10 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
         })
         .click();
     const frame = card.locator(".map-frame");
+    await expect(frame).toHaveClass(/full-window/);
+    const fittedZoom = zoom();
     await wheel();
-    await expect.poll(zoom).not.toBe(initialZoom);
+    await expect.poll(zoom).not.toBe(fittedZoom);
     const expandedZoom = zoom();
     await clickDirection(page, directionControls.drag);
     await wheel();
@@ -5068,4 +5070,80 @@ test("FMI XML caches survive reload and moving request times without refetching"
     await page.reload();
     await expect.poll(ready).toBe(true);
     expect(requests).toBe(2);
+});
+
+test("automatic jump run follows new winds until edited and can be reenabled", async ({
+    page,
+}) => {
+    await page.goto(
+        `${developerPath}&DEV_ground_obs=10,10,0,1&lat=62.4&lon=25.6&DEV_upper_winds=10,0;10,0;10,0;10,0;10,0`,
+    );
+    const automatic = page.getByRole("checkbox", {
+        name: "Päivitä automaattisesti",
+    });
+    await expect(automatic).toBeChecked();
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+    const first = new URL(page.url()).searchParams.get("map_run_start");
+    const changeWind = async (speed) => {
+        await page.evaluate(async (speed) => {
+            const { navigateQs } = await import("#app/app/settings.js");
+            navigateQs(
+                { DEV_upper_winds: `${speed},0;10,0;10,0;10,0;10,0` },
+                { replace: true },
+            );
+        }, speed);
+    };
+    for (const fullWindow of [true, false]) {
+        await centerMapOn(page, { lat: 60, lng: 20 });
+        await page.evaluate(async (fullWindow) => {
+            const { navigateQs } = await import("#app/app/settings.js");
+            navigateQs(
+                { map_full_window: JSON.stringify(fullWindow) },
+                { replace: true },
+            );
+        }, fullWindow);
+        await expect
+            .poll(() =>
+                Number(new URL(page.url()).searchParams.get("map_center_lat")),
+            )
+            .toBeGreaterThan(62);
+        expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
+            first,
+        );
+    }
+    // Wind updates refit even a viewport chosen by the user.
+    await centerMapOn(page, { lat: 60, lng: 20 });
+    // Only the highest layer changes: canopy winds remain the same.
+    await changeWind(20);
+    await expect
+        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
+        .not.toBe(first);
+    await expectAutomaticOpeningsUpwind(page);
+    await expect
+        .poll(() =>
+            Number(new URL(page.url()).searchParams.get("map_center_lat")),
+        )
+        .toBeGreaterThan(62);
+    await clickDirection(page, directionControls.clockwise);
+    await expect(automatic).not.toBeChecked();
+    const edited = new URL(page.url()).searchParams.get("map_run_start");
+    await changeWind(15);
+    await expect(automatic).not.toBeChecked();
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(edited);
+    await automatic.check();
+    await expect
+        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
+        .not.toBe(edited);
+    const enabled = new URL(page.url()).searchParams.get("map_run_start");
+    await changeWind(25);
+    await expect
+        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
+        .not.toBe(enabled);
+    await automatic.uncheck();
+    const paused = new URL(page.url()).searchParams.get("map_run_start");
+    await changeWind(5);
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(paused);
+    await page.reload();
+    await expect(automatic).not.toBeChecked();
+    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(paused);
 });

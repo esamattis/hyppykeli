@@ -177,6 +177,13 @@ export function DropzoneMap() {
             flex: 1;
             min-height: 0;
         }
+        .automatic-jump-run {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
         .map-layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr);
@@ -287,6 +294,10 @@ export function DropzoneMap() {
             pointer-events: none;
         }
         ${cardHeadingStyles}
+        .card-heading {
+            flex-wrap: wrap;
+            align-items: center;
+        }
     `);
     /** @type {import('preact').RefObject<HTMLDivElement>} */
     const mapRef = useRef(null);
@@ -323,6 +334,15 @@ export function DropzoneMap() {
         /** @type {import('leaflet').LatLngLiteral | null} */ (null),
         (value) => value === null || isValidPosition(value),
     );
+    const [automaticJumpRun, setAutomaticJumpRun] = useMapState(
+        "map_run_automatic",
+        true,
+        (value) => typeof value === "boolean",
+    );
+    const disableAutomaticJumpRun = () => {
+        if (QUERY_PARAMS.peek().map_run_automatic !== "false")
+            setAutomaticJumpRun(false);
+    };
     const [placingJumpRunDirection, setPlacingJumpRunDirection] =
         useState(false);
     const [draggingJumpRunDirection, setDraggingJumpRunDirection] =
@@ -716,6 +736,7 @@ export function DropzoneMap() {
     /** @param {import('leaflet').LatLngLiteral} target @param {JumpRunPlacement} [placement] */
     const positionJumpRunAt = (target, placement = "opening") => {
         if (!isValidPosition(target)) return;
+        disableAutomaticJumpRun();
         const creating = !jumpRunStart;
         const settings =
             creating && !QUERY_PARAMS.value.map_run_settings
@@ -771,6 +792,7 @@ export function DropzoneMap() {
         landingCoordinates,
         automaticSettings,
         automaticGroup,
+        freefallWinds,
         canopyWinds,
     ]);
     const automaticStart = useMemo(
@@ -867,19 +889,35 @@ export function DropzoneMap() {
         if (!jumpRunStart) return;
         fitJumpRunView(jumpRunStart, jumpRunSettings, jumpers, calculation);
     };
-    const initialPositionHandled = useRef(
-        !!jumpRunStart || QUERY_PARAMS.peek().map_run_start === "null",
+    const previousFullWindow = useRef(fullWindow);
+    useLayoutEffect(() => {
+        if (previousFullWindow.current === fullWindow) return;
+        previousFullWindow.current = fullWindow;
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
+            return;
+        leafletInstance.invalidateSize({ pan: false });
+        positionView();
+    }, [fullWindow, leafletInstance]);
+    const automaticUpdateKey = JSON.stringify([
+        landingCoordinates,
+        freefallWinds,
+        canopyWinds,
+    ]);
+    const lastAutomaticUpdate = useRef(
+        jumpRunStart || QUERY_PARAMS.peek().map_run_start === "null"
+            ? automaticUpdateKey
+            : null,
     );
     useEffect(() => {
-        if (initialPositionHandled.current) return;
-        if (jumpRunStart || QUERY_PARAMS.peek().map_run_start === "null") {
-            initialPositionHandled.current = true;
+        if (
+            !automaticJumpRun ||
+            !canPositionAutomatic ||
+            !leafletInstance ||
+            QUERY_PARAMS.peek().map_run_start === "null" ||
+            lastAutomaticUpdate.current === automaticUpdateKey
+        )
             return;
-        }
-        if (!canPositionAutomatic || !leafletInstance) return;
-        // Wait for a feasible placement and fresh upper/lower winds. Once positioned,
-        // later weather updates must not overwrite the user's edits or clear.
-        initialPositionHandled.current = true;
+        lastAutomaticUpdate.current = automaticUpdateKey;
         positionAutomaticJumpRun();
     });
     beginDirectionDragRef.current = (pointer) => {
@@ -912,6 +950,7 @@ export function DropzoneMap() {
     };
     aimJumpRunAtRef.current = (direction, center) => {
         if (!Number.isFinite(direction)) return;
+        disableAutomaticJumpRun();
         const settings = { ...jumpRunSettings, direction };
         const calculation = calculateJumpRun(freefallWinds, settings);
         // Keep the gesture's exit-sequence center fixed even when the new
@@ -933,6 +972,7 @@ export function DropzoneMap() {
     };
     /** @param {JumpRunJumper[]} group */
     const applyJumpers = (group) => {
+        disableAutomaticJumpRun();
         if (
             !jumpRunStart ||
             !jumpRunVelocity ||
@@ -959,6 +999,7 @@ export function DropzoneMap() {
     };
     /** @param {JumpRunSettings} next */
     const applyJumpRunSettings = (next) => {
+        disableAutomaticJumpRun();
         if (
             next.direction === jumpRunSettings.direction ||
             !jumpRunStart ||
@@ -1551,6 +1592,31 @@ export function DropzoneMap() {
                         `,
                     )}
                 </h2>
+                <label class="automatic-jump-run">
+                    <input
+                        type="checkbox"
+                        checked=${automaticJumpRun}
+                        onChange=${
+                            /** @param {Event} event */ (event) => {
+                                const checked =
+                                    /** @type {HTMLInputElement} */ (
+                                        event.currentTarget
+                                    ).checked;
+                                setAutomaticJumpRun(checked);
+                                if (checked) {
+                                    lastAutomaticUpdate.current = null;
+                                    if (!jumpRunStart)
+                                        navigateQs(
+                                            { map_run_start: undefined },
+                                            { replace: true },
+                                        );
+                                    positionAutomaticJumpRun();
+                                }
+                            }
+                        }
+                    />
+                    ${t("map.automaticUpdate")}
+                </label>
                 ${h(DataSource, {
                     sources: [
                         "Open-Meteo",
@@ -1640,6 +1706,7 @@ export function DropzoneMap() {
                         },
                         arrowCount: jumpRunStart ? Math.max(1, jumperCount) : 0,
                         onClear: () => {
+                            disableAutomaticJumpRun();
                             setPlacementUnavailable(null);
                             openingTargetRef.current = null;
                             setJumpRunSettings({
@@ -1651,6 +1718,7 @@ export function DropzoneMap() {
                             setJumpers([{ ...DEFAULT_JUMPER }]);
                         },
                         onUndo: () => {
+                            disableAutomaticJumpRun();
                             if (jumperCount > 1)
                                 applyJumpers(jumpers.slice(0, -1));
                             else {
