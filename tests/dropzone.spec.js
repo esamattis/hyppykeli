@@ -296,6 +296,66 @@ test("menu opens and closes with its toggle", async ({ page }) => {
     await expect(menu).not.toBeInViewport();
 });
 
+for (const { name, predefinedName } of [
+    { name: "EFUT", predefinedName: "EFUT" },
+    { name: "Meripuisto", predefinedName: "Meripuisto" },
+    { name: undefined, predefinedName: "EFJY" },
+    { name: "Custom dropzone", predefinedName: undefined },
+]) {
+    test(`menu reset restores ${name ?? "the ICAO name"} and clears storage before reloading`, async ({
+        page,
+    }) => {
+        await page.evaluate(async (name) => {
+            const { navigateQs } = await import("#app/app/settings.js");
+            navigateQs({ name, map_zoom: "9" });
+            localStorage.setItem("saved_dzs", '[{"name":"Saved dropzone"}]');
+            localStorage.setItem("language", "en");
+            localStorage.setItem("cached-test-data", "old data");
+        }, name);
+
+        const expectedSearch = predefinedName
+            ? await page.evaluate(async (name) => {
+                  const { completeDropzones, partialDropzones, dropzoneHref } =
+                      await import("#app/dropzones.js");
+                  const dropzone = [
+                      ...completeDropzones,
+                      ...partialDropzones,
+                  ].find((dz) => dz.name === name);
+                  return new URL(dropzoneHref(dropzone), location.href).search;
+              }, predefinedName)
+            : new URL(page.url()).search;
+
+        // Capture storage and the URL before startup can repopulate caches or
+        // update the query string with map defaults.
+        await page.addInitScript(() => {
+            sessionStorage.setItem(
+                "reset-result",
+                JSON.stringify({
+                    search: location.search,
+                    storage: { ...localStorage },
+                }),
+            );
+        });
+        await page
+            .getByRole("button", { name: "Valikko", exact: true })
+            .click();
+        await Promise.all([
+            page.waitForEvent("load"),
+            page
+                .getByRole("button", { name: "Palauta oletukset", exact: true })
+                .click(),
+        ]);
+
+        const result = await page.evaluate(() =>
+            JSON.parse(sessionStorage.getItem("reset-result")),
+        );
+        expect(result).toEqual({ search: expectedSearch, storage: {} });
+        await expect(page.locator("#title .title-name")).toHaveText(
+            name ?? "EFJY",
+        );
+    });
+}
+
 test("language can be changed live and persists", async ({ page }) => {
     await page.getByRole("button", { name: "Valikko", exact: true }).click();
 

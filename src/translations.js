@@ -28,6 +28,7 @@ export const english = {
     "menu.saved": "Saved",
     "menu.saveCurrent": "+ Save current",
     "menu.home": "Home",
+    "menu.reset": "Reset",
     "menu.removeSaved": (/** @type {string} */ name) =>
         `Remove saved dropzone ${name}`,
     "menu.confirmRemove": "Are you sure you want to remove the saved DZ?",
@@ -471,6 +472,7 @@ const finnish = {
     "menu.saved": "Tallennetut",
     "menu.saveCurrent": "+ Tallenna nykyinen",
     "menu.home": "Etusivulle",
+    "menu.reset": "Palauta oletukset",
     "menu.removeSaved": (name) => `Poista tallennettu hyppypaikka ${name}`,
     "menu.confirmRemove": "Haluatko varmasti poistaa tallennetun DZ:n?",
     "menu.namePrompt": "Nimi",

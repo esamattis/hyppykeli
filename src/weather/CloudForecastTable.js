@@ -6,7 +6,6 @@ import { isNullish, whenAll } from "#app/shared/values.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { ForecastAltitude } from "#app/weather/ForecastAltitude.js";
-import { formatExactAltitude } from "#app/weather/altitudes.js";
 import { CloudCoverSquare } from "#app/weather/CloudIndicators.js";
 import { getLiftedCondensationLevel } from "#app/weather/calculations.js";
 import {
@@ -278,11 +277,7 @@ export function CloudForecastTable(props) {
                                     ${layers.map((layer) => {
                                         const cover = layer?.cover;
                                         return html`
-                                            <td
-                                                class="forecast-reading"
-                                                tabindex=${layer ? 0 : undefined}
-                                                data-tooltip=${layer ? `${level} hPa · ${t("cloud.altitudeAboveDropzone")}: ${formatExactAltitude(layer.height)}` : undefined}
-                                            >
+                                            <td class="forecast-reading">
                                                 ${
                                                     isNullish(cover)
                                                         ? "—"

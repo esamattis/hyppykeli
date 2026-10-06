@@ -142,7 +142,7 @@ export function ManualMode(props) {
     const fieldId = useId();
     const scope = useScope(css`
         :scope.developer-controls {
-            margin-top: 20px;
+            min-width: 0;
         }
         :scope:is(dialog) {
             width: 520px;

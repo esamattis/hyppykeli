@@ -27,6 +27,17 @@ function savePreviousDz(e) {
     }
 }
 
+function resetCurrentDz() {
+    const dropzone = OTHER_DZs.find((dz) => dz.name === NAME.value);
+    if (dropzone) {
+        const url = new URL(location.href);
+        url.search = new URL(dropzoneHref(dropzone), url).search;
+        history.replaceState(null, "", url);
+    }
+    localStorage.clear();
+    location.reload();
+}
+
 /** @param {{ manualEditorRef: import('preact').RefObject<ManualModeHandle> }} props */
 export function SideMenu({ manualEditorRef }) {
     const scope = useScope(css`
@@ -189,12 +200,31 @@ export function SideMenu({ manualEditorRef }) {
         }
 
         .menu-footer {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
             font-size: 0.8rem;
+        }
+
+        .menu-footer > a {
+            grid-column: 1 / -1;
+            justify-self: start;
+            padding: 4px 0;
+            margin-bottom: 4px;
+        }
+
+        .menu-footer > button,
+        .menu-footer > .developer-controls > button {
+            width: 100%;
+            height: 100%;
+            min-height: 44px;
+            padding: 10px;
+            background: var(--color-surface-soft);
+        }
+
+        .menu-footer > button:hover,
+        .menu-footer > .developer-controls > button:hover {
+            background: var(--color-surface-hover);
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -329,6 +359,9 @@ export function SideMenu({ manualEditorRef }) {
 
                 <footer class="menu-section menu-footer">
                     <a href="/?no_redirect=1">${t("menu.home")}</a>
+                    <button type="button" onClick=${resetCurrentDz}>
+                        ${t("menu.reset")}
+                    </button>
                     ${h(ManualMode, {
                         editorRef: manualEditorRef,
                         onOpen: () => {
