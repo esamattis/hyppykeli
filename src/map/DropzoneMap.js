@@ -1,7 +1,12 @@
 // @ts-check
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
 import { getCanopyDrift } from "#app/map/canopy.js";
-import { QUERY_PARAMS, getQs, navigateQs } from "#app/app/settings.js";
+import {
+    DROPZONE_ELEVATION,
+    QUERY_PARAMS,
+    getQs,
+    navigateQs,
+} from "#app/app/settings.js";
 import { Help } from "#app/shared/Help.js";
 import { formatClock } from "#app/shared/dates.js";
 import { Icon, WindArrow } from "#app/shared/icons.js";
@@ -678,6 +683,7 @@ export function DropzoneMap() {
         freefallWinds,
         canopyWinds,
     } = getMapWindData(now);
+    const elevation = DROPZONE_ELEVATION.value;
     const upperWindOverride = QUERY_PARAMS.value.DEV_upper_winds;
     const calculation = calculateJumpRun(freefallWinds, jumpRunSettings);
     const jumpRunVelocity = calculation.velocity;
@@ -1327,6 +1333,7 @@ export function DropzoneMap() {
         jumperCount,
         data,
         upperWindOverride,
+        elevation,
         time,
         now,
     ]);
@@ -1392,6 +1399,7 @@ export function DropzoneMap() {
         jumpers,
         data,
         upperWindOverride,
+        elevation,
         ground,
         time,
         now,

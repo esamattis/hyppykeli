@@ -1891,7 +1891,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
         settings.getByRole("button", { name: /^(Tallenna|Peruuta)$/ }),
     ).toHaveCount(0);
     await expect(
-        settings.getByRole("spinbutton", { name: "Hyppääjien väli (s)" }),
+        settings.getByRole("spinbutton", { name: "Hyppääjien porrastus (s)" }),
     ).toHaveValue("5");
     await first
         .getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" })
@@ -1930,7 +1930,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(run).toHaveAttribute("d", runPath);
     await expect(arrows.nth(1)).not.toHaveAttribute("d", secondArrow);
     await settings
-        .getByRole("spinbutton", { name: "Hyppääjien väli (s)" })
+        .getByRole("spinbutton", { name: "Hyppääjien porrastus (s)" })
         .fill("10");
     await expect(summary).toContainText(/Hyppääjien väli\s*10 s/);
     await page.keyboard.press("Escape");
@@ -2116,9 +2116,12 @@ test("jump run explanations open in help dialogs and return to the settings", as
         .click();
     await expect(exitExplanation).toBeVisible();
     await expect(
-        page.getByText("Vapaapudotuslaskenta tukee korkeuksia 800–4200 m.", {
-            exact: true,
-        }),
+        page.getByText(
+            "Avauskorkeuden on oltava vähintään 800 m hyppypaikan maanpinnasta. Uloshyppykorkeuden ja hyppypaikan korkeuden merenpinnasta summa saa olla enintään ylimmän ennustetason korkeus, noin 4200 m merenpinnasta.",
+            {
+                exact: true,
+            },
+        ),
     ).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(exitExplanation).toBeHidden();
@@ -2136,7 +2139,7 @@ test("jump run explanations open in help dialogs and return to the settings", as
     await expect(settings).toBeVisible();
     for (const [label, explanation] of [
         [
-            "Hyppääjien väli (s): Ohje",
+            "Hyppääjien porrastus (s): Ohje",
             /^Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina\./,
         ],
         [
@@ -2425,7 +2428,7 @@ test("rotation preserves the current opening after settings, group, and wind edi
     });
     let degrees = 0;
     for (const [name, value] of [
-        ["Hyppääjien väli (s)", "10"],
+        ["Hyppääjien porrastus (s)", "10"],
         ["Todellinen ilmanopeus (km/h)", "180"],
         ["Uloshyppykorkeus (m)", "3500"],
     ]) {
@@ -2622,7 +2625,7 @@ test("direction dragging coalesces movements and commits the final position on r
         .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
         .click();
     await page
-        .getByRole("spinbutton", { name: "Hyppääjien väli (s)" })
+        .getByRole("spinbutton", { name: "Hyppääjien porrastus (s)" })
         .fill("10");
     await page.keyboard.press("Escape");
     const opening = await middleOpening(page);

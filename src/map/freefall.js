@@ -9,7 +9,7 @@ export const FREEFALL_SPEED = 180 / 3.6;
  * Estimate wind-only drift at constant descent speed, or simulate a jump exit
  * with gravity and drag when the aircraft exit velocity is supplied.
  * Offsets are metres east/north of exit; bearings are meteorological (from).
- * @param {FreefallWindLevel[]} winds Descending altitude order.
+ * @param {FreefallWindLevel[]} winds Descending heights above the dropzone.
  * @param {number} [exitHeight]
  * @param {number} [speedKmh]
  * @param {number} [openingHeight]
@@ -27,9 +27,9 @@ export function getFreefallDrift(
     if (
         !Number.isFinite(exitHeight) ||
         exitHeight <= openingHeight ||
-        exitHeight > 4200 ||
+        exitHeight > (winds[0]?.height ?? 0) ||
         !Number.isFinite(openingHeight) ||
-        openingHeight < 800 ||
+        openingHeight < Math.max(800, winds.at(-1)?.height ?? 800) ||
         !Number.isFinite(speedKmh) ||
         speedKmh <= 0 ||
         (exitVelocity &&
@@ -38,7 +38,12 @@ export function getFreefallDrift(
         winds.length !== 4 ||
         winds.some(
             ({ height, speed, direction }, index) =>
-                height !== [4200, 3000, 1500, 800][index] ||
+                !Number.isFinite(height) ||
+                Math.abs(
+                    height -
+                        (winds[0]?.height ?? 0) -
+                        ([0, -1200, -2700, -3400][index] ?? NaN),
+                ) > 1e-8 ||
                 speed === null ||
                 !Number.isFinite(speed) ||
                 speed < 0 ||

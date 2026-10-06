@@ -265,8 +265,11 @@ export const english = {
 
     "settings.jumpRunDirectionHelp":
         "Direction of travel over the ground: 0°/360° north, 90° east, 180° south, and 270° west. Wind correction determines the aircraft heading needed to follow this track. Changing direction rotates an existing run around its central predicted opening point. Missing wind data or a track that cannot be flown at the selected airspeed can prevent the calculation.",
+    "settings.elevation": "Dropzone elevation (m)",
+    "settings.elevationHelp":
+        "Dropzone height above sea level. Used to adjust wind calculations. FMI station data does not provide elevation, so the default is 0 m. Clear the field to restore the default.",
     "settings.altitudeReferenceHelp":
-        "The calculation uses nominal forecast heights, approximately above sea level, without correcting for dropzone elevation. These values are not a terrain-adjusted height-above-ground model.",
+        "Exit and opening altitudes are heights above the dropzone. The calculation subtracts the configured dropzone elevation from nominal forecast heights above sea level for freefall, aircraft wind correction, and canopy drift. Forecast heights remain approximate; surrounding terrain is not modelled.",
     "settings.freefallSpeedHelp":
         "The vertical terminal speed used in the freefall estimate. The calculation starts with zero vertical speed and includes forward movement inherited from the aircraft. Wind changes affect the jumper gradually. Presets set only this speed; they do not model horizontal tracking or wingsuit glide.",
     "settings.nextJumperHelp":
@@ -280,7 +283,7 @@ export const english = {
     "settings.openingHeight": "Opening altitude (m)",
     "settings.freefallSpeed": "Freefall speed (km/h)",
     "settings.jumpRunSpeed": "True airspeed (km/h)",
-    "settings.jumperInterval": "Jumper interval (s)",
+    "settings.jumperInterval": "Jumper separation (s)",
     "settings.jumperIntervalHelp":
         "Time in seconds between consecutive jump group exits. The same interval applies to every group on the jump run. The aircraft’s ground speed, including wind at exit altitude, determines the distance between exit points. Different freefall speeds and opening altitudes can produce different spacing between opening points.",
     "settings.nextJumper": "Settings for the next jumper",
@@ -300,7 +303,7 @@ export const english = {
     "settings.exitExplanation":
         "The exit altitude is shared by all jumpers. It must be above every existing jumper’s opening altitude and the opening altitude set for the next jumper.",
     "settings.profileRange":
-        "The freefall calculation supports altitudes from 800 to 4,200 m.",
+        "Opening must be at least 800 m above the dropzone. Exit plus dropzone elevation must not exceed the highest forecast level, approximately 4,200 m above sea level.",
     "settings.openingRange":
         "Altitude where the predicted freefall path ends. It must be at least 800 m and below exit altitude. Lower openings generally allow more time for freefall drift.",
     "highWinds.title": "ECMWF upper-wind forecasts",
@@ -657,8 +660,11 @@ const finnish = {
     "toolbar.windLevels": "Tuulikorkeudet",
     "settings.jumpRunDirectionHelp":
         "Lentoradan suunta maan suhteen: 0°/360° pohjoinen, 90° itä, 180° etelä ja 270° länsi. Tuulikorjaus määrittää lentokoneen nokan suunnan, jolla tätä lentorataa seurataan. Suunnan muuttaminen kiertää olemassa olevaa hyppylinjaa sen keskimmäisen ennustetun avautumiskohdan ympäri. Puuttuvat tuulitiedot tai lentorata, jota ei voi lentää valitulla ilmanopeudella, voivat estää laskennan.",
+    "settings.elevation": "Hyppypaikan korkeus merenpinnasta (m)",
+    "settings.elevationHelp":
+        "Hyppypaikan korkeus merenpinnasta. Käytetään tuulilaskelmien korjaamiseen. FMI:n asematiedot eivät sisällä korkeutta, joten oletus on 0 m. Tyhjennä kenttä palauttaaksesi oletuksen.",
     "settings.altitudeReferenceHelp":
-        "Laskenta käyttää ennusteen nimelliskorkeuksia, likimäärin merenpinnasta, ilman hyppypaikan korkeuden korjausta. Arvot eivät muodosta maaston mukaan korjattua mallia korkeudesta maanpinnan yläpuolella.",
+        "Uloshyppy- ja avauskorkeudet mitataan hyppypaikan maanpinnasta. Laskenta vähentää asetetun hyppypaikan korkeuden merenpinnasta ennusteen nimelliskorkeuksista vapaapudotuksen, lentokoneen tuulikorjauksen ja varjon varassa tapahtuvan ajautumisen laskentaa varten. Ennustekorkeudet ovat edelleen likimääräisiä; ympäröivää maastoa ei mallinneta.",
     "settings.freefallSpeedHelp":
         "Vapaapudotusarviossa käytettävä pystysuuntainen rajanopeus. Laskennan pystynopeus alkaa nollasta, ja arvio huomioi lentokoneelta perityn etenemisnopeuden. Tuulen muutokset vaikuttavat hyppääjään vähitellen. Esivalinnat asettavat vain tämän nopeuden; ne eivät mallinna vaakasuuntaista liukumista tai liitopuvun liitoa.",
     "settings.nextJumperHelp":
@@ -672,7 +678,7 @@ const finnish = {
     "settings.openingHeight": "Avauskorkeus (m)",
     "settings.freefallSpeed": "Vapaapudotusnopeus (km/h)",
     "settings.jumpRunSpeed": "Todellinen ilmanopeus (km/h)",
-    "settings.jumperInterval": "Hyppääjien väli (s)",
+    "settings.jumperInterval": "Hyppääjien porrastus (s)",
     "settings.jumperIntervalHelp":
         "Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina. Sama aikaväli koskee jokaista hyppylinjan ryhmää. Lentokoneen maanopeus, jossa huomioidaan tuuli uloshyppykorkeudella, määrää uloshyppykohtien välimatkan. Erilaiset vapaapudotusnopeudet ja avauskorkeudet voivat tuottaa erilaiset avautumiskohtien välit.",
     "settings.nextJumper": "Lisättävän hyppääjän asetukset",
@@ -691,7 +697,7 @@ const finnish = {
     "settings.exitExplanation":
         "Uloshyppykorkeus on yhteinen kaikille hyppääjille. Sen on oltava jokaisen olemassa olevan hyppääjän avauskorkeutta sekä lisättävälle hyppääjälle asetettua avauskorkeutta ylempänä.",
     "settings.profileRange":
-        "Vapaapudotuslaskenta tukee korkeuksia 800–4200 m.",
+        "Avauskorkeuden on oltava vähintään 800 m hyppypaikan maanpinnasta. Uloshyppykorkeuden ja hyppypaikan korkeuden merenpinnasta summa saa olla enintään ylimmän ennustetason korkeus, noin 4200 m merenpinnasta.",
     "settings.openingRange":
         "Korkeus, johon ennustettu vapaapudotusreitti päättyy. Sen on oltava vähintään 800 m ja uloshyppykorkeutta alempana. Matalampi avaus antaa yleensä enemmän aikaa vapaapudotusajautumiselle.",
     "highWinds.title": "ECMWF Ylätuuliennusteet",

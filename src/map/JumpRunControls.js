@@ -1,4 +1,5 @@
 // @ts-check
+import { DROPZONE_ELEVATION, navigateQs } from "#app/app/settings.js";
 import { Dialog } from "#app/shared/Dialog.js";
 import { DropdownMenu } from "#app/shared/DropdownMenu.js";
 import { FreefallHelp } from "#app/map/FreefallHelp.js";
@@ -181,6 +182,9 @@ export function JumpRunControls({
     const [separationDraft, setSeparationDraft] = useState(
         String(settings.separationSeconds),
     );
+    const [elevationDraft, setElevationDraft] = useState(
+        String(DROPZONE_ELEVATION.value),
+    );
     const [exitDraft, setExitDraft] = useState(String(settings.exitHeight));
     const [nextDraft, setNextDraft] = useState({
         openingHeight: String(nextJumper.openingHeight),
@@ -217,6 +221,7 @@ export function JumpRunControls({
             openingHeight: String(nextJumper.openingHeight),
             speedKmh: String(nextJumper.speedKmh),
         });
+        setElevationDraft(String(DROPZONE_ELEVATION.value));
         setExitDraft(String(settings.exitHeight));
         setJumperDrafts(
             jumpers.map((jumper) => ({
@@ -378,6 +383,50 @@ export function JumpRunControls({
                     </div>
                     <div class="setting-with-help">
                         <div class="setting-label">
+                            <label for=${`${titleId}-elevation`}>
+                                ${t("settings.elevation")}
+                            </label>
+                            <div class=${scope.end}>
+                                ${h(
+                                    Help,
+                                    {
+                                        label: `${t("settings.elevation")}: ${t("common.help")}`,
+                                    },
+                                    html`
+                                        <h3>${t("settings.elevation")}</h3>
+                                        <p>${t("settings.elevationHelp")}</p>
+                                    `,
+                                )}
+                            </div>
+                        </div>
+                        <input
+                            id=${`${titleId}-elevation`}
+                            type="number"
+                            min="0"
+                            max="4200"
+                            step="any"
+                            value=${elevationDraft}
+                            onInput=${
+                                /** @param {Event} event */ (event) => {
+                                    const input =
+                                        /** @type {HTMLInputElement} */ (
+                                            event.currentTarget
+                                        );
+                                    setElevationDraft(input.value);
+                                    if (input.checkValidity())
+                                        navigateQs(
+                                            {
+                                                elevation:
+                                                    input.value || undefined,
+                                            },
+                                            { replace: true },
+                                        );
+                                }
+                            }
+                        />
+                    </div>
+                    <div class="setting-with-help">
+                        <div class="setting-label">
                             <label for=${`${titleId}-exit`}>
                                 ${t("settings.exitHeight")}
                             </label>
@@ -403,7 +452,7 @@ export function JumpRunControls({
                             type="number"
                             required
                             min=${Math.max(800, nextJumper.openingHeight, ...jumpers.map((jumper) => jumper.openingHeight)) + 1}
-                            max="4200"
+                            max=${4200 - DROPZONE_ELEVATION.value}
                             step="1"
                             value=${exitDraft}
                             onInput=${/** @param {Event} event */ (event) => updateSettings("exitHeight", event)}

@@ -338,6 +338,7 @@ interface QueryParams {
     icaocode?: string;
     lat?: string;
     lon?: string;
+    elevation?: string;
     default_jump_run_direction?: string;
     default_jump_group_count?: string;
     name?: string;

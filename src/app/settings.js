@@ -1,6 +1,6 @@
 // @ts-check
 import { removeNullish } from "#app/shared/values.js";
-import { signal } from "@preact/signals";
+import { computed, signal } from "@preact/signals";
 
 /** @type {Signal<QueryParams[]>} */
 export const SAVED_DZs = signal(
@@ -97,3 +97,9 @@ export function getQs(params, mode) {
 
     return "?" + new URLSearchParams(removeNullish(query)).toString();
 }
+
+/** Dropzone elevation above sea level, in metres. FMI WFS supplies no elevation. */
+export const DROPZONE_ELEVATION = computed(() => {
+    const value = Number(QUERY_PARAMS.value.elevation);
+    return Number.isFinite(value) && value >= 0 && value <= 4200 ? value : 0;
+});

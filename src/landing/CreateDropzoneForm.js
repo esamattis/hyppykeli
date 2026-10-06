@@ -14,6 +14,7 @@ import { useRef, useState } from "preact/hooks";
  *   placeholder: string,
  *   value: string,
  *   type?: "text" | "number",
+ *   step?: string,
  *   min?: number,
  *   max?: number,
  *   onInput: (event: import("preact").JSX.TargetedEvent<HTMLInputElement>) => void,
@@ -27,6 +28,7 @@ function ClearableInput({
     placeholder,
     value,
     type = "text",
+    step,
     min,
     max,
     onInput,
@@ -75,6 +77,7 @@ function ClearableInput({
                 type=${type}
                 name=${name}
                 placeholder=${placeholder}
+                step=${step}
                 min=${min}
                 max=${max}
                 value=${value}
@@ -169,6 +172,7 @@ export function CreateDropzoneForm() {
         icaocode: "",
         lat: "",
         lon: "",
+        elevation: "",
         default_jump_run_direction: "",
         default_jump_group_count: "",
     });
@@ -288,6 +292,22 @@ export function CreateDropzoneForm() {
                     })}
                 </div>
                 <div class="desc">${t("landing.decimal")}</div>
+                <div class="field">
+                    <label for="elevation">${t("settings.elevation")}</label>
+                    ${h(ClearableInput, {
+                        name: "elevation",
+                        placeholder: "0",
+                        value: fields.elevation,
+                        step: "any",
+                        label: t("settings.elevation"),
+                        type: "number",
+                        min: 0,
+                        max: 4200,
+                        onInput: updateField,
+                        onClear: () => clearField("elevation"),
+                    })}
+                </div>
+                <div class="desc">${t("settings.elevationHelp")}</div>
             </fieldset>
 
             <fieldset>

@@ -1,6 +1,6 @@
 // @ts-check
 import { parseUpperWinds } from "#app/developer/overrides.js";
-import { QUERY_PARAMS } from "#app/app/settings.js";
+import { DROPZONE_ELEVATION, QUERY_PARAMS } from "#app/app/settings.js";
 import { t } from "#app/translations.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
 import { OBSERVATIONS, OM_DATA } from "#app/weather/state.js";
@@ -56,10 +56,16 @@ export function getMapWindData(now = Date.now()) {
               ? (data?.hourly[`winddirection_${level}hPa`][index] ?? null)
               : null,
     }));
-    const freefallWinds = altitudeWinds.slice(0, 4);
+    // Display forecast levels above sea level; calculations use height above DZ.
+    const elevation = DROPZONE_ELEVATION.value;
+    const heightAboveDropzone = altitudeWinds.map((wind) => ({
+        ...wind,
+        height: wind.height - elevation,
+    }));
+    const freefallWinds = heightAboveDropzone.slice(0, 4);
     /** @type {MapWindLevel[]} */
     const winds = [...altitudeWinds];
-    const averageWind = averageFreeFallWind(freefallWinds);
+    const averageWind = averageFreeFallWind(altitudeWinds.slice(0, 4));
     winds.unshift(averageWind);
     winds.push({
         label: t("map.ground"),
@@ -71,7 +77,7 @@ export function getMapWindData(now = Date.now()) {
     // Observations can arrive after the map's most recent minute tick.
     const freshGround = groundAge <= MAX_GROUND_WIND_AGE_MS;
     const canopyWinds = [
-        ...altitudeWinds,
+        ...heightAboveDropzone.filter((wind) => wind.height > 0),
         {
             height: 0,
             label: t("map.ground"),
