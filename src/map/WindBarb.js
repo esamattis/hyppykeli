@@ -1,9 +1,17 @@
 // @ts-check
 import { html } from "htm/preact";
 
+/** @param {number | null} speed */
+export function windBarbKnots(speed) {
+    return speed !== null && Number.isFinite(speed) && speed >= 0
+        ? Math.round((speed * 1.943844) / 5) * 5
+        : null;
+}
+
 /** @param {{ speed: number | null, direction: number | null }} props */
 export function WindBarb({ speed, direction }) {
-    const validSpeed = speed !== null && Number.isFinite(speed) && speed >= 0;
+    const knots = windBarbKnots(speed);
+    const validSpeed = knots !== null;
     const validDirection = direction !== null && Number.isFinite(direction);
     if (!validSpeed || (speed !== 0 && !validDirection))
         return html`
@@ -21,10 +29,9 @@ export function WindBarb({ speed, direction }) {
         `;
 
     // Standard wind barbs use knots: a flag is 50, a full barb 10, a half barb 5.
-    const knots = Math.round(((speed ?? 0) * 1.943844) / 5) * 5;
-    const flags = Math.floor(knots / 50);
-    const fullBarbs = Math.floor((knots % 50) / 10);
-    const halfBarb = knots % 10 >= 5;
+    const flags = Math.floor((knots ?? 0) / 50);
+    const fullBarbs = Math.floor(((knots ?? 0) % 50) / 10);
+    const halfBarb = (knots ?? 0) % 10 >= 5;
     const spacing = Math.min(
         5,
         28 / Math.max(1, flags * 2 + fullBarbs + Number(halfBarb)),

@@ -1506,6 +1506,7 @@ test("map wind icons update the selected reading in full window", async ({
 test("wind barb help explains direction and speed markings in both languages", async ({
     page,
 }) => {
+    await setUniformFreefallWind(page);
     const help = page.locator("#wind-barb-help");
     await help.click();
     const dialog = page.getByRole("dialog");
@@ -1523,6 +1524,9 @@ test("wind barb help explains direction and speed markings in both languages", a
     await expect(
         dialog.getByRole("heading", { name: "Nykyiset tuulet" }),
     ).toBeVisible();
+    await expect(
+        dialog.locator(".wind-level").filter({ hasText: "≈ 3000 m" }),
+    ).toContainText(/10 m\/s 0°\s*20 kt/);
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(help).toBeFocused();
@@ -1545,6 +1549,9 @@ test("wind barb help explains direction and speed markings in both languages", a
     await expect(
         dialog.getByRole("heading", { name: "Current winds" }),
     ).toBeVisible();
+    await expect(
+        dialog.locator(".wind-level").filter({ hasText: "≈ 3000 m" }),
+    ).toContainText(/10 m\/s 0°\s*20 kt/);
 });
 
 test("freefall drift integrates altitude winds from 4000 to 800 metres", async ({
@@ -2266,7 +2273,7 @@ test("jumper inputs step opening altitude by 100 m and freefall speed by 20 km/h
         name: "Hyppylinjan asetukset",
     });
     const next = settings.getByRole("group", {
-        name: "Lisättävän hyppääjän asetukset",
+        name: "Lisää hyppääjä",
     });
     const first = settings.getByRole("row", {
         name: "Hyppääjä 1",
@@ -2835,7 +2842,7 @@ test("adding, removing, and undoing jumpers preserves the exit center", async ({
     const dialog = page.getByRole("dialog", { name: "Hyppylinjan asetukset" });
     await edit.click();
     const template = dialog.getByRole("group", {
-        name: "Lisättävän hyppääjän asetukset",
+        name: "Lisää hyppääjä",
     });
     await template
         .getByRole("spinbutton", { name: "Avauskorkeus (m)" })
@@ -4012,7 +4019,7 @@ test("jump run adds jumpers using immediately applied template settings", async 
         name: "Hyppylinjan asetukset",
     });
     const dialog = settings.getByRole("group", {
-        name: "Lisättävän hyppääjän asetukset",
+        name: "Lisää hyppääjä",
     });
     await expect(
         settings.getByRole("button", { name: /^(Tallenna|Peruuta)$/ }),

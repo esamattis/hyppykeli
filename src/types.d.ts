@@ -158,6 +158,7 @@ interface JumpRunPositionControlsProps extends JumpRunControlsProps {
 interface ToolbarWindLevel {
     label: string;
     text: string;
+    knots: number | null;
     graphic: import("preact").ComponentChildren;
     arrow: import("preact").ComponentChildren;
     selected: boolean;

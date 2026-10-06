@@ -25,7 +25,7 @@ import {
     STATION_NAME,
     weatherSourceLabel,
 } from "#app/weather/state.js";
-import { WindBarb } from "#app/map/WindBarb.js";
+import { WindBarb, windBarbKnots } from "#app/map/WindBarb.js";
 import { FreefallToolbar } from "#app/map/FreefallToolbar.js";
 import { MapWindOverlay } from "#app/map/MapWindOverlay.js";
 import { driftCoordinates, jumpRunCoordinates } from "#app/map/freefall.js";
@@ -110,6 +110,13 @@ function windReading(wind) {
 
 export function DropzoneMap() {
     const mapLayerScope = useScope(css`
+        .leaflet-bar a {
+            background: rgb(255 255 255 / 70%);
+        }
+        .leaflet-bar a:hover,
+        .leaflet-bar a:focus-visible {
+            background: rgb(255 255 255 / 85%);
+        }
         .weather-station-callout {
             background: var(--color-surface);
             color: var(--color-text);
@@ -128,6 +135,10 @@ export function DropzoneMap() {
         .jump-run-placement button {
             font: inherit;
             cursor: pointer;
+            background: rgb(255 255 255 / 70%);
+        }
+        .jump-run-placement button:hover {
+            background: rgb(255 255 255 / 85%);
         }
         .jump-run-placement .leaflet-popup-tip-container {
             translate: calc(-1 * var(--placement-offset-x, 0px)) 0;
@@ -1753,6 +1764,7 @@ export function DropzoneMap() {
                                 return {
                                     label: wind.label,
                                     text: reading.text,
+                                    knots: windBarbKnots(wind.speed),
                                     arrow: reading.graphic,
                                     graphic: h(WindBarb, {
                                         speed: wind.speed,

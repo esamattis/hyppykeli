@@ -13,7 +13,7 @@ function loadStylesheet() {
         stylesheet = new Promise((resolve, reject) => {
             const link = document.createElement("link");
             link.rel = "stylesheet";
-            link.href = "/vendor/build/leaflet.css";
+            link.href = "/src/map/leaflet.css";
             link.onload = () => resolve();
             link.onerror = () => {
                 link.remove();

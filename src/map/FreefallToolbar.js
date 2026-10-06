@@ -63,13 +63,13 @@ export function FreefallToolbar({
             flex-shrink: 0;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
-            background: var(--color-surface);
+            background: rgb(255 255 255 / 70%);
             box-shadow: var(--shadow-floating);
             pointer-events: auto;
         }
         .toolbar-controls .arrow-action:hover,
         .toolbar-window-actions .arrow-action:hover {
-            background: var(--color-surface-hover);
+            background: rgb(255 255 255 / 85%);
         }
         .toolbar-controls .dropdown-menu,
         .toolbar-controls dialog {
@@ -143,12 +143,24 @@ export function FreefallToolbar({
             align-items: center;
             gap: 12px;
         }
-        .wind-level > div {
+        .wind-level-reading {
             flex: 1;
         }
         .wind-level svg {
             flex-shrink: 0;
             color: var(--color-primary);
+        }
+        .wind-level-knots {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 1.5rem;
+            white-space: nowrap;
+        }
+        .wind-level-knots svg {
+            width: 2em;
+            height: 2em;
+            color: #000;
         }
         .wind-level-choice {
             display: flex;
@@ -167,6 +179,18 @@ export function FreefallToolbar({
         .wind-level-choice[aria-pressed="true"] {
             background: #000;
             color: #fff;
+        }
+        #wind-barb-help {
+            background: rgb(255 255 255 / 70%);
+        }
+        .wind-level-choice[aria-pressed="false"]:hover,
+        #wind-barb-help:hover {
+            background: rgb(255 255 255 / 85%);
+        }
+        @media (min-width: 700px) {
+            .toolbar-actions .wind-level-icons dialog.help-dialog-wide {
+                width: min(600px, 90vw);
+            }
         }
     `);
     const selectedWind = windLevels.levels.find((level) => level.selected);
@@ -314,12 +338,24 @@ export function FreefallToolbar({
                                                 class="wind-level"
                                                 key=${level.label}
                                             >
-                                                ${level.arrow} ${level.graphic}
-                                                <div>
+                                                ${level.arrow}
+                                                <div class="wind-level-reading">
                                                     <strong>
                                                         ${level.label}
                                                     </strong>
                                                     <div>${level.text}</div>
+                                                </div>
+                                                <div class="wind-level-knots">
+                                                    ${level.graphic}
+                                                    ${
+                                                        level.knots === null
+                                                            ? null
+                                                            : html`
+                                                                  <span>
+                                                                      ${`${level.knots} kt`}
+                                                                  </span>
+                                                              `
+                                                    }
                                                 </div>
                                             </li>
                                         `,

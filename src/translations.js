@@ -317,7 +317,7 @@ export const english = {
     "settings.jumperInterval": "Jumper separation (s)",
     "settings.jumperIntervalHelp":
         "Time in seconds between consecutive jump group exits. The same interval applies to every group on the jump run. The aircraft’s ground speed, including wind at exit altitude, determines the distance between exit points. Different freefall speeds and opening altitudes can produce different spacing between opening points.",
-    "settings.nextJumper": "Settings for the next jumper",
+    "settings.nextJumper": "Add jumper",
     "settings.currentJumpers": "Current jumpers",
     "settings.jumpers": "Jumpers / jump groups",
     "settings.setJumpRunDirection": "Rotate by dragging",
@@ -738,7 +738,7 @@ const finnish = {
     "settings.jumperInterval": "Hyppääjien porrastus (s)",
     "settings.jumperIntervalHelp":
         "Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina. Sama aikaväli koskee jokaista hyppylinjan ryhmää. Lentokoneen maanopeus, jossa huomioidaan tuuli uloshyppykorkeudella, määrää uloshyppykohtien välimatkan. Erilaiset vapaapudotusnopeudet ja avauskorkeudet voivat tuottaa erilaiset avautumiskohtien välit.",
-    "settings.nextJumper": "Lisättävän hyppääjän asetukset",
+    "settings.nextJumper": "Lisää hyppääjä",
     "settings.currentJumpers": "Nykyiset hyppääjät",
     "settings.jumpers": "Hyppääjät / hyppyryhmät",
     "settings.setJumpRunDirection": "Kierrä vetämällä",

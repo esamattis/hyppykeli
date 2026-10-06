@@ -1,0 +1,2 @@
+/* Keep vendor defaults below scoped component styles and custom CSS. */
+@import url("/vendor/build/leaflet.css") layer(base);
