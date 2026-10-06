@@ -589,7 +589,9 @@ interface CSSScope {
 
 interface LandingDropzone {
     name: string;
-    href: string;
+    qs: { [Key in keyof QueryParams]?: string | number } & {
+        direction?: number;
+    };
     description: string | (() => string);
 }
 

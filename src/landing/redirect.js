@@ -1,5 +1,9 @@
 // @ts-check
-import { completeDropzones, partialDropzones } from "#app/dropzones.js";
+import {
+    completeDropzones,
+    dropzoneHref,
+    partialDropzones,
+} from "#app/dropzones.js";
 
 export function redirectToDz() {
     const params = new URLSearchParams(window.location.search);
@@ -45,7 +49,7 @@ export function redirectToDz() {
     );
 
     if (dz) {
-        window.location.href = dz.href;
+        window.location.href = dropzoneHref(dz);
         return;
     }
 }

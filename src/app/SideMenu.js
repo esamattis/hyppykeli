@@ -1,6 +1,10 @@
 // @ts-check
 import { ManualMode } from "#app/manual/ManualMode.js";
-import { completeDropzones, partialDropzones } from "#app/dropzones.js";
+import {
+    completeDropzones,
+    dropzoneHref,
+    partialDropzones,
+} from "#app/dropzones.js";
 import { Icon } from "#app/shared/icons.js";
 import { removeNullish } from "#app/shared/values.js";
 import { LANGUAGE, setLanguage, t } from "#app/translations.js";
@@ -272,7 +276,7 @@ export function SideMenu({ manualEditorRef }) {
                     <div class="dzs dz-grid" onClick=${savePreviousDz}>
                         ${OTHER_DZs.map(
                             (dz) => html`
-                                <a href=${dz.href}>${dz.name}</a>
+                                <a href=${dropzoneHref(dz)}>${dz.name}</a>
                             `,
                         )}
                     </div>

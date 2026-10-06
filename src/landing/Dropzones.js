@@ -1,5 +1,9 @@
 // @ts-check
-import { completeDropzones, partialDropzones } from "#app/dropzones.js";
+import {
+    completeDropzones,
+    dropzoneHref,
+    partialDropzones,
+} from "#app/dropzones.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
@@ -26,7 +30,7 @@ function DropzoneList({ dropzones }) {
                 .map(
                     (dz) => html`
                         <p key=${dz.name}>
-                            <a href=${dz.href}>${dz.name}</a>
+                            <a href=${dropzoneHref(dz)}>${dz.name}</a>
                             ${" "}${typeof dz.description === "function" ? dz.description() : dz.description}
                         </p>
                     `,
