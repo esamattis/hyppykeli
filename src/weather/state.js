@@ -1,6 +1,6 @@
 // @ts-check
 import { QUERY_PARAMS } from "#app/app/settings.js";
-import { parseGroundObservations } from "#app/developer/overrides.js";
+import { parseGroundObservations } from "#app/manual/overrides.js";
 import { isNullish } from "#app/shared/values.js";
 import { parseCoordinates } from "#app/shared/coordinates.js";
 import { t } from "#app/translations.js";
@@ -43,7 +43,7 @@ export const OPEN_METEO_CURRENT = signal(undefined);
 export const OBSERVATIONS = computed(() => {
     const live = LIVE_OBSERVATIONS.value;
     const overrides = parseGroundObservations(
-        QUERY_PARAMS.value.DEV_ground_obs,
+        QUERY_PARAMS.value.MANUAL_ground_obs,
     );
     if (!overrides) return live;
     const now = Date.now();
@@ -143,7 +143,7 @@ export function weatherSourceLabel(source) {
         case "openmeteo":
             return t("source.openMeteoModeled");
         case "mock":
-            return t("source.developerMode");
+            return t("source.manualMode");
         case "forecast":
             return FORECAST_SOURCE.value;
         default:
@@ -179,7 +179,7 @@ export const HOURLY_CLOUD_FORECASTS = computed(() => {
 export const LIVE_METARS = signal(undefined);
 
 export const METARS = computed(() => {
-    const text = QUERY_PARAMS.value.DEV_metar?.trim();
+    const text = QUERY_PARAMS.value.MANUAL_metar?.trim();
     if (!text) return LIVE_METARS.value;
     try {
         return parseMetarMessages([text]);

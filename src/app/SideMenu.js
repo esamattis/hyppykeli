@@ -1,5 +1,5 @@
 // @ts-check
-import { DeveloperMode } from "#app/developer/DeveloperMode.js";
+import { ManualMode } from "#app/manual/ManualMode.js";
 import { completeDropzones, partialDropzones } from "#app/dropzones.js";
 import { Icon } from "#app/shared/icons.js";
 import { removeNullish } from "#app/shared/values.js";
@@ -23,8 +23,8 @@ function savePreviousDz(e) {
     }
 }
 
-/** @param {{ developerEditorRef: import('preact').RefObject<DeveloperModeHandle> }} props */
-export function SideMenu({ developerEditorRef }) {
+/** @param {{ manualEditorRef: import('preact').RefObject<ManualModeHandle> }} props */
+export function SideMenu({ manualEditorRef }) {
     const scope = useScope(css`
         :scope {
             position: fixed;
@@ -298,8 +298,8 @@ export function SideMenu({ developerEditorRef }) {
 
                 <footer class="menu-section menu-footer">
                     <a href="/?no_redirect=1">${t("menu.home")}</a>
-                    ${h(DeveloperMode, {
-                        editorRef: developerEditorRef,
+                    ${h(ManualMode, {
+                        editorRef: manualEditorRef,
                         onOpen: () => {
                             MENU_OPEN.value = false;
                         },

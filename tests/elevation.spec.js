@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const label = "Hyppypaikan korkeus merenpinnasta (m)";
 const dz =
-    "/dz/?fmisid=101191&DEV_ground_obs=2,2,0,1&DEV_upper_winds=42,0;30,0;15,0;8,0;1.1,0";
+    "/dz/?fmisid=101191&MANUAL_ground_obs=2,2,0,1&MANUAL_upper_winds=42,0;30,0;15,0;8,0;1.1,0";
 
 test.beforeEach(async ({ page, baseURL }) => {
     await page.route("**/*", (route) =>

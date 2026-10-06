@@ -11,14 +11,14 @@ import {
     OBSERVATIONS,
 } from "#app/weather/state.js";
 import {
-    DEV_ACTIVE,
+    MANUAL_ACTIVE,
     parseGroundObservations,
     parseUpperWinds,
-} from "#app/developer/overrides.js";
+} from "#app/manual/overrides.js";
 import { h, html } from "htm/preact";
 import { useImperativeHandle, useRef, useState } from "preact/hooks";
 
-/** @param {DeveloperObservation[]} observations */
+/** @param {ManualObservation[]} observations */
 function toObservationInputs(observations) {
     return observations.map(({ gust, speed, direction, age }) => ({
         gust: gust !== undefined && gust >= 0 ? gust.toString() : "",
@@ -28,7 +28,7 @@ function toObservationInputs(observations) {
     }));
 }
 
-/** @param {DeveloperObservationInput[]} observations */
+/** @param {ManualObservationInput[]} observations */
 function serializeObservations(observations) {
     return (
         observations
@@ -39,7 +39,7 @@ function serializeObservations(observations) {
     );
 }
 
-/** @param {number} [now] @returns {DeveloperUpperWindInput[]} */
+/** @param {number} [now] @returns {ManualUpperWindInput[]} */
 function currentUpperWinds(now) {
     return getMapWindData(now)
         .winds.slice(1, 6)
@@ -49,7 +49,7 @@ function currentUpperWinds(now) {
         }));
 }
 
-/** @param {DeveloperUpperWindInput[]} winds */
+/** @param {ManualUpperWindInput[]} winds */
 function serializeUpperWinds(winds) {
     return winds
         .map(({ speed, direction }) => `${speed.trim()},${direction.trim()}`)
@@ -60,7 +60,7 @@ function clearOverrides() {
     navigateQs(
         Object.fromEntries(
             Object.entries(QUERY_PARAMS.value).filter(
-                ([key]) => !key.startsWith("DEV_"),
+                ([key]) => !key.startsWith("MANUAL_"),
             ),
         ),
         { mode: "replace" },
@@ -86,7 +86,7 @@ function formatQueryParams(params) {
 }
 
 /** @param {{ onEdit: () => void }} props */
-export function DeveloperBanner({ onEdit }) {
+export function ManualBanner({ onEdit }) {
     const scope = useScope(css`
         :scope {
             margin: 20px 20px 0;
@@ -111,13 +111,13 @@ export function DeveloperBanner({ onEdit }) {
             }
         }
     `);
-    if (!DEV_ACTIVE.value) return null;
+    if (!MANUAL_ACTIVE.value) return null;
     return html`
         <aside class="developer-banner" role="status">
             ${scope.style}
             <span>
-                <strong>${t("developer.active")}</strong>
-                ${" "}${t("developer.testSettings")}
+                <strong>${t("manual.active")}</strong>
+                ${" "}${t("manual.manualValues")}
             </span>
             <div class="developer-banner-actions">
                 <button
@@ -126,18 +126,18 @@ export function DeveloperBanner({ onEdit }) {
                     aria-controls="developer-mode"
                     onClick=${onEdit}
                 >
-                    ${t("developer.edit")}
+                    ${t("manual.edit")}
                 </button>
                 <button type="button" onClick=${clearOverrides}>
-                    ${t("developer.restore")}
+                    ${t("manual.restore")}
                 </button>
             </div>
         </aside>
     `;
 }
 
-/** @param {{ onOpen: () => void, editorRef: import('preact').RefObject<DeveloperModeHandle> }} props */
-export function DeveloperMode(props) {
+/** @param {{ onOpen: () => void, editorRef: import('preact').RefObject<ManualModeHandle> }} props */
+export function ManualMode(props) {
     const scope = useScope(css`
         :scope.developer-controls {
             margin-top: 20px;
@@ -217,12 +217,12 @@ export function DeveloperMode(props) {
     const [status, setStatus] = useState("");
     const [copyUrl, setCopyUrl] = useState("");
     const [observations, setObservations] = useState(
-        /** @type {DeveloperObservationInput[]} */ ([]),
+        /** @type {ManualObservationInput[]} */ ([]),
     );
     const [observationsEdited, setObservationsEdited] = useState(false);
 
     const [upperWinds, setUpperWinds] = useState(
-        /** @type {DeveloperUpperWindInput[]} */ ([]),
+        /** @type {ManualUpperWindInput[]} */ ([]),
     );
     const [upperWindsEdited, setUpperWindsEdited] = useState(false);
 
@@ -233,7 +233,7 @@ export function DeveloperMode(props) {
         setCopyUrl("");
         const now = Date.now();
         const saved = parseGroundObservations(
-            QUERY_PARAMS.value.DEV_ground_obs,
+            QUERY_PARAMS.value.MANUAL_ground_obs,
         );
         let recent =
             saved ??
@@ -318,12 +318,12 @@ export function DeveloperMode(props) {
         const inputs = toObservationInputs(recent);
         const winds = currentUpperWinds(now);
         const captured = {
-            DEV_ground_obs: serializeObservations(inputs),
-            DEV_metar: METARS.value?.[0]?.metar,
-            DEV_upper_winds: serializeUpperWinds(winds),
-            DEV_ground_gust: undefined,
-            DEV_ground_avg: undefined,
-            DEV_ground_direction: undefined,
+            MANUAL_ground_obs: serializeObservations(inputs),
+            MANUAL_metar: METARS.value?.[0]?.metar,
+            MANUAL_upper_winds: serializeUpperWinds(winds),
+            MANUAL_ground_gust: undefined,
+            MANUAL_ground_avg: undefined,
+            MANUAL_ground_direction: undefined,
         };
         navigateQs(captured);
         setValues({ ...QUERY_PARAMS.value });
@@ -333,7 +333,7 @@ export function DeveloperMode(props) {
         setObservationsEdited(false);
         setError("");
         setCopyUrl("");
-        setStatus(t("developer.saved"));
+        setStatus(t("manual.saved"));
     }
 
     async function copyCurrentUrl() {
@@ -345,18 +345,18 @@ export function DeveloperMode(props) {
         try {
             await navigator.clipboard.writeText(location.href);
             setCopyUrl("");
-            setStatus(t("developer.copied"));
+            setStatus(t("manual.copied"));
         } catch {
             setCopyUrl(location.href);
-            setStatus(t("developer.copyFailed"));
+            setStatus(t("manual.copyFailed"));
         }
     }
 
     /**
      * @param {QueryParams} [editedValues]
-     * @param {DeveloperObservationInput[]} [editedObservations]
+     * @param {ManualObservationInput[]} [editedObservations]
      * @param {boolean} [groundEdited]
-     * @param {DeveloperUpperWindInput[]} [editedUpperWinds]
+     * @param {ManualUpperWindInput[]} [editedUpperWinds]
      * @param {boolean} [upperEdited]
      */
     function applyValues(
@@ -367,10 +367,10 @@ export function DeveloperMode(props) {
         upperEdited = upperWindsEdited,
     ) {
         if (!dialogRef.current?.querySelector("form")?.checkValidity()) {
-            setError(t("developer.windInvalid"));
+            setError(t("manual.windInvalid"));
             return false;
         }
-        const metar = editedValues.DEV_metar?.trim();
+        const metar = editedValues.MANUAL_metar?.trim();
         if (metar) {
             try {
                 const parsed = parseMetarMessages([metar])[0];
@@ -378,39 +378,39 @@ export function DeveloperMode(props) {
                     throw new Error("Invalid METAR time");
                 }
             } catch {
-                setError(t("developer.metarInvalid"));
+                setError(t("manual.metarInvalid"));
                 return false;
             }
         }
         const groundObservations = groundEdited
             ? serializeObservations(editedObservations)
-            : editedValues.DEV_ground_obs;
+            : editedValues.MANUAL_ground_obs;
         if (
             groundObservations &&
             !parseGroundObservations(groundObservations)
         ) {
-            setError(t("developer.observationsInvalid"));
+            setError(t("manual.observationsInvalid"));
             return false;
         }
         const upper = upperEdited
             ? serializeUpperWinds(editedUpperWinds)
-            : editedValues.DEV_upper_winds;
+            : editedValues.MANUAL_upper_winds;
         if (upper && !parseUpperWinds(upper)) {
-            setError(t("developer.windInvalid"));
+            setError(t("manual.windInvalid"));
             return false;
         }
         const params = {
-            DEV_upper_winds: upper,
-            DEV_metar: metar || undefined,
-            DEV_ground_obs: groundObservations,
-            DEV_ground_gust: undefined,
-            DEV_ground_avg: undefined,
-            DEV_ground_direction: undefined,
+            MANUAL_upper_winds: upper,
+            MANUAL_metar: metar || undefined,
+            MANUAL_ground_obs: groundObservations,
+            MANUAL_ground_gust: undefined,
+            MANUAL_ground_avg: undefined,
+            MANUAL_ground_direction: undefined,
         };
         if (
             Object.entries(params).some(
                 ([key, value]) =>
-                    QUERY_PARAMS.value[/** @type {DeveloperKey} */ (key)] !==
+                    QUERY_PARAMS.value[/** @type {ManualKey} */ (key)] !==
                     value,
             )
         ) {
@@ -429,7 +429,7 @@ export function DeveloperMode(props) {
                 aria-controls="developer-mode"
                 onClick=${open}
             >
-                ${t("developer.title")}
+                ${t("manual.title")}
             </button>
         </div>
         ${h(
@@ -441,17 +441,17 @@ export function DeveloperMode(props) {
             },
             html`
                 ${scope.style}
-                <h2 id="developer-mode-title">${t("developer.title")}</h2>
-                <p>${t("developer.description")}</p>
+                <h2 id="developer-mode-title">${t("manual.title")}</h2>
+                <p>${t("manual.description")}</p>
                 <div class="developer-actions">
                     <button type="button" onClick=${captureCurrentValues}>
-                        ${t("developer.capture")}
+                        ${t("manual.capture")}
                     </button>
                     <button type="button" onClick=${copyCurrentUrl}>
-                        ${t("developer.copyUrl")}
+                        ${t("manual.copyUrl")}
                     </button>
                 </div>
-                <p>${t("developer.immediate")}</p>
+                <p>${t("manual.immediate")}</p>
                 ${
                     status &&
                     html`
@@ -462,7 +462,7 @@ export function DeveloperMode(props) {
                     copyUrl &&
                     html`
                         <label>
-                            ${t("developer.shareUrl")}
+                            ${t("manual.shareUrl")}
                             <input
                                 type="text"
                                 readonly
@@ -477,17 +477,17 @@ export function DeveloperMode(props) {
                 >
                     <div class="developer-fields">
                         <label>
-                            ${t("developer.metar")}
+                            ${t("manual.metar")}
                             <textarea
-                                name="DEV_metar"
-                                value=${values.DEV_metar ?? ""}
+                                name="MANUAL_metar"
+                                value=${values.MANUAL_metar ?? ""}
                                 onInput=${
                                     /** @param {Event & { currentTarget: HTMLTextAreaElement }} event */ (
                                         event,
                                     ) => {
                                         const editedValues = {
                                             ...values,
-                                            DEV_metar:
+                                            MANUAL_metar:
                                                 event.currentTarget.value,
                                         };
                                         setValues(editedValues);
@@ -500,17 +500,15 @@ export function DeveloperMode(props) {
                             />
                         </label>
                     </div>
-                    <h3>${t("developer.upperTitle")}</h3>
-                    <p>${t("developer.upperHelp")}</p>
+                    <h3>${t("manual.upperTitle")}</h3>
+                    <p>${t("manual.upperHelp")}</p>
                     <table class="developer-observations developer-upper-winds">
                         <thead>
                             <tr>
-                                <th scope="col">${t("developer.altitude")}</th>
+                                <th scope="col">${t("manual.altitude")}</th>
+                                <th scope="col">${t("manual.meanWindUnit")}</th>
                                 <th scope="col">
-                                    ${t("developer.meanWindUnit")}
-                                </th>
-                                <th scope="col">
-                                    ${t("developer.directionUnit")}
+                                    ${t("manual.directionUnit")}
                                 </th>
                             </tr>
                         </thead>
@@ -531,8 +529,8 @@ export function DeveloperMode(props) {
                                                     <td>
                                                         <input
                                                             type="number"
-                                                            name=${`DEV_upper_winds_${index}_${key}`}
-                                                            aria-label=${`${key === "speed" ? t("developer.meanWind") : t("weather.direction")}, ≈ ${height} m`}
+                                                            name=${`MANUAL_upper_winds_${index}_${key}`}
+                                                            aria-label=${`${key === "speed" ? t("manual.meanWind") : t("weather.direction")}, ≈ ${height} m`}
                                                             min="0"
                                                             max=${key === "direction" ? 360 : undefined}
                                                             step="any"
@@ -548,20 +546,16 @@ export function DeveloperMode(props) {
                             })}
                         </tbody>
                     </table>
-                    <h3>${t("developer.groundTitle")}</h3>
-                    <p>${t("developer.groundHelp")}</p>
+                    <h3>${t("manual.groundTitle")}</h3>
+                    <p>${t("manual.groundHelp")}</p>
                     <table class="developer-observations">
                         <thead>
                             <tr>
-                                <th scope="col">
-                                    ${t("developer.minutesAgo")}
-                                </th>
+                                <th scope="col">${t("manual.minutesAgo")}</th>
                                 <th scope="col">${t("weather.gustUnit")}</th>
+                                <th scope="col">${t("manual.meanWindUnit")}</th>
                                 <th scope="col">
-                                    ${t("developer.meanWindUnit")}
-                                </th>
-                                <th scope="col">
-                                    ${t("developer.directionUnit")}
+                                    ${t("manual.directionUnit")}
                                 </th>
                             </tr>
                         </thead>
@@ -578,9 +572,7 @@ export function DeveloperMode(props) {
                                             ]).map((key) => {
                                                 const label = {
                                                     gust: t("weather.gust"),
-                                                    speed: t(
-                                                        "developer.meanWind",
-                                                    ),
+                                                    speed: t("manual.meanWind"),
                                                     direction:
                                                         t("weather.direction"),
                                                 }[key];
@@ -588,7 +580,7 @@ export function DeveloperMode(props) {
                                                     <td>
                                                         <input
                                                             type="number"
-                                                            name=${`DEV_ground_obs_${index}_${key}`}
+                                                            name=${`MANUAL_ground_obs_${index}_${key}`}
                                                             aria-label=${`${label}, ${observation.age} min sitten`}
                                                             min=${key === "direction" ? -1 : 0}
                                                             max=${key === "direction" ? 360 : undefined}
@@ -622,7 +614,7 @@ export function DeveloperMode(props) {
                                 dialogRef.current?.close();
                             }}
                         >
-                            ${t("developer.clear")}
+                            ${t("manual.clear")}
                         </button>
                     </div>
                 </form>
@@ -631,7 +623,7 @@ export function DeveloperMode(props) {
                     aria-labelledby="developer-query-title"
                 >
                     <h3 id="developer-query-title">
-                        ${t("developer.queryString")}
+                        ${t("manual.queryString")}
                     </h3>
                     <pre>${formatQueryParams(QUERY_PARAMS.value)}</pre>
                 </section>

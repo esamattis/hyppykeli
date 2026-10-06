@@ -1,5 +1,5 @@
 // @ts-check
-import { DeveloperBanner } from "#app/developer/DeveloperMode.js";
+import { ManualBanner } from "#app/manual/ManualMode.js";
 import { LazyDropzoneMap } from "#app/map/LazyDropzoneMap.js";
 import { formatDate, humanDayText } from "#app/shared/dates.js";
 import {
@@ -41,8 +41,8 @@ import { useRef } from "preact/hooks";
 import { Tooltips } from "#app/shared/Tooltips.js";
 
 export function App() {
-    const developerEditorRef = useRef(
-        /** @type {DeveloperModeHandle | null} */ (null),
+    const manualEditorRef = useRef(
+        /** @type {ManualModeHandle | null} */ (null),
     );
     const scope = useScope(css`
         :scope {
@@ -186,7 +186,7 @@ export function App() {
     `);
 
     return html`
-        ${h(DeveloperBanner, { onEdit: () => developerEditorRef.current?.open() })}
+        ${h(ManualBanner, { onEdit: () => manualEditorRef.current?.open() })}
         <div class="content grid">
             ${scope.style}
             ${
@@ -264,7 +264,7 @@ export function App() {
             <${HighWinds} />
             <${Info} />
         </div>
-        ${h(SideMenu, { developerEditorRef })}
+        ${h(SideMenu, { manualEditorRef })}
         <${FloatingMenuButton} />
 
         <${RenderInjectedCSS} />

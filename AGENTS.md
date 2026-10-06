@@ -12,7 +12,7 @@ Group source modules by the feature that owns them:
 - `src/weather/providers`: API requests, caching, and response parsing. Providers
   return data; refresh orchestration owns updates to weather signals.
 - `src/map`: map UI, map state, freefall, and jump-run calculations.
-- `src/developer`: developer UI and observation overrides.
+- `src/manual`: manual UI and observation overrides.
 - `src/shared`: reusable UI primitives and general-purpose helpers.
 
 Keep component styles with their components. Use PascalCase filenames for

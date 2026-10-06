@@ -1,7 +1,7 @@
 // @ts-check
 import { QUERY_PARAMS } from "#app/app/settings.js";
 import { t } from "#app/translations.js";
-import { mockAllEntries } from "#app/developer/overrides.js";
+import { mockAllEntries } from "#app/manual/overrides.js";
 import { parseMetarMessages } from "#app/weather/metarMessages.js";
 import { getObservationStartTime } from "#app/weather/observationRange.js";
 import { hasValidWindData } from "#app/weather/calculations.js";
@@ -125,7 +125,7 @@ async function fetchObservations(cacheOnly, signal) {
 
 /** @param {boolean} cacheOnly @param {AbortSignal} signal */
 async function fetchMetar(cacheOnly, signal) {
-    if (QUERY_PARAMS.value.DEV_metar?.trim()) return;
+    if (QUERY_PARAMS.value.MANUAL_metar?.trim()) return;
     const icaocode = QUERY_PARAMS.value.icaocode?.trim();
     if (!icaocode) {
         LIVE_METARS.value = undefined;
@@ -273,7 +273,7 @@ export function weatherSettingsKey() {
             Object.entries(QUERY_PARAMS.value).filter(
                 ([key]) =>
                     !key.startsWith("map_") &&
-                    key !== "DEV_upper_winds" &&
+                    key !== "MANUAL_upper_winds" &&
                     key !== "default_jump_run_direction" &&
                     key !== "default_jump_group_count",
             ),

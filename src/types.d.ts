@@ -334,12 +334,12 @@ interface QueryParams {
     map_jumpers?: string;
     map_next_jumper?: string;
     map_run_settings?: string;
-    DEV_ground_obs?: string;
-    DEV_ground_gust?: string;
-    DEV_ground_avg?: string;
-    DEV_ground_direction?: string;
-    DEV_metar?: string;
-    DEV_upper_winds?: string;
+    MANUAL_ground_obs?: string;
+    MANUAL_ground_gust?: string;
+    MANUAL_ground_avg?: string;
+    MANUAL_ground_direction?: string;
+    MANUAL_metar?: string;
+    MANUAL_upper_winds?: string;
     __gusts?: string;
     __speeds?: string;
     __directions?: string;
@@ -360,21 +360,21 @@ interface QueryParams {
     save?: string;
 }
 
-type DeveloperKey = Extract<keyof QueryParams, `DEV_${string}`>;
+type ManualKey = Extract<keyof QueryParams, `MANUAL_${string}`>;
 
-interface DeveloperObservation {
+interface ManualObservation {
     gust?: number;
     speed?: number;
     direction?: number;
     age: number;
 }
 
-interface DeveloperUpperWindInput {
+interface ManualUpperWindInput {
     speed: string;
     direction: string;
 }
 
-interface DeveloperObservationInput {
+interface ManualObservationInput {
     gust: string;
     speed: string;
     direction: string;
@@ -649,7 +649,7 @@ interface CloudTypeDetails {
     explanation: string;
 }
 
-interface DeveloperModeHandle {
+interface ManualModeHandle {
     open: () => void;
 }
 

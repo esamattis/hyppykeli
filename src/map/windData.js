@@ -1,5 +1,5 @@
 // @ts-check
-import { parseUpperWinds } from "#app/developer/overrides.js";
+import { parseUpperWinds } from "#app/manual/overrides.js";
 import { DROPZONE_ELEVATION, QUERY_PARAMS } from "#app/app/settings.js";
 import { t } from "#app/translations.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
@@ -36,7 +36,7 @@ export function getMapWindData(now = Date.now()) {
             (latest, obs) => (!latest || obs.time > latest.time ? obs : latest),
             /** @type {WeatherData | undefined} */ (undefined),
         );
-    const overrides = parseUpperWinds(QUERY_PARAMS.value.DEV_upper_winds);
+    const overrides = parseUpperWinds(QUERY_PARAMS.value.MANUAL_upper_winds);
     /** @type {FreefallWindLevel[]} */
     const altitudeWinds = LEVELS.map(({ level, height }, row) => ({
         height,

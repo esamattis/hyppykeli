@@ -2,14 +2,14 @@
 import { QUERY_PARAMS } from "#app/app/settings.js";
 import { computed } from "@preact/signals";
 
-export const DEV_ACTIVE = computed(() =>
+export const MANUAL_ACTIVE = computed(() =>
     [
-        QUERY_PARAMS.value.DEV_ground_obs,
-        QUERY_PARAMS.value.DEV_ground_gust,
-        QUERY_PARAMS.value.DEV_ground_avg,
-        QUERY_PARAMS.value.DEV_ground_direction,
-        QUERY_PARAMS.value.DEV_metar,
-        QUERY_PARAMS.value.DEV_upper_winds,
+        QUERY_PARAMS.value.MANUAL_ground_obs,
+        QUERY_PARAMS.value.MANUAL_ground_gust,
+        QUERY_PARAMS.value.MANUAL_ground_avg,
+        QUERY_PARAMS.value.MANUAL_ground_direction,
+        QUERY_PARAMS.value.MANUAL_metar,
+        QUERY_PARAMS.value.MANUAL_upper_winds,
     ].some((value) => !!value?.trim()),
 );
 
@@ -17,7 +17,7 @@ export const DEV_ACTIVE = computed(() =>
  * Decode five altitude rows, highest first: speed, direction.
  * Empty cells represent missing wind data; invalid overrides use live data.
  * @param {string | undefined} text
- * @returns {DeveloperUpperWindInput[] | undefined}
+ * @returns {ManualUpperWindInput[] | undefined}
  */
 export function parseUpperWinds(text) {
     if (!text?.trim()) return undefined;
@@ -44,12 +44,12 @@ export function parseUpperWinds(text) {
  * Decode newest-first rows: gust, average speed, direction, age in minutes.
  * Empty wind values represent missing data. Invalid overrides use live data.
  * @param {string | undefined} text
- * @returns {DeveloperObservation[] | undefined}
+ * @returns {ManualObservation[] | undefined}
  */
 export function parseGroundObservations(text) {
     if (!text?.trim()) return undefined;
     const rows = text.split(";").map((row) => row.split(","));
-    /** @type {DeveloperObservation[]} */
+    /** @type {ManualObservation[]} */
     const observations = [];
     for (const row of rows) {
         if (row.length !== 4 || !row[3]?.trim()) return undefined;

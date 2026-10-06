@@ -63,7 +63,7 @@ export const english = {
     "compass.help":
         "The ranges below the wind readings show the minimum and maximum gust, mean wind, and direction observed during the last hour. Values are rounded to whole numbers. The arrow shows wind direction and its length shows the gust. The orange circle is the student limit (8 m/s), and the black circle is the licence limit (11 m/s). The animation replays the last hour chronologically. When it is off, the arrow shows the latest observation.",
     "source.openMeteoModeled": "Open-Meteo (modeled)",
-    "source.developerMode": "Developer mode",
+    "source.manualMode": "Manual mode",
     "error.noMetar": (/** @type {string} */ code) =>
         `No METAR message for ${code}.`,
     "error.stationNotFound": (/** @type {string} */ id) =>
@@ -350,40 +350,39 @@ export const english = {
     "footer.observationStation": "Observation data retrieved from station",
     "footer.and": "and",
     "footer.code": "Code",
-    "developer.active": "Developer mode active.",
-    "developer.testSettings": "Test settings are in use.",
-    "developer.edit": "Edit",
-    "developer.restore": "Restore real data",
-    "developer.title": "Developer mode",
-    "developer.metar": "METAR text",
-    "developer.upperTitle": "Open-Meteo winds for the current hour",
-    "developer.altitude": "Altitude",
-    "developer.upperHelp":
+    "manual.active": "Manual mode active.",
+    "manual.manualValues": "Manually entered values are in use.",
+    "manual.edit": "Edit",
+    "manual.restore": "Restore real data",
+    "manual.title": "Manual mode",
+    "manual.metar": "METAR text",
+    "manual.upperTitle": "Open-Meteo winds for the current hour",
+    "manual.altitude": "Altitude",
+    "manual.upperHelp":
         "Editing this table replaces the five altitude winds used by the map, freefall and canopy drift calculations. An empty value means missing wind data. Ground wind comes from the observations below.",
-    "developer.description":
-        "Test values are stored in DEV_ URL parameters. An empty METAR field uses real data.",
-    "developer.capture": "Save current values as test values",
-    "developer.copyUrl": "Copy URL",
-    "developer.clear": "Clear test values",
-    "developer.groundTitle": "Ground observations from the last hour",
-    "developer.minutesAgo": "Minutes ago",
-    "developer.meanWindUnit": "Mean (m/s)",
-    "developer.directionUnit": "Direction (°)",
-    "developer.saved": "Current values saved in the URL.",
-    "developer.copied": "URL copied.",
-    "developer.copyFailed": "Copy failed. Copy the URL from the field below.",
-    "developer.windInvalid":
-        "Check the allowed wind-value and direction ranges.",
-    "developer.metarInvalid": "Could not parse the METAR text. Check the text.",
-    "developer.observationsInvalid":
+    "manual.description":
+        "Manual values are stored in MANUAL_ URL parameters. An empty METAR field uses real data.",
+    "manual.capture": "Save current values as manual values",
+    "manual.copyUrl": "Copy URL",
+    "manual.clear": "Clear manual values",
+    "manual.groundTitle": "Ground observations from the last hour",
+    "manual.minutesAgo": "Minutes ago",
+    "manual.meanWindUnit": "Mean (m/s)",
+    "manual.directionUnit": "Direction (°)",
+    "manual.saved": "Current values saved in the URL.",
+    "manual.copied": "URL copied.",
+    "manual.copyFailed": "Copy failed. Copy the URL from the field below.",
+    "manual.windInvalid": "Check the allowed wind-value and direction ranges.",
+    "manual.metarInvalid": "Could not parse the METAR text. Check the text.",
+    "manual.observationsInvalid":
         "Check the observation wind values and directions.",
-    "developer.immediate":
+    "manual.immediate":
         "Changes take effect immediately and are stored in the URL.",
-    "developer.shareUrl": "Shareable URL",
-    "developer.groundHelp":
+    "manual.shareUrl": "Shareable URL",
+    "manual.groundHelp":
         "The newest row is the current ground wind. Editing the table replaces the last hour of observations. An empty wind value means a missing observation. Direction −1 means variable wind.",
-    "developer.meanWind": "Mean wind",
-    "developer.queryString": "Query string",
+    "manual.meanWind": "Mean wind",
+    "manual.queryString": "Query string",
     "footer.stationDistance": (/** @type {string} */ km) =>
         `Distance to observation station: ${km} km.`,
     "footer.disclaimer":
@@ -499,7 +498,7 @@ const finnish = {
     "compass.help":
         "Tuulilukemien alla näkyvät vaihteluvälit kertovat puuskan, keskituulen ja suunnan pienimmän ja suurimman havaitun arvon viimeisen tunnin ajalta. Arvot on pyöristetty kokonaisluvuiksi. Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Oranssi ympyrä on oppilasraja (8 m/s) ja musta ympyrä on kelppariraja (11 m/s). Animaatio toistaa viimeisen tunnin havainnot aikajärjestyksessä. Kun animaatio on pois päältä, nuoli näyttää uusimman havainnon.",
     "source.openMeteoModeled": "Open-Meteo (mallinnettu)",
-    "source.developerMode": "Kehittäjätila",
+    "source.manualMode": "Manuaalitila",
     "error.noMetar": (code) => `Ei METAR-sanomaa kentälle ${code}.`,
     "error.stationNotFound": (id) => `Havaintoasemaa ${id} ei löytynyt.`,
     "error.stationInvalid": (id) =>
@@ -768,42 +767,40 @@ const finnish = {
     "footer.observationStation": "Havaintotiedot haettu havaintoasemalta",
     "footer.and": "ja",
     "footer.code": "Koodi",
-    "developer.active": "Kehittäjätila käytössä.",
-    "developer.testSettings": "Käytössä on testiasetuksia.",
-    "developer.edit": "Muokkaa",
-    "developer.restore": "Palauta oikeat tiedot",
-    "developer.title": "Kehittäjätila",
-    "developer.metar": "METAR-teksti",
-    "developer.upperTitle": "Open-Meteon tuulet nykyiselle tunnille",
-    "developer.altitude": "Korkeus",
-    "developer.upperHelp":
+    "manual.active": "Manuaalitila käytössä.",
+    "manual.manualValues": "Käytössä on käsin syötettyjä arvoja.",
+    "manual.edit": "Muokkaa",
+    "manual.restore": "Palauta oikeat tiedot",
+    "manual.title": "Manuaalitila",
+    "manual.metar": "METAR-teksti",
+    "manual.upperTitle": "Open-Meteon tuulet nykyiselle tunnille",
+    "manual.altitude": "Korkeus",
+    "manual.upperHelp":
         "Taulukon muokkaus korvaa kartan, vapaapudotuksen ja varjon varassa ajautumisen laskennassa käytettävät viiden korkeuden tuulet. Tyhjä arvo tarkoittaa puuttuvaa tuulitietoa. Maanpinnan tuuli tulee alla olevista havainnoista.",
-    "developer.description":
-        "Testiarvot tallennetaan osoitteen DEV_-parametreihin. Tyhjä METAR-kenttä käyttää oikeita tietoja.",
-    "developer.capture": "Tallenna nykyiset arvot testiarvoiksi",
-    "developer.copyUrl": "Kopioi URL",
-    "developer.clear": "Tyhjennä testiarvot",
-    "developer.groundTitle": "Maanpinnan havainnot viimeiseltä tunnilta",
-    "developer.minutesAgo": "Min sitten",
-    "developer.meanWindUnit": "Keski (m/s)",
-    "developer.directionUnit": "Suunta (°)",
-    "developer.saved": "Nykyiset arvot tallennettu osoitteeseen.",
-    "developer.copied": "Osoite kopioitu.",
-    "developer.copyFailed":
+    "manual.description":
+        "Käsin syötetyt arvot tallennetaan osoitteen MANUAL_-parametreihin. Tyhjä METAR-kenttä käyttää oikeita tietoja.",
+    "manual.capture": "Tallenna nykyiset arvot manuaaliarvoiksi",
+    "manual.copyUrl": "Kopioi URL",
+    "manual.clear": "Tyhjennä manuaaliarvot",
+    "manual.groundTitle": "Maanpinnan havainnot viimeiseltä tunnilta",
+    "manual.minutesAgo": "Min sitten",
+    "manual.meanWindUnit": "Keski (m/s)",
+    "manual.directionUnit": "Suunta (°)",
+    "manual.saved": "Nykyiset arvot tallennettu osoitteeseen.",
+    "manual.copied": "Osoite kopioitu.",
+    "manual.copyFailed":
         "Kopiointi ei onnistunut. Kopioi osoite alla olevasta kentästä.",
-    "developer.windInvalid":
-        "Tarkista tuuliarvojen ja suuntien sallitut rajat.",
-    "developer.metarInvalid":
+    "manual.windInvalid": "Tarkista tuuliarvojen ja suuntien sallitut rajat.",
+    "manual.metarInvalid":
         "METAR-tekstin lukeminen epäonnistui. Tarkista teksti.",
-    "developer.observationsInvalid":
-        "Tarkista havaintojen tuuliarvot ja suunnat.",
-    "developer.immediate":
+    "manual.observationsInvalid": "Tarkista havaintojen tuuliarvot ja suunnat.",
+    "manual.immediate":
         "Muokkaukset tulevat voimaan heti ja tallentuvat osoitteeseen.",
-    "developer.shareUrl": "Jaettava osoite",
-    "developer.groundHelp":
+    "manual.shareUrl": "Jaettava osoite",
+    "manual.groundHelp":
         "Uusin rivi on nykyinen maanpinnan tuuli. Taulukon muokkaus korvaa viimeisen tunnin havainnot. Tyhjä tuuliarvo tarkoittaa puuttuvaa havaintoa. Suunta −1 tarkoittaa vaihtelevaa tuulta.",
-    "developer.meanWind": "Keskituuli",
-    "developer.queryString": "Kyselymerkkijono",
+    "manual.meanWind": "Keskituuli",
+    "manual.queryString": "Kyselymerkkijono",
     "footer.stationDistance": (km) => `Etäisyys havaintoasemalle ${km} km.`,
     "footer.disclaimer":
         "Tietojen käyttö omalla vastuulla. Ei takeita että tiedot ovat oikein.",
