@@ -213,6 +213,28 @@ export function DropzoneMap() {
         .map-viewport {
             position: relative;
         }
+        .map-errors {
+            position: absolute;
+            bottom: 32px;
+            left: 12px;
+            z-index: 700;
+            max-width: min(24rem, calc(100% - 24px));
+            padding: 8px 10px;
+            border: 1px solid var(--color-warning);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface);
+            color: var(--color-text);
+            box-shadow: var(--shadow-floating);
+            font-size: 0.75rem;
+            line-height: 1.4;
+            pointer-events: none;
+        }
+        .map-errors p {
+            margin: 0;
+        }
+        .map-errors p + p {
+            margin-top: 6px;
+        }
         .dz-map {
             position: relative;
             min-height: 440px;
@@ -1426,6 +1448,27 @@ export function DropzoneMap() {
             ? selectedWind.direction % 360
             : null;
 
+    const driftError = driftMissing ? t("map.driftUnavailable") : "";
+    const jumpRunError =
+        placementUnavailable || (jumpRunStart && !jumpRunVelocity)
+            ? t(
+                  placementUnavailable === "landing"
+                      ? "map.automaticRunUnavailable"
+                      : "map.jumpRunUnavailable",
+              )
+            : "";
+    const previousErrorsRef = useRef(/** @type {string[]} */ ([]));
+    useEffect(() => {
+        const errors = [driftError, jumpRunError, shareError].filter(
+            (error) => error !== "",
+        );
+        // Log each error when it appears, without repeating it on every drag frame.
+        for (const error of errors)
+            if (!previousErrorsRef.current.includes(error))
+                console.error(error);
+        previousErrorsRef.current = errors;
+    }, [driftError, jumpRunError, shareError]);
+
     return html`
         <section id="dropzone-map" aria-label=${t("map.region")}>
             ${scope.style}
@@ -1493,46 +1536,6 @@ export function DropzoneMap() {
                         )}
                     </ul>
                 </aside>
-                ${
-                    driftMissing
-                        ? html`
-                              <div
-                                  class="freefall-drift-summary"
-                                  aria-live="polite"
-                              >
-                                  ${t("map.driftUnavailable")}
-                              </div>
-                          `
-                        : null
-                }
-                ${
-                    placementUnavailable || (jumpRunStart && !jumpRunVelocity)
-                        ? html`
-                              <p class="jump-run-unavailable" role="status">
-                                  ${t(placementUnavailable === "landing" ? "map.automaticRunUnavailable" : "map.jumpRunUnavailable")}
-                              </p>
-                          `
-                        : null
-                }
-                ${
-                    hasLandingCoordinates && !canPositionAutomatic
-                        ? html`
-                              <p
-                                  class="automatic-run-unavailable"
-                                  role="status"
-                              >
-                                  ${t("map.automaticRunUnavailable")}
-                              </p>
-                          `
-                        : null
-                }
-                ${
-                    shareError
-                        ? html`
-                              <p role="status">${shareError}</p>
-                          `
-                        : null
-                }
                 <div class=${`map-frame${fullWindow ? " full-window" : ""}`}>
                     ${h(FreefallToolbar, {
                         fullWindow,
@@ -1626,6 +1629,43 @@ export function DropzoneMap() {
                     <div
                         class=${`map-viewport${placingJumpRunDirection ? " direction-setting" : ""}`}
                     >
+                        ${
+                            driftError || jumpRunError || shareError
+                                ? html`
+                                      <div class="map-errors" role="status">
+                                          ${
+                                              driftError
+                                                  ? html`
+                                                        <p
+                                                            class="freefall-drift-summary"
+                                                        >
+                                                            ${driftError}
+                                                        </p>
+                                                    `
+                                                  : null
+                                          }
+                                          ${
+                                              jumpRunError
+                                                  ? html`
+                                                        <p
+                                                            class=${`jump-run-unavailable${placementUnavailable === "landing" ? " automatic-run-unavailable" : ""}`}
+                                                        >
+                                                            ${jumpRunError}
+                                                        </p>
+                                                    `
+                                                  : null
+                                          }
+                                          ${
+                                              shareError
+                                                  ? html`
+                                                        <p>${shareError}</p>
+                                                    `
+                                                  : null
+                                          }
+                                      </div>
+                                  `
+                                : null
+                        }
                         ${
                             placingJumpRunDirection
                                 ? html`

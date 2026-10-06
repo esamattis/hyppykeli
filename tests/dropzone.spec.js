@@ -3112,14 +3112,33 @@ for (const [description, ground] of [
         await page.getByRole("button", { name: "Keskitä hyppylinja" }).click();
         const start = new URL(page.url()).searchParams.get("map_run_start");
         expect(start).not.toBeNull();
+        const errors = [];
+        page.on("console", (message) => {
+            if (
+                message.type() === "error" &&
+                message
+                    .text()
+                    .includes("Automaattinen sijoitus ei ole saatavilla")
+            )
+                errors.push(message.text());
+        });
         await map.click({ position: { x: 180, y: 200 } });
         await page.getByRole("button", { name: "Laskeutuminen" }).click();
-        await expect(page.locator(".jump-run-unavailable")).toContainText(
+        const error = page.locator(".map-errors .jump-run-unavailable");
+        await expect(error).toContainText(
             "Automaattinen sijoitus ei ole saatavilla",
         );
+        const message = (await error.textContent()).trim();
+        await expect.poll(() => errors).toEqual([message]);
         expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
             start,
         );
+        await page
+            .getByRole("button", { name: "Laajenna Tuulikartta koko ikkunaan" })
+            .click();
+        await expect(error).toBeVisible();
+        await page.getByRole("button", { name: "Palauta Tuulikartta" }).click();
+        expect(errors).toEqual([message]);
         await map.scrollIntoViewIfNeeded();
         await map.click({ position: { x: 180, y: 200 } });
         await page.getByRole("button", { name: "Avaus" }).click();
@@ -3127,6 +3146,12 @@ for (const [description, ground] of [
         expect(new URL(page.url()).searchParams.get("map_run_start")).not.toBe(
             start,
         );
+        await map.click({ position: { x: 180, y: 200 } });
+        await page.getByRole("button", { name: "Laskeutuminen" }).click();
+        await expect(error).toBeVisible();
+        await expect.poll(() => errors).toEqual([message, message]);
+        await page.getByRole("button", { name: "Poista hyppylinja" }).click();
+        await expect(page.locator(".map-errors")).toHaveCount(0);
     });
 }
 
@@ -3359,7 +3384,21 @@ for (const placement of ["unplaced", "positioned"]) {
 test("dragging sets jump run direction and clicking exits without moving the run", async ({
     page,
 }) => {
+    // Opposing lower winds prevent automatic placement, but allow free rotation.
+    await page.goto(
+        `${developerPath}&DEV_ground_obs=10,10,180,1&lat=62.4&lon=25.6`,
+    );
     await setUniformFreefallWind(page);
+    await expect(
+        page.getByRole("button", {
+            name: "Hyppylinjan automaattinen sijoitus",
+        }),
+    ).toBeDisabled();
+    await expect(page.locator(".map-errors")).toHaveCount(0);
+    const errors = [];
+    page.on("console", (message) => {
+        if (message.type() === "error") errors.push(message.text());
+    });
     const map = page.locator(".dz-map");
     await map.scrollIntoViewIfNeeded();
     await map.click({ position: { x: 100, y: 160 } });
@@ -3397,6 +3436,11 @@ test("dragging sets jump run direction and clicking exits without moving the run
     );
     await page.mouse.up();
     await expect(hint).toBeVisible();
+    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
+    await expect(page.locator(".map-errors")).toHaveCount(0);
+    expect(errors.filter((message) => message.includes("saatavilla"))).toEqual(
+        [],
+    );
     await expect(directionButton).toHaveAttribute("aria-checked", "true");
     const aimed = settings().direction;
     const start = new URL(page.url()).searchParams.get("map_run_start");
@@ -4285,6 +4329,10 @@ test("automatic positioning is disabled for an infeasible current direction and 
     );
     await setUniformFreefallWind(page);
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+    const errors = [];
+    page.on("console", (message) => {
+        if (message.type() === "error") errors.push(message.text());
+    });
     await page
         .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
         .click();
@@ -4302,10 +4350,17 @@ test("automatic positioning is disabled for an infeasible current direction and 
         name: "Hyppylinjan automaattinen sijoitus",
     });
     await expect(position).toBeDisabled();
-    await expect(page.locator(".automatic-run-unavailable")).toBeVisible();
+    await expect(page.locator(".automatic-run-unavailable")).toHaveCount(0);
+    const error = page.locator(".map-errors .jump-run-unavailable");
+    await expect(error).toContainText(
+        "Hyppylinjan paikat eivät ole saatavilla",
+    );
+    await expect
+        .poll(() => errors)
+        .toContain((await error.textContent()).trim());
     await clickDirection(page, directionControls.reset);
     await expect(position).toBeEnabled();
-    await expect(page.locator(".automatic-run-unavailable")).toHaveCount(0);
+    await expect(page.locator(".map-errors")).toHaveCount(0);
     const run = JSON.parse(
         new URL(page.url()).searchParams.get("map_run_settings"),
     );
@@ -4364,7 +4419,7 @@ for (const [description, ground] of [
             name: "Hyppylinjan automaattinen sijoitus",
         });
         await expect(position).toBeDisabled();
-        await expect(page.locator(".automatic-run-unavailable")).toBeVisible();
+        await expect(page.locator(".automatic-run-unavailable")).toHaveCount(0);
         expect(
             new URL(page.url()).searchParams.get("map_run_start"),
         ).toBeNull();
