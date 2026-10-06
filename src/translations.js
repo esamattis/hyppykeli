@@ -210,7 +210,18 @@ export const english = {
     "map.selectWind": "Select an altitude to show its wind on the map.",
     "map.navigationHelp": "Pan and zoom the map with two fingers.",
     "map.jumpRunHelp":
-        "On load, automatic placement uses the default axis facing the average 4200–800 m wind. Every predicted opening is placed at least 50 m upwind of the landing coordinates relative to each non-calm wind layer below that opening. The preferred offset estimates canopy wind drift with a constant descent speed of 5 m/s, using ground, 110 m, 800 m and any higher layers below opening. These are nominal forecast heights; the estimate does not model canopy glide or guarantee landing-area reachability. Automatic placement requires a ground observation no older than one hour and current upper winds; conflicting wind directions can prevent placement. The positioning button repeats this calculation using the current jump-run direction. The reset direction button restores the default axis facing the average wind while keeping the group’s opening point. Manual edits can move openings outside these limits. Click or tap the map, then choose a callout option to place the group’s opening point or the middle of the jump run there, or use that point as the parachute landing target with the automatic positioning calculation and current jump-run direction. Clicking anywhere else cancels positioning. Press Enter on the focused map to place the group’s opening point at the map centre. The direction menu contains direction mode, 90° rotation, and reset. Direction mode rotates the run around that opening point when you drag with the mouse or a finger; open the menu and press that button again to leave it. Add jumpers with the plus button. Settings control jump-run ground track, true airspeed, jumper interval, and shared exit altitude. Each jumper gets a drift arrow. Wind is interpolated between 800, 1,500, 3,000, and 4,200 m.",
+        "Each jumper or jump group gets a predicted freefall-drift arrow. Settings control ground track, aircraft true airspeed, exit interval, and shared exit altitude. Each jumper has its own opening altitude and freefall speed.",
+    "map.automaticHelpTitle": "Automatic placement",
+    "map.automaticHelp":
+        "On initial placement, the configured default axis is reversed when necessary to face into the average 4200–800 m wind. Every predicted opening is placed at least 50 m upwind of the landing target relative to each non-calm wind layer at or below that opening. The preferred offset estimates canopy wind drift at a constant descent speed of 5 m/s, using ground, 110 m, 800 m, and any higher layers below opening. This does not model canopy glide or guarantee landing-area reachability.",
+    "map.automaticLimitsHelp":
+        "Automatic placement requires a ground observation no older than one hour and current forecast winds. Missing data, an unachievable ground track, or conflicting wind directions can prevent placement. The positioning button repeats the calculation for the configured landing coordinates using the current direction. Manual edits and later weather updates do not automatically repeat placement and can leave openings outside these limits.",
+    "map.positioningHelpTitle": "Manual positioning",
+    "map.positioningHelp":
+        "Click or tap the map, then choose Opening to place the central predicted opening point there, Center jump run to place the middle of the exit sequence there, or Landing to use that point as the landing target for automatic placement with the current direction. For an even number of jumpers, the central opening point is the midpoint of the two middle openings. Clicking elsewhere cancels the callout. Press Enter on the focused map to place the central opening point at the map centre. Add jumpers with the plus button.",
+    "map.directionHelpTitle": "Direction controls",
+    "map.directionControlsHelp":
+        "The direction menu contains drag mode, 90° rotations, and reset. In drag mode, drag with the mouse or a finger to rotate the run around its central predicted opening point. Click the map or press the direction button again to finish. Reset restores the configured default axis, reversed when necessary to face into the average wind, while keeping that opening point.",
     "map.legendHelp":
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
@@ -244,27 +255,37 @@ export const english = {
     "toolbar.openingTooltip": "Opening altitude for the next jumper you add.",
     "toolbar.speedTooltip": "Freefall speed for the next jumper you add.",
     "toolbar.jumpRunTooltip":
-        "Jump run heading and aircraft true airspeed. Wind is accounted for when calculating ground speed.",
+        "Jump-run ground track and aircraft true airspeed. Wind is accounted for when calculating ground speed.",
     "toolbar.separation": "Separation",
     "toolbar.separationTooltip":
         "Time between consecutive jumper exits on the jump run.",
     "toolbar.opening": "Opening",
     "toolbar.speed": "Speed",
     "toolbar.windLevels": "Wind levels",
+
+    "settings.jumpRunDirectionHelp":
+        "Direction of travel over the ground: 0°/360° north, 90° east, 180° south, and 270° west. Wind correction determines the aircraft heading needed to follow this track. Changing direction rotates an existing run around its central predicted opening point. Missing wind data or a track that cannot be flown at the selected airspeed can prevent the calculation.",
+    "settings.altitudeReferenceHelp":
+        "The calculation uses nominal forecast heights, approximately above sea level, without correcting for dropzone elevation. These values are not a terrain-adjusted height-above-ground model.",
+    "settings.freefallSpeedHelp":
+        "The vertical terminal speed used in the freefall estimate. The calculation starts with zero vertical speed and includes forward movement inherited from the aircraft. Wind changes affect the jumper gradually. Presets set only this speed; they do not model horizontal tracking or wingsuit glide.",
+    "settings.nextJumperHelp":
+        "These values apply to subsequently added jumpers and the default group when first creating a run.",
     "settings.jumpRun": "Jump run settings",
     "settings.jumpRunDirection": "Jump run direction",
     "settings.defaultJumperCount": "Default jump group count",
     "settings.defaultJumperCountHelp":
-        "Number of jump groups created when first positioning a jump run, if its jumper list has not been customized. Each group uses the next-jumper settings. Add or remove jumpers to change an existing run.",
+        "Number of jump groups created when first positioning a jump run, if its jumper list has not been customized. Each group uses the next-jumper settings. Changing this value does not resize an existing run; add or remove jumpers in the list instead.",
     "settings.exitHeight": "Exit altitude (m)",
     "settings.openingHeight": "Opening altitude (m)",
     "settings.freefallSpeed": "Freefall speed (km/h)",
     "settings.jumpRunSpeed": "True airspeed (km/h)",
     "settings.jumperInterval": "Jumper interval (s)",
     "settings.jumperIntervalHelp":
-        "Time in seconds between consecutive jump group exits. The same interval applies to every group on the jump run. The aircraft's ground speed, including the effect of wind at exit altitude, determines the distance between exit points.",
+        "Time in seconds between consecutive jump group exits. The same interval applies to every group on the jump run. The aircraft’s ground speed, including wind at exit altitude, determines the distance between exit points. Different freefall speeds and opening altitudes can produce different spacing between opening points.",
     "settings.nextJumper": "Settings for the next jumper",
-    "settings.jumpers": "Jumpers",
+    "settings.currentJumpers": "Current jumpers",
+    "settings.jumpers": "Jumpers / jump groups",
     "settings.setJumpRunDirection": "Freely rotate the jump run by dragging",
     "settings.resetJumpRunDirection": "Reset jump run to default direction",
     "settings.rotateJumpRunClockwise": "Rotate jump run 90° clockwise",
@@ -275,11 +296,13 @@ export const english = {
     "settings.removeJumper": (/** @type {number} */ number) =>
         `Remove jumper ${number}`,
     "settings.speedExplanation":
-        "Enter true airspeed (TAS), not indicated airspeed (IAS). The direction is the track over the ground. Wind interpolated at exit altitude corrects ground speed for headwind, tailwind and crosswind; ground speed and the exit interval determine jumper spacing. Drift arrows also include forward throw, estimated from zero vertical speed using gravity and quadratic drag. The selected freefall speed is the terminal vertical speed in this estimate; wind changes act gradually on the jumper.",
-    "settings.exitExplanation": "The exit altitude is shared by all jumpers.",
-    "settings.profileRange": "The wind profile covers 800–4,200 m.",
+        "Enter true airspeed (TAS), not indicated airspeed (IAS). Wind at exit altitude is used to calculate ground speed along the selected ground track. Ground speed and the exit interval determine the distance between exit points. The freefall estimate also includes forward movement inherited from the aircraft.",
+    "settings.exitExplanation":
+        "The exit altitude is shared by all jumpers. It must be above every existing jumper’s opening altitude and the opening altitude set for the next jumper.",
+    "settings.profileRange":
+        "The freefall calculation supports altitudes from 800 to 4,200 m.",
     "settings.openingRange":
-        "The wind profile covers 800–4,200 m. Opening altitude must be below exit altitude.",
+        "Altitude where the predicted freefall path ends. It must be at least 800 m and below exit altitude. Lower openings generally allow more time for freefall drift.",
     "highWinds.title": "ECMWF upper-wind forecasts",
     "highWinds.helpForecast":
         "These are forecasts, not measurements. The app requests hourly wind speed and direction from Open-Meteo for the forecast coordinates.",
@@ -580,7 +603,18 @@ const finnish = {
     "map.selectWind": "Valitse korkeus nähdäksesi sen tuulen kartalla.",
     "map.navigationHelp": "Karttaa voi liikuttaa ja zoomata kahdella sormella.",
     "map.jumpRunHelp":
-        "Automaattinen sijoitus käyttää ladattaessa oletussuuntaa vasten 4200–800 m keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskoordinaattien tuulenpuolelle suhteessa jokaiseen avautumisen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin käyttäen maanpinnan, 110 m:n, 800 m:n ja avautumisen alapuolisten ylempien kerrosten tuulia. Korkeudet ovat ennusteen nimelliskorkeuksia; arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä. Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ylätuulet; ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike toistaa laskennan hyppylinjan nykyisellä suunnalla. Suunnan palautuspainike palauttaa oletussuunnan vasten keskituulta säilyttäen ryhmän avautumiskohdan. Käsin tehdyt muutokset voivat siirtää avautumiskohtia näiden rajojen ulkopuolelle. Klikkaa tai napauta karttaa ja valitse puhekuplasta ryhmän avautumiskohdan tai hyppylinjan keskikohdan sijoittaminen siihen tai käytä kohtaa varjojen laskeutumiskohteena automaattisella sijoituslaskennalla ja hyppylinjan nykyisellä suunnalla. Klikkaus muualle peruu sijoittamisen. Enter kohdistetulla kartalla sijoittaa ryhmän avautumiskohdan kartan keskikohtaan. Suuntavalikko sisältää suunnan asetuksen, 90° kierrot ja palautuksen. Suunnan asetus kiertää hyppylinjaa tuon avautumiskohdan ympäri, kun vedät hiirellä tai sormella; avaa valikko ja paina painiketta uudelleen poistuaksesi. Lisää hyppääjiä pluspainikkeesta. Asetuksista voi muuttaa hyppylinjan suuntaa, todellista ilmanopeutta, hyppääjien aikaväliä ja yhteistä uloshyppykorkeutta. Jokaiselle hyppääjälle piirretään ajautumisnuoli. Tuuli interpoloidaan korkeuksien 800, 1500, 3000 ja 4200 m välillä.",
+        "Jokaiselle hyppääjälle tai hyppyryhmälle piirretään ennustettu vapaapudotusajautumisen nuoli. Asetukset määrittävät lentoradan suunnan maan suhteen, lentokoneen todellisen ilmanopeuden, uloshyppyjen aikavälin ja yhteisen uloshyppykorkeuden. Jokaisella hyppääjällä on oma avauskorkeus ja vapaapudotusnopeus.",
+    "map.automaticHelpTitle": "Automaattinen sijoitus",
+    "map.automaticHelp":
+        "Ensimmäisessä sijoituksessa määritetty oletusakseli käännetään tarvittaessa vasten 4200–800 m keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskohteen tuulenpuolelle suhteessa jokaiseen avautumiskorkeuden tai sen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin käyttäen maanpinnan, 110 m:n, 800 m:n ja avautumisen alapuolisten ylempien kerrosten tuulia. Arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä.",
+    "map.automaticLimitsHelp":
+        "Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ennustetuulet. Puuttuvat tiedot, lentorata jota ei voi lentää tai ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike toistaa laskennan määritetyille laskeutumiskoordinaateille nykyisellä suunnalla. Käsin tehdyt muutokset ja myöhemmät sääpäivitykset eivät toista sijoitusta automaattisesti ja voivat jättää avautumiskohtia näiden rajojen ulkopuolelle.",
+    "map.positioningHelpTitle": "Sijoittaminen käsin",
+    "map.positioningHelp":
+        "Klikkaa tai napauta karttaa ja valitse Avaus sijoittaaksesi keskimmäisen ennustetun avautumiskohdan siihen, Keskitä hyppylinja sijoittaaksesi uloshyppyjonon keskikohdan siihen tai Laskeutuminen käyttääksesi kohtaa automaattisen sijoituksen laskeutumiskohteena nykyisellä suunnalla. Kun hyppääjien määrä on parillinen, keskimmäinen avautumiskohta on kahden keskimmäisen avautumiskohdan puolivälissä. Klikkaus muualle sulkee puhekuplan. Enter kohdistetulla kartalla sijoittaa keskimmäisen avautumiskohdan kartan keskikohtaan. Lisää hyppääjiä pluspainikkeesta.",
+    "map.directionHelpTitle": "Suunnan säätäminen",
+    "map.directionControlsHelp":
+        "Suuntavalikko sisältää vetotilan, 90° kierrot ja palautuksen. Vedä vetotilassa hiirellä tai sormella kiertääksesi hyppylinjaa sen keskimmäisen ennustetun avautumiskohdan ympäri. Klikkaa karttaa tai paina suuntapainiketta uudelleen lopettaaksesi. Palautus palauttaa määritetyn oletusakselin, tarvittaessa käännettynä vasten keskituulta, säilyttäen tuon avautumiskohdan.",
     "map.legendHelp":
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
@@ -614,27 +648,36 @@ const finnish = {
     "toolbar.speedTooltip":
         "Seuraavaksi lisättävän hyppääjän vapaapudotusnopeus.",
     "toolbar.jumpRunTooltip":
-        "Hyppylinjan suunta ja lentokoneen todellinen ilmanopeus. Tuuli huomioidaan maanopeuden laskennassa.",
+        "Hyppylinjan suunta maan suhteen ja lentokoneen todellinen ilmanopeus. Tuuli huomioidaan maanopeuden laskennassa.",
     "toolbar.separation": "Hyppääjien väli",
     "toolbar.separationTooltip":
         "Peräkkäisten uloshyppyjen välinen aika hyppylinjalla.",
     "toolbar.opening": "Avaus",
     "toolbar.speed": "Nopeus",
     "toolbar.windLevels": "Tuulikorkeudet",
+    "settings.jumpRunDirectionHelp":
+        "Lentoradan suunta maan suhteen: 0°/360° pohjoinen, 90° itä, 180° etelä ja 270° länsi. Tuulikorjaus määrittää lentokoneen nokan suunnan, jolla tätä lentorataa seurataan. Suunnan muuttaminen kiertää olemassa olevaa hyppylinjaa sen keskimmäisen ennustetun avautumiskohdan ympäri. Puuttuvat tuulitiedot tai lentorata, jota ei voi lentää valitulla ilmanopeudella, voivat estää laskennan.",
+    "settings.altitudeReferenceHelp":
+        "Laskenta käyttää ennusteen nimelliskorkeuksia, likimäärin merenpinnasta, ilman hyppypaikan korkeuden korjausta. Arvot eivät muodosta maaston mukaan korjattua mallia korkeudesta maanpinnan yläpuolella.",
+    "settings.freefallSpeedHelp":
+        "Vapaapudotusarviossa käytettävä pystysuuntainen rajanopeus. Laskennan pystynopeus alkaa nollasta, ja arvio huomioi lentokoneelta perityn etenemisnopeuden. Tuulen muutokset vaikuttavat hyppääjään vähitellen. Esivalinnat asettavat vain tämän nopeuden; ne eivät mallinna vaakasuuntaista liukumista tai liitopuvun liitoa.",
+    "settings.nextJumperHelp":
+        "Nämä arvot koskevat myöhemmin lisättäviä hyppääjiä sekä oletusryhmää, kun hyppylinja luodaan ensimmäisen kerran.",
     "settings.jumpRun": "Hyppylinjan asetukset",
     "settings.jumpRunDirection": "Hyppylinjan suunta",
     "settings.defaultJumperCount": "Hyppyryhmien oletusmäärä",
     "settings.defaultJumperCountHelp":
-        "Hyppyryhmien määrä, kun hyppylinja sijoitetaan ensimmäisen kerran eikä sen hyppääjälistaa ole muokattu. Jokainen ryhmä käyttää lisättävän hyppääjän asetuksia. Muuta olemassa olevan hyppylinjan ryhmien määrää lisäämällä tai poistamalla hyppääjiä.",
+        "Hyppyryhmien määrä, kun hyppylinja sijoitetaan ensimmäisen kerran eikä sen hyppääjälistaa ole muokattu. Jokainen ryhmä käyttää lisättävän hyppääjän asetuksia. Arvon muuttaminen ei muuta olemassa olevan hyppylinjan kokoa; lisää tai poista hyppääjiä listassa.",
     "settings.exitHeight": "Uloshyppykorkeus (m)",
     "settings.openingHeight": "Avauskorkeus (m)",
     "settings.freefallSpeed": "Vapaapudotusnopeus (km/h)",
     "settings.jumpRunSpeed": "Todellinen ilmanopeus (km/h)",
     "settings.jumperInterval": "Hyppääjien väli (s)",
     "settings.jumperIntervalHelp":
-        "Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina. Sama aikaväli koskee jokaista hyppylinjan ryhmää. Uloshyppykohtien välimatka määräytyy lentokoneen maanopeudesta, jossa huomioidaan tuuli uloshyppykorkeudella.",
+        "Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina. Sama aikaväli koskee jokaista hyppylinjan ryhmää. Lentokoneen maanopeus, jossa huomioidaan tuuli uloshyppykorkeudella, määrää uloshyppykohtien välimatkan. Erilaiset vapaapudotusnopeudet ja avauskorkeudet voivat tuottaa erilaiset avautumiskohtien välit.",
     "settings.nextJumper": "Lisättävän hyppääjän asetukset",
-    "settings.jumpers": "Hyppääjät",
+    "settings.currentJumpers": "Nykyiset hyppääjät",
+    "settings.jumpers": "Hyppääjät / hyppyryhmät",
     "settings.setJumpRunDirection": "Kierrä hyppylinjaa vapaasti vetämällä",
     "settings.resetJumpRunDirection": "Palauta hyppylinjan oletussuunta",
     "settings.rotateJumpRunClockwise": "Kierrä hyppylinjaa 90° myötäpäivään",
@@ -644,12 +687,13 @@ const finnish = {
     "settings.jumper": (number) => `Hyppääjä ${number}`,
     "settings.removeJumper": (number) => `Poista hyppääjä ${number}`,
     "settings.speedExplanation":
-        "Syötä todellinen ilmanopeus (TAS), ei mittarinopeutta (IAS). Suunta on lentoradan suunta maan suhteen. Uloshyppykorkeudelle interpoloitu tuuli korjaa maanopeutta vasta-, myötä- ja sivutuulen mukaan. Hyppääjien välimatka lasketaan maanopeudesta ja uloshyppyjen välisestä ajasta. Ajautumisnuolet huomioivat myös lentokoneelta perityn etenemisnopeuden, joka hidastuu neliöllisen ilmanvastuksen arvion mukaan. Pystynopeus alkaa nollasta ja kasvaa painovoiman vaikutuksesta. Valittu vapaapudotusnopeus on arvion pystysuuntainen rajanopeus, ja tuulen muutokset vaikuttavat hyppääjään vähitellen.",
+        "Syötä todellinen ilmanopeus (TAS), ei mittarinopeutta (IAS). Uloshyppykorkeuden tuulen avulla lasketaan maanopeus valitulla lentoradalla. Maanopeus ja uloshyppyjen aikaväli määräävät uloshyppykohtien välimatkan. Vapaapudotusarvio huomioi myös lentokoneelta perityn etenemisnopeuden.",
     "settings.exitExplanation":
-        "Uloshyppykorkeus on yhteinen kaikille hyppääjille.",
-    "settings.profileRange": "Tuuliprofiili kattaa 800–4200 m.",
+        "Uloshyppykorkeus on yhteinen kaikille hyppääjille. Sen on oltava jokaisen olemassa olevan hyppääjän avauskorkeutta sekä lisättävälle hyppääjälle asetettua avauskorkeutta ylempänä.",
+    "settings.profileRange":
+        "Vapaapudotuslaskenta tukee korkeuksia 800–4200 m.",
     "settings.openingRange":
-        "Tuuliprofiili kattaa 800–4200 m. Avauskorkeuden tulee olla uloshyppykorkeutta alempana.",
+        "Korkeus, johon ennustettu vapaapudotusreitti päättyy. Sen on oltava vähintään 800 m ja uloshyppykorkeutta alempana. Matalampi avaus antaa yleensä enemmän aikaa vapaapudotusajautumiselle.",
     "highWinds.title": "ECMWF Ylätuuliennusteet",
     "highWinds.helpForecast":
         "Nämä ovat ennusteita, eivät mittaushavaintoja. Sovellus pyytää Open-Meteon rajapinnasta tuntikohtaisen tuulen nopeuden ja suunnan ennustesijainnin koordinaateille.",

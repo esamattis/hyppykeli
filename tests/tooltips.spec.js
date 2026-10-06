@@ -142,7 +142,7 @@ test("map summary values explain their meaning on hover and keyboard focus", asy
         "Kaikkien hyppylinjan hyppääjien uloshyppykorkeus.",
         "Seuraavaksi lisättävän hyppääjän avauskorkeus.",
         "Seuraavaksi lisättävän hyppääjän vapaapudotusnopeus.",
-        "Hyppylinjan suunta ja lentokoneen todellinen ilmanopeus. Tuuli huomioidaan maanopeuden laskennassa.",
+        "Hyppylinjan suunta maan suhteen ja lentokoneen todellinen ilmanopeus. Tuuli huomioidaan maanopeuden laskennassa.",
         "Peräkkäisten uloshyppyjen välinen aika hyppylinjalla.",
     ];
     await expect(values).toHaveCount(explanations.length);

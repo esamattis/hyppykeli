@@ -1170,7 +1170,7 @@ test("map help separates instructions and explains forecast limitations", async 
     await expect(
         help.getByRole("heading", { name: "Hyppylinja" }),
     ).toBeVisible();
-    await expect(help).toContainText("ajautumisnuoli");
+    await expect(help).toContainText("vapaapudotusajautumisen nuoli");
     await expect(help).toContainText(
         "eivät ole hyppypaikalla mitattuja arvoja",
     );
@@ -2100,8 +2100,7 @@ test("jump run explanations open in help dialogs and return to the settings", as
         name: "Hyppylinjan asetukset",
     });
     const exitExplanation = page.getByText(
-        "Uloshyppykorkeus on yhteinen kaikille hyppääjille.",
-        { exact: true },
+        /^Uloshyppykorkeus on yhteinen kaikille hyppääjille\./,
     );
     const speedExplanation = page.getByText(
         /^Syötä todellinen ilmanopeus \(TAS\), ei mittarinopeutta \(IAS\)\./,
@@ -2117,7 +2116,9 @@ test("jump run explanations open in help dialogs and return to the settings", as
         .click();
     await expect(exitExplanation).toBeVisible();
     await expect(
-        page.getByText("Tuuliprofiili kattaa 800–4200 m.", { exact: true }),
+        page.getByText("Vapaapudotuslaskenta tukee korkeuksia 800–4200 m.", {
+            exact: true,
+        }),
     ).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(exitExplanation).toBeHidden();
@@ -2152,6 +2153,38 @@ test("jump run explanations open in help dialogs and return to the settings", as
         await page.keyboard.press("Escape");
         await expect(text).toBeHidden();
         await expect(settings).toBeVisible();
+    }
+    for (const [label, explanation] of [
+        ["Hyppylinjan suunta", "Lentoradan suunta maan suhteen"],
+        [
+            "Avauskorkeus (m)",
+            "Korkeus, johon ennustettu vapaapudotusreitti päättyy",
+        ],
+        [
+            "Vapaapudotusnopeus (km/h)",
+            "ne eivät mallinna vaakasuuntaista liukumista tai liitopuvun liitoa",
+        ],
+    ]) {
+        const buttons = settings.getByRole("button", {
+            name: `${label}: Ohje`,
+            exact: true,
+        });
+        await expect(buttons).toHaveCount(
+            label === "Hyppylinjan suunta" ? 1 : 2,
+        );
+        // Both next-jumper fields and table headers open their own help.
+        for (const button of await buttons.all()) {
+            await button.click();
+            const help = button.locator("..").locator("dialog");
+            await expect(
+                help.getByRole("heading", { name: label, exact: true }),
+            ).toBeVisible();
+            await expect(help).toContainText(explanation);
+            await page.keyboard.press("Escape");
+            await expect(help).toBeHidden();
+            await expect(settings).toBeVisible();
+            await expect(button).toBeFocused();
+        }
     }
     await settings
         .getByRole("spinbutton", {

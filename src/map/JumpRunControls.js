@@ -1,6 +1,7 @@
 // @ts-check
 import { Dialog } from "#app/shared/Dialog.js";
 import { DropdownMenu } from "#app/shared/DropdownMenu.js";
+import { FreefallHelp } from "#app/map/FreefallHelp.js";
 import { Help } from "#app/shared/Help.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { Icon, WindArrow } from "#app/shared/icons.js";
@@ -84,17 +85,18 @@ export function JumpRunControls({
             padding: 0 4px;
             font-size: 0.8rem;
         }
-        .next-jumper > label {
-            grid-template-columns: minmax(0, 1fr);
-            align-self: end;
-            gap: 4px;
-            margin: 0;
+        .next-jumper-help {
+            margin: 0 0 4px;
             font-size: 0.7rem;
-            line-height: 1.3;
         }
+        .next-jumper > .next-jumper-help,
         .next-jumper > .presets,
         .next-jumper > .add-jumper {
             grid-column: 1 / -1;
+        }
+        .current-jumpers-title {
+            margin: 14px 0 4px;
+            font-size: 0.8rem;
         }
         .direction-field {
             grid-template-columns: minmax(0, 1fr);
@@ -319,11 +321,33 @@ export function JumpRunControls({
                 <form
                     onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
                 >
-                    <label class="direction-field">
-                        ${t("settings.jumpRunDirection")}
+                    <div class="direction-field">
+                        <div class="setting-label">
+                            <label for=${`${titleId}-direction`}>
+                                ${t("settings.jumpRunDirection")}
+                            </label>
+                            <span class=${scope.end}>
+                                ${h(
+                                    Help,
+                                    {
+                                        label: `${t("settings.jumpRunDirection")}: ${t("common.help")}`,
+                                        wide: true,
+                                    },
+                                    html`
+                                        <h3>
+                                            ${t("settings.jumpRunDirection")}
+                                        </h3>
+                                        <p>
+                                            ${t("settings.jumpRunDirectionHelp")}
+                                        </p>
+                                    `,
+                                )}
+                            </span>
+                        </div>
                         <span class="direction-row">
                             <input
                                 type="range"
+                                id=${`${titleId}-direction`}
                                 aria-label=${t("settings.jumpRunDirection")}
                                 min="0"
                                 max="360"
@@ -343,7 +367,7 @@ export function JumpRunControls({
                             />
                             <span class="direction-reading">
                                 ${h(WindArrow, {
-                                    // WindArrow takes the origin; jump run direction is the heading.
+                                    // WindArrow takes the origin; jump run direction is the ground track.
                                     direction: (settings.direction + 180) % 360,
                                 })}
                                 <output class="direction-value">
@@ -351,7 +375,7 @@ export function JumpRunControls({
                                 </output>
                             </span>
                         </span>
-                    </label>
+                    </div>
                     <div class="setting-with-help">
                         <div class="setting-label">
                             <label for=${`${titleId}-exit`}>
@@ -367,6 +391,9 @@ export function JumpRunControls({
                                         <h3>${t("settings.exitHeight")}</h3>
                                         <p>${t("settings.exitExplanation")}</p>
                                         <p>${t("settings.profileRange")}</p>
+                                        <p>
+                                            ${t("settings.altitudeReferenceHelp")}
+                                        </p>
                                     `,
                                 )}
                             </div>
@@ -488,6 +515,9 @@ export function JumpRunControls({
                     </div>
                     <fieldset class="next-jumper">
                         <legend>${t("settings.nextJumper")}</legend>
+                        <p class="next-jumper-help">
+                            ${t("settings.nextJumperHelp")}
+                        </p>
                         ${h(FreefallFields, {
                             exitHeight: settings.exitHeight,
                             openingDraft: nextDraft.openingHeight,
@@ -527,6 +557,9 @@ export function JumpRunControls({
                     ${
                         jumperDrafts.length > 0 &&
                         html`
+                            <h3 class="current-jumpers-title">
+                                ${t("settings.currentJumpers")}
+                            </h3>
                             <table
                                 class="jumper-table"
                                 aria-label=${t("settings.jumpers")}
@@ -545,6 +578,9 @@ export function JumpRunControls({
                                             data-tooltip=${t("settings.freefallSpeed")}
                                         >
                                             ${t("toolbar.speed")} (km/h)
+                                            <span class=${scope.end}>
+                                                ${h(FreefallHelp, { field: "freefallSpeed" })}
+                                            </span>
                                         </th>
                                         <th
                                             scope="col"
@@ -552,6 +588,9 @@ export function JumpRunControls({
                                             data-tooltip=${t("settings.openingHeight")}
                                         >
                                             ${t("toolbar.opening")} (m)
+                                            <span class=${scope.end}>
+                                                ${h(FreefallHelp, { field: "openingHeight" })}
+                                            </span>
                                         </th>
                                         <th
                                             scope="col"

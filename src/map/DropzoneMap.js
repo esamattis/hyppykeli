@@ -1436,6 +1436,14 @@ export function DropzoneMap() {
 
                             <h3>${t("map.jumpRunHelpTitle")}</h3>
                             <p>${t("map.jumpRunHelp")}</p>
+                            <h3>${t("map.automaticHelpTitle")}</h3>
+                            <p>${t("map.automaticHelp")}</p>
+                            <p>${t("map.automaticLimitsHelp")}</p>
+                            <p>${t("settings.altitudeReferenceHelp")}</p>
+                            <h3>${t("map.positioningHelpTitle")}</h3>
+                            <p>${t("map.positioningHelp")}</p>
+                            <h3>${t("map.directionHelpTitle")}</h3>
+                            <p>${t("map.directionControlsHelp")}</p>
                         `,
                     )}
                 </h2>
