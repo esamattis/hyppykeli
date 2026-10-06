@@ -174,13 +174,13 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     expect(result.canopy.north).toBeCloseTo((-415 * 7.7) / 5, 5);
     expect(result.aircraft.ground.north).toBeCloseTo(50 - 41.5025, 5);
     const map = page.locator("#dropzone-map");
-    await expect(map).toContainText("Hyppypaikka 201 m merenpinnasta");
+    await expect(page.locator("#title")).toContainText("201 m merenpinnasta");
     const selected = map.locator('.wind-level-choice[aria-pressed="true"]');
     // Old URLs selecting the nominal 3000 m label still select 700 hPa.
     await expect(selected).toHaveAttribute("aria-label", /^≈ 3000 m:/);
-    await expect(selected).toHaveAttribute("data-tooltip", /^2900 m:/);
+    await expect(selected).toHaveAttribute("data-tooltip", /^3000 m:/);
     await selected.focus();
-    await expect(page.getByRole("tooltip")).toContainText("2900 m");
+    await expect(page.getByRole("tooltip")).toContainText("3000 m");
     await page.keyboard.press("Escape");
 
     await expect(map.locator(".wind-level-choice")).toHaveCount(6);
@@ -212,7 +212,7 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     await expect(exit).not.toHaveAttribute("max");
     await dialog.getByRole("button", { name: "Sulje", exact: true }).click();
     await expect(selected).toHaveAttribute("aria-label", /^≈ 3000 m:/);
-    await expect(selected).toHaveAttribute("data-tooltip", /^2965 m:/);
+    await expect(selected).toHaveAttribute("data-tooltip", /^3000 m:/);
     await selected.click();
     expect(JSON.parse(new URL(page.url()).searchParams.get("map_wind"))).toBe(
         "700",
@@ -222,7 +222,7 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
         navigateQs({ elevation: "250.5" });
     });
     await expect(selected).toHaveAttribute("aria-label", /^≈ 3000 m:/);
-    await expect(selected).toHaveAttribute("data-tooltip", /^2915 m:/);
+    await expect(selected).toHaveAttribute("data-tooltip", /^3000 m:/);
     // A forecast above the old 4200 m ceiling can be used and shared.
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");

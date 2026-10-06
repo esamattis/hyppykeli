@@ -1,5 +1,4 @@
 // @ts-check
-import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { Help } from "#app/shared/Help.js";
 import { WindBarb } from "#app/map/WindBarb.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
@@ -30,12 +29,6 @@ export function FreefallToolbar({
             padding: 0;
             border-bottom: 1px solid var(--color-border);
             background: var(--color-surface-soft);
-        }
-        .map-altitude-note {
-            margin: 0;
-            padding: 0 12px 6px;
-            color: var(--color-muted);
-            font-size: 0.65rem;
         }
         .toolbar-actions {
             position: relative;
@@ -373,9 +366,6 @@ export function FreefallToolbar({
                     })}
                 </div>
             </div>
-            <p class="map-altitude-note">
-                ${t("map.dropzoneHeights", String(Math.round(DROPZONE_ELEVATION.value)))}
-            </p>
             <div class="toolbar-actions">
                 <div
                     class="wind-level-icons"

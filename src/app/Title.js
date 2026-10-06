@@ -8,7 +8,11 @@ import { isNullish } from "#app/shared/values.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { LATEST_OBSERVATION, NAME } from "#app/weather/state.js";
-import { QUERY_PARAMS, navigateQs } from "#app/app/settings.js";
+import {
+    DROPZONE_ELEVATION,
+    QUERY_PARAMS,
+    navigateQs,
+} from "#app/app/settings.js";
 import { h, html } from "htm/preact";
 import { useId, useRef, useState } from "preact/hooks";
 
@@ -35,6 +39,13 @@ export function Title() {
 
         .title-name {
             min-width: 0;
+        }
+
+        .title-elevation {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: normal;
+            color: var(--color-muted);
         }
 
         .edit-name {
@@ -141,6 +152,9 @@ export function Title() {
                 >
                     ${h(Icon, { name: "pen", size: 20 })}
                 </button>
+            </span>
+            <span class="title-elevation">
+                ${t("title.elevation", String(Math.round(DROPZONE_ELEVATION.value)))}
             </span>
             <span class="title-temp">
                 ${

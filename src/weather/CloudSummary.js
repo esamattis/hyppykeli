@@ -237,12 +237,6 @@ function OpenMeteoClouds({ profile }) {
             color: var(--color-muted);
             font-size: 0.75rem;
         }
-        .cloud-profile-altitude-note {
-            margin: 8px 0 0;
-            color: var(--color-muted);
-            font-size: 0.75rem;
-            text-align: right;
-        }
         .cloud-profile-header {
             display: flex;
             justify-content: space-between;
@@ -262,9 +256,6 @@ function OpenMeteoClouds({ profile }) {
                 ${
                     profile
                         ? html`
-                              <p class="cloud-profile-altitude-note">
-                                  ${t("cloud.dropzoneHeights", String(Math.round(DROPZONE_ELEVATION.value)))}
-                              </p>
                               <ul
                                   class="cloud-list cloud-layers cloud-profile-layers"
                               >

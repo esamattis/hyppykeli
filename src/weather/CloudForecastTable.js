@@ -299,10 +299,6 @@ export function CloudForecastTable(props) {
                     </tbody>
                 </table>
             </div>
-            <p class="cloud-forecast-note">
-                Open-Meteo:
-                ${t("cloud.dropzoneHeights", String(Math.round(elevation)))}
-            </p>
             <p class="cloud-forecast-note">${t("cloud.forecastTableHelp")}</p>
         </div>
     `;

@@ -74,7 +74,7 @@ export function getMapWindData(now = Date.now()) {
                         ? `≈ ${overrides ? `${Math.round(height / 100) * 100} m` : formatForecastAltitude(height)}`
                         : `${level} hPa`,
                     altitudeTooltip: Number.isFinite(height)
-                        ? formatExactAltitude(height)
+                        ? formatForecastAltitude(height)
                         : undefined,
                     speed: overrides
                         ? overrides[row]?.speed

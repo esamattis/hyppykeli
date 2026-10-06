@@ -299,13 +299,15 @@ test("menu opens and closes with its toggle", async ({ page }) => {
 test("language can be changed live and persists", async ({ page }) => {
     await page.getByRole("button", { name: "Valikko", exact: true }).click();
 
-    const language = page.getByRole("combobox", { name: "Kieli" });
-    await language.selectOption("en");
+    await expect(
+        page.getByRole("button", { name: "Suomi", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Englanti", exact: true }).click();
 
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(
-        page.getByRole("heading", { name: "Dropzones" }),
-    ).toBeVisible();
+        page.getByRole("button", { name: "Menu", exact: true }),
+    ).toHaveAttribute("aria-expanded", "false");
     await expect(
         page.getByRole("heading", { name: "Winds", exact: true }),
     ).toBeVisible();
@@ -315,9 +317,30 @@ test("language can be changed live and persists", async ({ page }) => {
 
     await page.reload();
     await page.getByRole("button", { name: "Menu", exact: true }).click();
-    await expect(page.getByRole("combobox", { name: "Language" })).toHaveValue(
-        "en",
+    await expect(
+        page.getByRole("button", { name: "English", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    const finnish = page.getByRole("button", { name: "Finnish", exact: true });
+    await expect(finnish).toHaveAttribute("aria-pressed", "false");
+    await finnish.click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "fi");
+    await expect(
+        page.getByRole("button", { name: "Valikko", exact: true }),
+    ).toHaveAttribute("aria-expanded", "false");
+    await page.getByRole("button", { name: "Valikko", exact: true }).click();
+    await expect(
+        page.getByRole("button", { name: "Suomi", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+        page.getByRole("button", { name: "Englanti", exact: true }),
+    ).toHaveAttribute("aria-pressed", "false");
+    expect(await page.evaluate(() => localStorage.getItem("language"))).toBe(
+        "fi",
     );
+    await page.getByRole("button", { name: "Suomi", exact: true }).click();
+    await expect(
+        page.getByRole("button", { name: "Valikko", exact: true }),
+    ).toHaveAttribute("aria-expanded", "false");
 });
 
 test("name editor updates and removes the name query parameter", async ({
@@ -3047,7 +3070,7 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
     });
     await expect(rows).toHaveCount(2);
     await expect(rows.nth(1)).toContainText("2000 m");
-    await expect(card).toContainText("Hyppypaikka 1001 m merenpinnasta");
+    await expect(page.locator("#title")).toContainText("1001 m merenpinnasta");
     await rows
         .nth(1)
         .getByRole("button", { name: "Ohje", exact: true })
@@ -3224,7 +3247,7 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs({ elevation: "200.5" });
     });
-    await expect(dialog).toContainText("Hyppypaikka 201 m merenpinnasta");
+    await expect(page.locator("#title")).toContainText("201 m merenpinnasta");
     const altitude = pressureRow(700)
         .getByRole("rowheader")
         .locator("[data-tooltip]");
@@ -3250,7 +3273,7 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         "40 %",
         "40 %",
     ]);
-    await expect(dialog).toContainText("Hyppypaikka 0 m merenpinnasta");
+    await expect(page.locator("#title")).toContainText("0 m merenpinnasta");
 });
 
 for (const [axis, wind, speed, expected] of [

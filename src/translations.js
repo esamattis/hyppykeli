@@ -132,8 +132,6 @@ export const english = {
     "cloud.modelledLayers": "Modelled clouds · current hour",
     "cloud.altitudeSeaLevel": "Altitude above sea level",
     "cloud.altitudeAboveDropzone": "Height above dropzone",
-    "cloud.dropzoneHeights": (/** @type {string} */ elevation) =>
-        `Heights above dropzone · DZ elevation ${elevation} m above sea level.`,
     "cloud.modelUnavailable": "Current cloud forecast unavailable.",
     "cloud.modelledMeaning":
         "Modelled means a computer weather model estimates the clouds using weather observations and calculations of how the atmosphere changes. This is the model's estimate for the current hour near the selected coordinates, rather than a direct cloud observation. Actual cloud cover and heights may differ.",
@@ -186,6 +184,8 @@ export const english = {
         "The estimate is meaningful only when the clouds formed at the observation site. If they formed elsewhere under different temperature and dew-point conditions and arrived with the wind, the estimate is likely inaccurate.",
     "cloud.forecastHelp":
         "Hourly forecast of the condensation level and low-cloud coverage below 2 km. Scroll horizontally for more hours.",
+    "title.elevation": (/** @type {string} */ elevation) =>
+        `${elevation} m above sea level`,
     "title.groundTemperature": (/** @type {string} */ value) =>
         `${value}°C ground,`,
     "title.altitudeTemperature": (/** @type {string} */ value) =>
@@ -246,8 +246,6 @@ export const english = {
     "map.parachuteLandingPosition": "Landing",
     "map.directionPrompt": "Drag to set the jump-run direction.",
     "map.averageWind": "Average wind",
-    "map.dropzoneHeights": (/** @type {string} */ elevation) =>
-        `Heights above dropzone · DZ elevation ${elevation} m above sea level.`,
     "map.averageHelp":
         "Average speed and direction of the 925, 850, 700, and 600 hPa levels above ground (the corresponding fixed heights for manual winds). The displayed range is above the dropzone. Direction averaging accounts for crossing north and provides a rough freefall-drift estimate.",
     "map.shareFailed": "Sharing the map failed.",
@@ -568,8 +566,6 @@ const finnish = {
     "cloud.modelledLayers": "Mallinnetut pilvet · nykyinen tunti",
     "cloud.altitudeSeaLevel": "Korkeus merenpinnasta",
     "cloud.altitudeAboveDropzone": "Korkeus hyppypaikan maanpinnasta",
-    "cloud.dropzoneHeights": (/** @type {string} */ elevation) =>
-        `Korkeudet hyppypaikan maanpinnasta · Hyppypaikka ${elevation} m merenpinnasta.`,
     "cloud.modelUnavailable": "Nykyisen tunnin pilviennuste ei ole saatavilla.",
     "cloud.modelledMeaning":
         "Mallinnettu tarkoittaa, että tietokoneen säämalli arvioi pilviä säähavaintojen ja ilmakehän muutoksia kuvaavien laskelmien avulla. Tämä on mallin arvio nykyiselle tunnille valittujen koordinaattien lähellä, ei suora pilvihavainto. Todellinen pilvipeitto ja pilvien korkeudet voivat poiketa arviosta.",
@@ -619,6 +615,8 @@ const finnish = {
         "Arvio on järjellinen vain silloin kun pilvet ovat muodostuneet mittauspaikalla. Jos pilvet ovat muodostuneet toisaalla eri lämpötilassa ja kastepisteessä ja saapuneet tuulen mukana, arvio on todennäköisesti päin prinkkalaa.",
     "cloud.forecastHelp":
         "Tiivistymiskorkeuden ja matalien (alle 2 km) pilvien peittävyyden tuntiennuste. Vieritä sivulle nähdäksesi lisää tunteja.",
+    "title.elevation": (/** @type {string} */ elevation) =>
+        `${elevation} m merenpinnasta`,
     "title.groundTemperature": (value) => `${value}°C maassa,`,
     "title.altitudeTemperature": (value) => `${value}°C 4km:ssä`,
     "title.temperatureHelp":
@@ -673,8 +671,6 @@ const finnish = {
     "map.parachuteLandingPosition": "Laskeutuminen",
     "map.directionPrompt": "Vedä asettaaksesi hyppylinjan suunnan.",
     "map.averageWind": "Keskituuli",
-    "map.dropzoneHeights": (/** @type {string} */ elevation) =>
-        `Korkeudet hyppypaikan maanpinnasta · Hyppypaikka ${elevation} m merenpinnasta.`,
     "map.averageHelp":
         "Nopeuden ja suunnan keskiarvo maanpinnan yläpuolisilta 925, 850, 700 ja 600 hPa:n tasoilta (käsin syötetyillä tuulilla vastaavilta kiinteiltä korkeuksilta). Näytetty korkeusväli on hyppypaikan maanpinnasta. Suunnan keskiarvo huomioi pohjoissuunnan ylityksen ja antaa karkean arvion vapaapudotusajautumisesta.",
     "map.shareFailed": "Kartan jakaminen epäonnistui.",

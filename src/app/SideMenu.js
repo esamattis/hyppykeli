@@ -173,6 +173,21 @@ export function SideMenu({ manualEditorRef }) {
             font-size: 0.85rem;
         }
 
+        .language-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .language-buttons button {
+            flex: 1;
+        }
+
+        .language-buttons button[aria-pressed="true"] {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: var(--color-surface);
+        }
+
         .menu-footer {
             display: flex;
             flex-wrap: wrap;
@@ -284,20 +299,32 @@ export function SideMenu({ manualEditorRef }) {
 
                 <section class="menu-section" aria-labelledby="menu-language">
                     <h2 id="menu-language">${t("language.label")}</h2>
-                    <select
-                        aria-label=${t("language.label")}
-                        value=${LANGUAGE.value}
-                        onInput=${(/** @type {Event} */ event) => {
-                            const value = /** @type {HTMLSelectElement} */ (
-                                event.currentTarget
-                            ).value;
-                            if (value === "en" || value === "fi")
-                                setLanguage(value);
-                        }}
+                    <div
+                        class="language-buttons"
+                        role="group"
+                        aria-labelledby="menu-language"
                     >
-                        <option value="en">${t("language.english")}</option>
-                        <option value="fi">${t("language.finnish")}</option>
-                    </select>
+                        <button
+                            type="button"
+                            aria-pressed=${LANGUAGE.value === "en"}
+                            onClick=${() => {
+                                setLanguage("en");
+                                MENU_OPEN.value = false;
+                            }}
+                        >
+                            ${t("language.english")}
+                        </button>
+                        <button
+                            type="button"
+                            aria-pressed=${LANGUAGE.value === "fi"}
+                            onClick=${() => {
+                                setLanguage("fi");
+                                MENU_OPEN.value = false;
+                            }}
+                        >
+                            ${t("language.finnish")}
+                        </button>
+                    </div>
                 </section>
 
                 <footer class="menu-section menu-footer">
