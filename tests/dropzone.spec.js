@@ -5147,3 +5147,55 @@ test("automatic jump run follows new winds until edited and can be reenabled", a
     await expect(automatic).not.toBeChecked();
     expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(paused);
 });
+
+test("weather updates retain the mounted jump-run and flight-path layers", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    await map.click({ position: { x: 120, y: 160 } });
+    await page.getByRole("button", { name: "Avaus" }).click();
+    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
+    const retained = await page.evaluate(async () => {
+        const selectors = [
+            ".jump-run-line",
+            ".jump-run-jumper",
+            ".freefall-drift-line",
+            ".parachute-drift-line",
+        ];
+        const original = selectors.map((selector) => [
+            ...document.querySelectorAll(selector),
+        ]);
+        const removed = [];
+        const observer = new MutationObserver((records) => {
+            for (const record of records) {
+                for (const node of record.removedNodes) removed.push(node);
+            }
+        });
+        observer.observe(document.querySelector(".dz-map"), {
+            childList: true,
+            subtree: true,
+        });
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const data = structuredClone(OM_DATA.value);
+        for (const level of ["600", "700", "850", "925"])
+            data.hourly[`windspeed_${level}hPa`] = [20];
+        OM_DATA.value = data;
+        // Allow Preact's effects and Leaflet's scheduled updates to finish.
+        await new Promise((resolve) => setTimeout(resolve, 250));
+        observer.disconnect();
+        return selectors.map((selector, index) => {
+            const current = [...document.querySelectorAll(selector)];
+            return (
+                original[index].length > 0 &&
+                current.length === original[index].length &&
+                current.every((node, i) => node === original[index][i]) &&
+                !original[index].some((node) =>
+                    removed.some((parent) => parent.contains(node)),
+                )
+            );
+        });
+    });
+    expect(retained).toEqual([true, true, true, true]);
+});

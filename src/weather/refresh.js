@@ -190,12 +190,23 @@ function useOpenMeteoSurfaceWeather(data) {
     return weather.filter(({ time }) => time >= start && time <= end);
 }
 
+let stationSettingsKey = "";
+
 /** @param {boolean} cacheOnly @param {AbortSignal} signal */
 async function refreshWeather(cacheOnly, signal) {
     STALE_FORECASTS.value = true;
     if (cacheOnly) {
-        STATION_COORDINATES.value = null;
-        STATION_NAME.value = undefined;
+        const stationKey = JSON.stringify([
+            QUERY_PARAMS.value.fmisid,
+            QUERY_PARAMS.value.roadsid,
+        ]);
+        // Keep the current station available while refreshing the same location.
+        // Clear it when switching stations so forecasts cannot use the old one.
+        if (stationKey !== stationSettingsKey) {
+            stationSettingsKey = stationKey;
+            STATION_COORDINATES.value = null;
+            STATION_NAME.value = undefined;
+        }
         FMI_FORECAST_NAME.value = undefined;
     }
 

@@ -160,7 +160,7 @@ export function FreefallToolbar({
             padding: 0;
             border: 0;
             border-radius: var(--radius-sm);
-            background: transparent;
+            background: rgb(255 255 255 / 70%);
             color: var(--color-text);
             box-shadow: none;
         }
@@ -203,7 +203,7 @@ export function FreefallToolbar({
             </div>
             <div class="toolbar-summary">
                 <span class="jump-summary">
-                    <span class="value-label">${t("toolbar.jump")}</span>
+                    <span class="value-label">${t("toolbar.freefall")}</span>
                     <strong class="value-number">
                         <span
                             tabindex="0"
@@ -305,6 +305,27 @@ export function FreefallToolbar({
                             label: t("map.windBarbHelpTitle"),
                         },
                         html`
+                            <h3>${t("map.currentWinds")}</h3>
+                            <div class="wind-profile">
+                                <ul>
+                                    ${windLevels.levels.map(
+                                        (level) => html`
+                                            <li
+                                                class="wind-level"
+                                                key=${level.label}
+                                            >
+                                                ${level.arrow} ${level.graphic}
+                                                <div>
+                                                    <strong>
+                                                        ${level.label}
+                                                    </strong>
+                                                    <div>${level.text}</div>
+                                                </div>
+                                            </li>
+                                        `,
+                                    )}
+                                </ul>
+                            </div>
                             <h3>${t("map.windBarbHelpTitle")}</h3>
                             <p>${t("map.windBarbDirectionHelp")}</p>
                             <p>${t("map.windBarbSpeedHelp")}</p>
@@ -332,27 +353,6 @@ export function FreefallToolbar({
                                 ${h(WindBarb, { speed: null, direction: null })}
                                 ${t("map.windBarbMissingHelp")}
                             </p>
-                            <h3>${t("map.currentWinds")}</h3>
-                            <div class="wind-profile">
-                                <ul>
-                                    ${windLevels.levels.map(
-                                        (level) => html`
-                                            <li
-                                                class="wind-level"
-                                                key=${level.label}
-                                            >
-                                                ${level.arrow} ${level.graphic}
-                                                <div>
-                                                    <strong>
-                                                        ${level.label}
-                                                    </strong>
-                                                    <div>${level.text}</div>
-                                                </div>
-                                            </li>
-                                        `,
-                                    )}
-                                </ul>
-                            </div>
                         `,
                     )}
                 </div>

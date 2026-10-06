@@ -1405,21 +1405,49 @@ export function DropzoneMap() {
                   ),
               )
             : [];
+    // Keep Leaflet layers mounted across weather updates and minute ticks.
+    const runLayers = useMemo(
+        () => ({
+            group: layerGroup(),
+            line: polyline([], {
+                color: "#2563eb",
+                weight: 3,
+                dashArray: "8 6",
+                interactive: false,
+                className: "jump-run-line",
+            }),
+            markers: /** @type {import('leaflet').CircleMarker[]} */ ([]),
+        }),
+        [leafletInstance],
+    );
+    const driftLayers = useMemo(
+        () => ({
+            group: layerGroup(),
+            freefall: /** @type {import('leaflet').Polyline[]} */ ([]),
+            canopy: /** @type {import('leaflet').Polyline[]} */ ([]),
+        }),
+        [leafletInstance],
+    );
     useEffect(() => {
-        if (
-            !leafletInstance ||
-            activeLeafletRef.current !== leafletInstance ||
-            !jumpRunStart
-        )
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
             return;
-        const layers = layerGroup().addTo(leafletInstance);
-        const line = polyline([], {
-            color: "#2563eb",
-            weight: 3,
-            dashArray: "8 6",
-            interactive: false,
-            className: "jump-run-line",
-        }).addTo(layers);
+        runLayers.group.addTo(leafletInstance);
+        driftLayers.group.addTo(leafletInstance);
+        return () => {
+            runLayers.group.remove();
+            driftLayers.group.remove();
+        };
+    }, [leafletInstance, runLayers, driftLayers]);
+    useEffect(() => {
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
+            return;
+        const { group, line, markers } = runLayers;
+        if (!jumpRunStart) {
+            group.clearLayers();
+            markers.length = 0;
+            return;
+        }
+        line.addTo(group);
         // Extend beyond the viewport in both directions, including after panning
         // away from the exit point. The line does not depend on jumper spacing.
         const updateLine = () => {
@@ -1446,7 +1474,7 @@ export function DropzoneMap() {
                     : index === jumperCount - 1
                       ? "#ef4444"
                       : "#2563eb";
-            circleMarker(start, {
+            const options = {
                 radius: isEndpoint ? 7 : 5,
                 color: isEndpoint ? "white" : color,
                 fillColor: isEndpoint ? color : "white",
@@ -1454,14 +1482,19 @@ export function DropzoneMap() {
                 weight: 2,
                 interactive: false,
                 className: "jump-run-jumper",
-            }).addTo(layers);
+            };
+            const marker = markers[index] ?? circleMarker(start, options);
+            markers[index] = marker;
+            marker.setLatLng(start).setStyle(options).addTo(group);
         });
+        for (const marker of markers.splice(jumperStarts.length))
+            group.removeLayer(marker);
         return () => {
             leafletInstance.off("moveend zoomend resize", updateLine);
-            layers.remove();
         };
     }, [
         leafletInstance,
+        runLayers,
         jumpRunStart,
         jumpRunSettings,
         jumperCount,
@@ -1472,64 +1505,60 @@ export function DropzoneMap() {
         now,
     ]);
     useEffect(() => {
-        /** @type {FreefallDriftArrow[]} */
-        const arrows = jumperStarts.map((start, index) => ({
-            start,
-            exitHeight: jumpRunSettings.exitHeight,
-            openingHeight:
-                jumpers[index]?.openingHeight ?? DEFAULT_JUMPER.openingHeight,
-            speedKmh: jumpers[index]?.speedKmh ?? DEFAULT_JUMPER.speedKmh,
-        }));
-        if (
-            !leafletInstance ||
-            activeLeafletRef.current !== leafletInstance ||
-            !arrows.length
-        ) {
-            setDriftMissing(false);
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
             return;
-        }
-        const layers = layerGroup().addTo(leafletInstance);
-        const lines = arrows.flatMap((settings) => {
-            const path = calculation.drift(settings);
-            if (!path) return [];
-            const positions = path.map((offset) =>
-                driftCoordinates(settings.start, offset),
-            );
+        const { group, freefall, canopy } = driftLayers;
+        let missing = false;
+        jumperStarts.forEach((start, index) => {
+            const jumper = jumpers[index] ?? DEFAULT_JUMPER;
+            const path = calculation.drift(jumper);
+            const positions =
+                path?.map((offset) => driftCoordinates(start, offset)) ?? [];
             const opening = positions.at(-1);
-            const canopyPath = getCanopyDrift(
-                canopyWinds,
-                settings.openingHeight,
-            );
-            if (opening && canopyPath) {
-                polyline(
-                    canopyPath.map((offset) =>
-                        driftCoordinates(latLng(opening), offset),
-                    ),
-                    {
-                        color: "#c2410c",
-                        weight: 1,
-                        lineCap: "round",
-                        interactive: false,
-                        className: "parachute-drift-line",
-                    },
-                ).addTo(layers);
-            }
-            return [
-                polyline(positions, {
+            const canopyPath =
+                opening && getCanopyDrift(canopyWinds, jumper.openingHeight);
+            const canopyPositions =
+                opening && canopyPath
+                    ? canopyPath.map((offset) =>
+                          driftCoordinates(latLng(opening), offset),
+                      )
+                    : [];
+            missing ||= !path;
+            const freefallLine =
+                freefall[index] ??
+                polyline([], {
                     color: "#c2410c",
                     weight: 3,
                     lineCap: "round",
                     interactive: false,
                     className: "freefall-drift-line",
-                }).addTo(layers),
-            ];
+                });
+            const canopyLine =
+                canopy[index] ??
+                polyline([], {
+                    color: "#c2410c",
+                    weight: 1,
+                    lineCap: "round",
+                    interactive: false,
+                    className: "parachute-drift-line",
+                });
+            freefall[index] = freefallLine;
+            canopy[index] = canopyLine;
+            freefallLine.setLatLngs(positions);
+            canopyLine.setLatLngs(canopyPositions);
+            if (positions.length) freefallLine.addTo(group);
+            else group.removeLayer(freefallLine);
+            if (canopyPositions.length) canopyLine.addTo(group);
+            else group.removeLayer(canopyLine);
         });
-        setDriftMissing(lines.length < arrows.length);
-        return () => {
-            layers.remove();
-        };
+        for (const lines of [freefall, canopy]) {
+            for (const line of lines.splice(jumperStarts.length))
+                group.removeLayer(line);
+        }
+        setDriftMissing(missing);
     }, [
         leafletInstance,
+        driftLayers,
         jumpers,
         data,
         upperWindOverride,

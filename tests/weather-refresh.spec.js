@@ -148,3 +148,40 @@ test("changing locations supersedes a blocked refresh without stale writes or er
         oldCacheKeys: [],
     });
 });
+
+test("refreshing the same station preserves coordinates; switching stations clears them", async ({
+    page,
+}) => {
+    await page.route("https://opendata.fmi.fi/**", (route) => {
+        const query = new URL(route.request().url()).searchParams.get(
+            "storedquery_id",
+        );
+        return query.includes("observations")
+            ? route.fulfill({
+                  contentType: "application/xml",
+                  path: "example_data/observations.xml",
+              })
+            : route.fulfill({ status: 503 });
+    });
+    await openRefreshHarness(page);
+    const result = await page.evaluate(async () => {
+        const { QUERY_PARAMS } = await import("#app/app/settings.js");
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        const { STATION_COORDINATES } = await import("#app/weather/state.js");
+        const { effect } = await import("@preact/signals");
+        QUERY_PARAMS.value = { fmisid: "101339" };
+        await updateWeatherData();
+        const coordinates = [];
+        const dispose = effect(() =>
+            coordinates.push(STATION_COORDINATES.value),
+        );
+        await updateWeatherData();
+        const sameStation = [...coordinates];
+        QUERY_PARAMS.value = { lat: "61", lon: "24" };
+        await updateWeatherData();
+        dispose();
+        return { sameStation, switchedStation: coordinates };
+    });
+    expect(result.sameStation).toEqual(["60.89839,26.94882"]);
+    expect(result.switchedStation).toEqual(["60.89839,26.94882", null]);
+});

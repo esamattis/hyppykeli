@@ -252,7 +252,7 @@ export const english = {
     "map.directionHint":
         "Drag with the mouse or a finger. Open the direction menu and press the direction button again to finish.",
     "toolbar.freefallValues": "Freefall values",
-    "toolbar.jump": "Jump",
+    "toolbar.freefall": "Freefall",
     "toolbar.jumpRun": "Jump run",
     "toolbar.jumpRunLength": "Jump run length",
     "toolbar.jumpRunLengthTooltip":
@@ -674,7 +674,7 @@ const finnish = {
     "map.directionHint":
         "Vedä hiirellä tai sormella. Avaa suuntavalikko ja paina suuntapainiketta uudelleen lopettaaksesi.",
     "toolbar.freefallValues": "Vapaapudotuksen arvot",
-    "toolbar.jump": "Hyppy",
+    "toolbar.freefall": "Vapaapudotus",
     "toolbar.jumpRun": "Hyppylinja",
     "toolbar.jumpRunLength": "Hyppylinjan pituus",
     "toolbar.jumpRunLengthTooltip":
