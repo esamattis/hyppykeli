@@ -89,7 +89,7 @@ function calculateNeedleLength(gust) {
 
 /** @param {{ floating?: boolean }} props */
 export function Compass({ floating = false } = {}) {
-    const animated = COMPASS_ANIMATION_ENABLED.value;
+    const animated = !floating && COMPASS_ANIMATION_ENABLED.value;
     const scope = useScope(css`
         svg,
         text {
@@ -253,7 +253,7 @@ export function Compass({ floating = false } = {}) {
                   </g>
               `}
               ${h(HistoryNeedles, { observations: history })}
-              ${h(GustNeedle, { observation, history: floating, animation: !floating && animated ? history : undefined })}
+              ${h(GustNeedle, { observation, history: floating, animation: animated ? history : undefined })}
               <text
                     x="200"
                     y="170"
