@@ -170,7 +170,8 @@ export const english = {
     "cloud.condensationEstimate": "Condensation level estimate",
     "cloud.baseHelp":
         "Cloud base is the height of the bottom of the cloud layer above the observation site's ground level.",
-    "cloud.roundingHelp": "The card value is rounded to the nearest 50 metres.",
+    "cloud.roundingHelp":
+        "The card value is rounded to the nearest 100 metres.",
     "cloud.modelRoundingHelp":
         "Open-Meteo altitudes are rounded to the nearest 500 metres. Each altitude has a tooltip showing its value to the nearest metre.",
     "cloud.metarHeightHelp":
@@ -604,7 +605,7 @@ const finnish = {
     "cloud.condensationEstimate": "Tiivistymiskorkeuden arvio",
     "cloud.baseHelp":
         "Pilven alaraja on pilvikerroksen pohjan korkeus havaintopaikan maanpinnasta.",
-    "cloud.roundingHelp": "Kortin arvo on pyöristetty lähimpään 50 metriin.",
+    "cloud.roundingHelp": "Kortin arvo on pyöristetty lähimpään 100 metriin.",
     "cloud.modelRoundingHelp":
         "Open-Meteon korkeudet on pyöristetty lähimpään 500 metriin. Kunkin korkeuden työkaluvihje näyttää arvon metrin tarkkuudella.",
     "cloud.metarHeightHelp":

@@ -109,7 +109,10 @@ function CloudLayer({ cloud }) {
                 ${
                     hasBase
                         ? html`
-                              <b>
+                              <b
+                                  tabindex="0"
+                                  data-tooltip=${`${formatCloudBase(cloud.base, cloud.unit, { maximumFractionDigits: 0 })} (${cloud.base} ${cloud.unit})`}
+                              >
                                   ${formatCloudBase(cloud.base, cloud.unit, { approximate: true })}
                               </b>
                               <span class="cloud-base-label">

@@ -727,10 +727,10 @@ test("METAR cloud layers show coverage, heights and conversion help", async ({
         "Muutamia",
     ]);
     await expect(layers.locator(".cloud-layer-base b")).toHaveText([
-        "≈ 1850 m",
+        "≈ 1800 m",
         "≈ 900 m",
-        "≈ 450 m",
-        "≈ 150 m",
+        "≈ 500 m",
+        "≈ 200 m",
     ]);
     await expect(layers.locator(".cloud-layer-coverage")).toHaveText([
         "8/8 taivaasta",
@@ -740,13 +740,32 @@ test("METAR cloud layers show coverage, heights and conversion help", async ({
     ]);
 
     const conversions = [
-        { metar: "OVC060", conversion: "6000 ft = 1828,8 m" },
-        { metar: "BKN030CB", conversion: "3000 ft = 914,4 m" },
-        { metar: "SCT015", conversion: "1500 ft = 457,2 m" },
-        { metar: "FEW005", conversion: "500 ft = 152,4 m" },
+        {
+            metar: "OVC060",
+            conversion: "6000 ft = 1828,8 m",
+            tooltip: "1829 m (6000 ft)",
+        },
+        {
+            metar: "BKN030CB",
+            conversion: "3000 ft = 914,4 m",
+            tooltip: "914 m (3000 ft)",
+        },
+        {
+            metar: "SCT015",
+            conversion: "1500 ft = 457,2 m",
+            tooltip: "457 m (1500 ft)",
+        },
+        {
+            metar: "FEW005",
+            conversion: "500 ft = 152,4 m",
+            tooltip: "152 m (500 ft)",
+        },
     ];
     for (const [index, expected] of conversions.entries()) {
         const layer = layers.nth(index);
+        await layer.locator(".cloud-layer-base [data-tooltip]").focus();
+        await expect(page.getByRole("tooltip")).toHaveText(expected.tooltip);
+        await page.keyboard.press("Escape");
         await layer.getByRole("button", { name: "Ohje", exact: true }).click();
         const help = layer.getByRole("dialog");
         await expect(help).toBeVisible();
@@ -820,10 +839,13 @@ test("obscured sky METAR shows vertical visibility and conversion help", async (
     await expect(layer.locator(".cloud-layer-coverage")).toHaveText(
         "Taivas peittynyt",
     );
-    await expect(layer.locator(".cloud-layer-base b")).toHaveText("≈ 50 m");
+    await expect(layer.locator(".cloud-layer-base b")).toHaveText("≈ 100 m");
     await expect(layer.locator(".cloud-base-label")).toHaveText(
         "Pystynäkyvyys",
     );
+    await layer.locator(".cloud-layer-base [data-tooltip]").focus();
+    await expect(page.getByRole("tooltip")).toHaveText("61 m (200 ft)");
+    await page.keyboard.press("Escape");
     await layer.getByRole("button", { name: "Ohje", exact: true }).click();
     const help = layer.getByRole("dialog");
     await expect(help).toBeVisible();
@@ -862,10 +884,10 @@ test("manual banner opens the editor, applies METAR changes and restores live da
         (url) => url.searchParams.get("MANUAL_metar") === metar,
     );
     await expect(page.locator("#clouds .cloud-layer-base b")).toHaveText([
-        "≈ 1850 m",
+        "≈ 1800 m",
         "≈ 900 m",
-        "≈ 450 m",
-        "≈ 150 m",
+        "≈ 500 m",
+        "≈ 200 m",
     ]);
     await editor.getByRole("button", { name: "Sulje", exact: true }).click();
     await expect(editor).not.toBeVisible();
