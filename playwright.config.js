@@ -12,7 +12,17 @@ export default defineConfig({
     },
     projects: [
         { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-        { name: "mobile", use: { ...devices["Pixel 7"] } },
+        {
+            name: "mobile",
+            // These calculations run in Node and do not depend on the device.
+            testIgnore: [
+                "**/automatic-placement.spec.js",
+                "**/canopy.spec.js",
+                "**/jump-run.spec.js",
+                "**/metar.spec.js",
+            ],
+            use: { ...devices["Pixel 7"] },
+        },
     ],
     webServer: {
         command: "caddy file-server --listen 127.0.0.1:8489 --root .",

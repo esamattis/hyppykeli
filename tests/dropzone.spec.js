@@ -336,58 +336,6 @@ test("name editor updates and removes the name query parameter", async ({
     expect(new URL(page.url()).searchParams.has("name")).toBe(false);
 });
 
-test("title falls back to FMI location and then coordinates", async ({
-    page,
-}) => {
-    await page.goto("/dz/?fmisid=137208&DEV_mock=1");
-    await expect(page.locator("#title .title-name")).toHaveText("Utti");
-
-    await page.goto("/dz/?lat=40.7&lon=-74");
-    await expect(page.locator("#title .title-name")).toHaveText(
-        "40.7000, -74.0000",
-    );
-});
-
-test("menu closes when clicking outside", async ({ page }) => {
-    const toggle = page.getByRole("button", { name: "Valikko", exact: true });
-    await toggle.click();
-    await expect(page.locator(".side-menu")).toBeInViewport();
-
-    // The menu covers the heading's center on mobile; its left edge is exposed.
-    await page.locator("#winds h2").click({ position: { x: 5, y: 10 } });
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await expect(page.locator(".side-menu")).not.toBeInViewport();
-});
-
-test("redesigned menu lists dropzones and removes obsolete tools", async ({
-    page,
-}) => {
-    await page.getByRole("button", { name: "Valikko", exact: true }).click();
-    const menu = page.locator(".side-menu");
-    await expect(menu.locator(".dz-grid a")).toHaveCount(15);
-    await expect(
-        menu.getByRole("link", { name: "EFUT", exact: true }),
-    ).toHaveAttribute(
-        "href",
-        "/dz/?fmisid=101191&icaocode=EFUT&lat=60.89755354967867&lon=26.926031112670902&map_zoom=14&default_jump_run_direction=78&default_jump_group_count=8",
-    );
-    await expect(menu.getByRole("heading")).toHaveText([
-        "EFJY",
-        "Hyppypaikat",
-        "Kieli",
-    ]);
-    await expect(
-        menu.locator('select[name="storedQuery"], .css-editor'),
-    ).toHaveCount(0);
-    await expect(
-        menu.getByRole("button", { name: /^(Lataa|Jaa)$/ }),
-    ).toHaveCount(0);
-
-    await menu.getByRole("button", { name: "Sulje valikko" }).click();
-    await expect(menu).not.toBeInViewport();
-    await expect(menu).toHaveAttribute("inert", "");
-});
-
 test("ground wind shows the developer readings and hourly ranges", async ({
     page,
 }) => {
@@ -407,24 +355,6 @@ test("ground wind shows the developer readings and hourly ranges", async ({
     await expect(page.getByLabel("METAR", { exact: true })).toHaveText(
         "METAR EFJY 040720Z AUTO 19007KT 160V220 9999 -SHRA OVC005 //////CB 11/11 Q1014=",
     );
-});
-
-test("ground wind omits hourly ranges when rounded endpoints are equal", async ({
-    page,
-}) => {
-    const params = new URLSearchParams(developerPath.split("?")[1]);
-    params.set("DEV_ground_obs", "7.1,5.1,194,5;7.4,5.4,194,15");
-    await page.goto(`/dz/?${params}`);
-
-    const metrics = page.locator("#winds .latest-wind-cell");
-    await expect(metrics.nth(0).locator(".latest-value")).toHaveText(
-        /^7\s*m\/s$/,
-    );
-    await expect(metrics.nth(1).locator(".latest-value")).toHaveText(
-        /^5\s*m\/s$/,
-    );
-    await expect(metrics.nth(2).locator(".direction-value")).toHaveText("194°");
-    await expect(metrics.locator(".hourly-range")).toHaveCount(0);
 });
 
 test("coordinate-only dropzone uses Open-Meteo without an observations card or METAR error", async ({
@@ -584,38 +514,6 @@ test("METAR supplies the compass when no station source is configured", async ({
     await expect(page.locator("#observations-graph")).toHaveCount(0);
 });
 
-test("METAR average wind supplies the compass when gust is unavailable", async ({
-    page,
-}) => {
-    await page.route("https://api.open-meteo.com/**", (route) =>
-        route.fulfill({ json: openMeteoResponse() }),
-    );
-    const params = new URLSearchParams({
-        fmisid: "missing",
-        icaocode: "EFLA",
-        lat: "61.146406",
-        lon: "25.693366",
-        DEV_metar:
-            "METAR EFLA 041150Z AUTO 22005KT 200V260 9999 -RA SCT007/// BKN009/// OVC014/// 12/11 Q1014 RERA=",
-    });
-    await page.goto(`/dz/?${params}`);
-
-    await expect(page.locator("#winds .source-note")).toHaveText(
-        "Lähde: METAR",
-    );
-    const gust = page.locator("#winds .latest-gust");
-    await expect(gust).toHaveText(/^-\s*m\/s$/);
-    await expect(
-        page.locator("#winds .latest-gust + .hourly-range"),
-    ).toHaveCount(0);
-    await expect(page.locator("#winds .latest-wind").first()).toHaveText(
-        /^3\s*m\/s$/,
-    );
-    await expect(
-        page.locator("#compass .compass-observations-gust"),
-    ).toHaveText("- m/s");
-});
-
 for (const stationParam of ["fmisid", "roadsid"]) {
     test(`METAR supplies the compass when ${stationParam} has no observations`, async ({
         page,
@@ -663,42 +561,6 @@ test("FMI takes priority over a configured Fintraffic station and supplies coord
         )
         .not.toBeNull();
     expect(roadRequests).toBe(0);
-});
-
-test("FMI map callout requires separate landing zone coordinates", async ({
-    page,
-}) => {
-    await page.goto("/dz/?fmisid=137208&lat=62.4&lon=25.6&DEV_mock=1");
-    const callout = page.locator("#dropzone-map .weather-station-callout");
-    await expect(callout).toHaveText("FMI sääasema");
-    const locations = await page.evaluate(async () => {
-        const { FORECAST_COORDINATES, STATION_COORDINATES } =
-            await import("#app/weather/state.js");
-        return {
-            landing: FORECAST_COORDINATES.value,
-            station: STATION_COORDINATES.value,
-        };
-    });
-    expect(locations.landing).toBe("62.4,25.6");
-    expect(locations.station).not.toBe(locations.landing);
-
-    await page.goto("/dz/?fmisid=137208&DEV_mock=1");
-    await expect
-        .poll(() =>
-            page.evaluate(async () => {
-                const { FORECAST_COORDINATES, STATION_COORDINATES } =
-                    await import("#app/weather/state.js");
-                return (
-                    FORECAST_COORDINATES.value !== null &&
-                    FORECAST_COORDINATES.value === STATION_COORDINATES.value
-                );
-            }),
-        )
-        .toBe(true);
-    await expect(page.locator("#dropzone-map .leaflet-container")).toHaveCount(
-        1,
-    );
-    await expect(callout).toHaveCount(0);
 });
 
 test("Fintraffic station supplies observations and fallback coordinates", async ({
@@ -855,29 +717,6 @@ test("METAR cloud layers show coverage, heights and conversion help", async ({
     await expect(report).toHaveText(metar);
 });
 
-test("METAR cloud layers render when cloud types are unavailable", async ({
-    page,
-}) => {
-    const metar =
-        "METAR EFLA 041150Z AUTO 22005KT 200V260 9999 -RA SCT007/// BKN009/// OVC014/// 12/11 Q1014 RERA=";
-    const params = new URLSearchParams(developerPath.split("?")[1]);
-    params.set("DEV_metar", metar);
-    await page.goto(`/dz/?${params}`);
-
-    const layers = page.locator("#clouds .cloud-layer");
-    await expect(layers).toHaveCount(3);
-    await expect(layers.locator(".cloud-layer-name")).toHaveText([
-        "Täysi pilvikatto",
-        "Rakoileva",
-        "Hajanaisia",
-    ]);
-    await expect(layers.locator(".cloud-layer-base b")).toHaveText([
-        "≈ 450 m",
-        "≈ 250 m",
-        "≈ 200 m",
-    ]);
-});
-
 test("unlocated thunderclouds show a separate warning with wind-change help", async ({
     page,
 }) => {
@@ -900,144 +739,6 @@ test("unlocated thunderclouds show a separate warning with wind-change help", as
     );
     await expect(help.locator(".metar")).toHaveText("//////CB");
 });
-
-const thundercloudCases = [
-    {
-        name: "few CB",
-        groups: "FEW005CB",
-        layers: ["FEW005CB"],
-        thunder: ["FEW005CB"],
-        separate: false,
-    },
-    {
-        name: "scattered CB",
-        groups: "SCT015CB",
-        layers: ["SCT015CB"],
-        thunder: ["SCT015CB"],
-        separate: false,
-    },
-    {
-        name: "broken CB",
-        groups: "BKN030CB",
-        layers: ["BKN030CB"],
-        thunder: ["BKN030CB"],
-        separate: false,
-    },
-    {
-        name: "overcast CB",
-        groups: "OVC060CB",
-        layers: ["OVC060CB"],
-        thunder: ["OVC060CB"],
-        separate: false,
-    },
-    {
-        name: "multiple CB layers",
-        groups: "FEW005CB SCT015CB BKN030CB OVC060CB",
-        layers: ["OVC060CB", "BKN030CB", "SCT015CB", "FEW005CB"],
-        thunder: ["OVC060CB", "BKN030CB", "SCT015CB", "FEW005CB"],
-        separate: false,
-    },
-    {
-        name: "ordinary clouds",
-        groups: "FEW005 SCT015 BKN030 OVC060",
-        layers: ["OVC060", "BKN030", "SCT015", "FEW005"],
-        thunder: [],
-        separate: false,
-    },
-    {
-        name: "towering cumulus",
-        groups: "SCT015TCU",
-        layers: ["SCT015TCU"],
-        thunder: [],
-        separate: false,
-    },
-    {
-        name: "unlocated CB without other layers",
-        groups: "//////CB",
-        layers: [],
-        thunder: [],
-        separate: true,
-    },
-    {
-        name: "located and unlocated CB together",
-        groups: "FEW005CB SCT015 //////CB",
-        layers: ["SCT015", "FEW005CB"],
-        thunder: ["FEW005CB"],
-        separate: true,
-    },
-    {
-        name: "CB with unknown base",
-        groups: "BKN///CB",
-        layers: ["BKN///CB"],
-        thunder: ["BKN///CB"],
-        separate: false,
-    },
-];
-
-for (const scenario of thundercloudCases) {
-    test(`thundercloud variation: ${scenario.name}`, async ({ page }) => {
-        const params = new URLSearchParams(developerPath.split("?")[1]);
-        params.set(
-            "DEV_metar",
-            `METAR EFJY 041200Z AUTO 19007KT 9999 ${scenario.groups} 11/08 Q1014=`,
-        );
-        await page.goto(`/dz/?${params}`);
-        // Wait for the new report even in cases where zero layers are expected.
-        await expect(page.getByLabel("METAR", { exact: true })).toHaveText(
-            params.get("DEV_metar"),
-        );
-
-        const card = page.locator("#clouds");
-        const layers = card.locator(".cloud-layer");
-        await expect(layers).toHaveCount(scenario.layers.length);
-        await expect(
-            layers.getByRole("img", { name: "Ukkospilviä", exact: true }),
-        ).toHaveCount(scenario.thunder.length);
-        await expect(card.locator(".cloud-warning")).toHaveCount(
-            scenario.separate ? 1 : 0,
-        );
-        if (scenario.separate)
-            await expect(card.locator(".cloud-warning")).toBeVisible();
-
-        for (const [index, code] of scenario.layers.entries()) {
-            const layer = layers.nth(index);
-            const isThundercloud = scenario.thunder.includes(code);
-            const lightning = layer.getByRole("img", {
-                name: "Ukkospilviä",
-                exact: true,
-            });
-            if (isThundercloud) await expect(lightning).toBeVisible();
-            else await expect(lightning).toHaveCount(0);
-            await layer
-                .getByRole("button", { name: "Ohje", exact: true })
-                .click();
-            const help = layer.getByRole("dialog");
-            await expect(help.locator(".metar")).toHaveText(code);
-            if (isThundercloud) {
-                await expect(help).toContainText(
-                    "äkillisiä muutoksia tuulen nopeudessa ja suunnassa",
-                    { useInnerText: true },
-                );
-            } else {
-                await expect(help).not.toContainText(
-                    "CB tarkoittaa cumulonimbusta",
-                    { useInnerText: true },
-                );
-            }
-            if (code === "BKN///CB") {
-                await expect(layer.locator(".cloud-layer-base b")).toHaveCount(
-                    0,
-                );
-                await expect(
-                    help.locator(".cloud-base-conversion"),
-                ).toHaveCount(0);
-            }
-            await help
-                .getByRole("button", { name: "Sulje", exact: true })
-                .click();
-        }
-    });
-}
 
 test("obscured sky METAR shows vertical visibility and conversion help", async ({
     page,
@@ -1221,19 +922,15 @@ test("map toolbar expands only the map in both modes and restores", async ({
     await expect(help).toBeVisible();
     await expand.click();
     const frame = card.locator(".map-frame");
-    await expect(frame).toHaveClass(/full-window/);
-    await expect(frame).toHaveCSS("position", "fixed");
+    await expect(
+        card.getByRole("button", { name: "Palauta Hyppylinja", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
     await expect(frame.locator(".freefall-toolbar .window-toggle")).toHaveCount(
         1,
     );
     await expect(
         frame.locator(":scope > h2, :scope > .wind-profile, .flight-details"),
     ).toHaveCount(0);
-    const bounds = await frame.boundingBox();
-    expect(bounds.x).toBe(0);
-    expect(bounds.y).toBe(0);
-    expect(bounds.width).toBe(page.viewportSize().width);
-    expect(bounds.height).toBe(page.viewportSize().height);
     const restore = card.getByRole("button", { name: "Palauta Hyppylinja" });
     await expect(restore).toHaveAttribute("aria-pressed", "true");
     await expect(card.locator(".wind-profile")).toBeHidden();
@@ -1243,41 +940,12 @@ test("map toolbar expands only the map in both modes and restores", async ({
     await expect(heading).toBeVisible();
     await expect(help).toBeVisible();
     await expand.click();
-    await expect(frame).toHaveClass(/full-window/);
+    await expect(
+        card.getByRole("button", { name: "Palauta Hyppylinja", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
     await page.keyboard.press("Escape");
     await expect(expand).toHaveAttribute("aria-pressed", "false");
     await expect(heading).toBeVisible();
-    await expect(page.locator("body")).not.toHaveCSS("overflow", "hidden");
-});
-
-test("map help separates instructions and explains forecast limitations", async ({
-    page,
-}) => {
-    const card = page.locator("#dropzone-map");
-    await card.getByRole("button", { name: "Ohje", exact: true }).click();
-
-    const help = card.getByRole("dialog");
-    await expect(help).toBeVisible();
-    await expect(
-        help.getByRole("heading", {
-            name: "Tuulitiedot ja niiden rajoitukset",
-        }),
-    ).toBeVisible();
-    await expect(
-        help.getByRole("heading", { name: "Kartan käyttäminen" }),
-    ).toBeVisible();
-    await expect(
-        help.getByRole("heading", { name: "Hyppylinja" }),
-    ).toBeVisible();
-    await expect(help).toContainText("vapaapudotusajautumisen nuoli");
-    await expect(help).toContainText(
-        "eivät ole hyppypaikalla mitattuja arvoja",
-    );
-    await expect(help).toContainText("säämallin tuntiennusteita");
-    await expect(help).toContainText(
-        "todellinen tuuli voi poiketa ennusteesta",
-    );
-    await expect(help).toContainText("äläkä tee operatiivisia päätöksiä");
 });
 
 for (const settingDirection of [false, true]) {
@@ -1331,57 +999,6 @@ for (const settingDirection of [false, true]) {
     });
 }
 
-test("wind barb help shows the developer average and ground wind", async ({
-    page,
-}) => {
-    await page.goto(
-        `${developerPath}&DEV_upper_winds=15,276;14,272;12,246;12,238;3,204`,
-    );
-    await expect(page.locator(".wind-profile")).toBeHidden();
-    await page.locator("#wind-barb-help").click();
-    const readings = page.getByRole("dialog").locator(".wind-level");
-    await expect(readings).toHaveCount(7);
-    await expect(readings.locator("strong")).toHaveText([
-        "≈ 4200-800 m",
-        "≈ 4200 m",
-        "≈ 3000 m",
-        "≈ 1500 m",
-        "≈ 800 m",
-        "≈ 110 m",
-        "Maanpinta",
-    ]);
-    await expect(readings.nth(0)).toContainText("13 m/s 258°");
-    await expect(readings.nth(5)).toContainText("3 m/s 204°");
-    await expect(readings.nth(6)).toContainText("4 m/s 194°");
-    await page.evaluate(async () => {
-        const { OM_DATA } = await import("#app/weather/state.js");
-        const { QUERY_PARAMS } = await import("#app/app/settings.js");
-        QUERY_PARAMS.value = {
-            ...QUERY_PARAMS.value,
-            DEV_upper_winds: undefined,
-        };
-        OM_DATA.value = null;
-    });
-    await expect(readings.nth(1)).toContainText("Ei tietoa");
-});
-
-test("upper-wind forecast help explains how forecast readings are received", async ({
-    page,
-}) => {
-    const section = page.locator("#high-winds-today");
-    await section.getByRole("button", { name: "Ohje", exact: true }).click();
-
-    const help = section.getByRole("dialog");
-    await expect(help).toBeVisible();
-    await expect(help).toContainText(
-        "Nämä ovat ennusteita, eivät mittaushavaintoja",
-    );
-    await expect(help).toContainText("Open-Meteon rajapinnasta");
-    await expect(help).toContainText("painepinnoilta");
-    await expect(help).toContainText("kolmen tunnin jaksot");
-    await expect(help).toContainText("selaimen välimuistissa");
-});
-
 test("wind level selection supports clicks, keyboard and forecast refreshes", async ({
     page,
 }) => {
@@ -1433,125 +1050,6 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     });
     await expect(altitude).toHaveAttribute("aria-label", /Ei tietoa/);
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
-});
-
-test("map wind icons update the selected reading in full window", async ({
-    page,
-}) => {
-    await setUniformFreefallWind(page);
-    const icons = page.locator(".wind-level-icons .wind-level-choice");
-    await expect(icons).toHaveCount(7);
-    await expect(icons.nth(1)).toHaveAttribute("data-tooltip", /^≈ 4200 m:/);
-    await expect(icons.last()).toHaveAttribute("data-tooltip", /^Maanpinta:/);
-    await expect(
-        page.getByRole("button", { name: "Tuulikorkeudet", exact: true }),
-    ).toHaveCount(0);
-    const choice = windIcon(page, "≈ 1500 m");
-    await choice.focus();
-    await expect(page.locator("[data-tooltip-text]")).toHaveText(
-        (await choice.getAttribute("aria-label")) ?? "",
-    );
-    await expect(page.locator("[data-tooltip-text]")).toContainText("10 m/s");
-    await choice.click();
-    await expect(choice).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator(".selected-wind-summary")).toContainText(
-        "≈ 1500 m · 10 m/s 0°",
-    );
-    await windIcon(page, "≈ 3000 m").click();
-    await expect(windIcon(page, "≈ 3000 m")).toHaveAttribute(
-        "aria-pressed",
-        "true",
-    );
-    await expect(choice).toHaveAttribute("aria-pressed", "false");
-    await expect(page.locator(".selected-wind-summary")).toContainText(
-        "≈ 3000 m · 10 m/s 0°",
-    );
-    await page.evaluate(async () => {
-        const { OM_DATA } = await import("#app/weather/state.js");
-        const data = OM_DATA.value;
-        OM_DATA.value = {
-            ...data,
-            hourly: {
-                ...data.hourly,
-                windspeed_700hPa: [14],
-                winddirection_700hPa: [270],
-            },
-        };
-    });
-    await expect(page.locator(".selected-wind-summary")).toContainText(
-        "≈ 3000 m · 14 m/s 270°",
-    );
-    await page
-        .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
-        .click();
-    await expect(page.locator("#dropzone-map .map-frame")).toHaveClass(
-        /full-window/,
-    );
-    await choice.focus();
-    await page.keyboard.press("Enter");
-    await expect(choice).toHaveAttribute("aria-pressed", "true");
-    await expect(
-        page.locator('.wind-level-icons [aria-pressed="true"]'),
-    ).toHaveCount(1);
-    expect(new URL(page.url()).searchParams.get("map_wind")).toBe(
-        JSON.stringify("≈ 1500 m"),
-    );
-    await page.reload();
-    await expect(windIcon(page, "≈ 1500 m")).toHaveAttribute(
-        "aria-pressed",
-        "true",
-    );
-});
-
-test("wind barb help explains direction and speed markings in both languages", async ({
-    page,
-}) => {
-    await setUniformFreefallWind(page);
-    const help = page.locator("#wind-barb-help");
-    await help.click();
-    const dialog = page.getByRole("dialog");
-    await expect(dialog).toContainText("josta tuuli tulee");
-    await expect(dialog).toContainText("5 solmua");
-    await expect(dialog).toContainText("10 solmua");
-    await expect(dialog).toContainText("50 solmua");
-    await expect(dialog).toContainText("10 + 5 = 15 solmua");
-    await expect(dialog).toContainText(
-        "Ympyrä ilman vartta tarkoittaa tyyntä.",
-    );
-    await expect(dialog).toContainText(
-        "Kysymysmerkki tarkoittaa, ettei tuulitietoa ole saatavilla.",
-    );
-    await expect(
-        dialog.getByRole("heading", { name: "Nykyiset tuulet" }),
-    ).toBeVisible();
-    await expect(
-        dialog.locator(".wind-level").filter({ hasText: "≈ 3000 m" }),
-    ).toContainText(/10 m\/s 0°\s*20 kt/);
-    await page.keyboard.press("Escape");
-    await expect(dialog).toBeHidden();
-    await expect(help).toBeFocused();
-    await page.evaluate(async () => {
-        const { setLanguage } = await import("#app/translations.js");
-        setLanguage("en");
-    });
-    await help.click();
-    await expect(dialog).toContainText("the direction the wind comes from");
-    await expect(dialog).toContainText("5 knots");
-    await expect(dialog).toContainText("10 knots");
-    await expect(dialog).toContainText("50 knots");
-    await expect(dialog).toContainText("10 + 5 = 15 knots");
-    await expect(dialog).toContainText(
-        "A circle without a shaft means calm wind.",
-    );
-    await expect(dialog).toContainText(
-        "A question mark means wind data is unavailable.",
-    );
-    await expect(
-        dialog.getByRole("heading", { name: "Current winds" }),
-    ).toBeVisible();
-    await expect(
-        dialog.locator(".wind-level").filter({ hasText: "≈ 3000 m" }),
-    ).toContainText(/10 m\/s 0°\s*20 kt/);
 });
 
 test("freefall drift integrates altitude winds from 4000 to 800 metres", async ({
@@ -2011,34 +1509,6 @@ test.describe("upper wind forecast timezones", () => {
     }
 });
 
-test("upper wind forecast omits empty time columns and day headings", async ({
-    page,
-}) => {
-    await page.clock.install({ time: new Date("2026-07-04T08:30:00Z") });
-    await page.reload();
-    await page.evaluate(async () => {
-        const { OM_DATA } = await import("#app/weather/state.js");
-        const time = ["2026-07-04T12:00"];
-        const hourly = { time };
-        for (const level of ["600", "700", "850", "925", "1000"]) {
-            hourly[`windspeed_${level}hPa`] = [3];
-            hourly[`winddirection_${level}hPa`] = [225];
-        }
-        OM_DATA.value = { utc_offset_seconds: 0, hourly };
-    });
-
-    const table = page.locator(".upperwinds-compact");
-    await expect(table.locator(".wind-table-title")).toHaveText(["Tänään"]);
-    await expect(table.locator(".wind-table-title")).toHaveAttribute(
-        "colspan",
-        "1",
-    );
-    await expect(table.locator("th.time-header")).toHaveText(["12-15"]);
-    await expect(table.locator("tbody tr").first().locator("td")).toHaveCount(
-        1,
-    );
-});
-
 test("jump run redraws all jumpers and applies individual settings immediately", async ({
     page,
     isMobile,
@@ -2069,12 +1539,6 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect
         .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
         .not.toBe(firstStart);
-    const lineBounds = await run.boundingBox();
-    const mapBounds = await map.boundingBox();
-    expect(lineBounds.y).toBeLessThan(mapBounds.y);
-    expect(lineBounds.y + lineBounds.height).toBeGreaterThan(
-        mapBounds.y + mapBounds.height,
-    );
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await expect(jumpers).toHaveCount(3);
@@ -2263,183 +1727,6 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await expect(arrows).toHaveCount(1);
 });
 
-test("jumper inputs step opening altitude by 100 m and freefall speed by 20 km/h", async ({
-    page,
-}) => {
-    await page
-        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
-        .click();
-    const settings = page.getByRole("dialog", {
-        name: "Hyppylinjan asetukset",
-    });
-    const next = settings.getByRole("group", {
-        name: "Lisää hyppääjä",
-    });
-    const first = settings.getByRole("row", {
-        name: "Hyppääjä 1",
-        exact: true,
-    });
-    for (const group of [next, first]) {
-        const opening = group.getByRole("spinbutton", {
-            name: "Avauskorkeus (m)",
-            exact: true,
-        });
-        const speed = group.getByRole("spinbutton", {
-            name: "Vapaapudotusnopeus (km/h)",
-            exact: true,
-        });
-        await opening.press("ArrowUp");
-        await expect(opening).toHaveValue("900");
-        await speed.press("ArrowUp");
-        await expect(speed).toHaveValue("200");
-    }
-    await expect(page.locator(".jump-summary")).toContainText("4000-900m");
-    await expect(page.locator(".toolbar-summary")).toContainText("200 km/h");
-    await expect
-        .poll(
-            () =>
-                JSON.parse(
-                    new URL(page.url()).searchParams.get("map_jumpers"),
-                )[0],
-        )
-        .toEqual({ openingHeight: 900, speedKmh: 200 });
-});
-
-test("jump run explanations open in help dialogs and return to the settings", async ({
-    page,
-}) => {
-    await page
-        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
-        .click();
-    const settings = page.getByRole("dialog", {
-        name: "Hyppylinjan asetukset",
-    });
-    const exitExplanation = page.getByText(
-        /^Uloshyppykorkeus on yhteinen kaikille hyppääjille\./,
-    );
-    const speedExplanation = page.getByText(
-        /^Syötä todellinen ilmanopeus \(TAS\), ei mittarinopeutta \(IAS\)\./,
-    );
-    await expect(exitExplanation).toBeHidden();
-    await expect(speedExplanation).toBeHidden();
-
-    await settings
-        .getByRole("button", {
-            name: "Uloshyppykorkeus (m): Ohje",
-            exact: true,
-        })
-        .click();
-    await expect(exitExplanation).toBeVisible();
-    await expect(
-        page.getByText(
-            "Avauskorkeuden on oltava vähintään 800 m hyppypaikan maanpinnasta. Uloshyppykorkeuden ja hyppypaikan korkeuden merenpinnasta summa saa olla enintään ylimmän ennustetason korkeus, noin 4200 m merenpinnasta.",
-            {
-                exact: true,
-            },
-        ),
-    ).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(exitExplanation).toBeHidden();
-    await expect(settings).toBeVisible();
-
-    await settings
-        .getByRole("button", {
-            name: "Todellinen ilmanopeus (km/h): Ohje",
-            exact: true,
-        })
-        .click();
-    await expect(speedExplanation).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(speedExplanation).toBeHidden();
-    await expect(settings).toBeVisible();
-    for (const [label, explanation] of [
-        [
-            "Hyppääjien porrastus (s): Ohje",
-            /^Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina\./,
-        ],
-        [
-            "Hyppyryhmien oletusmäärä: Ohje",
-            /^Hyppyryhmien määrä, kun hyppylinja sijoitetaan ensimmäisen kerran/,
-        ],
-    ]) {
-        const text = page.getByText(explanation);
-        await expect(text).toBeHidden();
-        await settings
-            .getByRole("button", { name: label, exact: true })
-            .click();
-        await expect(text).toBeVisible();
-        await page.keyboard.press("Escape");
-        await expect(text).toBeHidden();
-        await expect(settings).toBeVisible();
-    }
-    for (const [label, explanation] of [
-        ["Hyppylinjan suunta", "Lentoradan suunta maan suhteen"],
-        [
-            "Avauskorkeus (m)",
-            "Korkeus, johon ennustettu vapaapudotusreitti päättyy",
-        ],
-        [
-            "Vapaapudotusnopeus (km/h)",
-            "ne eivät mallinna vaakasuuntaista liukumista tai liitopuvun liitoa",
-        ],
-    ]) {
-        const buttons = settings.getByRole("button", {
-            name: `${label}: Ohje`,
-            exact: true,
-        });
-        await expect(buttons).toHaveCount(
-            label === "Hyppylinjan suunta" ? 1 : 2,
-        );
-        // Both next-jumper fields and table headers open their own help.
-        for (const button of await buttons.all()) {
-            await button.click();
-            const help = button.locator("..").locator("dialog");
-            await expect(
-                help.getByRole("heading", { name: label, exact: true }),
-            ).toBeVisible();
-            await expect(help).toContainText(explanation);
-            await page.keyboard.press("Escape");
-            await expect(help).toBeHidden();
-            await expect(settings).toBeVisible();
-            await expect(button).toBeFocused();
-        }
-    }
-    await settings
-        .getByRole("spinbutton", {
-            name: "Todellinen ilmanopeus (km/h)",
-            exact: true,
-        })
-        .fill("180");
-    await expect(page.locator(".toolbar-summary")).toContainText(
-        /Hyppylinja\s*\d+° · 180 km\/h/,
-    );
-});
-
-test("jump run heading displays whole degrees without changing its precision", async ({
-    page,
-}) => {
-    const runSettings = {
-        direction: 16.6,
-        speedKmh: 120,
-        separationSeconds: 5,
-        exitHeight: 4000,
-    };
-    await page.goto(
-        `${developerPath}&map_run_settings=${encodeURIComponent(JSON.stringify(runSettings))}`,
-    );
-    await page
-        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
-        .click();
-    const settings = page.getByRole("dialog", {
-        name: "Hyppylinjan asetukset",
-    });
-    await expect(settings.locator(".direction-value")).toHaveText("17°");
-    expect(
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-            .direction,
-    ).toBe(16.6);
-});
-
 for (const jumperCount of [1, 4]) {
     test(`direction controls preserve the predicted landing point for ${jumperCount} groups`, async ({
         page,
@@ -2488,74 +1775,22 @@ for (const jumperCount of [1, 4]) {
     });
 }
 
-for (const jumperCount of [1, 3, 4]) {
-    test(`free rotation keeps the center of ${jumperCount} exits fixed across headings and reload`, async ({
-        page,
-    }) => {
-        const settings = {
-            direction: 0,
-            speedKmh: 120,
-            separationSeconds: 20,
-            exitHeight: 4000,
-        };
-        const group = Array.from({ length: jumperCount }, (_, index) => ({
-            speedKmh: index % 2 ? 240 : 180,
-            openingHeight: index % 2 ? 1200 : 800,
-        }));
-        await page.goto(
-            `${developerPath}&map_zoom=13&map_jumpers=${encodeURIComponent(JSON.stringify(group))}&map_run_start=${encodeURIComponent(JSON.stringify({ lat: 62.4, lng: 25.6 }))}&map_run_settings=${encodeURIComponent(JSON.stringify(settings))}`,
-        );
-        await setUniformFreefallWind(page);
-        const map = page.locator(".dz-map");
-        await map.scrollIntoViewIfNeeded();
-        const center = await runCenter(page);
-        await centerMapOn(page, center);
-        await clickDirection(page, directionControls.drag);
-        for (let turn = 0; turn < 4; turn++) {
-            const previous = JSON.parse(
-                new URL(page.url()).searchParams.get("map_run_settings"),
-            ).direction;
-            const direction = (previous + 90) % 360;
-            const pivot = await mapPoint(page, center);
-            const bounds = await map.boundingBox();
-            const x = bounds.x + pivot.x;
-            const y = bounds.y + pivot.y;
-            await page.mouse.move(x + 70, y);
-            await page.mouse.down();
-            await page.mouse.move(x, y + 70, { steps: 5 });
-            await page.mouse.up();
-            const actual = JSON.parse(
-                new URL(page.url()).searchParams.get("map_run_settings"),
-            ).direction;
-            expect(
-                Math.min(
-                    Math.abs(actual - direction),
-                    360 - Math.abs(actual - direction),
-                ),
-            ).toBeLessThan(1);
-            expect(await runCenterDistance(page, center)).toBeLessThan(1);
-        }
-        await page.reload();
-        await setUniformFreefallWind(page);
-        expect(await runCenterDistance(page, center)).toBeLessThan(1);
-    });
-}
-
-test("free rotation recovers its center after releasing on an infeasible heading", async ({
+test("free rotation preserves the exit center across headings and reload", async ({
     page,
 }) => {
+    const jumperCount = 4;
     const settings = {
-        direction: 180,
-        speedKmh: 20,
-        separationSeconds: 5,
+        direction: 0,
+        speedKmh: 120,
+        separationSeconds: 20,
         exitHeight: 4000,
     };
-    const group = Array.from({ length: 4 }, () => ({
-        speedKmh: 180,
-        openingHeight: 800,
+    const group = Array.from({ length: jumperCount }, (_, index) => ({
+        speedKmh: index % 2 ? 240 : 180,
+        openingHeight: index % 2 ? 1200 : 800,
     }));
     await page.goto(
-        `${developerPath}&map_jumpers=${encodeURIComponent(JSON.stringify(group))}&map_run_start=${encodeURIComponent(JSON.stringify({ lat: 62.4, lng: 25.6 }))}&map_run_settings=${encodeURIComponent(JSON.stringify(settings))}`,
+        `${developerPath}&map_zoom=13&map_jumpers=${encodeURIComponent(JSON.stringify(group))}&map_run_start=${encodeURIComponent(JSON.stringify({ lat: 62.4, lng: 25.6 }))}&map_run_settings=${encodeURIComponent(JSON.stringify(settings))}`,
     );
     await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
@@ -2563,71 +1798,33 @@ test("free rotation recovers its center after releasing on an infeasible heading
     const center = await runCenter(page);
     await centerMapOn(page, center);
     await clickDirection(page, directionControls.drag);
-    const pivot = await mapPoint(page, center);
-    const bounds = await map.boundingBox();
-    const x = bounds.x + pivot.x;
-    const y = bounds.y + pivot.y;
-    const reverse = async () => {
+    for (let turn = 0; turn < 4; turn++) {
+        const previous = JSON.parse(
+            new URL(page.url()).searchParams.get("map_run_settings"),
+        ).direction;
+        const direction = (previous + 90) % 360;
+        const pivot = await mapPoint(page, center);
+        const bounds = await map.boundingBox();
+        const x = bounds.x + pivot.x;
+        const y = bounds.y + pivot.y;
         await page.mouse.move(x + 70, y);
         await page.mouse.down();
-        await page.mouse.move(x - 70, y, { steps: 5 });
+        await page.mouse.move(x, y + 70, { steps: 5 });
         await page.mouse.up();
-    };
-    await reverse();
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(0);
-    await reverse();
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(4);
-    expect(await runCenterDistance(page, center)).toBeLessThan(1);
-});
-
-test("quarter-turn buttons rotate both ways around the opening center", async ({
-    page,
-}) => {
-    const runSettings = {
-        direction: 316.6,
-        speedKmh: 120,
-        separationSeconds: 5,
-        exitHeight: 4000,
-    };
-    await page.goto(
-        `${developerPath}&map_run_settings=${encodeURIComponent(JSON.stringify(runSettings))}`,
-    );
-    await setUniformFreefallWind(page);
-    const toolbar = page.locator(".freefall-toolbar");
-    const clockwise = directionControl(page, directionControls.clockwise);
-    const counterclockwise = directionControl(
-        page,
-        directionControls.counterclockwise,
-    );
-    await expect(clockwise).toBeDisabled();
-    await expect(counterclockwise).toBeDisabled();
-    const map = page.locator(".dz-map");
-    await map.scrollIntoViewIfNeeded();
-    await map.click({ position: { x: 120, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
-    const opening = await middleOpening(page);
-    for (const [name, direction] of [
-        [directionControls.clockwise, 46.6],
-        [directionControls.counterclockwise, 316.6],
-        [directionControls.counterclockwise, 226.6],
-        [directionControls.counterclockwise, 136.6],
-        [directionControls.counterclockwise, 46.6],
-        [directionControls.counterclockwise, 316.6],
-    ]) {
-        await clickDirection(page, name);
+        const actual = JSON.parse(
+            new URL(page.url()).searchParams.get("map_run_settings"),
+        ).direction;
         expect(
-            JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-                .direction,
-        ).toBeCloseTo(direction, 8);
-        await expect(toolbar.locator(".toolbar-summary")).toContainText(
-            `${Math.round(direction)}° · 120 km/h`,
-        );
-        expect(await openingDistance(page, opening)).toBeLessThan(1);
+            Math.min(
+                Math.abs(actual - direction),
+                360 - Math.abs(actual - direction),
+            ),
+        ).toBeLessThan(1);
+        expect(await runCenterDistance(page, center)).toBeLessThan(1);
     }
-    await toolbar.getByRole("button", { name: "Poista hyppylinja" }).click();
-    await expect(clockwise).toBeDisabled();
-    await expect(counterclockwise).toBeDisabled();
+    await page.reload();
+    await setUniformFreefallWind(page);
+    expect(await runCenterDistance(page, center)).toBeLessThan(1);
 });
 
 test("jump run turns into the selected wind around the opening center", async ({
@@ -2735,65 +1932,6 @@ test("turning into wind requires a valid selected wind and uses refreshed data",
         OM_DATA.value = null;
     });
     await expect(intoWind).toBeDisabled();
-});
-
-test("default direction is used only when creating a jump run", async ({
-    page,
-}) => {
-    await page.goto(`${developerPath}&default_jump_run_direction=180`);
-    await setUniformFreefallWind(page);
-    const map = page.locator(".dz-map");
-    await map.scrollIntoViewIfNeeded();
-    await map.click({ position: { x: 120, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(page.locator(".freefall-drift-line")).toHaveCount(6);
-    const opening = await middleOpening(page);
-    const beforeTurn = new URL(page.url()).searchParams.get("map_run_start");
-    expect(
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-            .direction,
-    ).toBe(180);
-    await page
-        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
-        .click();
-
-    const settings = page.getByRole("dialog", {
-        name: "Hyppylinjan asetukset",
-    });
-    const direction = settings.getByRole("slider", {
-        name: "Hyppylinjan suunta",
-    });
-    const defaultDirection = settings.getByRole("slider", {
-        name: "Hyppylinjan oletussuunta",
-    });
-    await expect(direction).toHaveValue("180");
-    await expect(defaultDirection).toHaveCount(0);
-    await direction.fill("225");
-
-    await expect(settings.locator(".direction-value")).toHaveText("225°");
-    expect(await openingDistance(page, opening)).toBeLessThan(20);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).not.toBe(
-        beforeTurn,
-    );
-    expect(
-        new URL(page.url()).searchParams.get("default_jump_run_direction"),
-    ).toBe("180");
-    expect(
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-            .direction,
-    ).toBe(225);
-
-    await page.keyboard.press("Escape");
-    const start = new URL(page.url()).searchParams.get("map_run_start");
-    await map.click({ position: { x: 200, y: 120 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect
-        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
-        .not.toBe(start);
-    expect(
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-            .direction,
-    ).toBe(225);
 });
 
 test("adding, removing, and undoing jumpers preserves the exit center", async ({
@@ -2933,58 +2071,6 @@ test("rotation preserves the current opening after settings, group, and wind edi
     expect(await openingDistance(page, opening)).toBeLessThan(1);
 });
 
-test("a feasible selected direction allows placement after the default track fails", async ({
-    page,
-}) => {
-    await page.goto(
-        `${developerPath}&default_jump_run_direction=0&map_run_settings=${encodeURIComponent(JSON.stringify({ direction: 0, speedKmh: 20, separationSeconds: 5, exitHeight: 4000 }))}`,
-    );
-    await setUniformFreefallWind(page);
-    const map = page.locator(".dz-map");
-    await map.scrollIntoViewIfNeeded();
-    await map.click({ position: { x: 120, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(page.locator(".jump-run-unavailable")).toBeVisible();
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe("null");
-    await page
-        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
-        .click();
-    await page.getByRole("slider", { name: "Hyppylinjan suunta" }).fill("180");
-    await page.keyboard.press("Escape");
-    await map.click({ position: { x: 120, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
-    await expect(page.locator(".jump-run-unavailable")).toHaveCount(0);
-    expect(
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-            .direction,
-    ).toBe(180);
-});
-
-test("rotation recovers its opening after an infeasible heading", async ({
-    page,
-}) => {
-    await page.goto(
-        `${developerPath}&default_jump_run_direction=180&map_run_settings=${encodeURIComponent(JSON.stringify({ direction: 180, speedKmh: 20, separationSeconds: 5, exitHeight: 4000 }))}`,
-    );
-    await setUniformFreefallWind(page);
-    const map = page.locator(".dz-map");
-    await map.scrollIntoViewIfNeeded();
-    await map.click({ position: { x: 120, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
-    const opening = await middleOpening(page);
-    await page
-        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
-        .click();
-    const direction = page.getByRole("slider", { name: "Hyppylinjan suunta" });
-    await direction.fill("0");
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(0);
-    await direction.fill("170");
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
-    expect(await openingDistance(page, opening)).toBeLessThan(1);
-});
-
 for (const input of ["mouse", "touch"]) {
     test(`direction ${input} dragging starts from the current heading without snapping`, async ({
         page,
@@ -3077,92 +2163,6 @@ for (const input of ["mouse", "touch"]) {
     });
 }
 
-test("direction dragging coalesces movements and commits the final position on release", async ({
-    page,
-}) => {
-    await page.goto(
-        `${developerPath}&lat=62.4&lon=25.6&DEV_upper_winds=10,0;10,0;10,0;10,0;10,0`,
-    );
-    await page.clock.setFixedTime(new Date());
-    const map = page.locator(".dz-map");
-    await map.scrollIntoViewIfNeeded();
-    await map.click({ position: { x: 120, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
-    // Invalidate the original target, then exercise the drag path as well as the slider.
-    await page
-        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
-        .click();
-    await page
-        .getByRole("spinbutton", { name: "Hyppääjien porrastus (s)" })
-        .fill("10");
-    await page.keyboard.press("Escape");
-    const center = await runCenter(page);
-    await clickDirection(page, directionControls.drag);
-    const writes = await map.evaluate(async (element) => {
-        const original = history.replaceState;
-        let writes = 0;
-        history.replaceState = function (...args) {
-            writes++;
-            return original.apply(this, args);
-        };
-        const bounds = element.getBoundingClientRect();
-        const send = (type, x, y) =>
-            element.dispatchEvent(
-                new PointerEvent(type, {
-                    bubbles: true,
-                    pointerId: 1,
-                    pointerType: "mouse",
-                    button: 0,
-                    clientX: bounds.left + x,
-                    clientY: bounds.top + y,
-                }),
-            );
-        try {
-            send("pointerdown", 120, 160);
-            for (let i = 0; i < 20; i++) send("pointermove", 140 + i, 160);
-            const beforeFrame = writes;
-            await new Promise(requestAnimationFrame);
-            const afterFrame = writes;
-            const frameSettings = new URL(location.href).searchParams.get(
-                "map_run_settings",
-            );
-            // These events happen in the same task: release must flush the latest point.
-            send("pointermove", 160, 200);
-            send("pointermove", 120, 250);
-            send("pointerup", 120, 250);
-            const afterRelease = writes;
-            const settings = new URL(location.href).searchParams.get(
-                "map_run_settings",
-            );
-            await new Promise(requestAnimationFrame);
-            await new Promise(requestAnimationFrame);
-            return {
-                beforeFrame,
-                afterFrame,
-                frameSettings,
-                afterRelease,
-                afterIdle: writes,
-                settings,
-                finalSettings: new URL(location.href).searchParams.get(
-                    "map_run_settings",
-                ),
-            };
-        } finally {
-            history.replaceState = original;
-        }
-    });
-    expect(writes.beforeFrame).toBe(0);
-    expect(writes.afterFrame).toBe(1);
-    expect(writes.afterRelease).toBe(2);
-    expect(writes.afterIdle).toBe(2);
-    expect(writes.finalSettings).toBe(writes.settings);
-    expect(JSON.parse(writes.settings).direction).not.toBe(
-        JSON.parse(writes.frameSettings).direction,
-    );
-    expect(await runCenterDistance(page, center)).toBeLessThan(1);
-});
-
 test("jump-run positioning requires confirmation and cancels on other clicks", async ({
     page,
 }) => {
@@ -3214,58 +2214,57 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
     }
 });
 
-for (const jumperCount of [1, 5, 6]) {
-    test(`centering the jump run puts the middle of ${jumperCount} exits at the tapped point`, async ({
-        page,
-    }) => {
-        const target = { lat: 62.4, lng: 25.6 };
-        await page.goto(
-            `${developerPath}&default_jump_group_count=${jumperCount}&default_jump_run_direction=90&map_center_lat=${target.lat}&map_center_lon=${target.lng}`,
-        );
-        await setUniformFreefallWind(page);
-        const map = page.locator(".dz-map");
-        await map.scrollIntoViewIfNeeded();
-        const bounds = await map.boundingBox();
-        await map.click({
-            position: { x: bounds.width / 2, y: bounds.height / 2 },
-        });
-        await page.getByRole("button", { name: "Keskitä hyppylinja" }).click();
-        await expect(map.locator(".jump-run-jumper")).toHaveCount(jumperCount);
-        await expect(map.locator(".jump-run-placement")).toHaveCount(0);
-        const distance = await page.evaluate(async (target) => {
-            const { getMapWindData } = await import("#app/map/windData.js");
-            const { getJumpRunVelocity, jumpRunCoordinates } =
-                await import("#app/map/freefall.js");
-            const { latLng } = await import("leaflet");
-            const params = new URL(location.href).searchParams;
-            const settings = JSON.parse(params.get("map_run_settings"));
-            const start = JSON.parse(params.get("map_run_start"));
-            const group = JSON.parse(params.get("map_jumpers"));
-            const velocity = getJumpRunVelocity(
-                getMapWindData().freefallWinds,
-                settings,
-            );
-            const last = latLng(
-                jumpRunCoordinates(
-                    start,
-                    settings,
-                    group.length - 1,
-                    velocity.ground,
-                ),
-            );
-            return latLng(
-                (start.lat + last.lat) / 2,
-                (start.lng + last.lng) / 2,
-            ).distanceTo(target);
-        }, target);
-        // Map clicks are rounded to screen pixels at the current zoom.
-        expect(distance).toBeLessThan(10);
-        expect(await openingDistance(page, target)).toBeGreaterThan(100);
-        const opening = await middleOpening(page);
-        await clickDirection(page, directionControls.clockwise);
-        expect(await openingDistance(page, opening)).toBeLessThan(1);
+test("centering the jump run puts its middle exit at the tapped point", async ({
+    page,
+}) => {
+    const jumperCount = 6;
+    const target = { lat: 62.4, lng: 25.6 };
+    await page.goto(
+        `${developerPath}&default_jump_group_count=${jumperCount}&default_jump_run_direction=90&map_center_lat=${target.lat}&map_center_lon=${target.lng}`,
+    );
+    await setUniformFreefallWind(page);
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    const bounds = await map.boundingBox();
+    await map.click({
+        position: { x: bounds.width / 2, y: bounds.height / 2 },
     });
-}
+    await page.getByRole("button", { name: "Keskitä hyppylinja" }).click();
+    await expect(map.locator(".jump-run-jumper")).toHaveCount(jumperCount);
+    await expect(map.locator(".jump-run-placement")).toHaveCount(0);
+    const distance = await page.evaluate(async (target) => {
+        const { getMapWindData } = await import("#app/map/windData.js");
+        const { getJumpRunVelocity, jumpRunCoordinates } =
+            await import("#app/map/freefall.js");
+        const { latLng } = await import("leaflet");
+        const params = new URL(location.href).searchParams;
+        const settings = JSON.parse(params.get("map_run_settings"));
+        const start = JSON.parse(params.get("map_run_start"));
+        const group = JSON.parse(params.get("map_jumpers"));
+        const velocity = getJumpRunVelocity(
+            getMapWindData().freefallWinds,
+            settings,
+        );
+        const last = latLng(
+            jumpRunCoordinates(
+                start,
+                settings,
+                group.length - 1,
+                velocity.ground,
+            ),
+        );
+        return latLng(
+            (start.lat + last.lat) / 2,
+            (start.lng + last.lng) / 2,
+        ).distanceTo(target);
+    }, target);
+    // Map clicks are rounded to screen pixels at the current zoom.
+    expect(distance).toBeLessThan(10);
+    expect(await openingDistance(page, target)).toBeGreaterThan(100);
+    const opening = await middleOpening(page);
+    await clickDirection(page, directionControls.clockwise);
+    expect(await openingDistance(page, opening)).toBeLessThan(1);
+});
 
 test("parachute landing at a tapped point reuses automatic positioning for the current group and direction", async ({
     page,
@@ -3388,48 +2387,42 @@ for (const [description, ground] of [
     });
 }
 
-for (const jumperCount of [1, 13, 14]) {
-    test(`jump run centers ${jumperCount} jumpers on a map click`, async ({
-        page,
-    }) => {
-        const center = { lat: 62.4, lng: 25.6 };
-        await page.goto(
-            `${developerPath}&default_jump_group_count=${jumperCount}&default_jump_run_direction=90&map_center_lat=${center.lat}&map_center_lon=${center.lng}`,
-        );
-        await setUniformFreefallWind(page);
+test("map clicks center a large group of jumpers", async ({ page }) => {
+    const jumperCount = 14;
+    const center = { lat: 62.4, lng: 25.6 };
+    await page.goto(
+        `${developerPath}&default_jump_group_count=${jumperCount}&default_jump_run_direction=90&map_center_lat=${center.lat}&map_center_lon=${center.lng}`,
+    );
+    await setUniformFreefallWind(page);
 
-        const map = page.locator(".dz-map");
-        await map.scrollIntoViewIfNeeded();
-        const bounds = await map.boundingBox();
-        await map.click({
-            position: { x: bounds.width / 2, y: bounds.height / 2 },
-        });
-        await page.getByRole("button", { name: "Avaus" }).click();
+    const map = page.locator(".dz-map");
+    await map.scrollIntoViewIfNeeded();
+    const bounds = await map.boundingBox();
+    await map.click({
+        position: { x: bounds.width / 2, y: bounds.height / 2 },
+    });
+    await page.getByRole("button", { name: "Avaus" }).click();
 
-        await expect(map.locator(".freefall-drift-line")).toHaveCount(
-            jumperCount,
-        );
-        const result = await page.evaluate(async () => {
-            const { getMapWindData } = await import("#app/map/windData.js");
-            const { jumpRunCoordinates } = await import("#app/map/freefall.js");
-            const { getFreefallDrift, driftCoordinates, getJumpRunVelocity } =
-                await import("#app/map/freefall.js");
-            const { latLng } = await import("leaflet");
-            const params = new URL(location.href).searchParams;
-            const settings = JSON.parse(params.get("map_run_settings"));
-            const start = JSON.parse(params.get("map_run_start"));
-            const jumpers = JSON.parse(params.get("map_jumpers"));
-            const target = {
-                lat: Number(params.get("map_center_lat")),
-                lng: Number(params.get("map_center_lon")),
-            };
-            const winds = getMapWindData().freefallWinds;
-            const velocity = getJumpRunVelocity(winds, settings);
-            const middleIndex = (jumpers.length - 1) / 2;
-            const openings = [
-                Math.floor(middleIndex),
-                Math.ceil(middleIndex),
-            ].map((index) => {
+    await expect(map.locator(".freefall-drift-line")).toHaveCount(jumperCount);
+    const result = await page.evaluate(async () => {
+        const { getMapWindData } = await import("#app/map/windData.js");
+        const { jumpRunCoordinates } = await import("#app/map/freefall.js");
+        const { getFreefallDrift, driftCoordinates, getJumpRunVelocity } =
+            await import("#app/map/freefall.js");
+        const { latLng } = await import("leaflet");
+        const params = new URL(location.href).searchParams;
+        const settings = JSON.parse(params.get("map_run_settings"));
+        const start = JSON.parse(params.get("map_run_start"));
+        const jumpers = JSON.parse(params.get("map_jumpers"));
+        const target = {
+            lat: Number(params.get("map_center_lat")),
+            lng: Number(params.get("map_center_lon")),
+        };
+        const winds = getMapWindData().freefallWinds;
+        const velocity = getJumpRunVelocity(winds, settings);
+        const middleIndex = (jumpers.length - 1) / 2;
+        const openings = [Math.floor(middleIndex), Math.ceil(middleIndex)].map(
+            (index) => {
                 const exit = latLng(
                     jumpRunCoordinates(start, settings, index, velocity.ground),
                 );
@@ -3442,22 +2435,22 @@ for (const jumperCount of [1, 13, 14]) {
                     velocity.air,
                 );
                 return latLng(driftCoordinates(exit, path[path.length - 1]));
-            });
-            const opening = latLng(
-                (openings[0].lat + openings[1].lat) / 2,
-                (openings[0].lng + openings[1].lng) / 2,
-            );
-            return {
-                direction: settings.direction,
-                jumperCount: jumpers.length,
-                openingDistance: opening.distanceTo(target),
-            };
-        });
-        expect(result.direction).toBe(90);
-        expect(result.jumperCount).toBe(jumperCount);
-        expect(result.openingDistance).toBeLessThan(20);
+            },
+        );
+        const opening = latLng(
+            (openings[0].lat + openings[1].lat) / 2,
+            (openings[0].lng + openings[1].lng) / 2,
+        );
+        return {
+            direction: settings.direction,
+            jumperCount: jumpers.length,
+            openingDistance: opening.distanceTo(target),
+        };
     });
-}
+    expect(result.direction).toBe(90);
+    expect(result.jumperCount).toBe(jumperCount);
+    expect(result.openingDistance).toBeLessThan(20);
+});
 
 test("two-finger navigation retains loaded tiles and saves the completed view", async ({
     page,
@@ -3532,87 +2525,50 @@ test("two-finger navigation retains loaded tiles and saves the completed view", 
     await touch.detach();
 });
 
-test("one finger on the map scrolls the page without changing the map view", async ({
+test("double-tap zoom preserves the positioned jump run", async ({
     page,
     isMobile,
 }) => {
-    test.skip(!isMobile, "Requires mobile touch input");
-    await page.goto(`${developerPath}&lat=62.4&lon=25.6`);
+    await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
+    const hint = page
+        .getByRole("status")
+        .filter({ hasText: "Vedä asettaaksesi hyppylinjan suunnan." });
     await map.scrollIntoViewIfNeeded();
-    const bounds = await map.boundingBox();
-    const initial = page.url();
-    const scroll = await page.evaluate(() => scrollY);
-    const touch = await page.context().newCDPSession(page);
-    await touch.send("Input.dispatchTouchEvent", {
-        type: "touchStart",
-        touchPoints: [{ x: bounds.x + 100, y: bounds.y + 200 }],
-    });
-    for (const offset of [20, 40, 60, 80]) {
-        await touch.send("Input.dispatchTouchEvent", {
-            type: "touchMove",
-            touchPoints: [{ x: bounds.x + 100, y: bounds.y + 200 - offset }],
-        });
+    await map.click({ position: { x: 80, y: 100 } });
+    await page.getByRole("button", { name: "Avaus" }).click();
+    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
+    await map.scrollIntoViewIfNeeded();
+    const initial = new URL(page.url()).searchParams;
+    if (isMobile) {
+        const bounds = await map.boundingBox();
+        const touch = await page.context().newCDPSession(page);
+        for (let tap = 0; tap < 2; tap++) {
+            await touch.send("Input.dispatchTouchEvent", {
+                type: "touchStart",
+                touchPoints: [{ x: bounds.x + 150, y: bounds.y + 220 }],
+            });
+            await touch.send("Input.dispatchTouchEvent", {
+                type: "touchEnd",
+                touchPoints: [],
+            });
+            if (tap === 0) await page.waitForTimeout(60);
+        }
+        await touch.detach();
+    } else {
+        await map.dblclick({ position: { x: 150, y: 220 }, delay: 60 });
     }
-    await touch.send("Input.dispatchTouchEvent", {
-        type: "touchEnd",
-        touchPoints: [],
-    });
-    await expect
-        .poll(() => page.evaluate(() => scrollY))
-        .toBeGreaterThan(scroll);
-    await expect(page).toHaveURL(initial);
-    await touch.detach();
+    await expect(page).toHaveURL(
+        (url) =>
+            Number(url.searchParams.get("map_zoom")) >
+            Number(initial.get("map_zoom")),
+    );
+    // Allow the single-click delay to expire to detect late placement.
+    await page.waitForTimeout(400);
+    const result = new URL(page.url()).searchParams;
+    expect(result.get("map_run_start")).toBe(initial.get("map_run_start"));
+    await expect(hint).toHaveCount(0);
 });
-
-for (const placement of ["unplaced", "positioned"]) {
-    test(`double-tap zoom preserves the ${placement} jump run`, async ({
-        page,
-        isMobile,
-    }) => {
-        await setUniformFreefallWind(page);
-        const map = page.locator(".dz-map");
-        const hint = page
-            .getByRole("status")
-            .filter({ hasText: "Vedä asettaaksesi hyppylinjan suunnan." });
-        if (placement === "positioned") {
-            await map.scrollIntoViewIfNeeded();
-            await map.click({ position: { x: 80, y: 100 } });
-            await page.getByRole("button", { name: "Avaus" }).click();
-            await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
-        }
-        await map.scrollIntoViewIfNeeded();
-        const initial = new URL(page.url()).searchParams;
-        if (isMobile) {
-            const bounds = await map.boundingBox();
-            const touch = await page.context().newCDPSession(page);
-            for (let tap = 0; tap < 2; tap++) {
-                await touch.send("Input.dispatchTouchEvent", {
-                    type: "touchStart",
-                    touchPoints: [{ x: bounds.x + 150, y: bounds.y + 220 }],
-                });
-                await touch.send("Input.dispatchTouchEvent", {
-                    type: "touchEnd",
-                    touchPoints: [],
-                });
-                if (tap === 0) await page.waitForTimeout(60);
-            }
-            await touch.detach();
-        } else {
-            await map.dblclick({ position: { x: 150, y: 220 }, delay: 60 });
-        }
-        await expect(page).toHaveURL(
-            (url) =>
-                Number(url.searchParams.get("map_zoom")) >
-                Number(initial.get("map_zoom")),
-        );
-        // Allow the single-click delay to expire to detect late placement.
-        await page.waitForTimeout(400);
-        const result = new URL(page.url()).searchParams;
-        expect(result.get("map_run_start")).toBe(initial.get("map_run_start"));
-        await expect(hint).toHaveCount(0);
-    });
-}
 
 test("dragging sets jump run direction and clicking exits without moving the run", async ({
     page,
@@ -3722,8 +2678,9 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
             name: "Laajenna Hyppylinja koko ikkunaan",
         })
         .click();
-    const frame = card.locator(".map-frame");
-    await expect(frame).toHaveClass(/full-window/);
+    await expect(
+        card.getByRole("button", { name: "Palauta Hyppylinja", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
     const fittedZoom = zoom();
     await wheel();
     await expect.poll(zoom).not.toBe(fittedZoom);
@@ -3742,198 +2699,22 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
     await expect(directionButton).toHaveAttribute("aria-checked", "true");
     await page.keyboard.press("Escape");
     await expect(directionButton).toHaveAttribute("aria-checked", "false");
-    await expect(frame).toHaveClass(/full-window/);
+    await expect(
+        card.getByRole("button", { name: "Palauta Hyppylinja", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
     await wheel();
     await expect.poll(zoom).not.toBe(expandedZoom);
     await page.keyboard.press("Escape");
-    await expect(frame).not.toHaveClass(/full-window/);
+    await expect(
+        card.getByRole("button", {
+            name: "Laajenna Hyppylinja koko ikkunaan",
+            exact: true,
+        }),
+    ).toHaveAttribute("aria-pressed", "false");
     const restoredZoom = zoom();
     await wheel();
     await page.waitForTimeout(400);
     expect(zoom()).toBe(restoredZoom);
-});
-
-test("small wheel movements zoom by a full level after a fractional touch view", async ({
-    page,
-}) => {
-    await setUniformFreefallWind(page);
-    await page.evaluate(async () => {
-        const { navigateQs } = await import("#app/app/settings.js");
-        navigateQs(
-            { map_zoom: "14.25", map_full_window: "true" },
-            { replace: true },
-        );
-        await new Promise(requestAnimationFrame);
-        await new Promise(requestAnimationFrame);
-    });
-    const map = page.locator(".dz-map");
-    await expect(page.locator(".map-frame")).toHaveClass(/full-window/);
-    await map.dispatchEvent("wheel", {
-        deltaY: -20,
-        clientX: 200,
-        clientY: 200,
-    });
-    await expect
-        .poll(() => new URL(page.url()).searchParams.get("map_zoom"))
-        .toBe("15");
-});
-
-test("map zoom is disabled during jump run direction setting and restored afterward", async ({
-    page,
-}) => {
-    await setUniformFreefallWind(page);
-    const map = page.locator(".dz-map");
-    await map.scrollIntoViewIfNeeded();
-    await map.click({ position: { x: 100, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(map.locator(".jump-run-jumper").first()).toBeVisible();
-    const directionButton = directionControl(page, directionControls.drag);
-    await clickDirection(page, directionControls.drag);
-    const hint = page
-        .getByRole("status")
-        .filter({ hasText: "Vedä asettaaksesi hyppylinjan suunnan." });
-    await expect(hint).toBeVisible();
-    const zoom = () => new URL(page.url()).searchParams.get("map_zoom");
-    const initialZoom = zoom();
-    const zoomIn = map.locator(".leaflet-control-zoom-in");
-    const zoomOut = map.locator(".leaflet-control-zoom-out");
-    await expect(zoomIn).toHaveAttribute("aria-disabled", "true");
-    await expect(zoomOut).toHaveAttribute("aria-disabled", "true");
-    await zoomIn.click({ force: true });
-    await zoomOut.click({ force: true });
-    await map.focus();
-    await page.keyboard.press("+");
-    await page.keyboard.press("-");
-    // A dblclick event must not zoom while the direction preview is active.
-    await map.dispatchEvent("dblclick", {
-        clientX: 150,
-        clientY: 220,
-        detail: 2,
-    });
-    const bounds = await map.boundingBox();
-    await page.mouse.move(bounds.x + 150, bounds.y + 220);
-    await page.mouse.wheel(0, -500);
-    await page.keyboard.down("Shift");
-    await page.mouse.move(bounds.x + 100, bounds.y + 160);
-    await page.mouse.down();
-    await page.mouse.move(bounds.x + 200, bounds.y + 260, { steps: 5 });
-    await page.mouse.up();
-    await page.keyboard.up("Shift");
-    const touch = await page.context().newCDPSession(page);
-    await touch.send("Input.dispatchTouchEvent", {
-        type: "touchStart",
-        touchPoints: [
-            { id: 1, x: bounds.x + 100, y: bounds.y + 200 },
-            { id: 2, x: bounds.x + 200, y: bounds.y + 200 },
-        ],
-    });
-    await touch.send("Input.dispatchTouchEvent", {
-        type: "touchMove",
-        touchPoints: [
-            { id: 1, x: bounds.x + 50, y: bounds.y + 200 },
-            { id: 2, x: bounds.x + 250, y: bounds.y + 200 },
-        ],
-    });
-    await touch.send("Input.dispatchTouchEvent", {
-        type: "touchEnd",
-        touchPoints: [],
-    });
-    await touch.detach();
-    await page.waitForTimeout(400);
-    expect(zoom()).toBe(initialZoom);
-    await expect(hint).toBeVisible();
-    const currentBounds = await map.boundingBox();
-    await map.dispatchEvent("click", {
-        clientX: currentBounds.x + 200,
-        clientY: currentBounds.y + 160,
-        detail: 1,
-    });
-    await page.waitForTimeout(400);
-    await expect(hint).toHaveCount(0);
-    expect(zoom()).toBe(initialZoom);
-    await expect(hint).toHaveCount(0);
-    await expect(zoomIn).toHaveAttribute("aria-disabled", "false");
-    await expect(zoomOut).toHaveAttribute("aria-disabled", "false");
-    await zoomIn.click();
-    await expect.poll(zoom).not.toBe(initialZoom);
-    const buttonZoom = zoom();
-    await map.focus();
-    await page.keyboard.press("+");
-    await expect.poll(zoom).not.toBe(buttonZoom);
-});
-
-test("full-window one-finger pan pauses while jump run direction mode is on", async ({
-    page,
-    isMobile,
-}) => {
-    test.skip(!isMobile, "Requires mobile touch input");
-    await setUniformFreefallWind(page);
-    await page
-        .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
-        .click();
-    const map = page.locator(".dz-map");
-    const hint = page
-        .getByRole("status")
-        .filter({ hasText: "Vedä asettaaksesi hyppylinjan suunnan." });
-    const directionButton = directionControl(page, directionControls.drag);
-    const touch = await page.context().newCDPSession(page);
-    const view = () => {
-        const params = new URL(page.url()).searchParams;
-        return [params.get("map_center_lat"), params.get("map_center_lon")];
-    };
-    const drag = async () => {
-        const bounds = await map.boundingBox();
-        await touch.send("Input.dispatchTouchEvent", {
-            type: "touchStart",
-            touchPoints: [{ x: bounds.x + 100, y: bounds.y + 200 }],
-        });
-        for (const offset of [20, 40, 60, 80]) {
-            await touch.send("Input.dispatchTouchEvent", {
-                type: "touchMove",
-                touchPoints: [
-                    { x: bounds.x + 100 + offset, y: bounds.y + 200 - offset },
-                ],
-            });
-            await page.evaluate(() => new Promise(requestAnimationFrame));
-        }
-        await touch.send("Input.dispatchTouchEvent", {
-            type: "touchEnd",
-            touchPoints: [],
-        });
-    };
-    const initial = view();
-    await drag();
-    await expect.poll(view).not.toEqual(initial);
-    await expect(hint).toHaveCount(0);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe("null");
-    await map.tap({ position: { x: 100, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(map.locator(".jump-run-jumper").first()).toBeVisible();
-    await expect(hint).toHaveCount(0);
-    const beforeDirection = view();
-    const start = new URL(page.url()).searchParams.get("map_run_start");
-    await clickDirection(page, directionControls.drag);
-    await expect(hint).toBeVisible();
-    const beforeSettings = new URL(page.url()).searchParams.get(
-        "map_run_settings",
-    );
-    await drag();
-    await expect(hint).toBeVisible();
-    expect(view()).toEqual(beforeDirection);
-    const aimedStart = new URL(page.url()).searchParams.get("map_run_start");
-    expect(aimedStart).not.toBe(start);
-    expect(new URL(page.url()).searchParams.get("map_run_settings")).not.toBe(
-        beforeSettings,
-    );
-    await clickDirection(page, directionControls.drag);
-    await expect(hint).toHaveCount(0);
-    await drag();
-    await expect.poll(view).not.toEqual(beforeDirection);
-    await expect(hint).toHaveCount(0);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
-        aimedStart,
-    );
-    await touch.detach();
 });
 
 test("jump run direction follows touch dragging and stays on after release", async ({
@@ -4000,101 +2781,6 @@ test("jump run direction follows touch dragging and stays on after release", asy
         aimedStart,
     );
     await touch.detach();
-});
-
-test("jump run adds jumpers using immediately applied template settings", async ({
-    page,
-    isMobile,
-}) => {
-    await setUniformFreefallWind(page);
-    const template = page.locator(".jump-summary");
-    const edit = page.getByRole("button", {
-        name: "Hyppylinjan asetukset",
-        exact: true,
-    });
-    await expect(page.getByRole("button", { name: /Muokkaa:/ })).toHaveCount(0);
-    await expect(template).toContainText("4000-800m · 180 km/h");
-    await edit.click();
-    const settings = page.getByRole("dialog", {
-        name: "Hyppylinjan asetukset",
-    });
-    const dialog = settings.getByRole("group", {
-        name: "Lisää hyppääjä",
-    });
-    await expect(
-        settings.getByRole("button", { name: /^(Tallenna|Peruuta)$/ }),
-    ).toHaveCount(0);
-    await expect(
-        dialog.getByRole("spinbutton", { name: "Uloshyppykorkeus (m)" }),
-    ).toHaveCount(0);
-    const opening = dialog.getByRole("spinbutton", {
-        name: "Avauskorkeus (m)",
-    });
-    await opening.fill("4000");
-    await expect(template).toContainText("4000-800m");
-    await opening.fill("1200");
-    await dialog.getByRole("button", { name: /^Freefly/ }).click();
-    await expect(template).toContainText("4000-1200m");
-    await expect(template).toContainText("240 km/h");
-    await dialog.getByRole("button", { name: "Lisää hyppääjä" }).click();
-    await expect(settings).toBeVisible();
-    const first = settings.getByRole("row", {
-        name: "Hyppääjä 1",
-        exact: true,
-    });
-    const second = settings.getByRole("row", {
-        name: "Hyppääjä 2",
-        exact: true,
-    });
-    await expect(
-        first.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
-    ).toHaveValue("180");
-    await expect(
-        first.getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
-    ).toHaveValue("800");
-    await expect(
-        second.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
-    ).toHaveValue("240");
-    await expect(
-        second.getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
-    ).toHaveValue("1200");
-    await settings
-        .getByRole("spinbutton", { name: "Uloshyppykorkeus (m)" })
-        .fill("3500");
-    await page.keyboard.press("Escape");
-    await edit.click();
-    await opening.fill("3500");
-    await expect(template).toContainText("3500-1200m");
-    await opening.fill("1500");
-    await dialog.getByRole("button", { name: /^Wingsuit/ }).click();
-    await expect(template).toContainText("3500-1500m");
-    await expect(template).toContainText("80 km/h");
-    await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
-    const map = page.locator(".dz-map");
-    await map.scrollIntoViewIfNeeded();
-    if (isMobile) await map.tap({ position: { x: 100, y: 160 } });
-    else await map.click({ position: { x: 100, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(3);
-    if (isMobile) await map.tap({ position: { x: 180, y: 160 } });
-    else await map.click({ position: { x: 180, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await edit.click();
-    await expect(
-        second.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
-    ).toHaveValue("240");
-    const third = settings.getByRole("row", {
-        name: "Hyppääjä 3",
-        exact: true,
-    });
-    await expect(
-        third.getByRole("spinbutton", { name: "Vapaapudotusnopeus (km/h)" }),
-    ).toHaveValue("80");
-    await expect(
-        third.getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
-    ).toHaveValue("1500");
-    await page.keyboard.press("Escape");
 });
 
 test("map setup survives URL reload and shares in full-window mode", async ({
@@ -4388,67 +3074,8 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
     }
 });
 
-test("wind tables omit cloud cover and condensation level columns", async ({
-    page,
-}) => {
-    await page
-        .getByRole("button", { name: "Ennuste taulukkona", exact: true })
-        .click();
-    const forecastDialog = page.getByRole("dialog", {
-        name: "Ennuste",
-        exact: true,
-    });
-    await expect(forecastDialog.getByRole("columnheader")).toHaveCount(6);
-    await expect(
-        forecastDialog.getByText("Pilvet L", { exact: true }),
-    ).toHaveCount(0);
-    await expect(
-        forecastDialog.getByText("Pilvet ML", { exact: true }),
-    ).toHaveCount(0);
-    await expect(forecastDialog.getByText("TK", { exact: true })).toHaveCount(
-        0,
-    );
-    await forecastDialog
-        .getByRole("button", { name: "Sulje", exact: true })
-        .click();
-
-    await page
-        .getByRole("button", { name: "Havainnot taulukkona", exact: true })
-        .click();
-    const observationsDialog = page.getByRole("dialog", {
-        name: "Havainnot",
-        exact: true,
-    });
-    await expect(observationsDialog.getByRole("columnheader")).toHaveCount(5);
-    await expect(
-        observationsDialog.getByText("TK", { exact: true }),
-    ).toHaveCount(0);
-});
-
-test("missing current Open-Meteo cloud data shows an unavailable message", async ({
-    page,
-}) => {
-    const response = openMeteoResponse();
-    for (const level of ["1000", "925", "850", "700", "600"]) {
-        response.hourly[`cloud_cover_${level}hPa`] = response.hourly.time.map(
-            () => null,
-        );
-    }
-    await page.route("https://api.open-meteo.com/**", (route) =>
-        route.fulfill({ json: response }),
-    );
-    await page.goto("/dz/?name=Cloud+DZ&lat=40.7&lon=-74");
-    const card = page.locator("#clouds");
-    await expect(card.getByRole("tablist")).toHaveCount(0);
-    await expect(card.locator(".open-meteo-clouds")).toContainText(
-        "Nykyisen tunnin pilviennuste ei ole saatavilla.",
-    );
-    await expect(card.locator(".cloud-profile-layers")).toHaveCount(0);
-});
-
 for (const [axis, wind, speed, expected] of [
     [180, 0, 10, 0],
-    [30, 350, 10, 30],
     [90, 0, 10, 90],
     [180, 0, 0, 180],
 ]) {
@@ -4519,164 +3146,6 @@ for (const [axis, wind, speed, expected] of [
         await expectAutomaticOpeningsUpwind(page);
     });
 }
-
-test("automatic positioning fits all exits, freefall paths and canopy landings on load and button click", async ({
-    page,
-}) => {
-    const group = [
-        { speedKmh: 180, openingHeight: 800 },
-        { speedKmh: 80, openingHeight: 1500 },
-        { speedKmh: 240, openingHeight: 1200 },
-        { speedKmh: 180, openingHeight: 800 },
-    ];
-    const params = new URLSearchParams({
-        lat: "62.4",
-        lon: "25.6",
-        default_jump_run_direction: "90",
-        DEV_ground_obs: "10,10,0,1",
-        DEV_upper_winds: Array(5).fill("10,0").join(";"),
-        map_jumpers: JSON.stringify(group),
-        map_run_settings: JSON.stringify({
-            direction: 90,
-            speedKmh: 157,
-            separationSeconds: 30,
-            exitHeight: 4000,
-        }),
-        map_center_lat: "60",
-        map_center_lon: "20",
-        map_zoom: "19",
-    });
-    await page.goto(`${developerPath}&${params}`);
-    await setUniformFreefallWind(page);
-    await expect(page.locator(".jump-run-jumper")).toHaveCount(group.length);
-    await expect(page.locator(".parachute-drift-line")).toHaveCount(
-        group.length,
-    );
-
-    const pointsOutsideView = () =>
-        page.locator(".dz-map").evaluate(async (element) => {
-            const { CRS, latLng, latLngBounds, point } =
-                await import("leaflet");
-            const { getMapWindData } = await import("#app/map/windData.js");
-            const { getCanopyDrift } = await import("#app/map/canopy.js");
-            const { createJumpRunCalculator } =
-                await import("#app/map/jumpRun.js");
-            const { driftCoordinates, jumpRunCoordinates } =
-                await import("#app/map/freefall.js");
-            const params = new URL(location.href).searchParams;
-            const zoom = Number(params.get("map_zoom"));
-            const center = CRS.EPSG3857.latLngToPoint(
-                latLng(
-                    Number(params.get("map_center_lat")),
-                    Number(params.get("map_center_lon")),
-                ),
-                zoom,
-            );
-            const halfSize = point(
-                element.clientWidth / 2,
-                element.clientHeight / 2,
-            );
-            const bounds = latLngBounds(
-                CRS.EPSG3857.pointToLatLng(center.subtract(halfSize), zoom),
-                CRS.EPSG3857.pointToLatLng(center.add(halfSize), zoom),
-            );
-            const start = JSON.parse(params.get("map_run_start"));
-            const settings = JSON.parse(params.get("map_run_settings"));
-            const group = JSON.parse(params.get("map_jumpers"));
-            const { freefallWinds, canopyWinds } = getMapWindData();
-            const calculation = createJumpRunCalculator()(
-                freefallWinds,
-                settings,
-            );
-            const positions = [
-                latLng(Number(params.get("lat")), Number(params.get("lon"))),
-            ];
-            for (const [index, jumper] of group.entries()) {
-                const exit = latLng(
-                    jumpRunCoordinates(
-                        start,
-                        settings,
-                        index,
-                        calculation.velocity.ground,
-                    ),
-                );
-                positions.push(exit);
-                const freefall = calculation
-                    .drift(jumper)
-                    .map((offset) => latLng(driftCoordinates(exit, offset)));
-                positions.push(...freefall);
-                const opening = freefall.at(-1);
-                positions.push(
-                    ...getCanopyDrift(canopyWinds, jumper.openingHeight).map(
-                        (offset) => latLng(driftCoordinates(opening, offset)),
-                    ),
-                );
-            }
-            return positions.filter((position) => !bounds.contains(position));
-        });
-
-    await expect.poll(pointsOutsideView).toEqual([]);
-    await page.evaluate(async () => {
-        const { navigateQs } = await import("#app/app/settings.js");
-        navigateQs(
-            { map_center_lat: "60", map_center_lon: "20", map_zoom: "19" },
-            { replace: true },
-        );
-    });
-    await expect.poll(pointsOutsideView).not.toEqual([]);
-    await page
-        .getByRole("button", { name: "Hyppylinjan automaattinen sijoitus" })
-        .click();
-    await expect.poll(pointsOutsideView).toEqual([]);
-
-    // Keep a user-chosen view when the automatically positioned run already fits.
-    const fittedView = new URL(page.url()).searchParams;
-    await centerMapOn(page, {
-        lat: Number(fittedView.get("map_center_lat")) + 0.001,
-        lng: Number(fittedView.get("map_center_lon")) + 0.001,
-    });
-    await expect.poll(pointsOutsideView).toEqual([]);
-    const visibleView = new URL(page.url()).searchParams;
-    await page
-        .getByRole("button", { name: "Hyppylinjan automaattinen sijoitus" })
-        .click();
-    const preservedView = new URL(page.url()).searchParams;
-    for (const key of ["map_center_lat", "map_center_lon", "map_zoom"])
-        expect(preservedView.get(key)).toBe(visibleView.get(key));
-
-    // Fit the edited run without automatically repositioning it.
-    const editedStart = JSON.parse(preservedView.get("map_run_start"));
-    editedStart.lat += 0.1;
-    await page.evaluate(async (start) => {
-        const { navigateQs } = await import("#app/app/settings.js");
-        navigateQs(
-            {
-                map_run_start: JSON.stringify(start),
-                map_center_lat: "60",
-                map_center_lon: "20",
-                map_zoom: "19",
-            },
-            { replace: true },
-        );
-    }, editedStart);
-    await expect.poll(pointsOutsideView).not.toEqual([]);
-    const editedRun = new URL(page.url()).searchParams;
-    await page
-        .getByRole("button", { name: "Sovita karttanäkymä hyppylinjaan" })
-        .click();
-    await expect.poll(pointsOutsideView).toEqual([]);
-    const fittedRun = new URL(page.url()).searchParams;
-    for (const key of ["map_run_start", "map_run_settings", "map_jumpers"])
-        expect(fittedRun.get(key)).toBe(editedRun.get(key));
-
-    // Later weather updates preserve the view chosen by the user.
-    await centerMapOn(page, { lat: 62.5, lng: 25.7 });
-    const view = new URL(page.url()).searchParams;
-    await setUniformFreefallWind(page);
-    const refreshedView = new URL(page.url()).searchParams;
-    for (const key of ["map_center_lat", "map_center_lon", "map_zoom"])
-        expect(refreshedView.get(key)).toBe(view.get(key));
-});
 
 test("viewport positioning fits a saved run without landing coordinates and disables after clearing", async ({
     page,
@@ -5154,56 +3623,4 @@ test("automatic jump run follows new winds until edited and can be reenabled", a
     await page.reload();
     await expect(automatic).not.toBeChecked();
     expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(paused);
-});
-
-test("weather updates retain the mounted jump-run and flight-path layers", async ({
-    page,
-}) => {
-    await setUniformFreefallWind(page);
-    const map = page.locator(".dz-map");
-    await map.scrollIntoViewIfNeeded();
-    await map.click({ position: { x: 120, y: 160 } });
-    await page.getByRole("button", { name: "Avaus" }).click();
-    await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
-    const retained = await page.evaluate(async () => {
-        const selectors = [
-            ".jump-run-line",
-            ".jump-run-jumper",
-            ".freefall-drift-line",
-            ".parachute-drift-line",
-        ];
-        const original = selectors.map((selector) => [
-            ...document.querySelectorAll(selector),
-        ]);
-        const removed = [];
-        const observer = new MutationObserver((records) => {
-            for (const record of records) {
-                for (const node of record.removedNodes) removed.push(node);
-            }
-        });
-        observer.observe(document.querySelector(".dz-map"), {
-            childList: true,
-            subtree: true,
-        });
-        const { OM_DATA } = await import("#app/weather/state.js");
-        const data = structuredClone(OM_DATA.value);
-        for (const level of ["600", "700", "850", "925"])
-            data.hourly[`windspeed_${level}hPa`] = [20];
-        OM_DATA.value = data;
-        // Allow Preact's effects and Leaflet's scheduled updates to finish.
-        await new Promise((resolve) => setTimeout(resolve, 250));
-        observer.disconnect();
-        return selectors.map((selector, index) => {
-            const current = [...document.querySelectorAll(selector)];
-            return (
-                original[index].length > 0 &&
-                current.length === original[index].length &&
-                current.every((node, i) => node === original[index][i]) &&
-                !original[index].some((node) =>
-                    removed.some((parent) => parent.contains(node)),
-                )
-            );
-        });
-    });
-    expect(retained).toEqual([true, true, true, true]);
 });

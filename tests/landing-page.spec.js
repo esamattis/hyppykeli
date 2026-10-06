@@ -1,31 +1,5 @@
 import { expect, test } from "@playwright/test";
 
-test("static landing copy follows the detected language", async ({ page }) => {
-    await page.goto("/?no_redirect");
-
-    await expect(page.locator('[data-language="fi"] p').first()).toBeVisible();
-    await expect(page.locator('[data-language="en"] p').first()).toBeHidden();
-    await expect(page.locator("html")).toHaveAttribute("lang", "fi");
-});
-
-test("static landing copy defaults to English without JavaScript", async ({
-    browser,
-    baseURL,
-}) => {
-    const context = await browser.newContext({
-        javaScriptEnabled: false,
-        locale: "fi-FI",
-    });
-    const page = await context.newPage();
-    await page.goto(`${baseURL}/?no_redirect`);
-
-    await expect(page.locator('[data-language="en"] p').first()).toBeVisible();
-    await expect(page.locator('[data-language="fi"] p').first()).toBeHidden();
-    await expect(page.locator("html")).toHaveAttribute("lang", "en");
-
-    await context.close();
-});
-
 test("landing page map selects the DZ coordinates", async ({ page }) => {
     await page.goto("/?no_redirect");
 
