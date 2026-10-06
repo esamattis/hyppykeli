@@ -21,6 +21,9 @@ async function setUniformFreefallWind(page) {
             time: [new Date().toISOString().slice(0, 13) + ":00"],
         };
         for (const level of ["600", "700", "850", "925", "1000"]) {
+            hourly[`geopotential_height_${level}hPa`] = [
+                { 600: 4200, 700: 3000, 850: 1500, 925: 800, 1000: 110 }[level],
+            ];
             hourly[`windspeed_${level}hPa`] = [10];
             hourly[`winddirection_${level}hPa`] = [0];
         }
@@ -251,9 +254,13 @@ function openMeteoResponse() {
         hourly[`cloud_cover_${level}hPa`] = time.map(() => 40);
         hourly[`geopotential_height_${level}hPa`] = time.map(
             () =>
-                ({ 1000: 110, 925: 800, 850: 1500, 700: 3000, 600: 4200 })[
-                    level
-                ],
+                ({
+                    1000: 110,
+                    925: 800,
+                    850: 1500,
+                    700: 3000,
+                    600: 4200,
+                })[level],
         );
     }
     return { utc_offset_seconds: 0, hourly, hourly_units };
@@ -375,7 +382,7 @@ test("coordinate-only dropzone uses Open-Meteo without an observations card or M
     await expect(clouds.getByRole("tablist")).toHaveCount(0);
     await expect(clouds.locator(".cloud-profile-layer")).toHaveCount(5);
     await expect(clouds.locator(".cloud-profile-layer").first()).toContainText(
-        "4200 m",
+        "4000 m",
     );
     await expect(clouds.locator(".cloud-profile-layer").first()).toContainText(
         "40 %",
@@ -399,6 +406,9 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
     page,
 }) => {
     const response = openMeteoResponse();
+    response.hourly.geopotential_height_600hPa = response.hourly.time.map(
+        () => 4321.4,
+    );
     for (const level of ["600", "700", "850", "925", "1000"]) {
         response.hourly[`windspeed_${level}hPa`] = response.hourly.time.map(
             () => 10,
@@ -416,13 +426,31 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
     expect(new URL(request.url()).searchParams.get("wind_speed_unit")).toBe(
         "ms",
     );
-    await expect(windIcon(page, "≈ 4200 m")).toHaveAttribute(
+    await expect(windIcon(page, "≈ 4500 m")).toHaveAttribute(
         "aria-label",
         /10 m\/s 270°/,
     );
     await expect(
         page.locator(".upperwinds-compact .wind-speed").first(),
     ).toHaveText("10 m/s");
+
+    const summaryAltitude = page
+        .locator(".upperwinds-compact .pressure-cell [data-tooltip]")
+        .first();
+    await expect(summaryAltitude).toHaveText("4500 m");
+    await summaryAltitude.focus();
+    await expect(page.getByRole("tooltip")).toContainText("4321 m");
+    await page.keyboard.press("Escape");
+    await page
+        .getByRole("button", { name: "Näytä tarkat tiedot", exact: true })
+        .click();
+    const rawAltitude = page
+        .locator(".upperwinds-raw .pressure-cell [data-tooltip]")
+        .first();
+    await expect(rawAltitude).toHaveText("4500 m");
+    await rawAltitude.focus();
+    await expect(page.getByRole("tooltip")).toContainText("4321 m");
+    await page.keyboard.press("Escape");
     const result = await page.evaluate(async () => {
         const { getMapWindData } = await import("#app/map/windData.js");
         const { getFreefallDrift, getJumpRunVelocity } =
@@ -441,7 +469,7 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
             jump: getFreefallDrift(winds, 4000, 180, 800, velocity.air).at(-1),
         };
     });
-    expect(result.speeds).toEqual([10, 10, 10, 10]);
+    expect(result.speeds).toEqual([10, 10, 10, 10, 10]);
     // 3200 m / 50 m/s = 64 s of wind drift at 10 m/s.
     expect(result.windOnly.east).toBeCloseTo(640);
     expect(result.windOnly.north).toBeCloseTo(0);
@@ -478,7 +506,7 @@ test("Open-Meteo refreshes cached winds with incompatible units", async ({
     const requestPromise = page.waitForRequest("https://api.open-meteo.com/**");
     await page.goto("/dz/?name=Wind+DZ&lat=40.7&lon=-74");
     await requestPromise;
-    await expect(windIcon(page, "≈ 4200 m")).toHaveAttribute(
+    await expect(windIcon(page, "≈ 4000 m")).toHaveAttribute(
         "aria-label",
         /12 m\/s 200°/,
     );
@@ -967,7 +995,7 @@ test("map toolbar expands only the map in both modes and restores", async ({
     await expect(restore).toHaveAttribute("aria-pressed", "true");
     await expect(card.locator(".wind-profile")).toBeHidden();
     await expect(frame.locator(".wind-level-icons")).toBeVisible();
-    await expect(windIcon(page, "≈ 4200 m")).toBeVisible();
+    await expect(windIcon(page, "600 hPa")).toBeVisible();
     await restore.click();
     await expect(heading).toBeVisible();
     await expect(help).toBeVisible();
@@ -1047,22 +1075,25 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
             "925",
             "1000",
         ].entries()) {
+            hourly[`geopotential_height_${level}hPa`] = [
+                { 600: 4200, 700: 3000, 850: 1500, 925: 800, 1000: 110 }[level],
+            ];
             hourly[`windspeed_${level}hPa`] = [index + 1];
             hourly[`winddirection_${level}hPa`] = [index * 90];
         }
         OM_DATA.value = { utc_offset_seconds: 0, hourly };
     });
 
-    const average = windIcon(page, "≈ 4200-800 m");
+    const average = windIcon(page, "≈ 4000-1000 m");
     await expect(average).toHaveAttribute("aria-pressed", "true");
     for (const label of [
-        "≈ 4200 m",
+        "≈ 4000 m",
         "≈ 3000 m",
         "≈ 1500 m",
-        "≈ 800 m",
-        "≈ 110 m",
+        "≈ 1000 m",
+        "≈ 0 m",
         "Maanpinta",
-        "≈ 4200-800 m",
+        "≈ 4000-1000 m",
     ]) {
         const button = windIcon(page, label);
         await button.click();
@@ -1071,7 +1102,7 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
             profile.locator('.wind-level-choice[aria-pressed="true"]'),
         ).toHaveCount(1);
     }
-    const altitude = windIcon(page, "≈ 4200 m");
+    const altitude = windIcon(page, "≈ 4000 m");
     await altitude.focus();
     await page.keyboard.press("Enter");
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
@@ -1080,8 +1111,9 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
         const { OM_DATA } = await import("#app/weather/state.js");
         OM_DATA.value = null;
     });
-    await expect(altitude).toHaveAttribute("aria-label", /Ei tietoa/);
-    await expect(altitude).toHaveAttribute("aria-pressed", "true");
+    const unavailable = windIcon(page, "600 hPa");
+    await expect(unavailable).toHaveAttribute("aria-label", /Ei tietoa/);
+    await expect(unavailable).toHaveAttribute("aria-pressed", "true");
 });
 
 test("freefall drift integrates altitude winds from 4000 to 800 metres", async ({
@@ -1139,19 +1171,19 @@ test("freefall drift integrates altitude winds from 4000 to 800 metres", async (
     expect(result.end.east).toBeCloseTo(0);
     expect(result.east.east).toBeCloseTo(-640);
     expect(result.east.north).toBeCloseTo(0);
-    expect(result.shear.north).toBeCloseTo(-1536);
+    expect(result.shear.north).toBeCloseTo(-1532);
     expect(result.wrap.north).toBeLessThan(-639);
     expect(result.calm).toEqual({ height: 800, east: 0, north: 0 });
     expect(result.missing).toBeNull();
     expect(result.custom.height).toBe(1200);
     expect(result.custom.north).toBeCloseTo(-353.25);
     expect(result.customShear.north).toBeCloseTo(
-        -(3555 ** 2 - 1200 ** 2) / (200 * (240 / 3.6)),
+        -(1305 * 30 + 1050 * 15) / (240 / 3.6),
     );
     expect(result.invalid).toBeNull();
 });
 
-test("jump run converts true airspeed using interpolated exit wind and ground track", async ({
+test("jump run converts true airspeed using nearest-level exit wind and ground track", async ({
     page,
 }) => {
     const result = await page.evaluate(async () => {
@@ -1226,12 +1258,12 @@ test("jump run converts true airspeed using interpolated exit wind and ground tr
         expect(Math.hypot(velocity.air.east, velocity.air.north)).toBeCloseTo(
             120 / 3.6,
         );
-    expect(result.shear.ground.north).toBeCloseTo(120 / 3.6 - 18);
-    expect(result.wrap.east).toBeCloseTo(0);
+    expect(result.shear.ground.north).toBeCloseTo(120 / 3.6 - 20);
+    expect(result.wrap.east).toBeCloseTo(10 * Math.sin((10 * Math.PI) / 180));
     expect(result.wrap.north).toBeCloseTo(-10 * Math.cos((10 * Math.PI) / 180));
     expect(result.exact.north).toBeCloseTo(-10);
     expect(result.missing).toBeNull();
-    expect(result.outside).toBeNull();
+    expect(result.outside.ground.north).toBeCloseTo(120 / 3.6 - 10);
     expect(result.crosswindTooStrong).toBeNull();
     expect(result.headwindTooStrong).toBeNull();
 });
@@ -1481,6 +1513,16 @@ test.describe("upper wind forecast timezones", () => {
                 );
                 const hourly = { time };
                 for (const level of ["600", "700", "850", "925", "1000"]) {
+                    hourly[`geopotential_height_${level}hPa`] = time.map(
+                        () =>
+                            ({
+                                600: 4200,
+                                700: 3000,
+                                850: 1500,
+                                925: 800,
+                                1000: 110,
+                            })[level],
+                    );
                     hourly[`windspeed_${level}hPa`] = time.map(
                         (_, index) => 11 + index,
                     );
@@ -1491,7 +1533,7 @@ test.describe("upper wind forecast timezones", () => {
                 OM_DATA.value = { utc_offset_seconds: offset, hourly };
             }, offset);
 
-            const altitude = windIcon(page, "≈ 4200 m");
+            const altitude = windIcon(page, "≈ 4000 m");
             await expect(altitude).toHaveAttribute(
                 "aria-label",
                 /19 m\/s 242°/,
@@ -1902,7 +1944,7 @@ test("jump run turns into the selected wind around the opening center", async ({
         ["≈ 3000 m", 270],
         ["≈ 1500 m", 315],
         ["≈ 800 m", 0],
-        ["≈ 110 m", 90],
+        ["≈ 100 m", 90],
         ["Maanpinta", 194],
     ]) {
         const previous = new URL(page.url()).searchParams.get(
@@ -1947,7 +1989,7 @@ test("turning into wind requires a valid selected wind and uses refreshed data",
     await map.scrollIntoViewIfNeeded();
     await map.click({ position: { x: 120, y: 160 } });
     await page.getByRole("button", { name: "Avaus" }).click();
-    await windIcon(page, "≈ 4200 m").click();
+    await windIcon(page, "≈ 4000 m").click();
     const intoWind = directionControl(page, directionControls.intoWind);
     await expect(intoWind).toBeEnabled();
     for (const [speed, direction] of [
@@ -2942,6 +2984,9 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
 }) => {
     const response = openMeteoResponse();
     response.elevation = 68;
+    response.hourly.geopotential_height_600hPa = response.hourly.time.map(
+        () => 4274,
+    );
     // The preceding and future hours differ, so selecting the current hour matters.
     response.hourly.cloud_cover_700hPa = response.hourly.time.map((_, index) =>
         index === 1 ? 75 : 5,
@@ -2971,6 +3016,12 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
     await expect(card.locator(".cloud-layer a")).toHaveCount(0);
     const rows = card.getByRole("tabpanel").locator(".cloud-profile-layer");
     await expect(rows).toHaveCount(3);
+    await expect(rows.first()).toContainText("4500 m");
+    const altitude = rows.first().locator(".cloud-layer-base [data-tooltip]");
+    await altitude.focus();
+    await expect(page.getByRole("tooltip")).toContainText("4274 m");
+    await page.keyboard.press("Escape");
+
     await expect(rows.nth(1)).toContainText("3000 m");
     await expect(rows.nth(1)).toContainText("75 %");
     await rows
@@ -2989,6 +3040,34 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
     await metarTab.press("End");
     await expect(modelTab).toBeFocused();
     await expect(rows).toHaveCount(3);
+    // Changing the URL elevation updates heights and filters levels below the DZ.
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ elevation: "1000.5" });
+    });
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(1)).toContainText("2000 m");
+    await expect(card).toContainText("Hyppypaikka 1001 m merenpinnasta");
+    await rows
+        .nth(1)
+        .getByRole("button", { name: "Ohje", exact: true })
+        .click();
+    await expect(page.getByRole("dialog")).toContainText(
+        "Korkeus hyppypaikan maanpinnasta: 2000 m",
+    );
+    await expect(page.getByRole("dialog")).toContainText(
+        "Korkeus merenpinnasta: 3000 m",
+    );
+    await page
+        .getByRole("dialog")
+        .getByRole("button", { name: "Sulje", exact: true })
+        .click();
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ elevation: undefined });
+    });
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(1)).toContainText("3000 m");
     // Losing METAR must also remove the tabs and leave the model visible.
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
@@ -3047,7 +3126,7 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
             1000: 110,
             925: 800,
             850: 1500,
-            700: 3024,
+            700: 3074,
             600: 4200,
         })) {
             hourly[`windspeed_${level}hPa`] = hourlyTimes.map(() => 12);
@@ -3057,7 +3136,9 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
                 () => height,
             );
         }
-        OM_DATA.value = { utc_offset_seconds: 0, hourly };
+        hourly.geopotential_height_925hPa[1] = 20;
+        hourly.geopotential_height_850hPa[2] = null;
+        OM_DATA.value = { utc_offset_seconds: 0, elevation: 68, hourly };
     });
 
     const forecast = page.locator("#clouds .cloud-forecast");
@@ -3094,11 +3175,11 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         "Keskipilvet",
         "Keski- ja alapilvet",
         "Matalat pilvet",
-        "4200 m",
+        "4000 m",
         "3000 m",
         "1500 m",
-        "800 m",
-        "100 m",
+        "1000 m",
+        "0 m",
     ]);
     await expect(dialog.locator(".cloud-forecast-altitude")).toHaveCount(0);
 
@@ -3127,6 +3208,49 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         await expect(dialog).toBeVisible();
         await expect(button).toBeFocused();
     }
+    const pressureRow = (level) =>
+        dialog.locator(`tr:has(th[title="${level} hPa"])`);
+    await expect(pressureRow(925).locator("td")).toHaveText([
+        "40 %",
+        "—",
+        "40 %",
+    ]);
+    await expect(pressureRow(850).locator("td")).toHaveText([
+        "40 %",
+        "40 %",
+        "—",
+    ]);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ elevation: "200.5" });
+    });
+    await expect(dialog).toContainText("Hyppypaikka 201 m merenpinnasta");
+    const altitude = pressureRow(700)
+        .getByRole("rowheader")
+        .locator("[data-tooltip]");
+    await altitude.focus();
+    await expect(page.getByRole("tooltip")).toContainText("2874 m");
+    await altitude.blur();
+
+    await expect(pressureRow(700).getByRole("rowheader")).toHaveText("3000 m");
+    await expect(pressureRow(925).getByRole("rowheader")).toHaveText("500 m");
+    await expect(pressureRow(1000).locator("td")).toHaveText(["—", "—", "—"]);
+    await expect(pressureRow(925).locator("td")).toHaveText([
+        "40 %",
+        "—",
+        "40 %",
+    ]);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ elevation: "invalid" });
+    });
+    await expect(pressureRow(700).getByRole("rowheader")).toHaveText("3000 m");
+    await expect(pressureRow(1000).locator("td")).toHaveText([
+        "40 %",
+        "40 %",
+        "40 %",
+    ]);
+    await expect(dialog).toContainText("Hyppypaikka 0 m merenpinnasta");
 });
 
 for (const [axis, wind, speed, expected] of [
@@ -3522,7 +3646,7 @@ test("reload shows cached weather before refresh and retains it through failures
             }),
         )
         .toBe(true);
-    await expect(windIcon(page, "≈ 4200 m")).toHaveAttribute(
+    await expect(windIcon(page, "≈ 4000 m")).toHaveAttribute(
         "aria-label",
         /12 m\/s/,
     );
@@ -3678,4 +3802,74 @@ test("automatic jump run follows new winds until edited and can be reenabled", a
     await page.reload();
     await expect(automatic).not.toBeChecked();
     expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(paused);
+});
+
+test("elevated Utti dropzone keeps a 4000 m jump run when 600 hPa falls below exit", async ({
+    page,
+}) => {
+    const response = openMeteoResponse();
+    // Captured pressure-level heights and winds from the reported Utti case.
+    for (const [level, height, speed, direction] of [
+        [600, 4039, 23.93, 300],
+        [700, 2852, 26.46, 295],
+        [850, 1312, 23.37, 291],
+        [925, 623, 17.93, 280],
+        [1000, -25, 7, 270],
+    ]) {
+        response.hourly[`geopotential_height_${level}hPa`] =
+            response.hourly.time.map(() => height);
+        response.hourly[`windspeed_${level}hPa`] = response.hourly.time.map(
+            () => speed,
+        );
+        response.hourly[`winddirection_${level}hPa`] = response.hourly.time.map(
+            () => direction,
+        );
+    }
+    response.elevation = 103;
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: response }),
+    );
+    const requested = page.waitForRequest("https://api.open-meteo.com/**");
+    await page.goto(
+        "/dz/?fmisid=101191&icaocode=EFUT&lat=60.89755354967867&lon=26.926031112670902&map_zoom=14&default_jump_run_direction=78&default_jump_group_count=8&elevation=103.3272&map_center_lat=60.89755354967867&map_center_lon=26.92607402801514",
+    );
+    const fields = new URL((await requested).url()).searchParams
+        .get("hourly")
+        .split(",");
+    expect(fields).not.toContain("windspeed_500hPa");
+    await expect(windIcon(page, "≈ 4000 m")).toHaveAttribute(
+        "aria-label",
+        /24 m\/s 300°/,
+    );
+    await page.evaluate(async () => {
+        const { LIVE_OBSERVATIONS } = await import("#app/weather/state.js");
+        LIVE_OBSERVATIONS.value = [
+            {
+                source: "fmi",
+                time: new Date(),
+                speed: 7.2,
+                gust: 10.1,
+                direction: 267,
+            },
+        ];
+    });
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(8);
+    await expect(page.locator(".jump-run-line")).toHaveCount(1);
+    const settings = JSON.parse(
+        new URL(page.url()).searchParams.get("map_run_settings"),
+    );
+    expect(settings.exitHeight).toBe(4000);
+    const heights = await page.evaluate(async () => {
+        const { getMapWindData } = await import("#app/map/windData.js");
+        return getMapWindData().freefallWinds.map((wind) => wind.height);
+    });
+    expect(heights[0]).toBeCloseTo(3935.6728, 4);
+    // Missing wind at the nearest level must still suppress the calculation.
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const data = structuredClone(OM_DATA.value);
+        data.hourly.windspeed_600hPa.fill(null);
+        OM_DATA.value = data;
+    });
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(0);
 });

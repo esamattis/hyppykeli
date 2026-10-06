@@ -131,6 +131,9 @@ export const english = {
     "cloud.source": "Cloud data source",
     "cloud.modelledLayers": "Modelled clouds · current hour",
     "cloud.altitudeSeaLevel": "Altitude above sea level",
+    "cloud.altitudeAboveDropzone": "Height above dropzone",
+    "cloud.dropzoneHeights": (/** @type {string} */ elevation) =>
+        `Heights above dropzone · DZ elevation ${elevation} m above sea level.`,
     "cloud.modelUnavailable": "Current cloud forecast unavailable.",
     "cloud.modelledMeaning":
         "Modelled means a computer weather model estimates the clouds using weather observations and calculations of how the atmosphere changes. This is the model's estimate for the current hour near the selected coordinates, rather than a direct cloud observation. Actual cloud cover and heights may differ.",
@@ -170,6 +173,8 @@ export const english = {
     "cloud.baseHelp":
         "Cloud base is the height of the bottom of the cloud layer above the observation site's ground level.",
     "cloud.roundingHelp": "The card value is rounded to the nearest 50 metres.",
+    "cloud.modelRoundingHelp":
+        "Open-Meteo altitudes are rounded to the nearest 500 metres. Each altitude has a tooltip showing its value to the nearest metre.",
     "cloud.metarHeightHelp":
         "The METAR digits express altitude in hundreds of feet (ft).",
     "cloud.estimateHelp": (
@@ -209,7 +214,7 @@ export const english = {
     "map.forecastNatureHelp":
         "The upper-level winds are not measurements taken at the dropzone. They are hourly weather-model forecasts retrieved from Open-Meteo for the selected forecast coordinates.",
     "map.forecastLevelsHelp":
-        "Open-Meteo provides wind speed and direction at pressure levels. The app maps them to approximate altitudes of 110, 800, 1,500, 3,000, and 4,200 m above sea level and interpolates between 800 and 4,200 m for the freefall-drift estimate.",
+        "Open-Meteo provides wind speed, direction, and geopotential height at pressure levels. The map subtracts the dropzone elevation and uses the nearest wind level by height above the dropzone, both within and outside the forecast range. Levels below model terrain or at/below the dropzone are excluded. Manual winds retain their fixed sea-level heights of 110, 800, 1,500, 3,000, and 4,200 m before this adjustment.",
     "map.forecastImplicationHelp":
         "Actual winds at the dropzone can differ from the forecast, especially between the modelled levels or when conditions change. Treat the drift arrow and jump-run layout as planning estimates, verify the current conditions with observations and information from the pilot or dropzone, and do not use the map as the sole basis for operational decisions.",
     "map.groundObservationHelp":
@@ -223,9 +228,9 @@ export const english = {
     "map.automaticUpdate": "Update automatically",
     "map.automaticHelpTitle": "Automatic placement",
     "map.automaticHelp":
-        "On initial placement, the configured default axis is reversed when necessary to face into the average 4200–800 m wind. Every predicted opening is placed at least 50 m upwind of the landing target relative to each non-calm wind layer at or below that opening. The preferred offset estimates canopy wind drift at a constant descent speed of 5 m/s, using ground, 110 m, 800 m, and any higher layers below opening. This does not model canopy glide or guarantee landing-area reachability.",
+        "On initial placement, the configured default axis is reversed when necessary to face into the average upper wind. Every predicted opening is placed at least 50 m upwind of the landing target relative to each non-calm wind layer at or below that opening. The preferred offset estimates canopy wind drift at a constant descent speed of 5 m/s, using ground wind and the nearest forecast level at each height. This does not model canopy glide or guarantee landing-area reachability.",
     "map.automaticLimitsHelp":
-        "Automatic placement requires a ground observation no older than one hour and current forecast winds. Missing data, an unachievable ground track, or conflicting wind directions can prevent placement. The positioning button reverses the current direction by 180° when needed to face into the average 4200–800 m wind, then repeats the calculation for the configured landing coordinates. With Update automatically checked, new wind data repeats placement. Manual edits uncheck it and can leave openings outside these limits.",
+        "Automatic placement requires a ground observation no older than one hour and current forecast winds. Missing data, an unachievable ground track, or conflicting wind directions can prevent placement. The positioning button reverses the current direction by 180° when needed to face into the average upper wind, then repeats the calculation for the configured landing coordinates. With Update automatically checked, new wind data repeats placement. Manual edits uncheck it and can leave openings outside these limits.",
     "map.positioningHelpTitle": "Manual positioning",
     "map.positioningHelp":
         "Click or tap the map, then choose Opening to place the central predicted opening point there, Center jump run to place the middle of the exit sequence there, or Landing to use that point as the landing target for automatic placement with the current direction. For an even number of jumpers, the central opening point is the midpoint of the two middle openings. Clicking elsewhere cancels the callout. Press Enter on the focused map to place the central opening point at the map centre. Add jumpers with the plus button.",
@@ -240,8 +245,11 @@ export const english = {
     "map.centerJumpRunPosition": "Center jump run",
     "map.parachuteLandingPosition": "Landing",
     "map.directionPrompt": "Drag to set the jump-run direction.",
+    "map.averageWind": "Average wind",
+    "map.dropzoneHeights": (/** @type {string} */ elevation) =>
+        `Heights above dropzone · DZ elevation ${elevation} m above sea level.`,
     "map.averageHelp":
-        "Average speed and direction at 800, 1,500, 3,000, and 4,200 m. Direction averaging accounts for crossing north and provides a rough freefall-drift estimate.",
+        "Average speed and direction of the 925, 850, 700, and 600 hPa levels above ground (the corresponding fixed heights for manual winds). The displayed range is above the dropzone. Direction averaging accounts for crossing north and provides a rough freefall-drift estimate.",
     "map.shareFailed": "Sharing the map failed.",
     "map.driftUnavailable":
         "Drift estimate unavailable: upper-wind data is missing.",
@@ -298,9 +306,9 @@ export const english = {
         "Direction of travel over the ground: 0°/360° north, 90° east, 180° south, and 270° west. Wind correction determines the aircraft heading needed to follow this track. Changing direction here keeps the central predicted opening point fixed (the midpoint of the two middle openings for an even number of groups). Free rotation by dragging keeps the middle of the exit sequence fixed. Missing wind data or a track that cannot be flown at the selected airspeed can prevent the calculation.",
     "settings.elevation": "Dropzone elevation (m)",
     "settings.elevationHelp":
-        "Dropzone height above sea level. Used to adjust wind calculations. FMI station data does not provide elevation, so the default is 0 m. Clear the field to restore the default.",
+        "Dropzone height above sea level. Used to adjust wind calculations and Open-Meteo cloud heights. FMI station data does not provide elevation, so the default is 0 m. Clear the field to restore the default.",
     "settings.altitudeReferenceHelp":
-        "Exit and opening altitudes are heights above the dropzone. The calculation subtracts the configured dropzone elevation from nominal forecast heights above sea level for freefall, aircraft wind correction, and canopy drift. Forecast heights remain approximate; surrounding terrain is not modelled.",
+        "Exit and opening altitudes are heights above the dropzone. Freefall, aircraft wind correction, and canopy drift use forecast geopotential heights minus the configured dropzone elevation. Manual winds use their fixed sea-level heights minus the same elevation. Heights are rounded only for display; surrounding terrain is not modelled.",
     "settings.freefallSpeedHelp":
         "The vertical terminal speed used in the freefall estimate. The calculation starts with zero vertical speed and includes forward movement inherited from the aircraft. Wind changes affect the jumper gradually. Presets set only this speed; they do not model horizontal tracking or wingsuit glide.",
     "settings.nextJumperHelp":
@@ -334,14 +342,14 @@ export const english = {
     "settings.exitExplanation":
         "The exit altitude is shared by all jumpers. It must be above every existing jumper’s opening altitude and the opening altitude set for the next jumper.",
     "settings.profileRange":
-        "Opening must be at least 800 m above the dropzone. Exit plus dropzone elevation must not exceed the highest forecast level, approximately 4,200 m above sea level.",
+        "Opening must be at least 800 m above the dropzone and below exit. Calculations use the nearest wind level by altitude, including above or below the available wind profile.",
     "settings.openingRange":
         "Altitude where the predicted freefall path ends. It must be at least 800 m and below exit altitude. Lower openings generally allow more time for freefall drift.",
     "highWinds.title": "ECMWF upper-wind forecasts",
     "highWinds.helpForecast":
         "These are forecasts, not measurements. The app requests hourly wind speed and direction from Open-Meteo for the forecast coordinates.",
     "highWinds.helpLevels":
-        "The values come from the 1,000, 925, 850, 700, and 600 hPa pressure levels, shown as approximate altitudes of 110, 800, 1,500, 3,000, and 4,200 m.",
+        "The values come from the 1,000, 925, 850, 700, and 600 hPa pressure levels. Row heights use the current period, or the first available period, above sea level and are rounded to 500 m. Row and cell tooltips show heights to the nearest metre; other periods may have different heights.",
     "highWinds.helpPeriods":
         "The summary shows three-hour periods. The current period uses the forecast for the current hour; other periods average three hourly forecasts. Details shows every hour separately. Data for each location is fetched at most once per hour and cached in the browser.",
     "highWinds.showSummary": "Show summary",
@@ -559,6 +567,9 @@ const finnish = {
     "cloud.source": "Pilvitietojen lähde",
     "cloud.modelledLayers": "Mallinnetut pilvet · nykyinen tunti",
     "cloud.altitudeSeaLevel": "Korkeus merenpinnasta",
+    "cloud.altitudeAboveDropzone": "Korkeus hyppypaikan maanpinnasta",
+    "cloud.dropzoneHeights": (/** @type {string} */ elevation) =>
+        `Korkeudet hyppypaikan maanpinnasta · Hyppypaikka ${elevation} m merenpinnasta.`,
     "cloud.modelUnavailable": "Nykyisen tunnin pilviennuste ei ole saatavilla.",
     "cloud.modelledMeaning":
         "Mallinnettu tarkoittaa, että tietokoneen säämalli arvioi pilviä säähavaintojen ja ilmakehän muutoksia kuvaavien laskelmien avulla. Tämä on mallin arvio nykyiselle tunnille valittujen koordinaattien lähellä, ei suora pilvihavainto. Todellinen pilvipeitto ja pilvien korkeudet voivat poiketa arviosta.",
@@ -598,6 +609,8 @@ const finnish = {
     "cloud.baseHelp":
         "Pilven alaraja on pilvikerroksen pohjan korkeus havaintopaikan maanpinnasta.",
     "cloud.roundingHelp": "Kortin arvo on pyöristetty lähimpään 50 metriin.",
+    "cloud.modelRoundingHelp":
+        "Open-Meteon korkeudet on pyöristetty lähimpään 500 metriin. Kunkin korkeuden työkaluvihje näyttää arvon metrin tarkkuudella.",
     "cloud.metarHeightHelp":
         "METARin numerot ilmaisevat korkeuden satoina jalkoina (ft).",
     "cloud.estimateHelp": (temperature, dewPoint) =>
@@ -628,7 +641,7 @@ const finnish = {
     "map.forecastNatureHelp":
         "Korkeuksien tuulet eivät ole hyppypaikalla mitattuja arvoja. Ne ovat Open-Meteosta valitun ennustesijainnin koordinaateille haettuja säämallin tuntiennusteita.",
     "map.forecastLevelsHelp":
-        "Open-Meteo antaa tuulen nopeuden ja suunnan painepinnoilla. Sovellus yhdistää ne likimääräisiin korkeuksiin 110, 800, 1 500, 3 000 ja 4 200 m merenpinnasta ja interpoloi vapaapudotusajautumista varten korkeuksien 800 ja 4 200 m väliset tuulet.",
+        "Open-Meteo antaa tuulen nopeuden, suunnan ja geopotentiaalikorkeuden painepinnoilla. Kartta vähentää hyppypaikan korkeuden merenpinnasta ja käyttää korkeudeltaan lähintä tuulitasoa sekä ennustekorkeuksien välillä että niiden ulkopuolella. Mallin maaston alapuoliset sekä hyppypaikan tasolla tai sen alapuolella olevat tasot jätetään pois. Käsin syötettyjen tuulten kiinteät korkeudet ennen korjausta ovat 110, 800, 1 500, 3 000 ja 4 200 m merenpinnasta.",
     "map.forecastImplicationHelp":
         "Hyppypaikan todellinen tuuli voi poiketa ennusteesta etenkin mallinnettujen korkeuksien välillä tai sään muuttuessa. Käytä ajautumisnuolta ja hyppylinjaa suunnittelun arvioina, varmista vallitsevat olosuhteet havainnoista sekä lentäjältä tai hyppypaikalta äläkä tee operatiivisia päätöksiä pelkän kartan perusteella.",
     "map.groundObservationHelp":
@@ -642,9 +655,9 @@ const finnish = {
     "map.automaticUpdate": "Päivitä automaattisesti",
     "map.automaticHelpTitle": "Automaattinen sijoitus",
     "map.automaticHelp":
-        "Ensimmäisessä sijoituksessa määritetty oletusakseli käännetään tarvittaessa vasten 4200–800 m keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskohteen tuulenpuolelle suhteessa jokaiseen avautumiskorkeuden tai sen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin käyttäen maanpinnan, 110 m:n, 800 m:n ja avautumisen alapuolisten ylempien kerrosten tuulia. Arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä.",
+        "Ensimmäisessä sijoituksessa määritetty oletusakseli käännetään tarvittaessa vasten yläkorkeuksien keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskohteen tuulenpuolelle suhteessa jokaiseen avautumiskorkeuden tai sen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin käyttäen maatuulta ja kullakin korkeudella lähintä ennustetasoa. Arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä.",
     "map.automaticLimitsHelp":
-        "Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ennustetuulet. Puuttuvat tiedot, lentorata jota ei voi lentää tai ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike kääntää nykyistä suuntaa tarvittaessa 180° vasten 4200–800 m keskituulta ja toistaa laskennan määritetyille laskeutumiskoordinaateille. Kun Päivitä automaattisesti on valittuna, uudet tuulitiedot toistavat sijoituksen. Käsin tehdyt muutokset poistavat valinnan ja voivat jättää avautumiskohtia näiden rajojen ulkopuolelle.",
+        "Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ennustetuulet. Puuttuvat tiedot, lentorata jota ei voi lentää tai ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike kääntää nykyistä suuntaa tarvittaessa 180° vasten yläkorkeuksien keskituulta ja toistaa laskennan määritetyille laskeutumiskoordinaateille. Kun Päivitä automaattisesti on valittuna, uudet tuulitiedot toistavat sijoituksen. Käsin tehdyt muutokset poistavat valinnan ja voivat jättää avautumiskohtia näiden rajojen ulkopuolelle.",
     "map.positioningHelpTitle": "Sijoittaminen käsin",
     "map.positioningHelp":
         "Klikkaa tai napauta karttaa ja valitse Avaus sijoittaaksesi keskimmäisen ennustetun avautumiskohdan siihen, Keskitä hyppylinja sijoittaaksesi uloshyppyjonon keskikohdan siihen tai Laskeutuminen käyttääksesi kohtaa automaattisen sijoituksen laskeutumiskohteena nykyisellä suunnalla. Kun hyppääjien määrä on parillinen, keskimmäinen avautumiskohta on kahden keskimmäisen avautumiskohdan puolivälissä. Klikkaus muualle sulkee puhekuplan. Enter kohdistetulla kartalla sijoittaa keskimmäisen avautumiskohdan kartan keskikohtaan. Lisää hyppääjiä pluspainikkeesta.",
@@ -659,8 +672,11 @@ const finnish = {
     "map.centerJumpRunPosition": "Keskitä hyppylinja",
     "map.parachuteLandingPosition": "Laskeutuminen",
     "map.directionPrompt": "Vedä asettaaksesi hyppylinjan suunnan.",
+    "map.averageWind": "Keskituuli",
+    "map.dropzoneHeights": (/** @type {string} */ elevation) =>
+        `Korkeudet hyppypaikan maanpinnasta · Hyppypaikka ${elevation} m merenpinnasta.`,
     "map.averageHelp":
-        "Nopeuden ja suunnan keskiarvo korkeuksilta 800, 1500, 3000 ja 4200 m. Suunnan keskiarvo huomioi pohjoissuunnan ylityksen ja antaa karkean arvion vapaapudotusajautumisesta.",
+        "Nopeuden ja suunnan keskiarvo maanpinnan yläpuolisilta 925, 850, 700 ja 600 hPa:n tasoilta (käsin syötetyillä tuulilla vastaavilta kiinteiltä korkeuksilta). Näytetty korkeusväli on hyppypaikan maanpinnasta. Suunnan keskiarvo huomioi pohjoissuunnan ylityksen ja antaa karkean arvion vapaapudotusajautumisesta.",
     "map.shareFailed": "Kartan jakaminen epäonnistui.",
     "map.driftUnavailable":
         "Ajautumisarvio ei saatavilla: ylätuulitietoja puuttuu.",
@@ -716,9 +732,9 @@ const finnish = {
         "Lentoradan suunta maan suhteen: 0°/360° pohjoinen, 90° itä, 180° etelä ja 270° länsi. Tuulikorjaus määrittää lentokoneen nokan suunnan, jolla tätä lentorataa seurataan. Suunnan muuttaminen tässä pitää keskimmäisen ennustetun avautumiskohdan paikallaan (parillisella ryhmämäärällä kahden keskimmäisen avautumiskohdan puoliväli). Vapaa kierto vetämällä pitää uloshyppyjonon keskikohdan paikallaan. Puuttuvat tuulitiedot tai lentorata, jota ei voi lentää valitulla ilmanopeudella, voivat estää laskennan.",
     "settings.elevation": "Hyppypaikan korkeus merenpinnasta (m)",
     "settings.elevationHelp":
-        "Hyppypaikan korkeus merenpinnasta. Käytetään tuulilaskelmien korjaamiseen. FMI:n asematiedot eivät sisällä korkeutta, joten oletus on 0 m. Tyhjennä kenttä palauttaaksesi oletuksen.",
+        "Hyppypaikan korkeus merenpinnasta. Käytetään tuulilaskelmien ja Open-Meteon pilvikorkeuksien korjaamiseen. FMI:n asematiedot eivät sisällä korkeutta, joten oletus on 0 m. Tyhjennä kenttä palauttaaksesi oletuksen.",
     "settings.altitudeReferenceHelp":
-        "Uloshyppy- ja avauskorkeudet mitataan hyppypaikan maanpinnasta. Laskenta vähentää asetetun hyppypaikan korkeuden merenpinnasta ennusteen nimelliskorkeuksista vapaapudotuksen, lentokoneen tuulikorjauksen ja varjon varassa tapahtuvan ajautumisen laskentaa varten. Ennustekorkeudet ovat edelleen likimääräisiä; ympäröivää maastoa ei mallinneta.",
+        "Uloshyppy- ja avauskorkeudet mitataan hyppypaikan maanpinnasta. Vapaapudotus, lentokoneen tuulikorjaus ja varjon varassa tapahtuva ajautuminen lasketaan ennusteen geopotentiaalikorkeuksista, joista vähennetään asetettu hyppypaikan korkeus merenpinnasta. Käsin syötetyillä tuulilla käytetään kiinteitä korkeuksia merenpinnasta samalla korjauksella. Korkeudet pyöristetään vain näytettäessä; ympäröivää maastoa ei mallinneta.",
     "settings.freefallSpeedHelp":
         "Vapaapudotusarviossa käytettävä pystysuuntainen rajanopeus. Laskennan pystynopeus alkaa nollasta, ja arvio huomioi lentokoneelta perityn etenemisnopeuden. Tuulen muutokset vaikuttavat hyppääjään vähitellen. Esivalinnat asettavat vain tämän nopeuden; ne eivät mallinna vaakasuuntaista liukumista tai liitopuvun liitoa.",
     "settings.nextJumperHelp":
@@ -751,14 +767,14 @@ const finnish = {
     "settings.exitExplanation":
         "Uloshyppykorkeus on yhteinen kaikille hyppääjille. Sen on oltava jokaisen olemassa olevan hyppääjän avauskorkeutta sekä lisättävälle hyppääjälle asetettua avauskorkeutta ylempänä.",
     "settings.profileRange":
-        "Avauskorkeuden on oltava vähintään 800 m hyppypaikan maanpinnasta. Uloshyppykorkeuden ja hyppypaikan korkeuden merenpinnasta summa saa olla enintään ylimmän ennustetason korkeus, noin 4200 m merenpinnasta.",
+        "Avauskorkeuden on oltava vähintään 800 m hyppypaikan maanpinnasta ja uloshyppykorkeuden alapuolella. Laskenta käyttää korkeudeltaan lähintä tuulitasoa myös saatavilla olevan tuuliprofiilin ylä- ja alapuolella.",
     "settings.openingRange":
         "Korkeus, johon ennustettu vapaapudotusreitti päättyy. Sen on oltava vähintään 800 m ja uloshyppykorkeutta alempana. Matalampi avaus antaa yleensä enemmän aikaa vapaapudotusajautumiselle.",
     "highWinds.title": "ECMWF Ylätuuliennusteet",
     "highWinds.helpForecast":
         "Nämä ovat ennusteita, eivät mittaushavaintoja. Sovellus pyytää Open-Meteon rajapinnasta tuntikohtaisen tuulen nopeuden ja suunnan ennustesijainnin koordinaateille.",
     "highWinds.helpLevels":
-        "Arvot tulevat painepinnoilta 1 000, 925, 850, 700 ja 600 hPa, jotka näytetään likimääräisinä korkeuksina 110, 800, 1 500, 3 000 ja 4 200 m.",
+        "Arvot tulevat painepinnoilta 1 000, 925, 850, 700 ja 600 hPa. Rivien korkeudet ovat nykyisen tai ensimmäisen saatavilla olevan jakson korkeuksia merenpinnasta, pyöristettyinä 500 metriin. Rivien ja solujen työkaluvihjeet näyttävät korkeudet metrin tarkkuudella; muiden jaksojen korkeudet voivat poiketa näistä.",
     "highWinds.helpPeriods":
         "Kooste näyttää kolmen tunnin jaksot. Meneillään oleva jakso käyttää nykyisen tunnin ennustetta, ja muut jaksot ovat kolmen tuntiennusteen keskiarvoja. Tarkat tiedot näyttävät jokaisen tunnin erikseen. Tiedot haetaan kullekin sijainnille enintään kerran tunnissa ja säilytetään selaimen välimuistissa.",
     "highWinds.showSummary": "Näytä kooste",

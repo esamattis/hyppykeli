@@ -61,6 +61,16 @@ interface MapWindLevel {
     direction: number | null;
 }
 
+interface SelectableMapWindLevel extends MapWindLevel {
+    altitudeTooltip?: string;
+    id: string;
+    /** Older shared URLs stored nominal altitude labels as the selection. */
+    legacyLabel: string;
+}
+
+interface MapAltitudeWindLevel
+    extends SelectableMapWindLevel, FreefallWindLevel {}
+
 interface AutomaticOpeningCheck {
     index: number;
     opening: FreefallDriftPoint;
@@ -156,6 +166,8 @@ interface JumpRunPositionControlsProps extends JumpRunControlsProps {
 }
 
 interface ToolbarWindLevel {
+    altitudeTooltip?: string;
+    id: string;
     label: string;
     text: string;
     knots: number | null;
@@ -179,7 +191,7 @@ interface FreefallToolbarProps {
     onUndo: () => void;
     windLevels: {
         levels: ToolbarWindLevel[];
-        onSelect: (label: string) => void;
+        onSelect: (id: string) => void;
     };
 }
 
@@ -197,11 +209,18 @@ interface MapWindParticle {
     lifetime: number;
 }
 
+interface ForecastAltitudeProps {
+    height: number;
+    reference: string;
+    approximate?: boolean;
+}
+
 interface OpenMeteoCloudProfile {
     time: Date;
     layers: {
         pressure: OpenMeteoPressureLevel;
         cover: number;
+        /** Height above the configured dropzone, in metres. */
         height: number;
     }[];
 }
@@ -247,6 +266,7 @@ interface FormattedTableData {
 
 type AverageWindSpeeds = {
     [key: string]: {
+        altitude?: number | null;
         speed: number | null;
         direction: number | null;
     };

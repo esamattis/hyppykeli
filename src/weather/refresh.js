@@ -265,7 +265,7 @@ async function refreshWeather(cacheOnly, signal) {
     }
 }
 
-// Keep the subscription and refresh identity in sync: map-only edits should
+// Keep the subscription and refresh identity in sync: local calculation edits should
 // neither refetch weather nor cancel a request that is still relevant.
 export function weatherSettingsKey() {
     return JSON.stringify(
@@ -274,6 +274,7 @@ export function weatherSettingsKey() {
                 ([key]) =>
                     !key.startsWith("map_") &&
                     key !== "MANUAL_upper_winds" &&
+                    key !== "elevation" &&
                     key !== "default_jump_run_direction" &&
                     key !== "default_jump_group_count",
             ),

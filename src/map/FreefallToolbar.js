@@ -1,4 +1,5 @@
 // @ts-check
+import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { Help } from "#app/shared/Help.js";
 import { WindBarb } from "#app/map/WindBarb.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
@@ -29,6 +30,12 @@ export function FreefallToolbar({
             padding: 0;
             border-bottom: 1px solid var(--color-border);
             background: var(--color-surface-soft);
+        }
+        .map-altitude-note {
+            margin: 0;
+            padding: 0 12px 6px;
+            color: var(--color-muted);
+            font-size: 0.65rem;
         }
         .toolbar-actions {
             position: relative;
@@ -336,7 +343,11 @@ export function FreefallToolbar({
                                 <span class="value-label">
                                     ${t("toolbar.wind")}
                                 </span>
-                                <strong class="value-number">
+                                <strong
+                                    class="value-number"
+                                    tabindex=${selectedWind.altitudeTooltip ? 0 : undefined}
+                                    data-tooltip=${selectedWind.altitudeTooltip}
+                                >
                                     ${selectedWind.label} · ${selectedWind.text}
                                 </strong>
                             </span>
@@ -362,6 +373,9 @@ export function FreefallToolbar({
                     })}
                 </div>
             </div>
+            <p class="map-altitude-note">
+                ${t("map.dropzoneHeights", String(Math.round(DROPZONE_ELEVATION.value)))}
+            </p>
             <div class="toolbar-actions">
                 <div
                     class="wind-level-icons"
@@ -375,10 +389,10 @@ export function FreefallToolbar({
                                     type="button"
                                     class="wind-level-choice"
                                     aria-label=${`${level.label}: ${level.text}`}
-                                    data-tooltip=${`${level.label}: ${level.text}`}
+                                    data-tooltip=${`${level.altitudeTooltip ?? level.label}: ${level.text}`}
                                     aria-pressed=${level.selected}
                                     onClick=${() =>
-                                        windLevels.onSelect(level.label)}
+                                        windLevels.onSelect(level.id)}
                                 >
                                     ${level.graphic}
                                 </button>
@@ -400,11 +414,14 @@ export function FreefallToolbar({
                                         (level) => html`
                                             <li
                                                 class="wind-level"
-                                                key=${level.label}
+                                                key=${level.id}
                                             >
                                                 ${level.arrow}
                                                 <div class="wind-level-reading">
-                                                    <strong>
+                                                    <strong
+                                                        tabindex=${level.altitudeTooltip ? 0 : undefined}
+                                                        data-tooltip=${level.altitudeTooltip}
+                                                    >
                                                         ${level.label}
                                                     </strong>
                                                     <div>${level.text}</div>

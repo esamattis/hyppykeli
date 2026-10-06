@@ -1,6 +1,11 @@
 // @ts-check
 import { parseUpperWinds } from "#app/manual/overrides.js";
 import { DROPZONE_ELEVATION, QUERY_PARAMS } from "#app/app/settings.js";
+import {
+    formatExactAltitude,
+    formatForecastAltitude,
+    roundForecastAltitude,
+} from "#app/weather/altitudes.js";
 import { t } from "#app/translations.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
 import { OBSERVATIONS, OM_DATA } from "#app/weather/state.js";
@@ -37,47 +42,91 @@ export function getMapWindData(now = Date.now()) {
             /** @type {WeatherData | undefined} */ (undefined),
         );
     const overrides = parseUpperWinds(QUERY_PARAMS.value.MANUAL_upper_winds);
-    /** @type {FreefallWindLevel[]} */
-    const altitudeWinds = LEVELS.map(({ level, height }, row) => ({
-        height,
-        label: `≈ ${height} m`,
-        speed: overrides
-            ? overrides[row]?.speed
-                ? Number(overrides[row].speed)
-                : null
-            : index >= 0
-              ? (data?.hourly[`windspeed_${level}hPa`][index] ?? null)
-              : null,
-        direction: overrides
-            ? overrides[row]?.direction
-                ? Number(overrides[row].direction)
-                : null
-            : index >= 0
-              ? (data?.hourly[`winddirection_${level}hPa`][index] ?? null)
-              : null,
-    }));
-    // Display forecast levels above sea level; calculations use height above DZ.
     const elevation = DROPZONE_ELEVATION.value;
-    const heightAboveDropzone = altitudeWinds.map((wind) => ({
-        ...wind,
-        height: wind.height - elevation,
-    }));
-    const freefallWinds = heightAboveDropzone.slice(0, 4);
-    /** @type {MapWindLevel[]} */
-    const winds = [...altitudeWinds];
-    const averageWind = averageFreeFallWind(altitudeWinds.slice(0, 4));
-    winds.unshift(averageWind);
-    winds.push({
-        label: t("map.ground"),
-        speed: ground?.speed ?? null,
-        direction: ground?.direction ?? null,
-    });
+    const terrain = overrides
+        ? elevation
+        : Math.max(elevation, data?.elevation ?? 0);
+    /** @type {MapAltitudeWindLevel[]} */
+    const altitudeWinds = LEVELS.flatMap(
+        ({ level, height: nominalHeight }, row) => {
+            const altitude = overrides
+                ? nominalHeight
+                : index >= 0
+                  ? data?.hourly[`geopotential_height_${level}hPa`]?.[index]
+                  : undefined;
+            const height =
+                typeof altitude === "number" && Number.isFinite(altitude)
+                    ? altitude - elevation
+                    : NaN;
+            // Never use a pressure surface at/below the DZ or below model terrain.
+            if (
+                Number.isFinite(height) &&
+                (height <= 0 || (altitude ?? 0) < terrain)
+            )
+                return [];
+            return [
+                {
+                    id: level,
+                    legacyLabel: `≈ ${nominalHeight} m`,
+                    height,
+                    label: Number.isFinite(height)
+                        ? `≈ ${overrides ? `${Math.round(height / 100) * 100} m` : formatForecastAltitude(height)}`
+                        : `${level} hPa`,
+                    altitudeTooltip: Number.isFinite(height)
+                        ? formatExactAltitude(height)
+                        : undefined,
+                    speed: overrides
+                        ? overrides[row]?.speed
+                            ? Number(overrides[row].speed)
+                            : null
+                        : index >= 0
+                          ? (data?.hourly[`windspeed_${level}hPa`][index] ??
+                            null)
+                          : null,
+                    direction: overrides
+                        ? overrides[row]?.direction
+                            ? Number(overrides[row].direction)
+                            : null
+                        : index >= 0
+                          ? (data?.hourly[`winddirection_${level}hPa`][index] ??
+                            null)
+                          : null,
+                },
+            ];
+        },
+    );
+    // Missing heights cannot be replaced with nominal heights or silently skipped.
+    const hasHeights = altitudeWinds.every(
+        (wind, i) =>
+            Number.isFinite(wind.height) &&
+            (i === 0 || wind.height < (altitudeWinds[i - 1]?.height ?? 0)),
+    );
+    const profile = hasHeights ? altitudeWinds : [];
+    const freefallWinds = overrides
+        ? profile.filter((wind) => wind.id !== "1000")
+        : profile;
+    const averageWind = averageFreeFallWind(
+        altitudeWinds.filter((wind) => wind.id !== "1000"),
+        Boolean(overrides),
+    );
+    /** @type {SelectableMapWindLevel[]} */
+    const winds = [
+        averageWind,
+        ...altitudeWinds,
+        {
+            id: "ground",
+            legacyLabel: t("map.ground"),
+            label: t("map.ground"),
+            speed: ground?.speed ?? null,
+            direction: ground?.direction ?? null,
+        },
+    ];
 
     const groundAge = ground ? now - ground.time.getTime() : Infinity;
     // Observations can arrive after the map's most recent minute tick.
     const freshGround = groundAge <= MAX_GROUND_WIND_AGE_MS;
     const canopyWinds = [
-        ...heightAboveDropzone.filter((wind) => wind.height > 0),
+        ...profile,
         {
             height: 0,
             label: t("map.ground"),
@@ -96,17 +145,32 @@ export function getMapWindData(now = Date.now()) {
     };
 }
 
-/** @param {MapWindLevel[]} winds @returns {MapWindLevel} */
-function averageFreeFallWind(winds) {
+/** @param {FreefallWindLevel[]} winds @param {boolean} manual @returns {SelectableMapWindLevel} */
+function averageFreeFallWind(winds, manual) {
+    const hasHeights =
+        winds.length > 0 && winds.every((wind) => Number.isFinite(wind.height));
+    const top = winds[0]?.height ?? 0;
+    const bottom = winds.at(-1)?.height ?? 0;
+    /** @param {number} height */
+    const round = (height) =>
+        manual ? Math.round(height / 100) * 100 : roundForecastAltitude(height);
     const average = {
-        label: "≈ 4200-800 m",
+        id: "average",
+        legacyLabel: "≈ 4200-800 m",
+        label: hasHeights
+            ? `≈ ${round(top)}-${round(bottom)} m`
+            : t("map.averageWind"),
+        altitudeTooltip: hasHeights
+            ? `${Math.round(top)}-${formatExactAltitude(bottom)}`
+            : undefined,
         speed: /** @type {number | null} */ (null),
         direction: /** @type {number | null} */ (null),
     };
     if (
         winds.length === 0 ||
         winds.some(
-            ({ speed, direction }) =>
+            ({ height, speed, direction }) =>
+                !Number.isFinite(height) ||
                 speed === null ||
                 !Number.isFinite(speed) ||
                 speed < 0 ||

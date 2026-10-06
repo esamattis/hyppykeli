@@ -1,22 +1,23 @@
 // @ts-check
+import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { Help } from "#app/shared/Help.js";
 import { formatClock, formatDate } from "#app/shared/dates.js";
 import { isNullish, whenAll } from "#app/shared/values.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
+import { ForecastAltitude } from "#app/weather/ForecastAltitude.js";
+import { formatExactAltitude } from "#app/weather/altitudes.js";
 import { CloudCoverSquare } from "#app/weather/CloudIndicators.js";
 import { getLiftedCondensationLevel } from "#app/weather/calculations.js";
-import { forecastTime } from "#app/weather/providers/openMeteo.js";
+import {
+    forecastTime,
+    getOpenMeteoCloudLayer,
+} from "#app/weather/providers/openMeteo.js";
 import { OM_DATA } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 
 /** @type {OpenMeteoPressureLevel[]} */
 const CLOUD_FORECAST_LEVELS = ["600", "700", "850", "925", "1000"];
-
-/** @param {number} altitude */
-function roundCloudForecastAltitude(altitude) {
-    return Math.round(altitude / 50) * 50;
-}
 
 /**
  * @param {Object} props
@@ -88,6 +89,7 @@ export function CloudForecastTable(props) {
         }
     `);
     const openMeteo = OM_DATA.value;
+    const elevation = DROPZONE_ELEVATION.value;
     const openMeteoIndexes = new Map(
         openMeteo?.hourly.time.map((time, index) => [
             forecastTime(time, openMeteo.utc_offset_seconds).getTime(),
@@ -234,18 +236,19 @@ export function CloudForecastTable(props) {
                             `,
                         )}
                         ${CLOUD_FORECAST_LEVELS.map((level) => {
-                            const rowAltitude = props.forecasts
-                                .map((forecast) => {
-                                    const index = openMeteoIndexes.get(
+                            const layers = props.forecasts.map((forecast) =>
+                                getOpenMeteoCloudLayer(
+                                    openMeteo,
+                                    openMeteoIndexes.get(
                                         forecast.time.getTime(),
-                                    );
-                                    return isNullish(index)
-                                        ? undefined
-                                        : openMeteo?.hourly[
-                                              `geopotential_height_${level}hPa`
-                                          ][index];
-                                })
-                                .find((height) => !isNullish(height));
+                                    ),
+                                    level,
+                                    elevation,
+                                ),
+                            );
+                            const rowAltitude = layers.find(
+                                (layer) => layer,
+                            )?.height;
 
                             return html`
                                 <tr
@@ -266,25 +269,20 @@ export function CloudForecastTable(props) {
                                         ${
                                             isNullish(rowAltitude)
                                                 ? t("common.noData")
-                                                : t(
-                                                      "cloud.altitudeMeters",
-                                                      roundCloudForecastAltitude(
-                                                          rowAltitude,
-                                                      ).toString(),
-                                                  )
+                                                : h(ForecastAltitude, {
+                                                      height: rowAltitude,
+                                                      reference: `${level} hPa · ${t("cloud.altitudeAboveDropzone")}`,
+                                                  })
                                         }
                                     </th>
-                                    ${props.forecasts.map((forecast) => {
-                                        const index = openMeteoIndexes.get(
-                                            forecast.time.getTime(),
-                                        );
-                                        const cover = isNullish(index)
-                                            ? undefined
-                                            : openMeteo?.hourly[
-                                                  `cloud_cover_${level}hPa`
-                                              ][index];
+                                    ${layers.map((layer) => {
+                                        const cover = layer?.cover;
                                         return html`
-                                            <td class="forecast-reading">
+                                            <td
+                                                class="forecast-reading"
+                                                tabindex=${layer ? 0 : undefined}
+                                                data-tooltip=${layer ? `${level} hPa · ${t("cloud.altitudeAboveDropzone")}: ${formatExactAltitude(layer.height)}` : undefined}
+                                            >
                                                 ${
                                                     isNullish(cover)
                                                         ? "—"
@@ -301,6 +299,10 @@ export function CloudForecastTable(props) {
                     </tbody>
                 </table>
             </div>
+            <p class="cloud-forecast-note">
+                Open-Meteo:
+                ${t("cloud.dropzoneHeights", String(Math.round(elevation)))}
+            </p>
             <p class="cloud-forecast-note">${t("cloud.forecastTableHelp")}</p>
         </div>
     `;

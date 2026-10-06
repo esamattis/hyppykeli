@@ -10,14 +10,14 @@ test("canopy descent integrates changing wind through opening and ground", () =>
     ];
     const path = getCanopyDrift(winds, 1150);
     expect(path[0]).toEqual({ height: 1150, east: 0, north: 0 });
-    // Interpolated opening wind is 1 m/s south. The lower layers turn west.
+    // Switch winds at midpoint heights: 1150, 455 and 55 m.
     const ground = path.at(-1);
     expect(ground.height).toBe(0);
-    expect(ground.north).toBeCloseTo(-(350 * 1.5 + 690 * 1) / 5, 8);
-    expect(ground.east).toBeCloseTo(-(690 * 2 + 110 * 5) / 5, 8);
-    // Halfway through the turning layer, integrate the changing vector.
-    const intermediate = path.find((point) => point.height === 500);
-    expect(intermediate.east).toBeCloseTo(-((4 * 300) / 690 / 2) * 60, 8);
+    expect(ground.north).toBeCloseTo(-(695 * 2) / 5, 8);
+    expect(ground.east).toBeCloseTo(-(400 * 4 + 55 * 6) / 5, 8);
+    // No westward drift before crossing the midpoint at 455 m.
+    const intermediate = path.find((point) => point.height === 455);
+    expect(intermediate.east).toBeCloseTo(0, 8);
     expect(
         path.every(
             (point, index) => !index || point.height < path[index - 1].height,
@@ -40,7 +40,7 @@ test("missing canopy wind or ground prevents a predicted landing", () => {
         direction: 0,
     }));
     expect(getCanopyDrift(winds.slice(0, -1), 800)).toBeNull();
-    expect(getCanopyDrift(winds, 900)).toBeNull();
+    expect(getCanopyDrift(winds, 900).at(-1).north).toBeCloseTo(-900);
     for (const height of [800, 110, 0]) {
         expect(
             getCanopyDrift(

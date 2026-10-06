@@ -1,11 +1,11 @@
 // @ts-check
-import { getWindAtHeight } from "#app/map/freefall.js";
+import { getNextWindBoundary, getWindAtHeight } from "#app/map/freefall.js";
 
 // Shared with automatic landing placement: wind drift only, not canopy glide.
 const CANOPY_DESCENT_SPEED_MPS = 5;
 
 /**
- * Integrate canopy drift from opening to ground using interpolated wind vectors.
+ * Integrate canopy drift from opening to ground using the nearest wind level at each height.
  * Offsets are metres east/north of the opening position.
  * @param {FreefallWindLevel[]} winds Descending altitude order, including ground.
  * @param {number} openingHeight
@@ -26,15 +26,13 @@ export function getCanopyDrift(winds, openingHeight) {
     let east = 0;
     let north = 0;
     for (let height = openingHeight; height > 0;) {
-        const boundary =
-            profile.find((wind) => wind.height < height)?.height ?? 0;
+        const boundary = getNextWindBoundary(profile, height);
         const nextHeight = Math.max(height - 100, boundary, 0);
-        const from = getWindAtHeight(profile, height);
-        const to = getWindAtHeight(profile, nextHeight);
-        if (!from || !to) return null;
+        const wind = getWindAtHeight(profile, (height + nextHeight) / 2);
+        if (!wind) return null;
         const seconds = (height - nextHeight) / CANOPY_DESCENT_SPEED_MPS;
-        east += ((from.east + to.east) / 2) * seconds;
-        north += ((from.north + to.north) / 2) * seconds;
+        east += wind.east * seconds;
+        north += wind.north * seconds;
         path.push({ height: nextHeight, east, north });
         height = nextHeight;
     }

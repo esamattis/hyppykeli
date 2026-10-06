@@ -202,12 +202,43 @@ export async function fetchHighWinds(
 }
 
 /**
- * Return the current forecast hour, using its actual pressure-level heights.
+ * Read a cloud sample above both model terrain and the dropzone.
+ * Keep the cached API heights above sea level; returned heights are above DZ.
  * @param {OpenMeteoWeatherData | null} data
+ * @param {number | undefined} index
+ * @param {OpenMeteoPressureLevel} pressure
+ * @param {number} elevation Dropzone elevation above sea level, in metres.
+ * @returns {OpenMeteoCloudProfile["layers"][number] | null}
+ */
+export function getOpenMeteoCloudLayer(data, index, pressure, elevation) {
+    if (!data || isNullish(index)) return null;
+    const cover = data.hourly[`cloud_cover_${pressure}hPa`]?.[index];
+    const height = data.hourly[`geopotential_height_${pressure}hPa`]?.[index];
+    if (
+        isNullish(cover) ||
+        isNullish(height) ||
+        !Number.isFinite(cover) ||
+        !Number.isFinite(height) ||
+        cover < 0 ||
+        cover > 100 ||
+        height < Math.max(0, data.elevation ?? 0, elevation)
+    )
+        return null;
+    return { pressure, cover, height: height - elevation };
+}
+
+/**
+ * Return the current forecast hour, with pressure-level heights above the DZ.
+ * @param {OpenMeteoWeatherData | null} data
+ * @param {number} [elevation] Dropzone elevation above sea level, in metres.
  * @param {Date} [now]
  * @returns {OpenMeteoCloudProfile | null}
  */
-export function getOpenMeteoCloudProfile(data, now = new Date()) {
+export function getOpenMeteoCloudProfile(
+    data,
+    elevation = 0,
+    now = new Date(),
+) {
     if (!data) return null;
     const index = data.hourly.time.findIndex((time) => {
         const age =
@@ -217,20 +248,8 @@ export function getOpenMeteoCloudProfile(data, now = new Date()) {
     });
     if (index < 0) return null;
     const layers = CLOUD_PRESSURE_LEVELS.flatMap((pressure) => {
-        const cover = data.hourly[`cloud_cover_${pressure}hPa`]?.[index];
-        const height =
-            data.hourly[`geopotential_height_${pressure}hPa`]?.[index];
-        if (
-            isNullish(cover) ||
-            isNullish(height) ||
-            !Number.isFinite(cover) ||
-            !Number.isFinite(height) ||
-            cover < 0 ||
-            cover > 100 ||
-            height < Math.max(0, data.elevation ?? 0)
-        )
-            return [];
-        return [{ pressure, cover, height }];
+        const layer = getOpenMeteoCloudLayer(data, index, pressure, elevation);
+        return layer ? [layer] : [];
     }).toSorted((a, b) => b.height - a.height);
     return layers.length
         ? {

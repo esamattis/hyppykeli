@@ -336,9 +336,9 @@ export function DropzoneMap() {
         false,
         (value) => typeof value === "boolean",
     );
-    const [selectedLabel, setSelectedLabel] = useMapState(
+    const [selectedWindId, setSelectedWindId] = useMapState(
         "map_wind",
-        "≈ 4200-800 m",
+        "average",
         (value) => typeof value === "string",
     );
     const [jumpRunStart, setJumpRunStart] = useMapState(
@@ -1576,7 +1576,11 @@ export function DropzoneMap() {
         jumperCount,
     ]);
     const selectedWind =
-        winds.find((wind) => wind.label === selectedLabel) ?? averageWind;
+        winds.find(
+            (wind) =>
+                wind.id === selectedWindId ||
+                wind.legacyLabel === selectedWindId,
+        ) ?? averageWind;
     const selectedWindDirection =
         selectedWind.speed !== null &&
         isFiniteNumber(selectedWind.speed) &&
@@ -1627,7 +1631,15 @@ export function DropzoneMap() {
                                 ${t("map.title")}:
                                 Open-Meteo${time && data ? `, ${t("time.clock", formatClock(forecastTime(time, data.utc_offset_seconds)))}` : ` — ${t("map.sourceNoCurrent")}`}.
                             </p>
-                            <p>≈ 4200-800 m: ${t("map.averageHelp")}</p>
+                            <p>
+                                <span
+                                    tabindex=${averageWind.altitudeTooltip ? 0 : undefined}
+                                    data-tooltip=${averageWind.altitudeTooltip}
+                                >
+                                    ${averageWind.label}
+                                </span>
+                                : ${t("map.averageHelp")}
+                            </p>
                             <p>
                                 ${t("map.groundObservationHelp")}
                                 <br />
@@ -1748,6 +1760,8 @@ export function DropzoneMap() {
                             levels: winds.map((wind) => {
                                 const reading = windReading(wind);
                                 return {
+                                    id: wind.id,
+                                    altitudeTooltip: wind.altitudeTooltip,
                                     label: wind.label,
                                     text: reading.text,
                                     knots: windBarbKnots(wind.speed),
@@ -1756,10 +1770,10 @@ export function DropzoneMap() {
                                         speed: wind.speed,
                                         direction: wind.direction,
                                     }),
-                                    selected: wind.label === selectedWind.label,
+                                    selected: wind.id === selectedWind.id,
                                 };
                             }),
-                            onSelect: setSelectedLabel,
+                            onSelect: setSelectedWindId,
                         },
                         arrowCount: jumpRunStart ? Math.max(1, jumperCount) : 0,
                         onClear: () => {

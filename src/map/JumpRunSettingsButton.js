@@ -331,7 +331,6 @@ export function JumpRunSettingsButton({
                                         (jumper) => jumper.openingHeight,
                                     ),
                                 ) + 1,
-                            max: 4200 - DROPZONE_ELEVATION.value,
                             step: 1,
                             value: exitDraft,
                             onDraftChange: setExitDraft,

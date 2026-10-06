@@ -87,7 +87,7 @@ function closestTranslation(preferred, constraints) {
  * Place every predicted opening upwind of the landing point at every non-calm
  * layer below that opening. Prefer the offset compensating time-integrated
  * canopy wind drift, then enforce the individual layer constraints.
- * Winds use the application's nominal heights; they must include ground (0 m).
+ * Wind heights are above the dropzone; they must include ground (0 m).
  * @param {import('leaflet').LatLngLiteral} target
  * @param {JumpRunSettings} settings
  * @param {JumpRunJumper[]} group

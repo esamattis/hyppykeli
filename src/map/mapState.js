@@ -52,8 +52,9 @@ export const isValidJumper = (value) =>
     isFiniteNumber(value.speedKmh) &&
     value.speedKmh > 0 &&
     isFiniteNumber(value.openingHeight) &&
-    value.openingHeight >= 0 &&
-    value.openingHeight < 4200;
+    value.openingHeight >= 0;
+// Nearest-level winds support altitudes outside the forecast range.
+// Keep shared settings independent of the current forecast heights.
 /** @param {JumpRunSettings} value */
 export const isValidJumpRunSettings = (value) =>
     !!value &&
@@ -65,5 +66,4 @@ export const isValidJumpRunSettings = (value) =>
     isFiniteNumber(value.separationSeconds) &&
     value.separationSeconds >= 0 &&
     isFiniteNumber(value.exitHeight) &&
-    value.exitHeight > 0 &&
-    value.exitHeight <= 4200;
+    value.exitHeight > 0;

@@ -27,29 +27,34 @@ export function getFreefallDrift(
     if (
         !Number.isFinite(exitHeight) ||
         exitHeight <= openingHeight ||
-        exitHeight > (winds[0]?.height ?? 0) ||
         !Number.isFinite(openingHeight) ||
-        openingHeight < Math.max(800, winds.at(-1)?.height ?? 800) ||
+        openingHeight < FREEFALL_OPENING ||
         !Number.isFinite(speedKmh) ||
         speedKmh <= 0 ||
         (exitVelocity &&
             (!Number.isFinite(exitVelocity.east) ||
                 !Number.isFinite(exitVelocity.north))) ||
-        winds.length !== 4 ||
-        winds.some(
-            ({ height, speed, direction }, index) =>
-                !Number.isFinite(height) ||
-                Math.abs(
-                    height -
-                        (winds[0]?.height ?? 0) -
-                        ([0, -1200, -2700, -3400][index] ?? NaN),
-                ) > 1e-8 ||
-                speed === null ||
-                !Number.isFinite(speed) ||
-                speed < 0 ||
-                direction === null ||
-                !Number.isFinite(direction),
-        )
+        !hasDescendingWindHeights(winds)
+    )
+        return null;
+
+    // Validate every level whose nearest-height region intersects the descent.
+    // Keep the full profile so unused neighbours still define its boundaries.
+    if (
+        winds.some((wind, index) => {
+            const above = winds[index - 1];
+            const below = winds[index + 1];
+            const top = above ? (above.height + wind.height) / 2 : Infinity;
+            const bottom = below ? (below.height + wind.height) / 2 : -Infinity;
+            return (
+                top >= openingHeight &&
+                bottom <= exitHeight &&
+                !getWindAtHeight(
+                    winds,
+                    Math.min(exitHeight, Math.max(openingHeight, wind.height)),
+                )
+            );
+        })
     )
         return null;
 
@@ -69,16 +74,13 @@ export function getFreefallDrift(
     let east = 0;
     let north = 0;
     for (let height = exitHeight; height > openingHeight;) {
-        const boundary =
-            winds.find((wind) => wind.height < height)?.height ??
-            FREEFALL_OPENING;
+        const boundary = getNextWindBoundary(winds, height);
         const nextHeight = Math.max(height - 100, boundary, openingHeight);
-        const from = atHeight(height);
-        const to = atHeight(nextHeight);
-        if (!from || !to) return null;
+        const wind = atHeight((height + nextHeight) / 2);
+        if (!wind) return null;
         const seconds = (height - nextHeight) / fallSpeed;
-        east += ((from.east + to.east) / 2) * seconds;
-        north += ((from.north + to.north) / 2) * seconds;
+        east += wind.east * seconds;
+        north += wind.north * seconds;
         path.push({ height: nextHeight, east, north });
         height = nextHeight;
     }
@@ -229,54 +231,62 @@ function getJumpDrift(
     return null;
 }
 
+/** @param {FreefallWindLevel[]} winds */
+function hasDescendingWindHeights(winds) {
+    return (
+        winds.length > 0 &&
+        winds.every(
+            (wind, index) =>
+                Number.isFinite(wind.height) &&
+                wind.height >= 0 &&
+                (index === 0 || wind.height < (winds[index - 1]?.height ?? 0)),
+        )
+    );
+}
+
 /**
- * Interpolate wind vectors, not bearings, at an altitude (metres).
+ * Next height where the nearest wind level changes during descent.
+ * @param {FreefallWindLevel[]} winds Descending altitude order.
+ * @param {number} height
+ */
+export function getNextWindBoundary(winds, height) {
+    for (let index = 1; index < winds.length; index++) {
+        const above = winds[index - 1];
+        const below = winds[index];
+        if (!above || !below) continue;
+        const boundary = (above.height + below.height) / 2;
+        if (boundary < height) return boundary;
+    }
+    return 0;
+}
+
+/**
+ * Use the closest level by altitude, including outside the available range.
+ * Equal distances select the higher level; wind direction never affects selection.
  * @param {FreefallWindLevel[]} winds Descending altitude order; speeds in m/s.
  * @param {number} height
  * @returns {WindVector | null}
  */
 export function getWindAtHeight(winds, height) {
-    if (!Number.isFinite(height)) return null;
-    const exactIndex = winds.findIndex((wind) => wind.height === height);
-    const upperIndex =
-        exactIndex >= 0
-            ? exactIndex
-            : winds.findIndex(
-                  (wind, index) =>
-                      wind.height >= height &&
-                      (winds[index + 1]?.height ?? wind.height) <= height,
-              );
-    const upper = winds[upperIndex];
-    const lower = upper?.height === height ? upper : winds[upperIndex + 1];
+    if (!Number.isFinite(height) || !hasDescendingWindHeights(winds))
+        return null;
+    const wind = winds.reduce((nearest, candidate) =>
+        Math.abs(candidate.height - height) < Math.abs(nearest.height - height)
+            ? candidate
+            : nearest,
+    );
     if (
-        !upper ||
-        !lower ||
-        [upper, lower].some(
-            ({ speed, direction }) =>
-                speed === null ||
-                !Number.isFinite(speed) ||
-                speed < 0 ||
-                direction === null ||
-                !Number.isFinite(direction),
-        )
+        wind.speed === null ||
+        !Number.isFinite(wind.speed) ||
+        wind.speed < 0 ||
+        wind.direction === null ||
+        !Number.isFinite(wind.direction)
     )
         return null;
-    const fraction =
-        upper.height === lower.height
-            ? 0
-            : (upper.height - height) / (upper.height - lower.height);
-    const vectors = [upper, lower].map((wind) => {
-        const radians = ((wind.direction ?? 0) * Math.PI) / 180;
-        return {
-            east: -Math.sin(radians) * (wind.speed ?? 0),
-            north: -Math.cos(radians) * (wind.speed ?? 0),
-        };
-    });
-    const [from, to] = vectors;
-    if (!from || !to) return null;
+    const radians = (wind.direction * Math.PI) / 180;
     return {
-        east: from.east + (to.east - from.east) * fraction,
-        north: from.north + (to.north - from.north) * fraction,
+        east: -Math.sin(radians) * wind.speed,
+        north: -Math.cos(radians) * wind.speed,
     };
 }
 

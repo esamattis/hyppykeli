@@ -8,10 +8,12 @@ import {
     PRESSURE_LEVELS_RAW,
     forecastTime,
 } from "#app/weather/providers/openMeteo.js";
+import { ForecastAltitude } from "#app/weather/ForecastAltitude.js";
+import { formatExactAltitude } from "#app/weather/altitudes.js";
 import { OM_DATA } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 
-// Vakiot tiedoston alussa
+// Nominal heights identify warning bands; displayed labels use forecast heights.
 const PRESSURE_LEVELS = [
     { pressure: "600 hPa", height: "4200" },
     { pressure: "700 hPa", height: "3000" },
@@ -104,6 +106,8 @@ function getAverageData(hourly, targetHour, dayOffset, offset) {
         const speedKey = `windspeed_${level}hPa`;
         /** @type {`winddirection_${OpenMeteoPressureLevel}hPa`} */
         const directionKey = `winddirection_${level}hPa`;
+        /** @type {`geopotential_height_${OpenMeteoPressureLevel}hPa`} */
+        const altitudeKey = `geopotential_height_${level}hPa`;
 
         if (isCurrentBlock) {
             const currentIndex = hourly.time.findIndex(
@@ -113,6 +117,7 @@ function getAverageData(hourly, targetHour, dayOffset, offset) {
             );
 
             result[level] = {
+                altitude: hourly[altitudeKey]?.[currentIndex] ?? null,
                 speed: hourly[speedKey]?.[currentIndex] ?? null,
                 direction: hourly[directionKey]?.[currentIndex] ?? null,
             };
@@ -140,7 +145,16 @@ function getAverageData(hourly, targetHour, dayOffset, offset) {
                 0,
             );
 
+            const altitudes = relevantIndices.flatMap((i) => {
+                const altitude = hourly[altitudeKey]?.[i];
+                return typeof altitude === "number" && Number.isFinite(altitude)
+                    ? [altitude]
+                    : [];
+            });
             result[level] = {
+                altitude: altitudes.length
+                    ? altitudes.reduce((a, b) => a + b, 0) / altitudes.length
+                    : null,
                 speed:
                     speeds.length > 0
                         ? speeds.reduce((a, b) => a + b, 0) / speeds.length
@@ -192,6 +206,7 @@ function roundToNearestFive(num) {
  * @param {Object} [props.data]
  * @param {number|null} props.data.speed
  * @param {number|null} props.data.direction
+ * @param {number|null} [props.data.altitude]
  * @param {string} props.columnClass
  * @param {string} props.height
  * @param {boolean} [props.hourly]
@@ -246,6 +261,8 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
 
     return html`
         <td
+            tabindex=${Number.isFinite(data.altitude) ? 0 : undefined}
+            data-tooltip=${Number.isFinite(data.altitude) ? `${t("cloud.altitudeSeaLevel")}: ${formatExactAltitude(data.altitude ?? 0)}` : undefined}
             class=${`wind-cell ${columnClass} ${getWindSpeedClass(
                 speedInMS,
                 height,
@@ -367,11 +384,20 @@ export function WindTable({ days, hourly = false }) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${PRESSURE_LEVELS.map(
-                        ({ pressure, height }) => html`
+                    ${PRESSURE_LEVELS.map(({ pressure, height }) => {
+                        const level = pressure.split(" ")[0] ?? "";
+                        const currentAltitude = columns.find(
+                            (column) => column.isCurrentBlock,
+                        )?.data[level]?.altitude;
+                        const altitude = Number.isFinite(currentAltitude)
+                            ? currentAltitude
+                            : columns
+                                  .map((column) => column.data[level]?.altitude)
+                                  .find((value) => Number.isFinite(value));
+                        return html`
                             <tr key=${pressure}>
                                 <th scope="row" class="pressure-cell">
-                                    ${height}
+                                    ${isNullish(altitude) ? pressure : h(ForecastAltitude, { height: altitude, reference: `${pressure} · ${t("cloud.altitudeSeaLevel")}` })}
                                 </th>
                                 ${columns.map(({ key, data, columnClass }) =>
                                     h(WindCell, {
@@ -385,8 +411,8 @@ export function WindTable({ days, hourly = false }) {
                                     }),
                                 )}
                             </tr>
-                        `,
-                    )}
+                        `;
+                    })}
                 </tbody>
             </table>
         </div>
@@ -477,6 +503,10 @@ export function OpenMeteoRaw() {
             winds[pressure.split(" ")[0] ?? ""] = {
                 speed: data.hourly[key][index] ?? null,
                 direction: data.hourly[directionKey][index] ?? null,
+                altitude:
+                    data.hourly[
+                        `geopotential_height_${/** @type {OpenMeteoPressureLevel} */ (pressure.split(" ")[0])}hPa`
+                    ]?.[index] ?? null,
             };
         });
         day.tableData[date.getHours()] = {

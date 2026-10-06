@@ -1,4 +1,5 @@
 // @ts-check
+import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { Help } from "#app/shared/Help.js";
 import { formatClock, formatDate } from "#app/shared/dates.js";
@@ -7,6 +8,7 @@ import { isNullish, whenAll } from "#app/shared/values.js";
 import { cloudLayerStyles, summaryStyles } from "#app/styles.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
+import { ForecastAltitude } from "#app/weather/ForecastAltitude.js";
 import { CloudForecastTable } from "#app/weather/CloudForecastTable.js";
 import { PercentageCloudCover } from "#app/weather/CloudIndicators.js";
 import { DataSource } from "#app/weather/DataSource.js";
@@ -197,7 +199,7 @@ function OpenMeteoCloudLayer({ layer }) {
             </div>
             <div class="cloud-layer-base">
                 <b>
-                    ${formatCloudBase(layer.height, "m", { approximate: true })}
+                    ${h(ForecastAltitude, { height: layer.height, reference: t("cloud.altitudeAboveDropzone"), approximate: true })}
                 </b>
             </div>
             ${h(
@@ -206,10 +208,14 @@ function OpenMeteoCloudLayer({ layer }) {
                 html`
                     <h3>Open-Meteo · ${layer.pressure} hPa</h3>
                     <p>
-                        ${t("cloud.altitudeSeaLevel")}:
-                        ${formatCloudBase(layer.height, "m")}
+                        ${t("cloud.altitudeAboveDropzone")}: ${" "}
+                        ${h(ForecastAltitude, { height: layer.height, reference: t("cloud.altitudeAboveDropzone") })}
                     </p>
-                    <p>${t("cloud.roundingHelp")}</p>
+                    <p>
+                        ${t("cloud.altitudeSeaLevel")}: ${" "}
+                        ${h(ForecastAltitude, { height: layer.height + DROPZONE_ELEVATION.value, reference: t("cloud.altitudeSeaLevel") })}
+                    </p>
+                    <p>${t("cloud.modelRoundingHelp")}</p>
                     <p>${t("cloud.modelledMeaning")}</p>
                     <p>${t("cloud.modelledCoverage")}</p>
                 `,
@@ -257,7 +263,7 @@ function OpenMeteoClouds({ profile }) {
                     profile
                         ? html`
                               <p class="cloud-profile-altitude-note">
-                                  ${t("cloud.altitudeSeaLevel")}
+                                  ${t("cloud.dropzoneHeights", String(Math.round(DROPZONE_ELEVATION.value)))}
                               </p>
                               <ul
                                   class="cloud-list cloud-layers cloud-profile-layers"
@@ -501,7 +507,10 @@ export function CloudSummary() {
     `);
 
     const metar = METARS.value?.at(-1);
-    const profile = getOpenMeteoCloudProfile(OM_DATA.value);
+    const profile = getOpenMeteoCloudProfile(
+        OM_DATA.value,
+        DROPZONE_ELEVATION.value,
+    );
     const showTabs = Boolean(metar && profile);
     const selectedSource = metar
         ? showTabs

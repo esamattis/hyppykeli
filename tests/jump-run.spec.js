@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { getFreefallDrift } from "../src/map/freefall.js";
+import { getFreefallDrift, getWindAtHeight } from "../src/map/freefall.js";
 import {
     createJumpRunCalculator,
     startForOpeningTarget,
@@ -90,4 +90,86 @@ test("placing and rotating a mixed group preserves its middle opening", () => {
         expect(opening.lat).toBeCloseTo(target.lat, 5);
         expect(opening.lng).toBeCloseTo(target.lng, 5);
     }
+});
+
+test("irregular wind levels preserve the aircraft-exit trajectory and reject incomplete descent data", () => {
+    const calculate = createJumpRunCalculator();
+    const baseline = calculate(winds, settings).drift(jumper).at(-1);
+    const irregular = [4380.5, 3150.25, 970.75, 120].map((height) => ({
+        height,
+        speed: 10,
+        direction: 0,
+    }));
+    const actual = calculate(irregular, settings).drift(jumper).at(-1);
+    expect(actual.height).toBe(800);
+    expect(actual.east).toBeCloseTo(baseline.east, 6);
+    expect(actual.north).toBeCloseTo(baseline.north, 6);
+    const missing = irregular.map((wind, index) =>
+        index === 2 ? { ...wind, speed: null } : wind,
+    );
+    expect(calculate(missing, settings).drift(jumper)).toBeNull();
+    for (const heights of [
+        [4380, NaN, 900],
+        [4380, 900, 900],
+        [4380, 900, 1500],
+    ]) {
+        expect(
+            getFreefallDrift(
+                heights.map((height) => ({ height, speed: 10, direction: 0 })),
+            ),
+        ).toBeNull();
+    }
+    const unusedMissing = [
+        ...winds,
+        { height: 110, speed: null, direction: null },
+    ];
+    expect(calculate(unusedMissing, settings).drift(jumper).at(-1)).toEqual(
+        baseline,
+    );
+});
+
+test("wind selection always uses nearest altitude regardless of bearing or range", () => {
+    const profile = [
+        { height: 3935.6728, speed: 20, direction: 270 },
+        { height: 2748.6728, speed: 8, direction: 90 },
+        { height: 519.6728, speed: 5, direction: 180 },
+    ];
+    for (const height of [4000, 3935.6728, 3500]) {
+        expect(getWindAtHeight(profile, height).east).toBeCloseTo(20);
+    }
+    for (const height of [3000, 2748.6728, 2000]) {
+        expect(getWindAtHeight(profile, height).east).toBeCloseTo(-8);
+    }
+    expect(getWindAtHeight(profile, 0).north).toBeCloseTo(5);
+    // Ties consistently choose the higher level.
+    expect(
+        getWindAtHeight(profile, (3935.6728 + 2748.6728) / 2).east,
+    ).toBeCloseTo(20);
+    expect(
+        getWindAtHeight(
+            [{ ...profile[0], speed: null }, ...profile.slice(1)],
+            4000,
+        ),
+    ).toBeNull();
+    expect(getWindAtHeight(profile, NaN)).toBeNull();
+    expect(getWindAtHeight([], 4000)).toBeNull();
+});
+
+test("drift integrates nearest-level regions exactly and supports a single wind level", () => {
+    const profile = [
+        { height: 2101, speed: 10, direction: 270 },
+        { height: 999, speed: 20, direction: 90 },
+    ];
+    // Boundary is 1550 m: 2450 m east wind, then 750 m west wind at 50 m/s.
+    const end = getFreefallDrift(profile).at(-1);
+    expect(end.east).toBeCloseTo((2450 * 10 - 750 * 20) / 50, 8);
+    expect(getFreefallDrift(profile.slice(0, 1)).at(-1).east).toBeCloseTo(
+        640,
+        8,
+    );
+    const calculation = createJumpRunCalculator()(
+        profile.slice(0, 1),
+        settings,
+    );
+    expect(calculation.drift(jumper).at(-1).height).toBe(800);
 });
