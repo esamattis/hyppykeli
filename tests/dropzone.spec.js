@@ -21,9 +21,10 @@ async function setUniformFreefallWind(page) {
 }
 
 /** @param {import("@playwright/test").Page} page */
-async function middleOpening(page) {
-    return page.evaluate(async () => {
+async function middleOpening(page, landing = false) {
+    return page.evaluate(async (landing) => {
         const { getMapWindData } = await import("#app/map/windData.js");
+        const { getCanopyDrift } = await import("#app/map/canopy.js");
         const {
             jumpRunCoordinates,
             getFreefallDrift,
@@ -35,7 +36,7 @@ async function middleOpening(page) {
         const settings = JSON.parse(params.get("map_run_settings") ?? "");
         const start = JSON.parse(params.get("map_run_start") ?? "");
         const jumpers = JSON.parse(params.get("map_jumpers") ?? "");
-        const winds = getMapWindData().freefallWinds;
+        const { freefallWinds: winds, canopyWinds } = getMapWindData();
         const velocity = getJumpRunVelocity(winds, settings);
         const middleIndex = (jumpers.length - 1) / 2;
         const openings = [Math.floor(middleIndex), Math.ceil(middleIndex)].map(
@@ -51,7 +52,15 @@ async function middleOpening(page) {
                     jumper.openingHeight,
                     velocity.air,
                 );
-                return latLng(driftCoordinates(exit, path[path.length - 1]));
+                const opening = latLng(
+                    driftCoordinates(exit, path[path.length - 1]),
+                );
+                const canopy = landing
+                    ? getCanopyDrift(canopyWinds, jumper.openingHeight)?.at(-1)
+                    : null;
+                return canopy
+                    ? latLng(driftCoordinates(opening, canopy))
+                    : opening;
             },
         );
         const opening = latLng(
@@ -59,15 +68,15 @@ async function middleOpening(page) {
             (openings[0].lng + openings[1].lng) / 2,
         );
         return { lat: opening.lat, lng: opening.lng };
-    });
+    }, landing);
 }
 
 /**
  * @param {import("@playwright/test").Page} page
  * @param {{ lat: number, lng: number }} target
  */
-async function openingDistance(page, target) {
-    const opening = await middleOpening(page);
+async function openingDistance(page, target, landing = false) {
+    const opening = await middleOpening(page, landing);
     return page.evaluate(
         async ({ opening, target }) => {
             const { latLng } = await import("leaflet");
@@ -75,6 +84,43 @@ async function openingDistance(page, target) {
         },
         { opening, target },
     );
+}
+
+/** Keep the predicted landing visible when testing pointer gestures around it. */
+async function centerMapOn(page, target) {
+    await page.evaluate(async (target) => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs(
+            {
+                map_center_lat: String(target.lat),
+                map_center_lon: String(target.lng),
+            },
+            { replace: true },
+        );
+        await new Promise(requestAnimationFrame);
+        await new Promise(requestAnimationFrame);
+    }, target);
+}
+
+/** Position of a geographic endpoint in the map's container, independent of run controls. */
+async function mapPoint(page, coordinates) {
+    return page.locator(".dz-map").evaluate(async (element, coordinates) => {
+        const { CRS, latLng } = await import("leaflet");
+        const params = new URL(location.href).searchParams;
+        const zoom = Number(params.get("map_zoom"));
+        const center = latLng(
+            Number(params.get("map_center_lat")),
+            Number(params.get("map_center_lon")),
+        );
+        const offset = CRS.EPSG3857.latLngToPoint(
+            latLng(coordinates),
+            zoom,
+        ).subtract(CRS.EPSG3857.latLngToPoint(center, zoom));
+        return {
+            x: element.clientWidth / 2 + offset.x,
+            y: element.clientHeight / 2 + offset.y,
+        };
+    }, coordinates);
 }
 
 const directionControls = {
@@ -2225,6 +2271,68 @@ test("jump run heading displays whole degrees without changing its precision", a
     ).toBe(16.6);
 });
 
+for (const jumperCount of [1, 4]) {
+    test(`direction controls preserve the predicted landing point for ${jumperCount} groups`, async ({
+        page,
+    }) => {
+        const original = { lat: 62.42, lng: 25.6 };
+        const settings = {
+            direction: 0,
+            speedKmh: 120,
+            separationSeconds: 5,
+            exitHeight: 4000,
+        };
+        const group = Array.from({ length: jumperCount }, (_, index) => ({
+            speedKmh: index === 2 ? 240 : 180,
+            openingHeight: index === 2 ? 1200 : 800,
+        }));
+        await page.goto(
+            `${developerPath}&lat=62.4&lon=25.6&map_zoom=11&map_center_lat=62.4&map_center_lon=25.6&default_jump_run_direction=0&map_jumpers=${encodeURIComponent(JSON.stringify(group))}&map_run_start=${encodeURIComponent(JSON.stringify(original))}&map_run_settings=${encodeURIComponent(JSON.stringify(settings))}`,
+        );
+        await setUniformFreefallWind(page);
+        const map = page.locator(".dz-map");
+        await map.scrollIntoViewIfNeeded();
+        await expect(map.locator(".parachute-drift-line")).toHaveCount(
+            jumperCount,
+        );
+        const landing = await middleOpening(page, true);
+        const expectLanding = async () =>
+            expect(await openingDistance(page, landing, true)).toBeLessThan(1);
+        await clickDirection(page, directionControls.clockwise);
+        await expectLanding();
+        await clickDirection(page, directionControls.counterclockwise);
+        await expectLanding();
+        await page
+            .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+            .click();
+        await page
+            .getByRole("slider", { name: "Hyppylinjan suunta" })
+            .fill("180");
+        await expectLanding();
+        await page.keyboard.press("Escape");
+        await page.reload();
+        await setUniformFreefallWind(page);
+        await map.scrollIntoViewIfNeeded();
+        await expectLanding();
+        await clickDirection(page, directionControls.drag);
+        const pivot = await mapPoint(page, landing);
+        const bounds = await map.boundingBox();
+        const x = bounds.x + pivot.x + 70;
+        const y = bounds.y + pivot.y;
+        await page.mouse.move(x, y);
+        await page.mouse.down();
+        await page.mouse.move(x, y + 70, { steps: 5 });
+        await page.mouse.up();
+        const direction = JSON.parse(
+            new URL(page.url()).searchParams.get("map_run_settings"),
+        ).direction;
+        expect(direction).toBeCloseTo(225, 0);
+        await expectLanding();
+        await clickDirection(page, directionControls.reset);
+        await expectLanding();
+    });
+}
+
 test("quarter-turn buttons rotate both ways around the opening center", async ({
     page,
 }) => {
@@ -2543,11 +2651,13 @@ for (const input of ["mouse", "touch"]) {
             .fill("45");
         await page.keyboard.press("Escape");
         const opening = await middleOpening(page);
+        await centerMapOn(page, await middleOpening(page, true));
         const button = directionControl(page, directionControls.drag);
         await clickDirection(page, directionControls.drag);
         const bounds = await map.boundingBox();
-        const x = bounds.x + 240;
-        const y = bounds.y + 160;
+        const pivot = await mapPoint(page, await middleOpening(page, true));
+        const x = bounds.x + pivot.x + 120;
+        const y = bounds.y + pivot.y;
         const direction = () =>
             JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
                 .direction;
@@ -3137,13 +3247,15 @@ test("dragging sets jump run direction and clicking exits without moving the run
     await expect(hint).toHaveCount(0);
     await expect(directionButton).toHaveAttribute("aria-checked", "false");
     const opening = await middleOpening(page);
+    await centerMapOn(page, await middleOpening(page, true));
     const placed = new URL(page.url()).searchParams.get("map_run_start");
     await clickDirection(page, directionControls.drag);
     await expect(hint).toBeVisible();
     await expect(directionButton).toHaveAttribute("aria-checked", "true");
     const bounds = await map.boundingBox();
-    const originX = bounds.x + 100;
-    const originY = bounds.y + 160;
+    const pivot = await mapPoint(page, await middleOpening(page, true));
+    const originX = bounds.x + pivot.x;
+    const originY = bounds.y + pivot.y;
     const settings = () =>
         JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"));
     await page.mouse.move(originX, originY);

@@ -1,4 +1,5 @@
 // @ts-check
+import { getCanopyDrift } from "#app/map/canopy.js";
 import {
     driftCoordinates,
     getFreefallDrift,
@@ -149,5 +150,57 @@ export function openingTargetForRun(start, settings, group, calculation) {
         lng:
             openings.reduce((sum, point) => sum + point.lng, 0) /
             openings.length,
+    };
+}
+
+/**
+ * Middle predicted landing, using the same freefall and canopy paths as the map.
+ * For an even group, use the midpoint of the two middle landings.
+ * @param {import('leaflet').LatLngLiteral} start
+ * @param {JumpRunSettings} settings
+ * @param {JumpRunJumper[]} group
+ * @param {JumpRunCalculation} calculation
+ * @param {FreefallWindLevel[]} canopyWinds
+ * @returns {import('leaflet').LatLngLiteral | null}
+ */
+export function landingTargetForRun(
+    start,
+    settings,
+    group,
+    calculation,
+    canopyWinds,
+) {
+    if (!calculation.velocity || !group.length) return null;
+    const middleIndex = (group.length - 1) / 2;
+    const indexes = [
+        ...new Set([Math.floor(middleIndex), Math.ceil(middleIndex)]),
+    ];
+    const landings = [];
+    for (const index of indexes) {
+        const jumper = group[index];
+        if (!jumper) return null;
+        const freefall = calculation.drift(jumper)?.at(-1);
+        const canopy = getCanopyDrift(canopyWinds, jumper.openingHeight)?.at(
+            -1,
+        );
+        if (!freefall || !canopy) return null;
+        const exit = position(
+            jumpRunCoordinates(
+                start,
+                settings,
+                index,
+                calculation.velocity.ground,
+            ),
+        );
+        const opening = position(driftCoordinates(exit, freefall));
+        landings.push(position(driftCoordinates(opening, canopy)));
+    }
+    return {
+        lat:
+            landings.reduce((sum, landing) => sum + landing.lat, 0) /
+            landings.length,
+        lng:
+            landings.reduce((sum, landing) => sum + landing.lng, 0) /
+            landings.length,
     };
 }

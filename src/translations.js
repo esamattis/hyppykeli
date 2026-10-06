@@ -221,7 +221,7 @@ export const english = {
         "Click or tap the map, then choose Opening to place the central predicted opening point there, Center jump run to place the middle of the exit sequence there, or Landing to use that point as the landing target for automatic placement with the current direction. For an even number of jumpers, the central opening point is the midpoint of the two middle openings. Clicking elsewhere cancels the callout. Press Enter on the focused map to place the central opening point at the map centre. Add jumpers with the plus button.",
     "map.directionHelpTitle": "Direction controls",
     "map.directionControlsHelp":
-        "The direction menu contains drag mode, 90° rotations, and reset. In drag mode, drag with the mouse or a finger to rotate the run around its central predicted opening point. Click the map or press the direction button again to finish. Reset restores the configured default axis, reversed when necessary to face into the average wind, while keeping that opening point.",
+        "The direction menu contains drag mode, 90° rotations, and reset. In drag mode, drag with the mouse or a finger to rotate the run around its central predicted parachute landing point (the midpoint of the two middle landings for an even number of groups). If canopy wind data is missing, the central predicted opening point is used instead. Click the map or press the direction button again to finish. Reset restores the configured default axis, reversed when necessary to face into the average wind, around the same pivot.",
     "map.legendHelp":
         "Arrows show flow direction. Line length represents speed.",
     "map.flowHelp":
@@ -264,7 +264,7 @@ export const english = {
     "toolbar.windLevels": "Wind levels",
 
     "settings.jumpRunDirectionHelp":
-        "Direction of travel over the ground: 0°/360° north, 90° east, 180° south, and 270° west. Wind correction determines the aircraft heading needed to follow this track. Changing direction rotates an existing run around its central predicted opening point. Missing wind data or a track that cannot be flown at the selected airspeed can prevent the calculation.",
+        "Direction of travel over the ground: 0°/360° north, 90° east, 180° south, and 270° west. Wind correction determines the aircraft heading needed to follow this track. Changing direction rotates an existing run around its central predicted parachute landing point (the midpoint of the two middle landings for an even number of groups). If canopy wind data is missing, the central predicted opening point is used instead. Missing wind data or a track that cannot be flown at the selected airspeed can prevent the calculation.",
     "settings.elevation": "Dropzone elevation (m)",
     "settings.elevationHelp":
         "Dropzone height above sea level. Used to adjust wind calculations. FMI station data does not provide elevation, so the default is 0 m. Clear the field to restore the default.",
@@ -617,7 +617,7 @@ const finnish = {
         "Klikkaa tai napauta karttaa ja valitse Avaus sijoittaaksesi keskimmäisen ennustetun avautumiskohdan siihen, Keskitä hyppylinja sijoittaaksesi uloshyppyjonon keskikohdan siihen tai Laskeutuminen käyttääksesi kohtaa automaattisen sijoituksen laskeutumiskohteena nykyisellä suunnalla. Kun hyppääjien määrä on parillinen, keskimmäinen avautumiskohta on kahden keskimmäisen avautumiskohdan puolivälissä. Klikkaus muualle sulkee puhekuplan. Enter kohdistetulla kartalla sijoittaa keskimmäisen avautumiskohdan kartan keskikohtaan. Lisää hyppääjiä pluspainikkeesta.",
     "map.directionHelpTitle": "Suunnan säätäminen",
     "map.directionControlsHelp":
-        "Suuntavalikko sisältää vetotilan, 90° kierrot ja palautuksen. Vedä vetotilassa hiirellä tai sormella kiertääksesi hyppylinjaa sen keskimmäisen ennustetun avautumiskohdan ympäri. Klikkaa karttaa tai paina suuntapainiketta uudelleen lopettaaksesi. Palautus palauttaa määritetyn oletusakselin, tarvittaessa käännettynä vasten keskituulta, säilyttäen tuon avautumiskohdan.",
+        "Suuntavalikko sisältää vetotilan, 90° kierrot ja palautuksen. Vedä vetotilassa hiirellä tai sormella kiertääksesi hyppylinjaa sen keskimmäisen ennustetun laskeutumiskohdan ympäri (parillisella ryhmämäärällä kahden keskimmäisen laskeutumiskohdan puoliväli). Jos varjon varassa tapahtuvan ajautumisen tuulitiedot puuttuvat, kiertokeskuksena käytetään keskimmäistä ennustettua avautumiskohtaa. Klikkaa karttaa tai paina suuntapainiketta uudelleen lopettaaksesi. Palautus palauttaa määritetyn oletusakselin, tarvittaessa käännettynä vasten keskituulta, saman kiertokeskuksen ympäri.",
     "map.legendHelp":
         "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
     "map.flowHelp":
@@ -659,7 +659,7 @@ const finnish = {
     "toolbar.speed": "Nopeus",
     "toolbar.windLevels": "Tuulikorkeudet",
     "settings.jumpRunDirectionHelp":
-        "Lentoradan suunta maan suhteen: 0°/360° pohjoinen, 90° itä, 180° etelä ja 270° länsi. Tuulikorjaus määrittää lentokoneen nokan suunnan, jolla tätä lentorataa seurataan. Suunnan muuttaminen kiertää olemassa olevaa hyppylinjaa sen keskimmäisen ennustetun avautumiskohdan ympäri. Puuttuvat tuulitiedot tai lentorata, jota ei voi lentää valitulla ilmanopeudella, voivat estää laskennan.",
+        "Lentoradan suunta maan suhteen: 0°/360° pohjoinen, 90° itä, 180° etelä ja 270° länsi. Tuulikorjaus määrittää lentokoneen nokan suunnan, jolla tätä lentorataa seurataan. Suunnan muuttaminen kiertää olemassa olevaa hyppylinjaa sen keskimmäisen ennustetun laskeutumiskohdan ympäri (parillisella ryhmämäärällä kahden keskimmäisen laskeutumiskohdan puoliväli). Jos varjon varassa tapahtuvan ajautumisen tuulitiedot puuttuvat, kiertokeskuksena käytetään keskimmäistä ennustettua avautumiskohtaa. Puuttuvat tuulitiedot tai lentorata, jota ei voi lentää valitulla ilmanopeudella, voivat estää laskennan.",
     "settings.elevation": "Hyppypaikan korkeus merenpinnasta (m)",
     "settings.elevationHelp":
         "Hyppypaikan korkeus merenpinnasta. Käytetään tuulilaskelmien korjaamiseen. FMI:n asematiedot eivät sisällä korkeutta, joten oletus on 0 m. Tyhjennä kenttä palauttaaksesi oletuksen.",

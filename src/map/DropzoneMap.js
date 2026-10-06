@@ -37,6 +37,7 @@ import {
     startForOpeningTarget,
     startForRunCenter,
     openingTargetForRun,
+    landingTargetForRun,
 } from "#app/map/jumpRun.js";
 import { getMapWindData } from "#app/map/windData.js";
 import { h, html } from "htm/preact";
@@ -843,9 +844,19 @@ export function DropzoneMap() {
         initialPositionHandled.current = true;
         positionAutomaticJumpRun();
     });
+    const directionPivot = () =>
+        (jumpRunStart &&
+            landingTargetForRun(
+                jumpRunStart,
+                jumpRunSettings,
+                jumpers,
+                calculation,
+                canopyWinds,
+            )) ??
+        currentOpeningTarget();
     beginDirectionDragRef.current = (pointer) => {
         const map = activeLeafletRef.current;
-        const pivot = currentOpeningTarget();
+        const pivot = directionPivot();
         if (!map || !pivot) return null;
         const bounds = map.getContainer().getBoundingClientRect();
         let offset = pointer
@@ -859,17 +870,8 @@ export function DropzoneMap() {
         return { direction: jumpRunSettings.direction, offset };
     };
     aimJumpRunAtRef.current = (direction) => {
-        const pivot = currentOpeningTarget();
-        if (!pivot || !Number.isFinite(direction)) return;
-        const settings = { ...jumpRunSettings, direction };
-        const start = startForOpeningTarget(
-            pivot,
-            settings,
-            jumpers,
-            calculateJumpRun(freefallWinds, settings),
-        );
-        if (!start) return;
-        savePositionedRun(pivot, start, settings, jumpers);
+        if (!Number.isFinite(direction)) return;
+        applyJumpRunSettings({ ...jumpRunSettings, direction });
     };
     /** @param {JumpRunJumper[]} group */
     const applyJumpers = (group) => {
@@ -907,6 +909,9 @@ export function DropzoneMap() {
             setJumpRunSettings(next);
             return;
         }
+        // Canopy drift is independent of heading. Keeping the middle opening
+        // fixed also keeps the middle predicted landing fixed as winds and
+        // jumper profiles stay the same. Recalculate freefall for the new track.
         const pivot = currentOpeningTarget();
         const start = pivot
             ? startForOpeningTarget(
@@ -942,9 +947,10 @@ export function DropzoneMap() {
             pointerFocus = false;
         };
         // Clicking asks to position the run, or exits direction mode without moving it.
-        // Dragging rotates relative to its initial bearing around the stored
-        // opening. This effect must not depend on the run start or heading,
-        // or it would reset the gesture during rotation.
+        // Dragging rotates relative to its initial bearing around the landing
+        // point (or the opening when canopy wind data is missing). Keep this
+        // effect independent of the run start and heading so a rotation does
+        // not reset the gesture.
         const directionPlacement = placingJumpRunDirection;
         /** @type {JumpRunDirectionGesture | null} */
         let directionGesture = null;
