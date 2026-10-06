@@ -685,8 +685,8 @@ export function DropzoneMap() {
     const openingKey = (start, settings, group) =>
         JSON.stringify([start, settings, group, freefallWinds]);
     const currentOpeningTarget = () => {
-        // Preserve the target across rotations and jumper count changes, but
-        // derive it again after other edits or restored URL state.
+        // Preserve the target across rotations, but derive it again after
+        // other edits or restored URL state.
         const key = openingKey(jumpRunStart, jumpRunSettings, jumpers);
         if (key !== openingTargetKeyRef.current) {
             openingTargetRef.current = jumpRunStart
@@ -865,25 +865,29 @@ export function DropzoneMap() {
     };
     /** @param {JumpRunJumper[]} group */
     const applyJumpers = (group) => {
-        if (!jumpRunStart || !group.length || group.length === jumpers.length) {
+        if (
+            !jumpRunStart ||
+            !jumpRunVelocity ||
+            !group.length ||
+            group.length === jumpers.length
+        ) {
             setJumpers(group);
             return;
         }
-        const target = currentOpeningTarget();
-        const start = target
-            ? startForOpeningTarget(target, jumpRunSettings, group, calculation)
-            : null;
-        if (target && start) {
-            savePositionedRun(target, start, jumpRunSettings, group);
-            return;
-        }
-        // Keep the last target when the current heading is infeasible.
-        openingTargetKeyRef.current = openingKey(
+        // Keep the exit-sequence center fixed as its length changes.
+        const [lat, lng] = jumpRunCoordinates(
             jumpRunStart,
             jumpRunSettings,
-            group,
+            (jumpers.length - group.length) / 2,
+            jumpRunVelocity.ground,
         );
-        setJumpers(group);
+        navigateQs(
+            {
+                map_run_start: JSON.stringify({ lat, lng }),
+                map_jumpers: JSON.stringify(group),
+            },
+            { replace: true },
+        );
     };
     /** @param {JumpRunSettings} next */
     const applyJumpRunSettings = (next) => {

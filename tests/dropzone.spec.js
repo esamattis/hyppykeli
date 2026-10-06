@@ -2180,7 +2180,7 @@ test("default direction is used only when creating a jump run", async ({
     ).toBe(225);
 });
 
-test("adding, removing, and undoing jumpers preserves the opening center", async ({
+test("adding, removing, and undoing jumpers preserves the exit center", async ({
     page,
 }) => {
     await page.goto(`${developerPath}&default_jump_group_count=1`);
@@ -2191,7 +2191,33 @@ test("adding, removing, and undoing jumpers preserves the opening center", async
     await page.getByRole("button", { name: "Avaus" }).click();
     const paths = map.locator(".freefall-drift-line");
     await expect(paths).toHaveCount(1);
-    const target = await middleOpening(page);
+    const runCenter = () =>
+        page.evaluate(async () => {
+            const { getMapWindData } = await import("#app/map/windData.js");
+            const { jumpRunCoordinates, getJumpRunVelocity } =
+                await import("#app/map/freefall.js");
+            const params = new URL(location.href).searchParams;
+            const settings = JSON.parse(params.get("map_run_settings"));
+            const start = JSON.parse(params.get("map_run_start"));
+            const group = JSON.parse(params.get("map_jumpers"));
+            const velocity = getJumpRunVelocity(
+                getMapWindData().freefallWinds,
+                settings,
+            );
+            return jumpRunCoordinates(
+                start,
+                settings,
+                (group.length - 1) / 2,
+                velocity.ground,
+            );
+        });
+    const target = await runCenter();
+    const opening = await middleOpening(page);
+    const expectCenter = async () => {
+        const center = await runCenter();
+        expect(center[0]).toBeCloseTo(target[0], 6);
+        expect(center[1]).toBeCloseTo(target[1], 6);
+    };
     const toolbar = page.locator(".freefall-toolbar");
     const edit = page.getByRole("button", {
         name: "Hyppylinjan asetukset",
@@ -2208,23 +2234,24 @@ test("adding, removing, and undoing jumpers preserves the opening center", async
     await template.getByRole("button", { name: /^Freefly/ }).click();
     await template.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await expect(paths).toHaveCount(2);
-    expect(await openingDistance(page, target)).toBeLessThan(1);
+    await expectCenter();
+    expect(await openingDistance(page, opening)).toBeGreaterThan(1);
     await page.keyboard.press("Escape");
     await toolbar
         .getByRole("button", { name: "Lisää hyppääjä", exact: true })
         .click();
     await expect(paths).toHaveCount(3);
-    expect(await openingDistance(page, target)).toBeLessThan(1);
+    await expectCenter();
     await edit.click();
     await dialog
         .getByRole("button", { name: "Poista hyppääjä 2", exact: true })
         .click();
     await expect(paths).toHaveCount(2);
-    expect(await openingDistance(page, target)).toBeLessThan(1);
+    await expectCenter();
     await page.keyboard.press("Escape");
     await toolbar.getByRole("button", { name: "Poista hyppääjä" }).click();
     await expect(paths).toHaveCount(1);
-    expect(await openingDistance(page, target)).toBeLessThan(1);
+    await expectCenter();
 });
 
 test("rotation preserves the current opening after settings, group, and wind edits", async ({
