@@ -20,14 +20,17 @@ import { h, html } from "htm/preact";
 import { useEffect, useRef } from "preact/hooks";
 
 /**
+ * @param {Signal<WeatherData[]>} signal
+ * @param {boolean} reverse
  * @returns {import("chart.js").ChartConfiguration}
  */
-function getDefaultGraphOptions() {
+function getDefaultGraphOptions(signal, reverse) {
     const theme = getTheme();
     Chart.defaults.font.family = theme.font;
     Chart.defaults.color = theme.muted;
     return {
         type: "line",
+        plugins: [createHoverPlugin(signal, reverse)],
         data: {
             labels: [],
             datasets: [],
@@ -195,16 +198,17 @@ export function Graph(props) {
         let foreChart = null;
 
         if (obsChartRef.current) {
-            obsChart = new Chart(obsChartRef.current, getDefaultGraphOptions());
-            obsChart.options.onHover = createHoverHandler(OBSERVATIONS, true);
+            obsChart = new Chart(
+                obsChartRef.current,
+                getDefaultGraphOptions(OBSERVATIONS, true),
+            );
         }
 
         if (foreChartRef.current) {
             foreChart = new Chart(
                 foreChartRef.current,
-                getDefaultGraphOptions(),
+                getDefaultGraphOptions(FORECASTS, false),
             );
-            foreChart.options.onHover = createHoverHandler(FORECASTS, false);
         }
 
         const unsubsribe = effect(() => {
@@ -276,37 +280,42 @@ export function Graph(props) {
 /**
  * @param {Signal<WeatherData[]>} signal
  * @param {boolean} reverse
+ * @returns {import("chart.js").Plugin}
  */
-function createHoverHandler(signal, reverse) {
-    /**
-     * @param {import("chart.js").ChartEvent} event
-     * @param {import("chart.js").ActiveElement[]} elements
-     * @param {Chart} chart
-     */
-    const onHover = (event, elements, chart) => {
-        const points = chart.getElementsAtEventForMode(
-            // @ts-ignore
-            event,
-            "index",
-            {
-                axis: "x",
-                intersect: false,
-            },
-            false,
-        );
+function createHoverPlugin(signal, reverse) {
+    return {
+        id: "hovered-compass",
+        afterEvent(chart, { event, replay, inChartArea }) {
+            // Updates and resizes replay old events, even after dismissal.
+            if (replay || !inChartArea || event.type === "mouseout") return;
+            // Chart.js queues mouse events until the next animation frame.
+            if (
+                event.native instanceof MouseEvent &&
+                !chart.canvas.matches(":hover")
+            )
+                return;
+            const points = chart.getElementsAtEventForMode(
+                // @ts-ignore
+                event,
+                "index",
+                {
+                    axis: "x",
+                    intersect: false,
+                },
+                false,
+            );
 
-        let index = points[0]?.index;
-        if (index !== undefined) {
-            if (reverse) {
-                index = signal.value.length - index - 1;
-            }
+            let index = points[0]?.index;
+            if (index !== undefined) {
+                if (reverse) {
+                    index = signal.value.length - index - 1;
+                }
 
-            const obs = signal.value[index];
-            if (obs) {
-                HOVERED_OBSERVATION.value = obs;
+                const obs = signal.value[index];
+                if (obs) {
+                    HOVERED_OBSERVATION.value = obs;
+                }
             }
-        }
+        },
     };
-
-    return onHover;
 }
