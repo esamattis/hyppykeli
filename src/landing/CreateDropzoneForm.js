@@ -254,7 +254,7 @@ export function CreateDropzoneForm() {
 
     return html`
         <h2>${headingScope.style}${t("landing.create")}</h2>
-        <form action="/dz" onSubmit=${validateCoordinates}>
+        <form action="/dz/" onSubmit=${validateCoordinates}>
             ${scope.style}
 
             <fieldset>

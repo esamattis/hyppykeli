@@ -479,7 +479,7 @@ export function DropzoneMap() {
         };
     }, [fullWindow]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!fullWindow && !placingJumpRunDirection) return;
         /** @param {KeyboardEvent} event */
         const exit = (event) => {
@@ -1075,7 +1075,7 @@ export function DropzoneMap() {
         if (pivot) savePositionedRun(pivot, start, next, jumpers);
     };
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
             return;
         const container = leafletInstance.getContainer();

@@ -211,6 +211,7 @@ export function DropdownMenu({
         /** @param {KeyboardEvent} keyEvent */
         const stopEscape = (keyEvent) => {
             if (keyEvent.key !== "Escape") return;
+            if (!menuRef.current?.matches(":popover-open")) return;
             // A modal dialog is the top layer and owns this Escape.
             if (document.querySelector("dialog:modal")) return;
             keyEvent.stopPropagation();

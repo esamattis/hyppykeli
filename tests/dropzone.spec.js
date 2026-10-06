@@ -4684,6 +4684,7 @@ test("viewport positioning fits a saved run without landing coordinates and disa
     const start = { lat: 62.4, lng: 25.6 };
     const params = new URLSearchParams({
         map_run_start: JSON.stringify(start),
+        map_run_automatic: "false",
         map_center_lat: "60",
         map_center_lon: "20",
         map_zoom: "19",
