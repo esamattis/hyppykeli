@@ -238,6 +238,9 @@ export function DropzoneMap() {
         .direction-setting .dz-map {
             cursor: crosshair;
         }
+        .map-viewport:not(.map-visible) {
+            --animation-play-state: paused;
+        }
         .direction-setting {
             --map-direction-color: #00aaff;
             --map-direction-animation: dropzone-map-direction-dashes 700ms
@@ -304,6 +307,7 @@ export function DropzoneMap() {
     `);
     /** @type {import('preact').RefObject<HTMLDivElement>} */
     const mapRef = useRef(null);
+    const [mapVisible, setMapVisible] = useState(false);
     /** @type {import('preact').RefObject<import('leaflet').Map | null>} */
     const activeLeafletRef = useRef(null);
     /** @type {import('preact').RefObject<(target: import('leaflet').LatLngLiteral, placement?: JumpRunPlacement) => void>} */
@@ -428,6 +432,15 @@ export function DropzoneMap() {
         setCenterLon(value.lng);
     };
     const coordinates = FORECAST_COORDINATES.value;
+    useEffect(() => {
+        const container = mapRef.current;
+        if (!container) return;
+        const observer = new IntersectionObserver(([entry]) => {
+            setMapVisible(entry?.isIntersecting ?? false);
+        });
+        observer.observe(container);
+        return () => observer.disconnect();
+    }, [coordinates]);
     const stationCoordinates = STATION_COORDINATES.value;
     const stationName = STATION_NAME.value;
     const stationLabel = t(
@@ -1750,7 +1763,7 @@ export function DropzoneMap() {
                         },
                     })}
                     <div
-                        class=${`map-viewport${placingJumpRunDirection ? " direction-setting" : ""}`}
+                        class=${`map-viewport${mapVisible ? " map-visible" : ""}${placingJumpRunDirection ? " direction-setting" : ""}`}
                     >
                         ${
                             driftError || jumpRunError || shareError

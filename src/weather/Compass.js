@@ -37,7 +37,6 @@ const INSTRUCTOR_LIMIT_LENGTH = 150;
 const STUDENT_WIND_SPEED = 8;
 const INSTRUCTOR_WIND_SPEED = 11;
 const MAX_WIND_SPEED = 11.9;
-const COLOR_FADE_LENGTH = 5;
 const COMPASS_BOUNCE_GUST = 11;
 const COMPASS_SPIN_GUST = 14;
 
@@ -440,6 +439,7 @@ function needleKeyframes(frames) {
         colors: colors.values.map((fill, index) => ({
             fill,
             offset: colors.times[index],
+            easing: "steps(1, end)",
         })),
     };
 }
@@ -469,26 +469,9 @@ function bounceKeyframes(values, times) {
 
 /** @param {number} length */
 function needleColor(length) {
-    const studentFade = Math.max(
-        0,
-        Math.min(
-            1,
-            (length - STUDENT_LIMIT_LENGTH + COLOR_FADE_LENGTH) /
-                COLOR_FADE_LENGTH,
-        ),
-    );
-    const instructorFade = Math.max(
-        0,
-        Math.min(
-            1,
-            (length - INSTRUCTOR_LIMIT_LENGTH + COLOR_FADE_LENGTH) /
-                COLOR_FADE_LENGTH,
-        ),
-    );
-    // Bright green (0, 255, 0), orange (255, 165, 0), then red (255, 0, 0).
-    const red = Math.round(255 * studentFade);
-    const green = Math.round((255 - 90 * studentFade) * (1 - instructorFade));
-    return `rgb(${red}, ${green}, 0)`;
+    if (length >= INSTRUCTOR_LIMIT_LENGTH) return "rgb(255, 0, 0)";
+    if (length >= STUDENT_LIMIT_LENGTH) return "rgb(255, 165, 0)";
+    return "rgb(0, 255, 0)";
 }
 
 /**
@@ -509,8 +492,8 @@ function needleAnimationTime(progress) {
 }
 
 /**
- * Fade immediately before each limit, reaching its color at the circle even
- * during overshoot and recoil. Use the same eased timeline as the length.
+ * Change color only when crossing a limit, including during overshoot and
+ * recoil. Threshold times follow the same eased timeline as the length.
  * @param {number[]} lengths
  * @param {number[]} times
  */
@@ -524,29 +507,30 @@ function needleColorKeyframes(lengths, times) {
         const end = lengths[index] ?? start;
         const startTime = times[index - 1] ?? 0;
         const endTime = times[index] ?? startTime;
-        const crossings = [
-            STUDENT_LIMIT_LENGTH - COLOR_FADE_LENGTH,
-            STUDENT_LIMIT_LENGTH,
-            INSTRUCTOR_LIMIT_LENGTH - COLOR_FADE_LENGTH,
-            INSTRUCTOR_LIMIT_LENGTH,
-        ]
+        const crossings = [STUDENT_LIMIT_LENGTH, INSTRUCTOR_LIMIT_LENGTH]
             .filter(
                 (length) =>
                     length > Math.min(start, end) &&
                     length < Math.max(start, end),
             )
             .sort((a, b) => (end > start ? a - b : b - a));
-        for (const length of crossings) {
-            const progress = (length - start) / (end - start);
-            colors.values.push(needleColor(length));
+        const boundaries = [start, ...crossings, end];
+        for (let boundary = 0; boundary < boundaries.length - 1; boundary++) {
+            const length = boundaries[boundary] ?? start;
+            const next = boundaries[boundary + 1] ?? end;
+            const color = needleColor((length + next) / 2);
+            if (color === colors.values.at(-1)) continue;
+            const progress =
+                end === start ? 0 : (length - start) / (end - start);
+            colors.values.push(color);
             colors.times.push(
                 startTime +
                     (endTime - startTime) * needleAnimationTime(progress),
             );
         }
-        colors.values.push(needleColor(end));
-        colors.times.push(endTime);
     }
+    colors.values.push(needleColor(lengths.at(-1) ?? 0));
+    colors.times.push(times.at(-1) ?? 1);
     return colors;
 }
 
