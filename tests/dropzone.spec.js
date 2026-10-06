@@ -3954,6 +3954,22 @@ for (const [axis, wind, speed, expected] of [
         expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
             start,
         );
+        await page.getByRole("button", { name: "Poista hyppylinja" }).click();
+        await expect(page.locator(".jump-run-jumper")).toHaveCount(0);
+        await page.reload();
+        await setUniformFreefallWind(page);
+        await expect(page.locator(".jump-run-jumper")).toHaveCount(0);
+        await page
+            .getByRole("button", {
+                name: "Hyppylinjan automaattinen sijoitus",
+            })
+            .click();
+        await expect(page.locator(".jump-run-jumper")).toHaveCount(4);
+        const restoredParams = new URL(page.url()).searchParams;
+        expect(
+            JSON.parse(restoredParams.get("map_run_settings")).direction,
+        ).toBe(expected);
+        expect(restoredParams.get("map_run_start")).toBe(start);
     });
 }
 
@@ -4017,7 +4033,7 @@ test("automatic positioning preserves the current direction and reset restores t
     expect(
         JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
             .direction,
-    ).toBe(180);
+    ).toBe(0);
 });
 
 test("automatic positioning is disabled for an infeasible current direction and reset recovers", async ({

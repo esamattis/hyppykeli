@@ -777,7 +777,9 @@ export function DropzoneMap() {
     const automaticSettings = {
         ...jumpRunSettings,
         direction:
-            jumpRunStart || QUERY_PARAMS.value.map_run_settings
+            jumpRunStart ||
+            (QUERY_PARAMS.value.map_run_settings &&
+                QUERY_PARAMS.value.map_run_start !== "null")
                 ? jumpRunSettings.direction
                 : intoWindDirection,
     };
