@@ -711,6 +711,7 @@ interface DataSourceProps {
 }
 
 interface FmiRequestOptions {
+    signal?: AbortSignal;
     cacheOnly?: boolean;
     onCacheStatus?: (stale: boolean) => void;
     mock: boolean;
@@ -740,6 +741,7 @@ interface ResponseCachePolicy<T> {
 }
 
 interface CachedFetchOptions<T> {
+    signal?: AbortSignal;
     format: "json" | "text";
     headers?: Record<string, string>;
     cache: ResponseCachePolicy<T>;
@@ -764,8 +766,16 @@ interface CachedResponseEntry<T> {
 }
 
 interface FetchJSONOptions<T> {
+    signal?: AbortSignal;
     headers?: Record<string, string>;
     cache: ResponseCachePolicy<T>;
     cacheOnly?: boolean;
     validate?: (data: T) => boolean;
+}
+
+interface WeatherRefresh {
+    key: string;
+    controller: AbortController;
+    again: boolean;
+    promise: Promise<void>;
 }

@@ -11,6 +11,7 @@ export async function fetchJSON(url, options) {
     try {
         const result = await fetchCached(url, {
             format: "json",
+            signal: options.signal,
             headers: options.headers,
             cacheOnly: options.cacheOnly,
             validate: options.validate,

@@ -55,6 +55,7 @@ function reportFailure(url, error, cached) {
  * @returns {Promise<CachedFetchResult<T> | undefined>}
  */
 export async function fetchCached(url, options) {
+    options.signal?.throwIfAborted();
     const key =
         PREFIX +
         (options.cache.key ??
@@ -185,6 +186,7 @@ export async function fetchCached(url, options) {
                 ? "Fetch age exceeded"
                 : "Measurement old or missing",
     });
+    const previousEntry = entry ? { ...entry } : undefined;
     const attempt = /** @type {CachedResponseEntry<T>} */ (
         entry ?? {
             hasData: false,
@@ -195,11 +197,13 @@ export async function fetchCached(url, options) {
     );
     attempt.lastAttemptAt = now;
     save(key, attempt);
-    const request = (async () => {
+    /** @type {Promise<CachedFetchResult<T>>} */
+    const request = Promise.resolve().then(async () => {
         try {
             const response = await fetch(url, {
                 headers: options.headers,
                 cache: "no-store",
+                signal: options.signal,
             });
             if (!response.ok)
                 throw new Error(
@@ -210,6 +214,7 @@ export async function fetchCached(url, options) {
                     ? await response.text()
                     : await response.json()
             );
+            options.signal?.throwIfAborted();
             if (options.validate && !options.validate(data))
                 throw new Error("Invalid API response");
             const timestamp = policy.measurementTime?.(data);
@@ -244,6 +249,7 @@ export async function fetchCached(url, options) {
                         measurementAge >= policy.measurementMaxAgeMs),
             };
         } catch (error) {
+            if (options.signal?.aborted) throw error;
             attempt.error =
                 error instanceof Error ? error.message : String(error);
             save(key, attempt);
@@ -264,9 +270,27 @@ export async function fetchCached(url, options) {
                 error: attempt.error,
             };
         } finally {
-            pending.delete(key);
+            if (pending.get(key) === request) pending.delete(key);
+            options.signal?.removeEventListener("abort", cancel);
         }
-    })();
+    });
+    // Cancellation is not a failed API attempt. Restore the previous entry so
+    // a replacement refresh can retry immediately, including for the same key.
+    function cancel() {
+        if (pending.get(key) !== request) return;
+        pending.delete(key);
+        if (previousEntry) {
+            save(key, previousEntry);
+        } else {
+            memory.delete(key);
+            try {
+                localStorage.removeItem(key);
+            } catch {
+                /* Storage may be blocked. */
+            }
+        }
+    }
     pending.set(key, request);
+    options.signal?.addEventListener("abort", cancel, { once: true });
     return request;
 }

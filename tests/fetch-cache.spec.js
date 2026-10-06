@@ -202,3 +202,63 @@ test("XML text is cached and storage failures still allow fetching and reuse", a
     expect(result[1].fromCache).toBe(true);
     expect(requests).toBe(1);
 });
+
+for (const warm of [false, true]) {
+    test(`cancellation permits an immediate replacement fetch and preserves cached data (warm: ${warm})`, async ({
+        page,
+    }) => {
+        await openCacheHarness(page);
+        const result = await page.evaluate(
+            async ({ policy, prefix, warm }) => {
+                const key = prefix + "test";
+                const previous = {
+                    data: { value: 1 },
+                    hasData: true,
+                    fetchedAt: Date.now() - 20 * 60_000,
+                    lastAttemptAt: Date.now() - 20 * 60_000,
+                    measurementAt: null,
+                };
+                if (warm) localStorage.setItem(key, JSON.stringify(previous));
+                let failures = 0;
+                document.addEventListener("apicacheerror", () => failures++);
+                // Ignore cancellation in the transport to also exercise late results.
+                const responses = [];
+                window.fetch = () =>
+                    new Promise((resolve) => responses.push(resolve));
+                const controller = new AbortController();
+                const first = window
+                    .cacheFetch(policy, { signal: controller.signal })
+                    .catch((error) => error.name);
+                await Promise.resolve();
+                controller.abort();
+                const restored = JSON.parse(localStorage.getItem(key));
+                const second = window.cacheFetch(policy);
+                await Promise.resolve();
+                responses[0](new Response('{"value":99}'));
+                const cancelled = await first;
+                // The old request's cleanup must not remove the new pending request.
+                const shared = window.cacheFetch(policy);
+                responses[1](new Response('{"value":2}'));
+                const replacement = await second;
+                return {
+                    restored,
+                    cancelled,
+                    replacement,
+                    shared: await shared,
+                    requests: responses.length,
+                    cached: JSON.parse(localStorage.getItem(key)).data,
+                    failures,
+                };
+            },
+            { policy: forecasts, prefix, warm },
+        );
+        if (warm) expect(result.restored.data).toEqual({ value: 1 });
+        else expect(result.restored).toBeNull();
+        expect(result.cancelled).toBe("AbortError");
+        expect(result.requests).toBe(2);
+        expect(result.replacement.data).toEqual({ value: 2 });
+        expect(result.shared.data).toEqual({ value: 2 });
+        expect(result.cached).toEqual({ value: 2 });
+        expect(result.failures).toBe(0);
+    });
+}

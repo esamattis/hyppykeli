@@ -1,6 +1,6 @@
 // @ts-check
 import { t } from "#app/translations.js";
-import { updateWeatherData } from "#app/weather/refresh.js";
+import { updateWeatherData, weatherSettingsKey } from "#app/weather/refresh.js";
 import { HOVERED_OBSERVATION, NAME, addError } from "#app/weather/state.js";
 import { MENU_OPEN } from "#app/app/menuState.js";
 import { QUERY_PARAMS, navigateQs, saveCurrentDz } from "#app/app/settings.js";
@@ -79,19 +79,7 @@ export function startApp() {
     });
 
     // Refresh weather when its query settings change; map edits only update the URL.
-    computed(() =>
-        JSON.stringify(
-            Object.fromEntries(
-                Object.entries(QUERY_PARAMS.value).filter(
-                    ([key]) =>
-                        !key.startsWith("map_") &&
-                        key !== "DEV_upper_winds" &&
-                        key !== "default_jump_run_direction" &&
-                        key !== "default_jump_group_count",
-                ),
-            ),
-        ),
-    ).subscribe(() => {
+    computed(weatherSettingsKey).subscribe(() => {
         updateWeatherData().then(() => {
             if (!pollingStarted) {
                 pollingStarted = true;

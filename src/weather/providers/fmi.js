@@ -30,7 +30,9 @@ export async function fmiRequest(storedQuery, params, exampleUrl, options) {
         let text;
         if (useExample) {
             if (options.cacheOnly) return;
-            const response = await fetch(exampleUrl ?? url);
+            const response = await fetch(exampleUrl ?? url, {
+                signal: options.signal,
+            });
             if (response.status === 404) return;
             if (!response.ok) return "error";
             text = await response.text();
@@ -38,6 +40,7 @@ export async function fmiRequest(storedQuery, params, exampleUrl, options) {
             /** @type {CachedFetchResult<string> | undefined} */
             const result = await fetchCached(url.toString(), {
                 format: "text",
+                signal: options.signal,
                 cacheOnly: options.cacheOnly,
                 validate: (text) => {
                     const doc = new DOMParser().parseFromString(

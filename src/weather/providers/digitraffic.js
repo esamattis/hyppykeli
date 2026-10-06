@@ -9,14 +9,16 @@ import { fetchJSON } from "#app/shared/fetchJSON.js";
 /**
  * @param {string} roadsid
  * @param {boolean} [cacheOnly]
+ * @param {AbortSignal} [signal]
  */
-export async function fetchRoadStationInfo(roadsid, cacheOnly = false) {
+export async function fetchRoadStationInfo(roadsid, cacheOnly = false, signal) {
     /** @type {RoadStationInfoDetailed | undefined} */
     const data = await fetchJSON(
         `https://tie.digitraffic.fi/api/weather/v1/stations/${roadsid}`,
         {
             headers: { "Digitraffic-User": "hyppykeli.fi" },
             cacheOnly,
+            signal,
             validate: (data) =>
                 Array.isArray(data?.geometry?.coordinates) &&
                 typeof data?.properties?.names?.fi === "string",
@@ -36,12 +38,14 @@ export async function fetchRoadStationInfo(roadsid, cacheOnly = false) {
  * @param {Date} obsStartTime
  * @param {(observations: WeatherData[]) => void} onCurrent
  * @param {boolean} [cacheOnly]
+ * @param {AbortSignal} [signal]
  */
 export async function fetchRoadObservations(
     roadsid,
     obsStartTime,
     onCurrent,
     cacheOnly = false,
+    signal,
 ) {
     // load in background as not so important
     /** @type {Promise<RoadStationHistory|undefined>} */
@@ -57,6 +61,7 @@ export async function fetchRoadObservations(
                 "Digitraffic-User": "hyppykeli.fi",
             },
             cacheOnly,
+            signal,
             validate: (data) => Array.isArray(data?.values),
             cache: roadHistoryCache(roadsid, obsStartTime),
         },
@@ -70,6 +75,7 @@ export async function fetchRoadObservations(
                 "Digitraffic-User": "hyppykeli.fi",
             },
             cacheOnly,
+            signal,
             validate: (data) =>
                 Array.isArray(data?.sensorValues) &&
                 typeof data?.dataUpdatedTime === "string",

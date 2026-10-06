@@ -42,9 +42,11 @@ function reportProviderError(error) {
     addError(error instanceof Error ? error.message : String(error));
 }
 
-function requestOptions(cacheOnly = false) {
+/** @param {boolean} cacheOnly @param {AbortSignal} signal */
+function requestOptions(cacheOnly, signal) {
     return {
         cacheOnly,
+        signal,
         mock: DEV_MOCK.value,
         /** @param {number} delta */
         onLoading(delta) {
@@ -60,8 +62,8 @@ function useObservations(observations) {
     return observations.some(hasValidWindData);
 }
 
-/** @param {boolean} cacheOnly */
-async function fetchObservations(cacheOnly) {
+/** @param {boolean} cacheOnly @param {AbortSignal} signal */
+async function fetchObservations(cacheOnly, signal) {
     const startTime = getObservationStartTime(
         Number(QUERY_PARAMS.value.observation_range) || 12,
     );
@@ -73,18 +75,21 @@ async function fetchObservations(cacheOnly) {
         if (selectedName) localStorage.setItem("previous_dz", selectedName);
         try {
             const station = await fetchFmiObservations(fmisid, {
-                ...requestOptions(cacheOnly),
+                ...requestOptions(cacheOnly, signal),
                 startTime,
             });
+            if (signal.aborted) return;
             STATION_NAME.value = station.name;
             STATION_COORDINATES.value = station.coordinates;
-            FORECAST_COORDINATES.value ??= station.coordinates;
+            FORECAST_COORDINATES.value =
+                explicitForecastCoordinates() ?? station.coordinates;
             if (useObservations(station.observations)) return;
         } catch (error) {
-            if (!cacheOnly) reportProviderError(error);
+            if (!cacheOnly && !signal.aborted) reportProviderError(error);
         }
     }
 
+    if (signal.aborted) return;
     const roadsid = QUERY_PARAMS.value.roadsid;
     if (roadsid) {
         const [found] = await Promise.all([
@@ -92,56 +97,63 @@ async function fetchObservations(cacheOnly) {
                 roadsid,
                 startTime,
                 (observations) => {
+                    if (signal.aborted) return;
                     LIVE_OBSERVATIONS.value = observations;
                 },
                 cacheOnly,
+                signal,
             ).then(({ observations, hasHistory }) => {
+                if (signal.aborted) return false;
                 if (hasHistory) return useObservations(observations);
                 LIVE_OBSERVATIONS.value = observations;
                 return observations.some(hasValidWindData);
             }),
-            fetchRoadStationInfo(roadsid, cacheOnly)
+            fetchRoadStationInfo(roadsid, cacheOnly, signal)
                 .then((station) => {
-                    if (!station) return;
+                    if (!station || signal.aborted) return;
                     STATION_COORDINATES.value = station.coordinates;
-                    FORECAST_COORDINATES.value ??= station.coordinates;
+                    FORECAST_COORDINATES.value =
+                        explicitForecastCoordinates() ?? station.coordinates;
                     STATION_NAME.value = station.name;
                 })
                 .catch((error) => {
-                    if (!cacheOnly) reportProviderError(error);
+                    if (!cacheOnly && !signal.aborted)
+                        reportProviderError(error);
                 }),
         ]);
         if (found) return;
     }
 
+    if (signal.aborted) return;
     LIVE_OBSERVATIONS.value = [];
 }
 
-/** @param {boolean} cacheOnly */
-async function fetchMetar(cacheOnly) {
+/** @param {boolean} cacheOnly @param {AbortSignal} signal */
+async function fetchMetar(cacheOnly, signal) {
     if (QUERY_PARAMS.value.DEV_metar?.trim()) return;
     const icaocode = QUERY_PARAMS.value.icaocode?.trim();
     if (!icaocode) {
         LIVE_METARS.value = undefined;
         return;
     }
-    const metar = await fetchFlykMetar(icaocode, cacheOnly);
+    const metar = await fetchFlykMetar(icaocode, cacheOnly, signal);
+    if (signal.aborted) return;
     LIVE_METARS.value = metar ? parseMetarMessages([metar]) : undefined;
     if (!metar && !cacheOnly) addError(t("error.noMetar", icaocode));
 }
 
-/** @param {string} coordinates @param {boolean} cacheOnly */
-async function fetchForecasts(coordinates, cacheOnly) {
+/** @param {string} coordinates @param {boolean} cacheOnly @param {AbortSignal} signal */
+async function fetchForecasts(coordinates, cacheOnly, signal) {
     let stale = cacheOnly;
     const result = await fetchFmiForecasts(coordinates, {
-        ...requestOptions(cacheOnly),
+        ...requestOptions(cacheOnly, signal),
         onCacheStatus: (value) => {
             stale = cacheOnly || value;
         },
         range: Number(QUERY_PARAMS.value.forecast_range) || 12,
         day: FORECAST_DAY.value,
     });
-    if (!result) return false;
+    if (!result || signal.aborted) return false;
     FMI_FORECAST_NAME.value = result.forecastName;
     FORECAST_LOCATION_NAME.value = result.locationName;
     if (!result.forecasts.some(hasValidWindData)) return false;
@@ -200,8 +212,8 @@ function useOpenMeteoSurfaceWeather(data) {
     return weather.filter(({ time }) => time >= start && time <= end);
 }
 
-/** @param {boolean} cacheOnly */
-async function refreshWeather(cacheOnly) {
+/** @param {boolean} cacheOnly @param {AbortSignal} signal */
+async function refreshWeather(cacheOnly, signal) {
     STALE_FORECASTS.value = true;
     if (cacheOnly) {
         STATION_COORDINATES.value = null;
@@ -210,9 +222,11 @@ async function refreshWeather(cacheOnly) {
         FORECAST_COORDINATES.value = explicitForecastCoordinates();
     }
 
-    const metarPromise = fetchMetar(cacheOnly);
-    await fetchObservations(cacheOnly);
-    await metarPromise;
+    await Promise.all([
+        fetchMetar(cacheOnly, signal),
+        fetchObservations(cacheOnly, signal),
+    ]);
+    if (signal.aborted) return;
 
     const coordinates = FORECAST_COORDINATES.value;
     if (!coordinates) {
@@ -226,15 +240,22 @@ async function refreshWeather(cacheOnly) {
 
     let openMeteoStale = cacheOnly;
     const [hasFmiForecast, openMeteo] = await Promise.all([
-        fetchForecasts(coordinates, cacheOnly),
-        fetchHighWinds(coordinates, cacheOnly, (stale) => {
-            openMeteoStale = cacheOnly || stale;
-        }).then((data) => {
+        fetchForecasts(coordinates, cacheOnly, signal),
+        fetchHighWinds(
+            coordinates,
+            cacheOnly,
+            (stale) => {
+                openMeteoStale = cacheOnly || stale;
+            },
+            signal,
+        ).then((data) => {
+            if (signal.aborted) return null;
             OM_DATA.value = data;
             return data;
         }),
     ]);
 
+    if (signal.aborted) return;
     let hasForecast = hasFmiForecast;
     if (openMeteo) {
         const surfaceForecasts = useOpenMeteoSurfaceWeather(openMeteo);
@@ -257,26 +278,53 @@ async function refreshWeather(cacheOnly) {
     }
 }
 
-/** @type {Promise<void> | undefined} */
+// Keep the subscription and refresh identity in sync: map-only edits should
+// neither refetch weather nor cancel a request that is still relevant.
+export function weatherSettingsKey() {
+    return JSON.stringify(
+        Object.fromEntries(
+            Object.entries(QUERY_PARAMS.value).filter(
+                ([key]) =>
+                    !key.startsWith("map_") &&
+                    key !== "DEV_upper_winds" &&
+                    key !== "default_jump_run_direction" &&
+                    key !== "default_jump_group_count",
+            ),
+        ),
+    );
+}
+
+/** @type {WeatherRefresh | undefined} */
 let activeRefresh;
-let refreshAgain = false;
 
 export function updateWeatherData() {
-    if (activeRefresh) {
-        refreshAgain = true;
-        return activeRefresh;
+    const key = weatherSettingsKey();
+    if (activeRefresh?.key === key) {
+        activeRefresh.again = true;
+        return activeRefresh.promise;
     }
-    activeRefresh = (async () => {
+    activeRefresh?.controller.abort();
+    const controller = new AbortController();
+    const { signal } = controller;
+    /** @type {WeatherRefresh} */
+    const refresh = {
+        key,
+        controller,
+        again: false,
+        promise: Promise.resolve(),
+    };
+    activeRefresh = refresh;
+    refresh.promise = (async () => {
         do {
-            refreshAgain = false;
+            refresh.again = false;
             ERRORS.value = [];
-            // Hydrate all providers first so forecasts and observations can render
-            // together before any potentially slow network request begins.
-            await refreshWeather(true);
-            await refreshWeather(false);
-        } while (refreshAgain);
+            // Hydrate all providers before potentially slow network requests.
+            await refreshWeather(true, signal);
+            if (signal.aborted) return;
+            await refreshWeather(false, signal);
+        } while (refresh.again && !signal.aborted);
     })().finally(() => {
-        activeRefresh = undefined;
+        if (activeRefresh === refresh) activeRefresh = undefined;
     });
-    return activeRefresh;
+    return refresh.promise;
 }
