@@ -44,6 +44,10 @@ export function JumpRunControls({
             gap: 4px;
             font-size: 0.8rem;
         }
+        .jumper-actions {
+            display: flex;
+            flex-shrink: 0;
+        }
         ${settingsDialogStyles}
         :scope:is(dialog) {
             width: min(640px, calc(100vw - 32px));
@@ -310,18 +314,24 @@ export function JumpRunControls({
                     },
                 ],
             })}
-            ${h(ToolbarButton, {
-                label: t("settings.addJumper"),
-                icon: "plus",
-                onClick: onAdd,
-            })}
-            ${h(ToolbarButton, {
-                label: t("toolbar.removeJumper"),
-                icon: "minus",
-                className: "undo-arrow",
-                disabled: arrowCount === 0,
-                onClick: onUndo,
-            })}
+            <div
+                class="jumper-actions"
+                role="group"
+                aria-label=${t("settings.jumpers")}
+            >
+                ${h(ToolbarButton, {
+                    label: t("settings.addJumper"),
+                    icon: "plus",
+                    onClick: onAdd,
+                })}
+                ${h(ToolbarButton, {
+                    label: t("toolbar.removeJumper"),
+                    icon: "minus",
+                    className: "undo-arrow",
+                    disabled: arrowCount === 0,
+                    onClick: onUndo,
+                })}
+            </div>
             ${h(ToolbarButton, {
                 label: t("settings.jumpRun"),
                 icon: "settings",

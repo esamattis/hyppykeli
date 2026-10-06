@@ -59,6 +59,7 @@ export function FreefallToolbar({
             gap: 6px;
         }
         .toolbar-controls .arrow-action,
+        .toolbar-controls .jumper-actions,
         .toolbar-window-actions .arrow-action {
             flex-shrink: 0;
             border: 1px solid var(--color-border);
@@ -69,6 +70,21 @@ export function FreefallToolbar({
         }
         .toolbar-controls .arrow-action:hover,
         .toolbar-window-actions .arrow-action:hover {
+            background: rgb(255 255 255 / 85%);
+        }
+        .toolbar-controls .jumper-actions .arrow-action {
+            border: 0;
+            border-radius: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+        .toolbar-controls .jumper-actions .arrow-action:first-child {
+            border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+        }
+        .toolbar-controls .jumper-actions .arrow-action:last-child {
+            border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+        }
+        .toolbar-controls .jumper-actions .arrow-action:hover {
             background: rgb(255 255 255 / 85%);
         }
         .toolbar-controls .dropdown-menu,
