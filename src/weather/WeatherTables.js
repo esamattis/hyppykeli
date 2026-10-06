@@ -108,11 +108,16 @@ export function ForecastRows(props) {
  */
 export function WindDirection(props) {
     const scope = useScope(css`
+        :scope {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            vertical-align: middle;
+        }
+
         .direction-value {
             width: 4ch;
             display: inline-block;
-            padding-right: 3px;
-            z-index: -1;
         }
 
         .direction {
@@ -122,6 +127,7 @@ export function WindDirection(props) {
             font-size: 80%;
             width: 20px;
             height: 20px;
+            flex-shrink: 0;
         }
     `);
 
@@ -165,6 +171,8 @@ export function DataTable(props) {
             table-layout: fixed;
             width: 100%;
             border-collapse: collapse;
+            font-size: 0.85rem;
+            line-height: 1.3;
         }
 
         :scope th {
@@ -175,7 +183,7 @@ export function DataTable(props) {
         :scope td,
         :scope th {
             white-space: nowrap;
-            padding: 8px 6px;
+            padding: 4px 5px;
             border-bottom: 1px solid var(--color-border);
             background-color: var(--color-surface);
         }
@@ -183,7 +191,7 @@ export function DataTable(props) {
         :scope thead th {
             color: var(--color-muted);
             background: var(--color-surface-soft);
-            font-size: 0.85rem;
+            font-size: 0.75rem;
         }
 
         :scope td:first-of-type,

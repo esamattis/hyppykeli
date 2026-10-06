@@ -40,6 +40,7 @@ const INSTRUCTOR_WIND_SPEED = 11;
 const MAX_WIND_SPEED = 11.9;
 const COMPASS_BOUNCE_GUST = 11;
 const COMPASS_SPIN_GUST = 14;
+const LIMIT_COLOR = "rgb(255, 0, 0)";
 
 /**
  * Linearly converts a value from one range to another range.
@@ -276,7 +277,7 @@ export function Compass({ floating = false } = {}) {
                 xmlns="http://www.w3.org/2000/svg">
 
               <!-- Circle for compass outline -->
-              <circle cx="200" cy="200" r=${circle} stroke="black" stroke-width="2" fill="none" />
+              <circle class="compass-outer-ring" cx="200" cy="200" r=${circle} stroke=${LIMIT_COLOR} stroke-width="2" fill="none" />
               <circle cx="200" cy="200" r=${studentCircle} stroke="orange" stroke-width="2" fill="none" />
 
               <!-- Directions Text -->
@@ -463,7 +464,7 @@ function bounceKeyframes(values, times) {
 
 /** @param {number} length */
 function needleColor(length) {
-    if (length >= INSTRUCTOR_LIMIT_LENGTH) return "rgb(255, 0, 0)";
+    if (length >= INSTRUCTOR_LIMIT_LENGTH) return LIMIT_COLOR;
     if (length >= STUDENT_LIMIT_LENGTH) return "rgb(255, 165, 0)";
     return "rgb(0, 255, 0)";
 }
