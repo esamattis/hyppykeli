@@ -250,6 +250,7 @@ test("model terrain and missing forecast heights never fall back to nominal heig
         const { OM_DATA } = await import("#app/weather/state.js");
         const { getMapWindData } = await import("#app/map/windData.js");
         const { getFreefallDrift } = await import("#app/map/freefall.js");
+        const { getCanopyDrift } = await import("#app/map/canopy.js");
         navigateQs({ MANUAL_upper_winds: undefined });
         const hourly = {
             time: [new Date().toISOString().slice(0, 13) + ":00"],
@@ -280,6 +281,16 @@ test("model terrain and missing forecast heights never fall back to nominal heig
             hourly: { ...hourly, geopotential_height_700hPa: [null] },
         };
         const missing = getMapWindData();
+        const invalidCanopies = [];
+        for (const height of [null, 4300, 4400]) {
+            OM_DATA.value = {
+                ...data,
+                hourly: { ...hourly, geopotential_height_700hPa: [height] },
+            };
+            invalidCanopies.push(
+                getCanopyDrift(getMapWindData().canopyWinds, 800),
+            );
+        }
         navigateQs({ MANUAL_upper_winds: "42,0;30,0;15,0;8,0;1.1,0" });
         const manual = getMapWindData();
         return {
@@ -288,6 +299,7 @@ test("model terrain and missing forecast heights never fall back to nominal heig
             fiveHeights: fiveLevels.freefallWinds.map((wind) => wind.height),
             fiveDrift: getFreefallDrift(fiveLevels.freefallWinds)?.at(-1),
             missingDrift: getFreefallDrift(missing.freefallWinds),
+            invalidCanopies,
             manualHeights: manual.freefallWinds.map((wind) => wind.height),
             rawTop: OM_DATA.value.hourly.geopotential_height_600hPa[0],
         };
@@ -297,6 +309,121 @@ test("model terrain and missing forecast heights never fall back to nominal heig
     expect(result.fiveHeights).toEqual([4100, 2900, 1400, 900, 50]);
     expect(result.fiveDrift.north).toBeCloseTo(-640, 5);
     expect(result.missingDrift).toBeNull();
+    expect(result.invalidCanopies).toEqual([null, null, null]);
     expect(result.manualHeights).toEqual([4000, 2800, 1300, 600]);
     expect(result.rawTop).toBe(4300);
+});
+
+test("drawn canopy paths join the opening and follow elevation-adjusted wind boundaries", async ({
+    page,
+}) => {
+    const start = { lat: 62.4, lng: 25.6 };
+    await page.goto(
+        `${dz}&lat=62.4&lon=25.6&map_run_automatic=false&map_run_start=${encodeURIComponent(JSON.stringify(start))}`,
+    );
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(1);
+    await page.evaluate(async () => {
+        const { Polyline } = await import("leaflet");
+        const layers = new Set();
+        const original = Polyline.prototype.setLatLngs;
+        Polyline.prototype.setLatLngs = function (coordinates) {
+            if (
+                ["freefall-drift-line", "parachute-drift-line"].includes(
+                    this.options.className,
+                )
+            )
+                layers.add(this);
+            return original.call(this, coordinates);
+        };
+        window.driftGeometry = () =>
+            Object.fromEntries(
+                [...layers].map((layer) => [
+                    layer.options.className,
+                    layer.getLatLngs(),
+                ]),
+            );
+        const { navigateQs } = await import("#app/app/settings.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const hourly = {
+            time: [new Date().toISOString().slice(0, 13) + ":00"],
+        };
+        for (const [level, height] of Object.entries({
+            600: 4300,
+            700: 3100,
+            850: 1600,
+            925: 1100,
+            1000: 250,
+        })) {
+            hourly[`geopotential_height_${level}hPa`] = [height];
+            hourly[`windspeed_${level}hPa`] = [level === "1000" ? 4 : 8];
+            hourly[`winddirection_${level}hPa`] = [level === "1000" ? 90 : 0];
+        }
+        navigateQs({ MANUAL_upper_winds: undefined, elevation: "200" });
+        OM_DATA.value = { utc_offset_seconds: 0, elevation: 0, hourly };
+    });
+    const geometry = () => page.evaluate(() => window.driftGeometry());
+    await expect.poll(async () => Object.keys(await geometry()).length).toBe(2);
+    const initial = await geometry();
+    const freefall = initial["freefall-drift-line"];
+    expect(freefall[0].lat).toBeCloseTo(start.lat, 10);
+    expect(freefall[0].lng).toBeCloseTo(start.lng, 10);
+    const opening = freefall.at(-1);
+    const canopy = initial["parachute-drift-line"];
+    expect(canopy[0].lat).toBeCloseTo(opening.lat, 10);
+    expect(canopy[0].lng).toBeCloseTo(opening.lng, 10);
+    // 900/50/0 m levels switch at 475 and 25 m above the DZ.
+    const endpointError = (end, east, north) =>
+        page.evaluate(
+            async ({ opening, end, east, north }) => {
+                const { driftCoordinates } =
+                    await import("#app/map/freefall.js");
+                const { latLng } = await import("leaflet");
+                return latLng(end).distanceTo(
+                    driftCoordinates(opening, { height: 0, east, north }),
+                );
+            },
+            { opening, end, east, north },
+        );
+    expect(
+        await endpointError(
+            canopy.at(-1),
+            (-450 * 4) / 5,
+            -(325 * 8 + 25 * 2) / 5,
+        ),
+    ).toBeLessThan(1e-6);
+
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ elevation: "300" });
+    });
+    await expect
+        .poll(async () => (await geometry())["parachute-drift-line"])
+        .not.toEqual(canopy);
+    const adjusted = await geometry();
+    // Removing the below-DZ 1000 hPa level leaves a boundary at 400 m.
+    expect(adjusted["freefall-drift-line"]).toEqual(freefall);
+    expect(adjusted["parachute-drift-line"][0].lat).toBeCloseTo(
+        opening.lat,
+        10,
+    );
+    expect(adjusted["parachute-drift-line"][0].lng).toBeCloseTo(
+        opening.lng,
+        10,
+    );
+    expect(
+        await endpointError(
+            adjusted["parachute-drift-line"].at(-1),
+            0,
+            -(400 * 8 + 400 * 2) / 5,
+        ),
+    ).toBeLessThan(1e-6);
+
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const data = structuredClone(OM_DATA.value);
+        data.hourly.geopotential_height_700hPa = [null];
+        OM_DATA.value = data;
+    });
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(0);
+    await expect(page.locator(".parachute-drift-line")).toHaveCount(0);
 });

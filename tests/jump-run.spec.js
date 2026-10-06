@@ -173,3 +173,29 @@ test("drift integrates nearest-level regions exactly and supports a single wind 
     );
     expect(calculation.drift(jumper).at(-1).height).toBe(800);
 });
+
+test("decimal midpoint ties use the upper wind for aircraft and descent boundaries", () => {
+    const profile = [
+        { height: 2748.6728, speed: 10, direction: 270 },
+        { height: 1208.6728, speed: 20, direction: 90 },
+    ];
+    const boundary = (profile[0].height + profile[1].height) / 2;
+    expect(getWindAtHeight(profile, boundary).east).toBeCloseTo(10, 8);
+    expect(getWindAtHeight(profile, boundary - 1e-9).east).toBeCloseTo(-20, 8);
+    const calculate = createJumpRunCalculator();
+    expect(
+        calculate(profile, { ...settings, exitHeight: boundary }).velocity
+            .ground.east,
+    ).toBeCloseTo(settings.speedKmh / 3.6 + 10, 8);
+    // Missing wind below an opening exactly on the boundary is never used.
+    const missingBelow = [profile[0], { ...profile[1], speed: null }];
+    expect(
+        getFreefallDrift(missingBelow, 4000, 180, boundary).at(-1).east,
+    ).toBeCloseTo(((4000 - boundary) * 10) / 50, 8);
+    expect(
+        calculate(missingBelow, settings).drift({
+            ...jumper,
+            openingHeight: boundary,
+        }),
+    ).not.toBeNull();
+});

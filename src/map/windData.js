@@ -125,15 +125,17 @@ export function getMapWindData(now = Date.now()) {
     const groundAge = ground ? now - ground.time.getTime() : Infinity;
     // Observations can arrive after the map's most recent minute tick.
     const freshGround = groundAge <= MAX_GROUND_WIND_AGE_MS;
-    const canopyWinds = [
-        ...profile,
-        {
-            height: 0,
-            label: t("map.ground"),
-            speed: freshGround ? (ground?.speed ?? null) : null,
-            direction: freshGround ? (ground?.direction ?? null) : null,
-        },
-    ];
+    const canopyWinds = hasHeights
+        ? [
+              ...profile,
+              {
+                  height: 0,
+                  label: t("map.ground"),
+                  speed: freshGround ? (ground?.speed ?? null) : null,
+                  direction: freshGround ? (ground?.direction ?? null) : null,
+              },
+          ]
+        : [];
     return {
         data,
         time,

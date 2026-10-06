@@ -270,12 +270,14 @@ export function getNextWindBoundary(winds, height) {
 export function getWindAtHeight(winds, height) {
     if (!Number.isFinite(height) || !hasDescendingWindHeights(winds))
         return null;
-    const wind = winds.reduce((nearest, candidate) =>
-        Math.abs(candidate.height - height) < Math.abs(nearest.height - height)
-            ? candidate
-            : nearest,
-    );
+    // Use the same midpoint boundaries as integration. Subtracting distances
+    // separately can round a decimal-height tie toward the lower level.
+    const wind = winds.find((candidate, index) => {
+        const below = winds[index + 1];
+        return !below || height >= (candidate.height + below.height) / 2;
+    });
     if (
+        !wind ||
         wind.speed === null ||
         !Number.isFinite(wind.speed) ||
         wind.speed < 0 ||
