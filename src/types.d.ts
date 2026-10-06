@@ -111,6 +111,7 @@ interface JumpRunJumperDraft {
 interface JumpRunDirectionGesture {
     direction: number;
     offset: import("leaflet").Point;
+    center: import("leaflet").LatLngLiteral;
 }
 
 type JumpRunPlacement = "opening" | "center" | "landing";

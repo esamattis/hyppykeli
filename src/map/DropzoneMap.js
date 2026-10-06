@@ -37,7 +37,6 @@ import {
     startForOpeningTarget,
     startForRunCenter,
     openingTargetForRun,
-    landingTargetForRun,
 } from "#app/map/jumpRun.js";
 import { getMapWindData } from "#app/map/windData.js";
 import { h, html } from "htm/preact";
@@ -346,8 +345,11 @@ export function DropzoneMap() {
     const positionJumpRunAtRef = useRef(() => {});
     /** @type {import('preact').RefObject<(pointer: import('leaflet').Point) => JumpRunDirectionGesture | null>} */
     const beginDirectionDragRef = useRef(() => null);
-    /** @type {import('preact').RefObject<(direction: number) => void>} */
+    /** @type {import('preact').RefObject<(direction: number, center: import('leaflet').LatLngLiteral) => void>} */
     const aimJumpRunAtRef = useRef(() => {});
+    /** @type {import('preact').RefObject<import('leaflet').LatLngLiteral | null>} */
+    const directionCenterRef = useRef(null);
+    const directionCenterKeyRef = useRef("");
     /** @type {import('preact').RefObject<import('leaflet').LatLngLiteral | null>} */
     const openingTargetRef = useRef(null);
     const openingTargetKeyRef = useRef("");
@@ -866,34 +868,54 @@ export function DropzoneMap() {
         initialPositionHandled.current = true;
         positionAutomaticJumpRun();
     });
-    const directionPivot = () =>
-        (jumpRunStart &&
-            landingTargetForRun(
-                jumpRunStart,
-                jumpRunSettings,
-                jumpers,
-                calculation,
-                canopyWinds,
-            )) ??
-        currentOpeningTarget();
     beginDirectionDragRef.current = (pointer) => {
         const map = activeLeafletRef.current;
-        const pivot = directionPivot();
-        if (!map || !pivot) return null;
+        if (!map || !jumpRunStart || !jumpers.length) return null;
+        const center = jumpRunVelocity
+            ? latLng(
+                  jumpRunCoordinates(
+                      jumpRunStart,
+                      jumpRunSettings,
+                      (jumpers.length - 1) / 2,
+                      jumpRunVelocity.ground,
+                  ),
+              )
+            : directionCenterKeyRef.current ===
+                openingKey(jumpRunStart, jumpRunSettings, jumpers)
+              ? directionCenterRef.current
+              : null;
+        if (!center) return null;
         const bounds = map.getContainer().getBoundingClientRect();
         let offset = pointer
             .subtract(point(bounds.left, bounds.top))
-            .subtract(map.latLngToContainerPoint(pivot));
+            .subtract(map.latLngToContainerPoint(center));
         // A drag starting near the pivot needs a stable rotation radius.
         if (offset.distanceTo(point(0, 0)) < 40) {
             const radians = (jumpRunSettings.direction * Math.PI) / 180;
             offset = point(Math.sin(radians) * 40, -Math.cos(radians) * 40);
         }
-        return { direction: jumpRunSettings.direction, offset };
+        return { direction: jumpRunSettings.direction, offset, center };
     };
-    aimJumpRunAtRef.current = (direction) => {
+    aimJumpRunAtRef.current = (direction, center) => {
         if (!Number.isFinite(direction)) return;
-        applyJumpRunSettings({ ...jumpRunSettings, direction });
+        const settings = { ...jumpRunSettings, direction };
+        const calculation = calculateJumpRun(freefallWinds, settings);
+        // Keep the gesture's exit-sequence center fixed even when the new
+        // heading changes ground speed, or passes through an infeasible track.
+        const start = startForRunCenter(center, settings, jumpers, calculation);
+        const opening =
+            start && openingTargetForRun(start, settings, jumpers, calculation);
+        // Retain the center so another drag can recover after releasing on
+        // an infeasible heading, until a different edit or wind update occurs.
+        directionCenterRef.current = center;
+        directionCenterKeyRef.current = openingKey(
+            start ?? jumpRunStart,
+            settings,
+            jumpers,
+        );
+        if (start && opening)
+            savePositionedRun(opening, start, settings, jumpers);
+        else setJumpRunSettings(settings);
     };
     /** @param {JumpRunJumper[]} group */
     const applyJumpers = (group) => {
@@ -969,10 +991,9 @@ export function DropzoneMap() {
             pointerFocus = false;
         };
         // Clicking asks to position the run, or exits direction mode without moving it.
-        // Dragging rotates relative to its initial bearing around the landing
-        // point (or the opening when canopy wind data is missing). Keep this
-        // effect independent of the run start and heading so a rotation does
-        // not reset the gesture.
+        // Dragging rotates relative to its initial bearing around the center
+        // of the exit sequence. Keep this effect independent of the run start
+        // and heading so a rotation does not reset the gesture.
         const directionPlacement = placingJumpRunDirection;
         /** @type {JumpRunDirectionGesture | null} */
         let directionGesture = null;
@@ -994,7 +1015,7 @@ export function DropzoneMap() {
                     360) +
                     360) %
                 360;
-            aimJumpRunAtRef.current?.(direction);
+            aimJumpRunAtRef.current?.(direction, directionGesture.center);
         };
         const flushDirectionAim = () => {
             if (aimFrame !== null) cancelAnimationFrame(aimFrame);
