@@ -31,7 +31,8 @@ export function FreefallFields({
             align-items: center;
             justify-content: space-between;
         }
-        label {
+        .field-label > label {
+            display: block;
             margin: 0;
         }
         input {
