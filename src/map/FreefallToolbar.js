@@ -36,10 +36,9 @@ export function FreefallToolbar({
             z-index: 800;
         }
         .toolbar-window-actions {
-            position: absolute;
-            top: 12px;
-            right: 12px;
             display: flex;
+            flex-shrink: 0;
+            margin-left: auto;
             gap: 6px;
         }
         .toolbar-controls {
@@ -60,8 +59,7 @@ export function FreefallToolbar({
             gap: 6px;
         }
         .toolbar-controls .arrow-action,
-        .toolbar-controls .jumper-actions,
-        .toolbar-window-actions .arrow-action {
+        .toolbar-controls .jumper-actions {
             flex-shrink: 0;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
@@ -69,8 +67,7 @@ export function FreefallToolbar({
             box-shadow: var(--shadow-floating);
             pointer-events: auto;
         }
-        .toolbar-controls .arrow-action:hover,
-        .toolbar-window-actions .arrow-action:hover {
+        .toolbar-controls .arrow-action:hover {
             background: rgb(255 255 255 / 85%);
         }
         .toolbar-controls .jumper-actions .arrow-action {
@@ -129,7 +126,7 @@ export function FreefallToolbar({
             line-height: 1.4;
         }
         .toolbar-summary-values > span {
-            white-space: nowrap;
+            white-space: normal;
         }
         .value-number {
             margin-left: 4px;
@@ -142,7 +139,7 @@ export function FreefallToolbar({
         }
         .wind-level-icons {
             position: absolute;
-            top: 56px;
+            top: 12px;
             right: 12px;
             display: flex;
             flex-direction: column;
@@ -240,20 +237,23 @@ export function FreefallToolbar({
         >
             ${scope.style}
             <div class="toolbar-controls">
-                ${h(JumpRunControls, {
-                    ...jumpRun,
-                    canPosition,
-                    onPosition,
-                    arrowCount,
-                    onUndo,
-                })}
-                <div class="toolbar-map-actions">
-                    ${h(ToolbarButton, {
+                ${h(
+                    JumpRunControls,
+                    {
+                        ...jumpRun,
+                        canPosition,
+                        onPosition,
+                        arrowCount,
+                        onUndo,
+                    },
+                    h(ToolbarButton, {
                         label: t("toolbar.positionView"),
                         icon: "fitView",
                         disabled: !canPositionView,
                         onClick: onPositionView,
-                    })}
+                    }),
+                )}
+                <div class="toolbar-map-actions">
                     ${h(ToolbarButton, {
                         label: t("toolbar.removeJumpRun"),
                         icon: "trash",
@@ -342,6 +342,24 @@ export function FreefallToolbar({
                             </span>
                         `
                     }
+                </div>
+                <div class="toolbar-window-actions">
+                    ${h(ToolbarButton, {
+                        label: t("toolbar.shareMap"),
+                        icon: "share",
+                        disabled: typeof navigator.share !== "function",
+                        onClick: onShare,
+                    })}
+                    ${h(ToolbarButton, {
+                        label: fullWindow
+                            ? t("toolbar.restoreMap")
+                            : t("toolbar.expandMap"),
+                        icon: fullWindow ? "collapse" : "expand",
+                        size: 20,
+                        className: "window-toggle",
+                        pressed: fullWindow,
+                        onClick: onToggleFullWindow,
+                    })}
                 </div>
             </div>
             <div class="toolbar-actions">
@@ -437,24 +455,6 @@ export function FreefallToolbar({
                             </p>
                         `,
                     )}
-                </div>
-                <div class="toolbar-window-actions">
-                    ${h(ToolbarButton, {
-                        label: t("toolbar.shareMap"),
-                        icon: "share",
-                        disabled: typeof navigator.share !== "function",
-                        onClick: onShare,
-                    })}
-                    ${h(ToolbarButton, {
-                        label: fullWindow
-                            ? t("toolbar.restoreMap")
-                            : t("toolbar.expandMap"),
-                        icon: fullWindow ? "collapse" : "expand",
-                        size: 20,
-                        className: "window-toggle",
-                        pressed: fullWindow,
-                        onClick: onToggleFullWindow,
-                    })}
                 </div>
             </div>
         </div>

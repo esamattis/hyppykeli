@@ -43,6 +43,7 @@ export function JumpRunControls({
                 disabled: !canPosition,
                 onClick: onPosition,
             })}
+            ${children}
             ${h(DropdownMenu, {
                 id: "jump-run-direction-menu",
                 label: t("settings.jumpRunDirection"),
@@ -118,7 +119,6 @@ export function JumpRunControls({
                     onClick: onUndo,
                 })}
             </div>
-            ${children}
         </div>
     `;
 }
