@@ -73,6 +73,15 @@ export const english = {
     "error.coordinatesMissing":
         "Coordinates are missing. Enter latitude and longitude or select an FMI or Fintraffic observation station.",
     "error.noForecasts": "No forecasts found.",
+    "error.cachedFetch": (
+        /** @type {string} */ provider,
+        /** @type {string} */ error,
+    ) =>
+        `${provider}: refresh failed (${error}). Showing stale cached data until a refresh succeeds.`,
+    "error.apiFetch": (
+        /** @type {string} */ provider,
+        /** @type {string} */ error,
+    ) => `${provider}: fetch failed (${error}). No cached data available.`,
     "error.fmiFetch": (/** @type {string} */ id) =>
         `Error retrieving data from FMI observation station ${id}.`,
     "fromNow.hours": (/** @type {number} */ value) =>
@@ -478,6 +487,10 @@ const finnish = {
     "error.coordinatesMissing":
         "Koordinaatit puuttuvat. Anna leveys- ja pituusaste tai määritä FMI:n tai Fintrafficin havaintoasema.",
     "error.noForecasts": "Ennusteita ei löytynyt.",
+    "error.cachedFetch": (provider, error) =>
+        `${provider}: päivitys epäonnistui (${error}). Näytetään vanhentuneita välimuistin tietoja, kunnes päivitys onnistuu.`,
+    "error.apiFetch": (provider, error) =>
+        `${provider}: haku epäonnistui (${error}). Välimuistissa ei ole tietoja.`,
     "error.fmiFetch": (id) =>
         `Virhe Ilmatieteenlaitoksen havaintoaseman ${id} tietojen hakemisessa.`,
     "fromNow.hours": (value) =>

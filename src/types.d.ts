@@ -711,6 +711,8 @@ interface DataSourceProps {
 }
 
 interface FmiRequestOptions {
+    cacheOnly?: boolean;
+    onCacheStatus?: (stale: boolean) => void;
     mock: boolean;
     onLoading: (delta: number) => void;
 }
@@ -727,4 +729,43 @@ interface FmiObservationOptions extends FmiRequestOptions {
 interface JumpRunCalculation {
     velocity: JumpRunVelocity | null;
     drift: (jumper: JumpRunJumper) => FreefallDriftPoint[] | null;
+}
+
+interface ResponseCachePolicy<T> {
+    key?: string;
+    maxFetchAgeMs?: number;
+    measurementMaxAgeMs?: number;
+    minFetchIntervalMs: number;
+    measurementTime?: (data: T) => number;
+}
+
+interface CachedFetchOptions<T> {
+    format: "json" | "text";
+    headers?: Record<string, string>;
+    cache: ResponseCachePolicy<T>;
+    cacheOnly?: boolean;
+    validate?: (data: T) => boolean;
+}
+
+interface CachedFetchResult<T> {
+    data: T;
+    fromCache: boolean;
+    stale: boolean;
+    error?: string;
+}
+
+interface CachedResponseEntry<T> {
+    hasData: boolean;
+    data: T;
+    fetchedAt: number;
+    lastAttemptAt: number;
+    measurementAt: number | null;
+    error?: string;
+}
+
+interface FetchJSONOptions<T> {
+    headers?: Record<string, string>;
+    cache: ResponseCachePolicy<T>;
+    cacheOnly?: boolean;
+    validate?: (data: T) => boolean;
 }

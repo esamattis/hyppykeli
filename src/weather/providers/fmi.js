@@ -1,4 +1,9 @@
 // @ts-check
+import {
+    fmiForecastCache,
+    fmiObservationCache,
+} from "#app/weather/providers/cachePolicies.js";
+import { fetchCached } from "#app/shared/fetchCached.js";
 import { t } from "#app/translations.js";
 
 /**
@@ -6,7 +11,7 @@ import { t } from "#app/translations.js";
  * @param {StoredQuery} storedQuery - The stored query ID for the request.
  * @param {Object} params - The parameters for the request.
  * @param {string | undefined} exampleUrl
- * @param {FmiRequestOptions} options
+ * @param {FmiRequestOptions & {cache: ResponseCachePolicy<string>}} options
  * @returns {Promise<Document|undefined|"error">} The parsed XML document from the response.
  * @throws Will throw an error if the request fails.
  */
@@ -21,31 +26,44 @@ export async function fmiRequest(storedQuery, params, exampleUrl, options) {
 
     options.onLoading(1);
     try {
-        const response = await fetch(
-            useExample ? (exampleUrl ?? url) : url,
-        ).catch(() => null);
-        if (!response) {
-            return "error";
+        /** @type {string | undefined} */
+        let text;
+        if (useExample) {
+            if (options.cacheOnly) return;
+            const response = await fetch(exampleUrl ?? url);
+            if (response.status === 404) return;
+            if (!response.ok) return "error";
+            text = await response.text();
+        } else {
+            /** @type {CachedFetchResult<string> | undefined} */
+            const result = await fetchCached(url.toString(), {
+                format: "text",
+                cacheOnly: options.cacheOnly,
+                validate: (text) => {
+                    const doc = new DOMParser().parseFromString(
+                        text,
+                        "application/xml",
+                    );
+                    return (
+                        !doc.querySelector("parsererror") &&
+                        doc.getElementsByTagNameNS("*", "ExceptionReport")
+                            .length === 0 &&
+                        doc.getElementsByTagNameNS("*", "MeasurementTimeseries")
+                            .length > 0
+                    );
+                },
+                cache: options.cache,
+            });
+            text = result?.data;
+            options.onCacheStatus?.(result?.stale ?? true);
         }
-        if (response.status === 404) {
-            return;
-        }
-
-        if (!response.ok) {
-            return "error";
-        }
-
-        let data;
-        try {
-            const text = await response.text();
-            const parser = new DOMParser();
-            data = parser.parseFromString(text, "application/xml");
-        } catch (error) {
-            console.error("ERROR", url.toString(), error);
-            return "error";
-        }
+        if (text === undefined) return;
+        const data = new DOMParser().parseFromString(text, "application/xml");
 
         return data;
+    } catch (error) {
+        console.warn("FMI request failed", error);
+        return "error";
     } finally {
         options.onLoading(-1);
     }
@@ -135,16 +153,12 @@ export async function fetchFmiForecasts(coordinates, options) {
         forecastEndTime.setDate(forecastEndTime.getDate() + day);
     }
 
-    const cacheBust = Math.floor(Date.now() / 30_000);
-
     const forecastXml = await fmiRequest(
         // "fmi::forecast::hirlam::surface::point::timevaluepair",
         // "ecmwf::forecast::surface::point::simple",
         // "ecmwf::forecast::surface::point::timevaluepair",
         "fmi::forecast::edited::weather::scandinavia::point::timevaluepair",
         {
-            cch: cacheBust,
-
             starttime: forecastStartTime.toISOString(),
             endtime: forecastEndTime.toISOString(),
 
@@ -170,7 +184,15 @@ export async function fetchFmiForecasts(coordinates, options) {
             latlon: coordinates,
         },
         "/example_data/forecast.xml",
-        options,
+        {
+            ...options,
+            cache: fmiForecastCache(
+                coordinates,
+                forecastRange,
+                day,
+                forecastStartTime,
+            ),
+        },
     );
 
     if (forecastXml === "error") {
@@ -287,12 +309,9 @@ export async function fetchFmiForecasts(coordinates, options) {
 export async function fetchFmiObservations(fmisid, options) {
     const obsStartTime = options.startTime;
 
-    const cacheBust = Math.floor(Date.now() / 30_000);
-
     const doc = await fmiRequest(
         "fmi::observations::weather::timevaluepair",
         {
-            cch: cacheBust,
             starttime: obsStartTime.toISOString(),
             // endtime:
             parameters: [
@@ -305,7 +324,10 @@ export async function fetchFmiObservations(fmisid, options) {
             fmisid,
         },
         "/example_data/observations.xml",
-        options,
+        {
+            ...options,
+            cache: fmiObservationCache(fmisid, obsStartTime),
+        },
     );
 
     if (!doc) {

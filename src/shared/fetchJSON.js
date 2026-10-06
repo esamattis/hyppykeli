@@ -1,31 +1,23 @@
 // @ts-check
+import { fetchCached } from "#app/shared/fetchCached.js";
 
 /**
+ * @template T
  * @param {string} url
- * @param {Object} [options]
- * @param {Record<string, string>} [options.headers]
+ * @param {FetchJSONOptions<T>} options
+ * @returns {Promise<T | undefined>}
  */
 export async function fetchJSON(url, options) {
-    const { hostname, pathname, search } = new URL(url);
-
-    const res = await fetch(url, {
-        headers: options?.headers,
-    }).catch((error) => {
-        return new Response(null, {
-            status: 555,
-            statusText: "Request failed",
+    try {
+        const result = await fetchCached(url, {
+            format: "json",
+            headers: options.headers,
+            cacheOnly: options.cacheOnly,
+            validate: options.validate,
+            cache: options.cache,
         });
-    });
-
-    if (!res.ok) {
-        const errorEvent = new CustomEvent("fetchjsonerror", {
-            detail: {
-                message: `Virhe ${hostname} API:ssa: ${res.status}, parametrit: ${pathname}${search}`,
-            },
-        });
-        document.dispatchEvent(errorEvent);
-        return;
+        return result?.data;
+    } catch {
+        return undefined;
     }
-
-    return await res.json();
 }

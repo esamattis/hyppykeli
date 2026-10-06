@@ -1,4 +1,5 @@
 // @ts-check
+import { CACHE_POLICIES } from "#app/weather/providers/cachePolicies.js";
 import { coordinateDistance } from "#app/shared/coordinates.js";
 import { fetchJSON } from "#app/shared/fetchJSON.js";
 
@@ -10,6 +11,8 @@ export async function findClosestRoadStation(coordinates) {
     const stations = await fetchJSON(
         "https://tie.digitraffic.fi/api/weather/v1/stations",
         {
+            validate: (data) => Array.isArray(data?.features),
+            cache: CACHE_POLICIES.stationMetadata,
             headers: {
                 "Digitraffic-User": "hyppykeli.fi",
             },

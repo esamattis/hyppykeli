@@ -280,7 +280,7 @@ export const FORECAST_DATE = computed(() => {
  * @param {string} msg
  */
 export function addError(msg) {
-    ERRORS.value = [...ERRORS.value, msg];
+    if (!ERRORS.value.includes(msg)) ERRORS.value = [...ERRORS.value, msg];
 }
 
 /**

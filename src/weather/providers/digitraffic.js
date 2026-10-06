@@ -1,27 +1,29 @@
 // @ts-check
+import {
+    CACHE_POLICIES,
+    ROAD_OBSERVATION_CACHE,
+    roadHistoryCache,
+} from "#app/weather/providers/cachePolicies.js";
 import { fetchJSON } from "#app/shared/fetchJSON.js";
 
 /**
  * @param {string} roadsid
+ * @param {boolean} [cacheOnly]
  */
-export async function fetchRoadStationInfo(roadsid) {
-    const res = await fetch(
+export async function fetchRoadStationInfo(roadsid, cacheOnly = false) {
+    /** @type {RoadStationInfoDetailed | undefined} */
+    const data = await fetchJSON(
         `https://tie.digitraffic.fi/api/weather/v1/stations/${roadsid}`,
         {
-            headers: {
-                "Digitraffic-User": "hyppykeli.fi",
-            },
+            headers: { "Digitraffic-User": "hyppykeli.fi" },
+            cacheOnly,
+            validate: (data) =>
+                Array.isArray(data?.geometry?.coordinates) &&
+                typeof data?.properties?.names?.fi === "string",
+            cache: CACHE_POLICIES.stationMetadata,
         },
-    ).catch(() => null);
-
-    if (!res?.ok) {
-        throw new Error(
-            `Virhe Digitraffic API:ssa: ${res?.status ?? "yhteysvirhe"}`,
-        );
-    }
-
-    /** @type {RoadStationInfoDetailed} */
-    const data = await res.json();
+    );
+    if (!data) return;
 
     return {
         coordinates: `${data.geometry.coordinates[1]},${data.geometry.coordinates[0]}`,
@@ -33,8 +35,14 @@ export async function fetchRoadStationInfo(roadsid) {
  * @param {string} roadsid
  * @param {Date} obsStartTime
  * @param {(observations: WeatherData[]) => void} onCurrent
+ * @param {boolean} [cacheOnly]
  */
-export async function fetchRoadObservations(roadsid, obsStartTime, onCurrent) {
+export async function fetchRoadObservations(
+    roadsid,
+    obsStartTime,
+    onCurrent,
+    cacheOnly = false,
+) {
     // load in background as not so important
     /** @type {Promise<RoadStationHistory|undefined>} */
     const historyPromise = fetchJSON(
@@ -48,6 +56,9 @@ export async function fetchRoadObservations(roadsid, obsStartTime, onCurrent) {
             headers: {
                 "Digitraffic-User": "hyppykeli.fi",
             },
+            cacheOnly,
+            validate: (data) => Array.isArray(data?.values),
+            cache: roadHistoryCache(roadsid, obsStartTime),
         },
     );
 
@@ -58,6 +69,11 @@ export async function fetchRoadObservations(roadsid, obsStartTime, onCurrent) {
             headers: {
                 "Digitraffic-User": "hyppykeli.fi",
             },
+            cacheOnly,
+            validate: (data) =>
+                Array.isArray(data?.sensorValues) &&
+                typeof data?.dataUpdatedTime === "string",
+            cache: ROAD_OBSERVATION_CACHE,
         },
     );
 

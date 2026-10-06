@@ -1,4 +1,6 @@
 // @ts-check
+import { openMeteoCache } from "#app/weather/providers/cachePolicies.js";
+import { fetchCached } from "#app/shared/fetchCached.js";
 import { isNullish } from "#app/shared/values.js";
 
 /**
@@ -126,9 +128,11 @@ function isWindForecast(data) {
 
 /**
  * @param {string} coordinates
+ * @param {boolean} cacheOnly
+ * @param {((stale: boolean) => void) | undefined} onCacheStatus
  * @returns {Promise<OpenMeteoWeatherData | null>}
  */
-async function fetchDataWithCoordinates(coordinates) {
+async function fetchDataWithCoordinates(coordinates, cacheOnly, onCacheStatus) {
     const [latitudeText = "", longitudeText = ""] = coordinates.split(",");
     const latitude = Number(latitudeText);
     const longitude = Number(longitudeText);
@@ -151,75 +155,36 @@ async function fetchDataWithCoordinates(coordinates) {
     });
 
     try {
-        const response = await fetch(
+        /** @type {CachedFetchOptions<OpenMeteoWeatherData>} */
+        const options = {
+            format: "json",
+            cacheOnly,
+            validate: isWindForecast,
+            cache: openMeteoCache(latitude, longitude),
+        };
+        const result = await fetchCached(
             `https://api.open-meteo.com/v1/forecast?${params}`,
+            options,
         );
-        if (!response.ok) {
-            throw new Error(`Open-Meteo HTTP ${response.status}`);
-        }
-        const data = await response.json();
-        if (!isWindForecast(data)) {
-            throw new Error("Invalid Open-Meteo wind forecast");
-        }
-        return data;
+        onCacheStatus?.(result?.stale ?? true);
+        return result?.data ?? null;
     } catch (error) {
         console.warn("Open-Meteo wind forecast unavailable", error);
         return null;
     }
 }
 
-export function clearOMCache() {
-    localStorage.removeItem("ECMWFWindAloft");
-    localStorage.removeItem("ECMWFWindAloftTime");
-    localStorage.removeItem("ECMWFWindAloftCoordinates");
-}
-
 /**
  * @param {string} coordinates
+ * @param {boolean} [cacheOnly]
+ * @param {(stale: boolean) => void} [onCacheStatus]
  */
-export async function fetchHighWinds(coordinates) {
-    const cachedData = localStorage.getItem("ECMWFWindAloft");
-    const cachedTime = localStorage.getItem("ECMWFWindAloftTime");
-    const cachedCoordinates = localStorage.getItem("ECMWFWindAloftCoordinates");
-
-    const now = new Date();
-    const currentHour = now.getHours();
-
-    /** @type {unknown} */
-    let cachedForecast = null;
-    if (cachedData) {
-        try {
-            cachedForecast = JSON.parse(cachedData);
-        } catch {
-            // Corrupt cache entries must not prevent fetching a new forecast.
-        }
-        if (!isWindForecast(cachedForecast)) clearOMCache();
-    }
-
-    if (isWindForecast(cachedForecast) && cachedTime && cachedCoordinates) {
-        const cachedHour = new Date(Number(cachedTime)).getHours();
-
-        if (
-            cachedCoordinates === coordinates &&
-            cachedHour === currentHour &&
-            now.getTime() - Number(cachedTime) >= 0 &&
-            now.getTime() - Number(cachedTime) < 60 * 60 * 1000
-        ) {
-            console.log("Käytetään välimuistissa olevaa dataa");
-            return cachedForecast;
-        }
-    }
-
-    // Jos välimuistissa ei ole dataa tai se on vanhentunutta, haetaan uutta
-    const newData = await fetchDataWithCoordinates(coordinates);
-
-    if (newData) {
-        localStorage.setItem("ECMWFWindAloft", JSON.stringify(newData));
-        localStorage.setItem("ECMWFWindAloftTime", now.getTime().toString());
-        localStorage.setItem("ECMWFWindAloftCoordinates", coordinates);
-    }
-
-    return newData;
+export async function fetchHighWinds(
+    coordinates,
+    cacheOnly = false,
+    onCacheStatus,
+) {
+    return fetchDataWithCoordinates(coordinates, cacheOnly, onCacheStatus);
 }
 
 /**

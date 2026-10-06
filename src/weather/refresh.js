@@ -42,8 +42,9 @@ function reportProviderError(error) {
     addError(error instanceof Error ? error.message : String(error));
 }
 
-function requestOptions() {
+function requestOptions(cacheOnly = false) {
     return {
+        cacheOnly,
         mock: DEV_MOCK.value,
         /** @param {number} delta */
         onLoading(delta) {
@@ -59,7 +60,8 @@ function useObservations(observations) {
     return observations.some(hasValidWindData);
 }
 
-async function fetchObservations() {
+/** @param {boolean} cacheOnly */
+async function fetchObservations(cacheOnly) {
     const startTime = getObservationStartTime(
         Number(QUERY_PARAMS.value.observation_range) || 12,
     );
@@ -71,7 +73,7 @@ async function fetchObservations() {
         if (selectedName) localStorage.setItem("previous_dz", selectedName);
         try {
             const station = await fetchFmiObservations(fmisid, {
-                ...requestOptions(),
+                ...requestOptions(cacheOnly),
                 startTime,
             });
             STATION_NAME.value = station.name;
@@ -79,27 +81,35 @@ async function fetchObservations() {
             FORECAST_COORDINATES.value ??= station.coordinates;
             if (useObservations(station.observations)) return;
         } catch (error) {
-            reportProviderError(error);
+            if (!cacheOnly) reportProviderError(error);
         }
     }
 
     const roadsid = QUERY_PARAMS.value.roadsid;
     if (roadsid) {
         const [found] = await Promise.all([
-            fetchRoadObservations(roadsid, startTime, (observations) => {
-                LIVE_OBSERVATIONS.value = observations;
-            }).then(({ observations, hasHistory }) => {
+            fetchRoadObservations(
+                roadsid,
+                startTime,
+                (observations) => {
+                    LIVE_OBSERVATIONS.value = observations;
+                },
+                cacheOnly,
+            ).then(({ observations, hasHistory }) => {
                 if (hasHistory) return useObservations(observations);
                 LIVE_OBSERVATIONS.value = observations;
                 return observations.some(hasValidWindData);
             }),
-            fetchRoadStationInfo(roadsid)
+            fetchRoadStationInfo(roadsid, cacheOnly)
                 .then((station) => {
+                    if (!station) return;
                     STATION_COORDINATES.value = station.coordinates;
                     FORECAST_COORDINATES.value ??= station.coordinates;
                     STATION_NAME.value = station.name;
                 })
-                .catch(reportProviderError),
+                .catch((error) => {
+                    if (!cacheOnly) reportProviderError(error);
+                }),
         ]);
         if (found) return;
     }
@@ -107,22 +117,27 @@ async function fetchObservations() {
     LIVE_OBSERVATIONS.value = [];
 }
 
-async function fetchMetar() {
+/** @param {boolean} cacheOnly */
+async function fetchMetar(cacheOnly) {
     if (QUERY_PARAMS.value.DEV_metar?.trim()) return;
     const icaocode = QUERY_PARAMS.value.icaocode?.trim();
     if (!icaocode) {
         LIVE_METARS.value = undefined;
         return;
     }
-    const metar = await fetchFlykMetar(icaocode);
+    const metar = await fetchFlykMetar(icaocode, cacheOnly);
     LIVE_METARS.value = metar ? parseMetarMessages([metar]) : undefined;
-    if (!metar) addError(t("error.noMetar", icaocode));
+    if (!metar && !cacheOnly) addError(t("error.noMetar", icaocode));
 }
 
-/** @param {string} coordinates */
-async function fetchForecasts(coordinates) {
+/** @param {string} coordinates @param {boolean} cacheOnly */
+async function fetchForecasts(coordinates, cacheOnly) {
+    let stale = cacheOnly;
     const result = await fetchFmiForecasts(coordinates, {
-        ...requestOptions(),
+        ...requestOptions(cacheOnly),
+        onCacheStatus: (value) => {
+            stale = cacheOnly || value;
+        },
         range: Number(QUERY_PARAMS.value.forecast_range) || 12,
         day: FORECAST_DAY.value,
     });
@@ -132,7 +147,7 @@ async function fetchForecasts(coordinates) {
     if (!result.forecasts.some(hasValidWindData)) return false;
     FORECASTS.value = result.forecasts;
     FORECAST_SOURCE.value = "FMI";
-    STALE_FORECASTS.value = false;
+    STALE_FORECASTS.value = stale;
     return true;
 }
 
@@ -185,16 +200,18 @@ function useOpenMeteoSurfaceWeather(data) {
     return weather.filter(({ time }) => time >= start && time <= end);
 }
 
-export async function updateWeatherData() {
-    ERRORS.value = [];
+/** @param {boolean} cacheOnly */
+async function refreshWeather(cacheOnly) {
     STALE_FORECASTS.value = true;
-    STATION_COORDINATES.value = null;
-    STATION_NAME.value = undefined;
-    FMI_FORECAST_NAME.value = undefined;
-    FORECAST_COORDINATES.value = explicitForecastCoordinates();
+    if (cacheOnly) {
+        STATION_COORDINATES.value = null;
+        STATION_NAME.value = undefined;
+        FMI_FORECAST_NAME.value = undefined;
+        FORECAST_COORDINATES.value = explicitForecastCoordinates();
+    }
 
-    const metarPromise = fetchMetar();
-    await fetchObservations();
+    const metarPromise = fetchMetar(cacheOnly);
+    await fetchObservations(cacheOnly);
     await metarPromise;
 
     const coordinates = FORECAST_COORDINATES.value;
@@ -203,13 +220,16 @@ export async function updateWeatherData() {
         FORECASTS.value = [];
         FORECAST_SOURCE.value = null;
         FORECAST_LOCATION_NAME.value = null;
-        addError(t("error.coordinatesMissing"));
+        if (!cacheOnly) addError(t("error.coordinatesMissing"));
         return;
     }
 
+    let openMeteoStale = cacheOnly;
     const [hasFmiForecast, openMeteo] = await Promise.all([
-        fetchForecasts(coordinates),
-        fetchHighWinds(coordinates).then((data) => {
+        fetchForecasts(coordinates, cacheOnly),
+        fetchHighWinds(coordinates, cacheOnly, (stale) => {
+            openMeteoStale = cacheOnly || stale;
+        }).then((data) => {
             OM_DATA.value = data;
             return data;
         }),
@@ -222,7 +242,7 @@ export async function updateWeatherData() {
             FORECASTS.value = surfaceForecasts;
             FORECAST_SOURCE.value = "Open-Meteo";
             FORECAST_LOCATION_NAME.value = coordinates;
-            STALE_FORECASTS.value = false;
+            STALE_FORECASTS.value = openMeteoStale;
             hasForecast = true;
         }
     } else {
@@ -233,6 +253,30 @@ export async function updateWeatherData() {
         FORECASTS.value = [];
         FORECAST_SOURCE.value = null;
         FORECAST_LOCATION_NAME.value = null;
-        addError(t("error.noForecasts"));
+        if (!cacheOnly) addError(t("error.noForecasts"));
     }
+}
+
+/** @type {Promise<void> | undefined} */
+let activeRefresh;
+let refreshAgain = false;
+
+export function updateWeatherData() {
+    if (activeRefresh) {
+        refreshAgain = true;
+        return activeRefresh;
+    }
+    activeRefresh = (async () => {
+        do {
+            refreshAgain = false;
+            ERRORS.value = [];
+            // Hydrate all providers first so forecasts and observations can render
+            // together before any potentially slow network request begins.
+            await refreshWeather(true);
+            await refreshWeather(false);
+        } while (refreshAgain);
+    })().finally(() => {
+        activeRefresh = undefined;
+    });
+    return activeRefresh;
 }

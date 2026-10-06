@@ -427,7 +427,8 @@ test("coordinate-only dropzone uses Open-Meteo without an observations card or M
     await expect(
         page.locator("#compass .compass-observations-gust"),
     ).toHaveText("9 m/s");
-    await expect(page.locator("#errors")).toHaveCount(0);
+    await expect(page.locator("#errors")).toContainText("opendata.fmi.fi");
+    await expect(page.locator("#errors")).not.toContainText("Ei METAR-sanomaa");
 });
 
 test("Open-Meteo m/s winds keep their strength in the table and jump-run calculations", async ({
@@ -493,9 +494,16 @@ test("Open-Meteo refreshes cached winds with incompatible units", async ({
     for (const level of ["600", "700", "850", "925", "1000"])
         cached.hourly_units[`windspeed_${level}hPa`] = "km/h";
     await page.addInitScript((cached) => {
-        localStorage.setItem("ECMWFWindAloft", JSON.stringify(cached));
-        localStorage.setItem("ECMWFWindAloftTime", String(Date.now()));
-        localStorage.setItem("ECMWFWindAloftCoordinates", "40.7,-74");
+        localStorage.setItem(
+            "hyppykeli:response:v1:open-meteo:40.7,-74",
+            JSON.stringify({
+                data: cached,
+                hasData: true,
+                fetchedAt: Date.now(),
+                lastAttemptAt: Date.now(),
+                measurementAt: null,
+            }),
+        );
     }, cached);
     await page.route("https://api.open-meteo.com/**", (route) =>
         route.fulfill({ json: openMeteoResponse() }),
@@ -505,7 +513,12 @@ test("Open-Meteo refreshes cached winds with incompatible units", async ({
     await requestPromise;
     await expect(windLevel(page, "≈ 4200 m")).toContainText("12 m/s 200°");
     const units = await page.evaluate(
-        () => JSON.parse(localStorage.getItem("ECMWFWindAloft")).hourly_units,
+        () =>
+            JSON.parse(
+                localStorage.getItem(
+                    "hyppykeli:response:v1:open-meteo:40.7,-74",
+                ),
+            ).data.hourly_units,
     );
     expect(units.windspeed_600hPa).toBe("m/s");
 });
@@ -4252,3 +4265,184 @@ for (const [description, ground] of [
         await expectAutomaticOpeningsUpwind(page);
     });
 }
+
+test("reload shows cached weather before refresh and retains it through failures until recovery", async ({
+    page,
+}) => {
+    await page.clock.install();
+    let mode = "fresh";
+    let release;
+    const blocked = new Promise((resolve) => {
+        release = resolve;
+    });
+    let gust = 7;
+    let upperWind = 12;
+    await page.route("https://api.open-meteo.com/**", async (route) => {
+        if (mode === "blocked") await blocked;
+        if (mode === "failed") return route.fulfill({ status: 503 });
+        const data = openMeteoResponse();
+        data.hourly.windspeed_600hPa = data.hourly.windspeed_600hPa.map(
+            () => upperWind,
+        );
+        return route.fulfill({ json: data });
+    });
+    await page.route("https://tie.digitraffic.fi/**", async (route) => {
+        if (mode === "blocked") await blocked;
+        if (mode === "failed") return route.fulfill({ status: 503 });
+        const now = await page.evaluate(() => new Date().toISOString());
+        const url = new URL(route.request().url());
+        if (url.pathname.endsWith("/history")) {
+            return route.fulfill({
+                json: { values: [], dataUpdatedTime: now },
+            });
+        }
+        if (url.pathname.endsWith("/data")) {
+            return route.fulfill({
+                json: {
+                    dataUpdatedTime: now,
+                    sensorValues: [
+                        {
+                            id: 1,
+                            name: "MAKSIMITUULI",
+                            value: gust,
+                            measuredTime: now,
+                        },
+                        {
+                            id: 2,
+                            name: "KESKITUULI",
+                            value: 4,
+                            measuredTime: now,
+                        },
+                        {
+                            id: 3,
+                            name: "TUULENSUUNTA",
+                            value: 180,
+                            measuredTime: now,
+                        },
+                    ],
+                },
+            });
+        }
+        return route.fulfill({
+            json: {
+                geometry: { coordinates: [-74, 40.7] },
+                properties: { names: { fi: "Cache station" } },
+            },
+        });
+    });
+    await page.goto("/dz/?name=Cache+DZ&roadsid=5004&lat=40.7&lon=-74");
+    await expect
+        .poll(() =>
+            page.evaluate(async () => {
+                const { LIVE_OBSERVATIONS, FORECASTS, OM_DATA } =
+                    await import("#app/weather/state.js");
+                return (
+                    LIVE_OBSERVATIONS.value[0]?.gust === 7 &&
+                    FORECASTS.value.length > 0 &&
+                    OM_DATA.value !== null
+                );
+            }),
+        )
+        .toBe(true);
+    await page.evaluate(() => {
+        for (const key of Object.keys(localStorage)) {
+            if (!key.startsWith("hyppykeli:response:v1:")) continue;
+            const entry = JSON.parse(localStorage.getItem(key));
+            entry.fetchedAt -= 60 * 60_000;
+            entry.lastAttemptAt -= 60 * 60_000;
+            localStorage.setItem(key, JSON.stringify(entry));
+        }
+    });
+    mode = "blocked";
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect
+        .poll(() =>
+            page.evaluate(async () => {
+                const { LIVE_OBSERVATIONS, FORECASTS, OM_DATA } =
+                    await import("#app/weather/state.js");
+                return (
+                    LIVE_OBSERVATIONS.value[0]?.gust === 7 &&
+                    FORECASTS.value.length > 0 &&
+                    OM_DATA.value?.hourly.windspeed_600hPa[0] === 12
+                );
+            }),
+        )
+        .toBe(true);
+    await expect(windLevel(page, "≈ 4200 m")).toContainText("12 m/s");
+    mode = "failed";
+    release();
+    await expect(page.locator("#errors")).toContainText(
+        "Näytetään vanhentuneita välimuistin tietoja",
+    );
+    expect(
+        await page.evaluate(async () => {
+            const { LIVE_OBSERVATIONS } = await import("#app/weather/state.js");
+            return LIVE_OBSERVATIONS.value[0]?.gust;
+        }),
+    ).toBe(7);
+    // Wait for the failed refresh to finish before advancing its next poll.
+    await page.evaluate(async () => {
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        await updateWeatherData();
+    });
+    mode = "fresh";
+    gust = 9;
+    upperWind = 22;
+    await page.clock.runFor(60_000);
+    await expect
+        .poll(() =>
+            page.evaluate(async () => {
+                const { LIVE_OBSERVATIONS, OM_DATA } =
+                    await import("#app/weather/state.js");
+                return (
+                    LIVE_OBSERVATIONS.value[0]?.gust === 9 &&
+                    OM_DATA.value?.hourly.windspeed_600hPa[0] === 22
+                );
+            }),
+        )
+        .toBe(true);
+    await expect(page.locator("#errors")).not.toContainText(
+        "Näytetään vanhentuneita välimuistin tietoja",
+    );
+});
+
+test("FMI XML caches survive reload and moving request times without refetching", async ({
+    page,
+}) => {
+    let requests = 0;
+    await page.route("https://opendata.fmi.fi/**", (route) => {
+        requests++;
+        const url = new URL(route.request().url());
+        expect(url.searchParams.has("cch")).toBe(false);
+        return route.fulfill({
+            contentType: "application/xml",
+            path: url.searchParams
+                .get("storedquery_id")
+                .includes("observations")
+                ? "example_data/observations.xml"
+                : "example_data/forecast.xml",
+        });
+    });
+    await page.goto("/dz/?fmisid=101339");
+    const ready = () =>
+        page.evaluate(async () => {
+            const { LIVE_OBSERVATIONS, FORECASTS, LOADING } =
+                await import("#app/weather/state.js");
+            return (
+                LIVE_OBSERVATIONS.value.length > 0 &&
+                FORECASTS.value.length > 0 &&
+                LOADING.value === 0
+            );
+        });
+    await expect.poll(ready).toBe(true);
+    expect(requests).toBe(2);
+    const timestamps = await page.evaluate(() =>
+        Object.keys(localStorage)
+            .filter((key) => key.startsWith("hyppykeli:response:v1:fmi:"))
+            .map((key) => JSON.parse(localStorage.getItem(key)).measurementAt),
+    );
+    expect(timestamps.filter((time) => Number.isFinite(time))).toHaveLength(1);
+    await page.reload();
+    await expect.poll(ready).toBe(true);
+    expect(requests).toBe(2);
+});

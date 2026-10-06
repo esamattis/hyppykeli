@@ -1,4 +1,5 @@
 // @ts-check
+import { t } from "#app/translations.js";
 import { updateWeatherData } from "#app/weather/refresh.js";
 import { HOVERED_OBSERVATION, NAME, addError } from "#app/weather/state.js";
 import { MENU_OPEN } from "#app/app/menuState.js";
@@ -11,6 +12,13 @@ let started = false;
 export function startApp() {
     if (started) return;
     started = true;
+    document.addEventListener("apicacheerror", (event) => {
+        if (!(event instanceof CustomEvent)) return;
+        const { provider, error, cached } = event.detail;
+        addError(
+            t(cached ? "error.cachedFetch" : "error.apiFetch", provider, error),
+        );
+    });
     startTooltips();
     /** @type {ReturnType<typeof setTimeout>} */
     let timer;
@@ -41,7 +49,14 @@ export function startApp() {
         }
     });
 
-    setInterval(updateWeatherData, 60000);
+    let pollingStarted = false;
+    async function pollWeather() {
+        try {
+            await updateWeatherData();
+        } finally {
+            setTimeout(pollWeather, 60_000);
+        }
+    }
 
     let initial = true;
 
@@ -78,6 +93,10 @@ export function startApp() {
         ),
     ).subscribe(() => {
         updateWeatherData().then(() => {
+            if (!pollingStarted) {
+                pollingStarted = true;
+                setTimeout(pollWeather, 60_000);
+            }
             if (!initial) {
                 return;
             }
@@ -101,12 +120,6 @@ export function startApp() {
                 element.scrollIntoView();
             }
         });
-    });
-
-    document.addEventListener("fetchjsonerror", (event) => {
-        if (event instanceof CustomEvent && event.detail.message) {
-            addError(event.detail.message);
-        }
     });
 
     effect(() => {
