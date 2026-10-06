@@ -1,4 +1,5 @@
 // @ts-check
+import { FormField, NumberInput } from "#app/shared/FormFields.js";
 import { QUERY_PARAMS, navigateQs } from "#app/app/settings.js";
 import { getMapWindData } from "#app/map/windData.js";
 import { Dialog } from "#app/shared/Dialog.js";
@@ -16,7 +17,7 @@ import {
     parseUpperWinds,
 } from "#app/manual/overrides.js";
 import { h, html } from "htm/preact";
-import { useImperativeHandle, useRef, useState } from "preact/hooks";
+import { useId, useImperativeHandle, useRef, useState } from "preact/hooks";
 
 /** @param {ManualObservation[]} observations */
 function toObservationInputs(observations) {
@@ -138,6 +139,7 @@ export function ManualBanner({ onEdit }) {
 
 /** @param {{ onOpen: () => void, editorRef: import('preact').RefObject<ManualModeHandle> }} props */
 export function ManualMode(props) {
+    const fieldId = useId();
     const scope = useScope(css`
         :scope.developer-controls {
             margin-top: 20px;
@@ -153,10 +155,6 @@ export function ManualMode(props) {
         .developer-fields {
             display: grid;
             gap: 14px;
-        }
-        label {
-            display: grid;
-            gap: 6px;
         }
         input,
         textarea {
@@ -461,44 +459,61 @@ export function ManualMode(props) {
                 ${
                     copyUrl &&
                     html`
-                        <label>
-                            ${t("manual.shareUrl")}
-                            <input
-                                type="text"
-                                readonly
-                                value=${copyUrl}
-                                onFocus=${/** @param {FocusEvent & { currentTarget: HTMLInputElement }} event */ (event) => event.currentTarget.select()}
-                            />
-                        </label>
+                        ${h(
+                            FormField,
+                            {
+                                id: `${fieldId}-share`,
+                                label: t("manual.shareUrl"),
+                                layout: "stacked",
+                                className: "manual-field",
+                            },
+                            h("input", {
+                                id: `${fieldId}-share`,
+                                type: "text",
+                                readOnly: true,
+                                value: copyUrl,
+                                onFocus: (event) =>
+                                    event.currentTarget.select(),
+                            }),
+                        )}
                     `
                 }
                 <form
                     onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
                 >
                     <div class="developer-fields">
-                        <label>
-                            ${t("manual.metar")}
-                            <textarea
-                                name="MANUAL_metar"
-                                value=${values.MANUAL_metar ?? ""}
-                                onInput=${
-                                    /** @param {Event & { currentTarget: HTMLTextAreaElement }} event */ (
-                                        event,
-                                    ) => {
-                                        const editedValues = {
-                                            ...values,
-                                            MANUAL_metar:
-                                                event.currentTarget.value,
-                                        };
-                                        setValues(editedValues);
-                                        setStatus("");
-                                        setCopyUrl("");
-                                        applyValues(editedValues);
+                        ${h(
+                            FormField,
+                            {
+                                id: `${fieldId}-metar`,
+                                label: t("manual.metar"),
+                                layout: "stacked",
+                                className: "manual-field",
+                            },
+                            html`
+                                <textarea
+                                    id=${`${fieldId}-metar`}
+                                    name="MANUAL_metar"
+                                    value=${values.MANUAL_metar ?? ""}
+                                    onInput=${
+                                        /** @param {import("preact").JSX.TargetedEvent<HTMLTextAreaElement>} event */ (
+                                            event,
+                                        ) => {
+                                            const editedValues = {
+                                                ...values,
+                                                MANUAL_metar:
+                                                    event.currentTarget.value,
+                                            };
+                                            setValues(editedValues);
+                                            setStatus("");
+                                            setCopyUrl("");
+                                            applyValues(editedValues);
+                                        }
                                     }
-                                }
-                                spellcheck="false"
-                            />
-                        </label>
+                                    spellcheck="false"
+                                />
+                            `,
+                        )}
                     </div>
                     <h3>${t("manual.upperTitle")}</h3>
                     <p>${t("manual.upperHelp")}</p>
@@ -527,16 +542,24 @@ export function ManualMode(props) {
                                             ]).map(
                                                 (key) => html`
                                                     <td>
-                                                        <input
-                                                            type="number"
-                                                            name=${`MANUAL_upper_winds_${index}_${key}`}
-                                                            aria-label=${`${key === "speed" ? t("manual.meanWind") : t("weather.direction")}, ≈ ${height} m`}
-                                                            min="0"
-                                                            max=${key === "direction" ? 360 : undefined}
-                                                            step="any"
-                                                            value=${wind[key]}
-                                                            onInput=${/** @param {Event & { currentTarget: HTMLInputElement }} event */ (event) => editUpperWind(index, key, event)}
-                                                        />
+                                                        ${h(NumberInput, {
+                                                            name: `MANUAL_upper_winds_${index}_${key}`,
+                                                            "aria-label": `${key === "speed" ? t("manual.meanWind") : t("weather.direction")}, ≈ ${height} m`,
+                                                            min: 0,
+                                                            max:
+                                                                key ===
+                                                                "direction"
+                                                                    ? 360
+                                                                    : undefined,
+                                                            step: "any",
+                                                            value: wind[key],
+                                                            onInput: (event) =>
+                                                                editUpperWind(
+                                                                    index,
+                                                                    key,
+                                                                    event,
+                                                                ),
+                                                        })}
                                                     </td>
                                                 `,
                                             )
@@ -578,16 +601,30 @@ export function ManualMode(props) {
                                                 }[key];
                                                 return html`
                                                     <td>
-                                                        <input
-                                                            type="number"
-                                                            name=${`MANUAL_ground_obs_${index}_${key}`}
-                                                            aria-label=${`${label}, ${observation.age} min sitten`}
-                                                            min=${key === "direction" ? -1 : 0}
-                                                            max=${key === "direction" ? 360 : undefined}
-                                                            step="any"
-                                                            value=${observation[key]}
-                                                            onInput=${/** @param {Event & { currentTarget: HTMLInputElement }} event */ (event) => editObservation(index, key, event)}
-                                                        />
+                                                        ${h(NumberInput, {
+                                                            name: `MANUAL_ground_obs_${index}_${key}`,
+                                                            "aria-label": `${label}, ${observation.age} min sitten`,
+                                                            min:
+                                                                key ===
+                                                                "direction"
+                                                                    ? -1
+                                                                    : 0,
+                                                            max:
+                                                                key ===
+                                                                "direction"
+                                                                    ? 360
+                                                                    : undefined,
+                                                            step: "any",
+                                                            value: observation[
+                                                                key
+                                                            ],
+                                                            onInput: (event) =>
+                                                                editObservation(
+                                                                    index,
+                                                                    key,
+                                                                    event,
+                                                                ),
+                                                        })}
                                                     </td>
                                                 `;
                                             })

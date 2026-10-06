@@ -1,4 +1,5 @@
 // @ts-check
+import { CheckboxField } from "#app/shared/FormFields.js";
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
 import { holdAnimations } from "#app/app/animationState.js";
 import { getCanopyDrift } from "#app/map/canopy.js";
@@ -189,13 +190,6 @@ export function DropzoneMap() {
         .map-frame.full-window .dz-map {
             flex: 1;
             min-height: 0;
-        }
-        .automatic-jump-run {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 0.8rem;
-            cursor: pointer;
         }
         .map-layout {
             display: grid;
@@ -1662,31 +1656,23 @@ export function DropzoneMap() {
                         `,
                     )}
                 </h2>
-                <label class="automatic-jump-run">
-                    <input
-                        type="checkbox"
-                        checked=${automaticJumpRun}
-                        onChange=${
-                            /** @param {Event} event */ (event) => {
-                                const checked =
-                                    /** @type {HTMLInputElement} */ (
-                                        event.currentTarget
-                                    ).checked;
-                                setAutomaticJumpRun(checked);
-                                if (checked) {
-                                    lastAutomaticUpdate.current = null;
-                                    if (!jumpRunStart)
-                                        navigateQs(
-                                            { map_run_start: undefined },
-                                            { replace: true },
-                                        );
-                                    positionAutomaticJumpRun();
-                                }
-                            }
+                ${h(CheckboxField, {
+                    className: "automatic-jump-run",
+                    label: t("map.automaticUpdate"),
+                    checked: automaticJumpRun,
+                    onCheckedChange: (checked) => {
+                        setAutomaticJumpRun(checked);
+                        if (checked) {
+                            lastAutomaticUpdate.current = null;
+                            if (!jumpRunStart)
+                                navigateQs(
+                                    { map_run_start: undefined },
+                                    { replace: true },
+                                );
+                            positionAutomaticJumpRun();
                         }
-                    />
-                    ${t("map.automaticUpdate")}
-                </label>
+                    },
+                })}
                 ${h(DataSource, {
                     sources: [
                         "Open-Meteo",

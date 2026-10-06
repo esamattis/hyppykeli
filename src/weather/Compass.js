@@ -1,4 +1,5 @@
 // @ts-check
+import { CheckboxField } from "#app/shared/FormFields.js";
 import { QUERY_PARAMS } from "#app/app/settings.js";
 import { ANIMATIONS_RUNNING } from "#app/app/animationState.js";
 import { FromNow } from "#app/shared/FromNow.js";
@@ -242,12 +243,8 @@ export function Compass({ floating = false } = {}) {
 
         .compass-animation-toggle {
             align-self: flex-start;
-            display: flex;
-            align-items: center;
-            gap: 4px;
+            --checkbox-gap: 4px;
             padding: 4px;
-            font-size: 0.8rem;
-            cursor: pointer;
         }
     `);
 
@@ -325,18 +322,15 @@ export function Compass({ floating = false } = {}) {
 
             ${!floating && html`
                 <div class="compass-controls">
-                <label class="compass-animation-toggle">
-                    <input
-                        type="checkbox"
-                        checked=${animated}
-                        onChange=${() => {
-                            const enabled = !animated;
-                            COMPASS_ANIMATION_ENABLED.value = enabled;
-                            localStorage.setItem("compass-animation", String(enabled));
-                        }}
-                    />
-                    ${t("compass.animation")}
-                </label>
+                ${h(CheckboxField, {
+                    className: "compass-animation-toggle",
+                    label: t("compass.animation"),
+                    checked: animated,
+                    onCheckedChange: (enabled) => {
+                        COMPASS_ANIMATION_ENABLED.value = enabled;
+                        localStorage.setItem("compass-animation", String(enabled));
+                    },
+                })}
 
                 <div class="summary-time">
                     ${observation && h(FromNow, { date: observation.time })}

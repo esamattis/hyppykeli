@@ -2879,7 +2879,7 @@ test("map setup survives URL reload and shares in full-window mode", async ({
     expect(
         Number.isFinite(Number(setup.searchParams.get("map_center_lon"))),
     ).toBe(true);
-    await toolbar.getByRole("button", { name: "Jaa kartta" }).click();
+    await toolbar.getByRole("button", { name: "Jaa hyppylinja" }).click();
     const shared = await page.evaluate(() => window.sharedMap);
     const sharedURL = new URL(shared.url);
     expect(sharedURL.searchParams.get("map_full_window")).toBe("true");

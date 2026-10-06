@@ -1,5 +1,5 @@
 // @ts-check
-import { Help } from "#app/shared/Help.js";
+import { FieldHelp } from "#app/shared/FormFields.js";
 import { t } from "#app/translations.js";
 import { h, html } from "htm/preact";
 
@@ -7,10 +7,9 @@ import { h, html } from "htm/preact";
 export function FreefallHelp({ field }) {
     const title = t(`settings.${field}`);
     return h(
-        Help,
-        { label: `${title}: ${t("common.help")}`, wide: true },
+        FieldHelp,
+        { title, wide: true },
         html`
-            <h3>${title}</h3>
             ${
                 field === "openingHeight"
                     ? html`

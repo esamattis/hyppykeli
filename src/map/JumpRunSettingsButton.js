@@ -1,8 +1,8 @@
 // @ts-check
+import { FieldHelp, FormField, NumberInput } from "#app/shared/FormFields.js";
 import { DROPZONE_ELEVATION, navigateQs } from "#app/app/settings.js";
 import { Dialog } from "#app/shared/Dialog.js";
 import { FreefallHelp } from "#app/map/FreefallHelp.js";
-import { Help } from "#app/shared/Help.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { Icon, WindArrow } from "#app/shared/icons.js";
 import { settingsDialogStyles } from "#app/styles.js";
@@ -30,32 +30,13 @@ export function JumpRunSettingsButton({
         :scope:is(dialog) {
             width: min(640px, calc(100vw - 32px));
         }
-        .setting-with-help {
+        form {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 6rem;
-            align-items: center;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .setting-label {
-            display: flex;
-            align-items: center;
-        }
-        .setting-label > label {
-            display: block;
-            margin: 0;
-        }
-        @media (max-width: 480px) {
-            .setting-with-help,
-            form > label {
-                grid-template-columns: minmax(0, 1fr);
-            }
-            .setting-label {
-                justify-content: space-between;
-            }
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 6px 8px;
         }
         fieldset {
-            margin-top: 14px;
+            margin: 8px 0 0;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
         }
@@ -72,6 +53,7 @@ export function JumpRunSettingsButton({
         .next-jumper-help {
             margin: 0 0 4px;
             font-size: 0.7rem;
+            line-height: 1.4;
         }
         .next-jumper > .next-jumper-help,
         .next-jumper > .presets,
@@ -79,12 +61,17 @@ export function JumpRunSettingsButton({
             grid-column: 1 / -1;
         }
         .current-jumpers-title {
-            margin: 14px 0 4px;
+            margin: 8px 0 0;
             font-size: 0.8rem;
+        }
+        .direction-field,
+        .next-jumper,
+        .current-jumpers-title,
+        .jumper-table {
+            grid-column: 1 / -1;
         }
         .direction-field {
             grid-template-columns: minmax(0, 1fr);
-            gap: 4px;
         }
         .direction-row {
             display: flex;
@@ -100,6 +87,7 @@ export function JumpRunSettingsButton({
             align-items: center;
             gap: 6px;
             min-width: 6ch;
+            font-size: 0.8rem;
             white-space: nowrap;
         }
         .direction-value {
@@ -128,7 +116,6 @@ export function JumpRunSettingsButton({
         }
         .jumper-table {
             width: 100%;
-            margin-top: 14px;
             border-collapse: collapse;
             table-layout: fixed;
             font-size: 0.8rem;
@@ -216,16 +203,6 @@ export function JumpRunSettingsButton({
         setSeparationDraft(String(settings.separationSeconds));
         dialogRef.current?.showModal();
     };
-    /** @param {"speedKmh" | "separationSeconds" | "exitHeight"} key @param {Event} event */
-    const updateSettings = (key, event) => {
-        const input = /** @type {HTMLInputElement} */ (event.currentTarget);
-        const value = input.value;
-        if (key === "speedKmh") setSpeedDraft(value);
-        else if (key === "separationSeconds") setSeparationDraft(value);
-        else setExitDraft(value);
-        if (input.checkValidity())
-            onChange({ ...settings, [key]: Number(value) });
-    };
     return html`
         ${h(ToolbarButton, {
             label: t("settings.jumpRun"),
@@ -242,242 +219,212 @@ export function JumpRunSettingsButton({
                 <form
                     onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
                 >
-                    <div class="direction-field">
-                        <div class="setting-label">
-                            <label for=${`${titleId}-direction`}>
-                                ${t("settings.jumpRunDirection")}
-                            </label>
-                            <span class=${scope.end}>
-                                ${h(
-                                    Help,
-                                    {
-                                        label: `${t("settings.jumpRunDirection")}: ${t("common.help")}`,
-                                        wide: true,
-                                    },
-                                    html`
-                                        <h3>
-                                            ${t("settings.jumpRunDirection")}
-                                        </h3>
-                                        <p>
-                                            ${t("settings.jumpRunDirectionHelp")}
-                                        </p>
-                                    `,
-                                )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-direction`,
+                            label: t("settings.jumpRunDirection"),
+                            className: "direction-field",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                {
+                                    title: t("settings.jumpRunDirection"),
+                                    wide: true,
+                                },
+                                html`
+                                    <p>${t("settings.jumpRunDirectionHelp")}</p>
+                                `,
+                            ),
+                        },
+                        html`
+                            <span class="direction-row">
+                                <input
+                                    type="range"
+                                    id=${`${titleId}-direction`}
+                                    aria-label=${t("settings.jumpRunDirection")}
+                                    min="0"
+                                    max="360"
+                                    step="1"
+                                    value=${settings.direction}
+                                    onInput=${
+                                        /** @param {Event} event */ (event) =>
+                                            onChange({
+                                                ...settings,
+                                                direction: Number(
+                                                    /** @type {HTMLInputElement} */ (
+                                                        event.currentTarget
+                                                    ).value,
+                                                ),
+                                            })
+                                    }
+                                />
+                                <span class="direction-reading">
+                                    ${h(WindArrow, {
+                                        // WindArrow takes the origin; jump run direction is the ground track.
+                                        direction:
+                                            (settings.direction + 180) % 360,
+                                    })}
+                                    <output class="direction-value">
+                                        ${Math.round(settings.direction)}°
+                                    </output>
+                                </span>
                             </span>
-                        </div>
-                        <span class="direction-row">
-                            <input
-                                type="range"
-                                id=${`${titleId}-direction`}
-                                aria-label=${t("settings.jumpRunDirection")}
-                                min="0"
-                                max="360"
-                                step="1"
-                                value=${settings.direction}
-                                onInput=${
-                                    /** @param {Event} event */ (event) =>
-                                        onChange({
-                                            ...settings,
-                                            direction: Number(
-                                                /** @type {HTMLInputElement} */ (
-                                                    event.currentTarget
-                                                ).value,
-                                            ),
-                                        })
-                                }
-                            />
-                            <span class="direction-reading">
-                                ${h(WindArrow, {
-                                    // WindArrow takes the origin; jump run direction is the ground track.
-                                    direction: (settings.direction + 180) % 360,
-                                })}
-                                <output class="direction-value">
-                                    ${Math.round(settings.direction)}°
-                                </output>
-                            </span>
-                        </span>
-                    </div>
-                    <div class="setting-with-help">
-                        <div class="setting-label">
-                            <label for=${`${titleId}-elevation`}>
-                                ${t("settings.elevation")}
-                            </label>
-                            <div class=${scope.end}>
-                                ${h(
-                                    Help,
-                                    {
-                                        label: `${t("settings.elevation")}: ${t("common.help")}`,
-                                    },
-                                    html`
-                                        <h3>${t("settings.elevation")}</h3>
-                                        <p>${t("settings.elevationHelp")}</p>
-                                    `,
-                                )}
-                            </div>
-                        </div>
-                        <input
-                            id=${`${titleId}-elevation`}
-                            type="number"
-                            min="0"
-                            max="4200"
-                            step="any"
-                            value=${elevationDraft}
-                            onInput=${
-                                /** @param {Event} event */ (event) => {
-                                    const input =
-                                        /** @type {HTMLInputElement} */ (
-                                            event.currentTarget
-                                        );
-                                    setElevationDraft(input.value);
-                                    if (input.checkValidity())
-                                        navigateQs(
-                                            {
-                                                elevation:
-                                                    input.value || undefined,
-                                            },
-                                            { replace: true },
-                                        );
-                                }
-                            }
-                        />
-                    </div>
-                    <div class="setting-with-help">
-                        <div class="setting-label">
-                            <label for=${`${titleId}-exit`}>
-                                ${t("settings.exitHeight")}
-                            </label>
-                            <div class=${scope.end}>
-                                ${h(
-                                    Help,
-                                    {
-                                        label: `${t("settings.exitHeight")}: ${t("common.help")}`,
-                                    },
-                                    html`
-                                        <h3>${t("settings.exitHeight")}</h3>
-                                        <p>${t("settings.exitExplanation")}</p>
-                                        <p>${t("settings.profileRange")}</p>
-                                        <p>
-                                            ${t("settings.altitudeReferenceHelp")}
-                                        </p>
-                                    `,
-                                )}
-                            </div>
-                        </div>
-                        <input
-                            id=${`${titleId}-exit`}
-                            type="number"
-                            required
-                            min=${Math.max(800, nextJumper.openingHeight, ...jumpers.map((jumper) => jumper.openingHeight)) + 1}
-                            max=${4200 - DROPZONE_ELEVATION.value}
-                            step="1"
-                            value=${exitDraft}
-                            onInput=${/** @param {Event} event */ (event) => updateSettings("exitHeight", event)}
-                        />
-                    </div>
-                    <div class="setting-with-help">
-                        <div class="setting-label">
-                            <label for=${`${titleId}-speed`}>
-                                ${t("settings.jumpRunSpeed")}
-                            </label>
-                            <div class=${scope.end}>
-                                ${h(
-                                    Help,
-                                    {
-                                        label: `${t("settings.jumpRunSpeed")}: ${t("common.help")}`,
-                                        wide: true,
-                                    },
-                                    html`
-                                        <h3>${t("settings.jumpRunSpeed")}</h3>
-                                        <p>${t("settings.speedExplanation")}</p>
-                                    `,
-                                )}
-                            </div>
-                        </div>
-                        <input
-                            id=${`${titleId}-speed`}
-                            type="number"
-                            required
-                            min="1"
-                            max="1000"
-                            step="1"
-                            value=${speedDraft}
-                            onInput=${/** @param {Event} event */ (event) => updateSettings("speedKmh", event)}
-                        />
-                    </div>
-                    <div class="setting-with-help">
-                        <div class="setting-label">
-                            <label for=${`${titleId}-interval`}>
-                                ${t("settings.jumperInterval")}
-                            </label>
-                            <div class=${scope.end}>
-                                ${h(
-                                    Help,
-                                    {
-                                        label: `${t("settings.jumperInterval")}: ${t("common.help")}`,
-                                    },
-                                    html`
-                                        <h3>${t("settings.jumperInterval")}</h3>
-                                        <p>
-                                            ${t("settings.jumperIntervalHelp")}
-                                        </p>
-                                    `,
-                                )}
-                            </div>
-                        </div>
-                        <input
-                            id=${`${titleId}-interval`}
-                            type="number"
-                            required
-                            min="1"
-                            max="120"
-                            step="1"
-                            value=${separationDraft}
-                            onInput=${/** @param {Event} event */ (event) => updateSettings("separationSeconds", event)}
-                        />
-                    </div>
-                    <div class="setting-with-help">
-                        <div class="setting-label">
-                            <label for=${`${titleId}-count`}>
-                                ${t("settings.defaultJumperCount")}
-                            </label>
-                            <div class=${scope.end}>
-                                ${h(
-                                    Help,
-                                    {
-                                        label: `${t("settings.defaultJumperCount")}: ${t("common.help")}`,
-                                    },
-                                    html`
-                                        <h3>
-                                            ${t("settings.defaultJumperCount")}
-                                        </h3>
-                                        <p>
-                                            ${t("settings.defaultJumperCountHelp")}
-                                        </p>
-                                    `,
-                                )}
-                            </div>
-                        </div>
-                        <input
-                            id=${`${titleId}-count`}
-                            type="number"
-                            min="1"
-                            max="100"
-                            step="1"
-                            value=${defaultJumperCount}
-                            onInput=${
-                                /** @param {Event} event */ (event) => {
-                                    const input =
-                                        /** @type {HTMLInputElement} */ (
-                                            event.currentTarget
-                                        );
-                                    if (input.checkValidity())
-                                        onDefaultJumperCountChange(
-                                            Number(input.value),
-                                        );
-                                }
-                            }
-                        />
-                    </div>
+                        `,
+                    )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-elevation`,
+                            label: t("settings.elevation"),
+                            className: "setting-with-help",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                { title: t("settings.elevation") },
+                                html`
+                                    <p>${t("settings.elevationHelp")}</p>
+                                `,
+                            ),
+                        },
+                        h(NumberInput, {
+                            id: `${titleId}-elevation`,
+                            min: 0,
+                            max: 4200,
+                            step: "any",
+                            value: elevationDraft,
+                            onDraftChange: setElevationDraft,
+                            onValueChange: (_value, input) =>
+                                navigateQs(
+                                    { elevation: input.value || undefined },
+                                    { replace: true },
+                                ),
+                        }),
+                    )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-exit`,
+                            label: t("settings.exitHeight"),
+                            className: "setting-with-help",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                { title: t("settings.exitHeight") },
+                                html`
+                                    <p>${t("settings.exitExplanation")}</p>
+                                    <p>${t("settings.profileRange")}</p>
+                                    <p>
+                                        ${t("settings.altitudeReferenceHelp")}
+                                    </p>
+                                `,
+                            ),
+                        },
+                        h(NumberInput, {
+                            id: `${titleId}-exit`,
+                            required: true,
+                            min:
+                                Math.max(
+                                    800,
+                                    nextJumper.openingHeight,
+                                    ...jumpers.map(
+                                        (jumper) => jumper.openingHeight,
+                                    ),
+                                ) + 1,
+                            max: 4200 - DROPZONE_ELEVATION.value,
+                            step: 1,
+                            value: exitDraft,
+                            onDraftChange: setExitDraft,
+                            onValueChange: (value) =>
+                                onChange({ ...settings, exitHeight: value }),
+                        }),
+                    )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-speed`,
+                            label: t("settings.jumpRunSpeed"),
+                            className: "setting-with-help",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                {
+                                    title: t("settings.jumpRunSpeed"),
+                                    wide: true,
+                                },
+                                html`
+                                    <p>${t("settings.speedExplanation")}</p>
+                                `,
+                            ),
+                        },
+                        h(NumberInput, {
+                            id: `${titleId}-speed`,
+                            required: true,
+                            min: 1,
+                            max: 1000,
+                            step: 1,
+                            value: speedDraft,
+                            onDraftChange: setSpeedDraft,
+                            onValueChange: (value) =>
+                                onChange({ ...settings, speedKmh: value }),
+                        }),
+                    )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-interval`,
+                            label: t("settings.jumperInterval"),
+                            className: "setting-with-help",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                { title: t("settings.jumperInterval") },
+                                html`
+                                    <p>${t("settings.jumperIntervalHelp")}</p>
+                                `,
+                            ),
+                        },
+                        h(NumberInput, {
+                            id: `${titleId}-interval`,
+                            required: true,
+                            min: 1,
+                            max: 120,
+                            step: 1,
+                            value: separationDraft,
+                            onDraftChange: setSeparationDraft,
+                            onValueChange: (value) =>
+                                onChange({
+                                    ...settings,
+                                    separationSeconds: value,
+                                }),
+                        }),
+                    )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-count`,
+                            label: t("settings.defaultJumperCount"),
+                            className: "setting-with-help",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                { title: t("settings.defaultJumperCount") },
+                                html`
+                                    <p>
+                                        ${t("settings.defaultJumperCountHelp")}
+                                    </p>
+                                `,
+                            ),
+                        },
+                        h(NumberInput, {
+                            id: `${titleId}-count`,
+                            min: 1,
+                            max: 100,
+                            step: 1,
+                            value: defaultJumperCount,
+                            onValueChange: onDefaultJumperCountChange,
+                        }),
+                    )}
                     <fieldset class="next-jumper">
                         <legend>${t("settings.nextJumper")}</legend>
                         <p class="next-jumper-help">

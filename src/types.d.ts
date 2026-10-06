@@ -664,6 +664,55 @@ interface FreefallFieldsProps {
     onChange: (field: keyof JumpRunJumper, value: number) => void;
 }
 
+interface FormFieldProps {
+    id: string;
+    label?: import("preact").ComponentChildren;
+    help?: import("preact").ComponentChildren;
+    layout?: "compact" | "stacked" | "plain";
+    className?: string;
+    labelClassName?: string;
+    children?: import("preact").ComponentChildren;
+}
+
+interface FieldHelpProps {
+    title: string;
+    wide?: boolean;
+    children?: import("preact").ComponentChildren;
+}
+
+type NumberInputProps = Omit<
+    import("preact").JSX.InputHTMLAttributes<HTMLInputElement>,
+    "type" | "onInput" | "ref"
+> & {
+    inputRef?: import("preact").Ref<HTMLInputElement>;
+    onDraftChange?: (value: string) => void;
+    onValueChange?: (value: number, input: HTMLInputElement) => void;
+    onInput?: import("preact").JSX.InputEventHandler<HTMLInputElement>;
+};
+
+type CheckboxFieldProps = Omit<
+    import("preact").JSX.InputHTMLAttributes<HTMLInputElement>,
+    "type" | "class" | "className" | "children" | "onChange"
+> & {
+    label: import("preact").ComponentChildren;
+    className?: string;
+    onCheckedChange?: (checked: boolean) => void;
+};
+
+interface ClearableInputProps {
+    name: string;
+    label: string;
+    placeholder: string;
+    value: string;
+    type?: "text" | "number";
+    step?: string;
+    min?: number;
+    max?: number;
+    onInput: import("preact").JSX.InputEventHandler<HTMLInputElement>;
+    onClear: () => void;
+    onPaste?: import("preact").JSX.ClipboardEventHandler<HTMLInputElement>;
+}
+
 interface SpeedPresetsProps {
     onSelect: (speedKmh: number) => void;
 }

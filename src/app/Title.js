@@ -1,4 +1,5 @@
 // @ts-check
+import { FormField } from "#app/shared/FormFields.js";
 import { Dialog } from "#app/shared/Dialog.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { Help } from "#app/shared/Help.js";
@@ -77,14 +78,8 @@ export function Title() {
             margin-top: 0;
         }
 
-        form label {
-            display: grid;
-            gap: 8px;
-        }
-
-        input {
-            width: 100%;
-            box-sizing: border-box;
+        .name-field {
+            --form-field-gap: 8px;
         }
 
         .name-hint {
@@ -197,21 +192,24 @@ export function Title() {
                 <div>
                     <h2 id=${dialogTitleId}>${t("title.edit")}</h2>
                     <form onSubmit=${saveName}>
-                        <label>
-                            ${t("menu.namePrompt")}
-                            <input
-                                ref=${inputRef}
-                                name="name"
-                                type="text"
-                                value=${nameDraft}
-                                onInput=${(/** @type {Event} */ event) =>
-                                    setNameDraft(
-                                        /** @type {HTMLInputElement} */ (
-                                            event.currentTarget
-                                        ).value,
-                                    )}
-                            />
-                        </label>
+                        ${h(
+                            FormField,
+                            {
+                                id: `${dialogTitleId}-name`,
+                                label: t("menu.namePrompt"),
+                                layout: "stacked",
+                                className: "name-field",
+                            },
+                            h("input", {
+                                id: `${dialogTitleId}-name`,
+                                ref: inputRef,
+                                name: "name",
+                                type: "text",
+                                value: nameDraft,
+                                onInput: (event) =>
+                                    setNameDraft(event.currentTarget.value),
+                            }),
+                        )}
                         <p class="name-hint">${t("title.emptyName")}</p>
                         <div class="name-actions">
                             <button type="submit">${t("common.save")}</button>

@@ -167,26 +167,6 @@ export const settingsDialogStyles = css`
         margin: 0 0 14px;
         font-size: 1.15rem;
     }
-    form label {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) 6rem;
-        align-items: center;
-        gap: 8px;
-        margin-top: 10px;
-        overflow-wrap: anywhere;
-    }
-    input[type="number"] {
-        width: 100%;
-        min-width: 0;
-        min-height: 36px;
-        padding: 6px 8px;
-        box-sizing: border-box;
-    }
-    form p {
-        margin: 10px 0;
-        font-size: 0.85rem;
-        line-height: 1.4;
-    }
 `;
 
 export const cardHeadingStyles = css`

@@ -1,107 +1,11 @@
 // @ts-check
-import { Icon } from "#app/shared/icons.js";
+import { ClearableInput, FormField } from "#app/shared/FormFields.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { findClosestRoadStation } from "#app/weather/providers/roadStations.js";
 import { DropzoneCoordinateMap } from "#app/landing/DropzoneCoordinateMap.js";
 import { h, html } from "htm/preact";
-import { useRef, useState } from "preact/hooks";
-
-/**
- * @param {{
- *   name: string,
- *   label: string,
- *   placeholder: string,
- *   value: string,
- *   type?: "text" | "number",
- *   step?: string,
- *   min?: number,
- *   max?: number,
- *   onInput: (event: import("preact").JSX.TargetedEvent<HTMLInputElement>) => void,
- *   onClear: () => void,
- *   onPaste?: (event: import("preact").JSX.TargetedClipboardEvent<HTMLInputElement>) => void,
- * }} props
- */
-function ClearableInput({
-    name,
-    label,
-    placeholder,
-    value,
-    type = "text",
-    step,
-    min,
-    max,
-    onInput,
-    onClear,
-    onPaste,
-}) {
-    const scope = useScope(css`
-        :scope {
-            position: relative;
-            display: inline-flex;
-            max-width: 100%;
-        }
-        input {
-            box-sizing: border-box;
-            width: 22ch;
-            padding: 8px 38px 8px 10px;
-        }
-        .clear-input {
-            position: absolute;
-            top: 50%;
-            right: 4px;
-            display: grid;
-            width: 30px;
-            height: 30px;
-            padding: 0;
-            border: 0;
-            place-items: center;
-            transform: translateY(-50%);
-            background: transparent;
-        }
-    `);
-    /** @type {import("preact").RefObject<HTMLInputElement | null>} */
-    const inputRef = useRef(null);
-
-    function clear() {
-        onClear();
-        inputRef.current?.focus();
-    }
-
-    return html`
-        <div>
-            ${scope.style}
-            <input
-                ref=${inputRef}
-                id=${name}
-                type=${type}
-                name=${name}
-                placeholder=${placeholder}
-                step=${step}
-                min=${min}
-                max=${max}
-                value=${value}
-                onInput=${onInput}
-                onPaste=${onPaste}
-            />
-            ${
-                value
-                    ? html`
-                          <button
-                              class="clear-input"
-                              type="button"
-                              aria-label=${t("landing.clear", label)}
-                              title=${t("landing.clear", label)}
-                              onClick=${clear}
-                          >
-                              ${h(Icon, { name: "close", size: 18 })}
-                          </button>
-                      `
-                    : null
-            }
-        </div>
-    `;
-}
+import { useState } from "preact/hooks";
 
 export function CreateDropzoneForm() {
     const headingScope = useScope(css`
@@ -265,10 +169,15 @@ export function CreateDropzoneForm() {
                     lon: fields.lon,
                     onSelect: selectCoordinates,
                 })}
-
-                <div class="field">
-                    <label for="lat">${t("landing.latitude")}</label>
-                    ${h(ClearableInput, {
+                ${h(
+                    FormField,
+                    {
+                        id: "lat",
+                        label: t("landing.latitude"),
+                        layout: "plain",
+                        className: "field",
+                    },
+                    h(ClearableInput, {
                         name: "lat",
                         placeholder: "60.1234",
                         value: fields.lat,
@@ -276,25 +185,37 @@ export function CreateDropzoneForm() {
                         onInput: updateField,
                         onPaste: pasteCoordinates,
                         onClear: () => clearField("lat"),
-                    })}
-                </div>
+                    }),
+                )}
                 <div class="desc"></div>
 
-                <div class="field">
-                    <label for="lon">${t("landing.longitude")}</label>
-                    ${h(ClearableInput, {
+                ${h(
+                    FormField,
+                    {
+                        id: "lon",
+                        label: t("landing.longitude"),
+                        layout: "plain",
+                        className: "field",
+                    },
+                    h(ClearableInput, {
                         name: "lon",
                         placeholder: "24.1234",
                         value: fields.lon,
                         label: "pituusaste",
                         onInput: updateField,
                         onClear: () => clearField("lon"),
-                    })}
-                </div>
+                    }),
+                )}
                 <div class="desc">${t("landing.decimal")}</div>
-                <div class="field">
-                    <label for="elevation">${t("settings.elevation")}</label>
-                    ${h(ClearableInput, {
+                ${h(
+                    FormField,
+                    {
+                        id: "elevation",
+                        label: t("settings.elevation"),
+                        layout: "plain",
+                        className: "field",
+                    },
+                    h(ClearableInput, {
                         name: "elevation",
                         placeholder: "0",
                         value: fields.elevation,
@@ -305,31 +226,41 @@ export function CreateDropzoneForm() {
                         max: 4200,
                         onInput: updateField,
                         onClear: () => clearField("elevation"),
-                    })}
-                </div>
+                    }),
+                )}
                 <div class="desc">${t("settings.elevationHelp")}</div>
             </fieldset>
 
             <fieldset>
                 <legend>${t("landing.other")}</legend>
-                <div class="field">
-                    <label for="name">${t("landing.name")}</label>
-                    ${h(ClearableInput, {
+                ${h(
+                    FormField,
+                    {
+                        id: "name",
+                        label: t("landing.name"),
+                        layout: "plain",
+                        className: "field",
+                    },
+                    h(ClearableInput, {
                         name: "name",
                         placeholder: "My DZ",
                         value: fields.name,
                         label: "nimi",
                         onInput: updateField,
                         onClear: () => clearField("name"),
-                    })}
-                </div>
+                    }),
+                )}
                 <div class="desc"></div>
 
-                <div class="field">
-                    <label for="default_jump_run_direction">
-                        ${t("landing.defaultJumpRunDirection")}
-                    </label>
-                    ${h(ClearableInput, {
+                ${h(
+                    FormField,
+                    {
+                        id: "default_jump_run_direction",
+                        label: t("landing.defaultJumpRunDirection"),
+                        layout: "plain",
+                        className: "field",
+                    },
+                    h(ClearableInput, {
                         name: "default_jump_run_direction",
                         placeholder: "180",
                         value: fields.default_jump_run_direction,
@@ -339,17 +270,21 @@ export function CreateDropzoneForm() {
                         max: 360,
                         onInput: updateField,
                         onClear: () => clearField("default_jump_run_direction"),
-                    })}
-                </div>
+                    }),
+                )}
                 <div class="desc">
                     ${t("landing.defaultJumpRunDirectionHelp")}
                 </div>
 
-                <div class="field">
-                    <label for="default_jump_group_count">
-                        ${t("landing.defaultJumperCount")}
-                    </label>
-                    ${h(ClearableInput, {
+                ${h(
+                    FormField,
+                    {
+                        id: "default_jump_group_count",
+                        label: t("landing.defaultJumperCount"),
+                        layout: "plain",
+                        className: "field",
+                    },
+                    h(ClearableInput, {
                         name: "default_jump_group_count",
                         placeholder: "6",
                         value: fields.default_jump_group_count,
@@ -359,21 +294,27 @@ export function CreateDropzoneForm() {
                         max: 100,
                         onInput: updateField,
                         onClear: () => clearField("default_jump_group_count"),
-                    })}
-                </div>
+                    }),
+                )}
                 <div class="desc">${t("landing.defaultJumperCountHelp")}</div>
 
-                <div class="field">
-                    <label for="fmisid">FMISID</label>
-                    ${h(ClearableInput, {
+                ${h(
+                    FormField,
+                    {
+                        id: "fmisid",
+                        label: "FMISID",
+                        layout: "plain",
+                        className: "field",
+                    },
+                    h(ClearableInput, {
                         name: "fmisid",
                         placeholder: "123445",
                         value: fields.fmisid,
                         label: "FMISID",
                         onInput: updateField,
                         onClear: () => clearField("fmisid"),
-                    })}
-                </div>
+                    }),
+                )}
 
                 <div class="desc">
                     ${t("landing.fmiHelp")}${" "}
@@ -382,17 +323,23 @@ export function CreateDropzoneForm() {
                     </a>
                 </div>
 
-                <div class="field">
-                    <label for="roadsid">${t("landing.roadStation")}</label>
-                    ${h(ClearableInput, {
+                ${h(
+                    FormField,
+                    {
+                        id: "roadsid",
+                        label: t("landing.roadStation"),
+                        layout: "plain",
+                        className: "field",
+                    },
+                    h(ClearableInput, {
                         name: "roadsid",
                         placeholder: "123445",
                         value: fields.roadsid,
                         label: t("landing.roadStation"),
                         onInput: updateField,
                         onClear: () => clearField("roadsid"),
-                    })}
-                </div>
+                    }),
+                )}
                 <button
                     class="roadsid-button"
                     id="get-roadsid"
@@ -416,17 +363,23 @@ export function CreateDropzoneForm() {
                     </a>
                 </div>
 
-                <div class="field">
-                    <label for="icaocode">ICAO</label>
-                    ${h(ClearableInput, {
+                ${h(
+                    FormField,
+                    {
+                        id: "icaocode",
+                        label: "ICAO",
+                        layout: "plain",
+                        className: "field",
+                    },
+                    h(ClearableInput, {
                         name: "icaocode",
                         placeholder: "EFXY",
                         value: fields.icaocode,
                         label: "ICAO",
                         onInput: updateField,
                         onClear: () => clearField("icaocode"),
-                    })}
-                </div>
+                    }),
+                )}
                 <div class="desc">${t("landing.icaoHelp")}</div>
             </fieldset>
 
