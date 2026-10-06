@@ -473,11 +473,6 @@ export function CloudSummary() {
             white-space: normal;
             min-width: 10ch;
         }
-        .cloud-forecast-detail-table tr > :first-child {
-            background: var(--color-surface-soft);
-            text-align: left;
-            padding-inline: 8px;
-        }
         .cloud-forecast-table td {
             min-width: 7ch;
             font-weight: 650;
@@ -490,43 +485,6 @@ export function CloudSummary() {
         }
         .forecast-reading .cloud-cover {
             align-items: center;
-        }
-        .cloud-forecast-detail-table tbody th {
-            min-width: 10ch;
-        }
-        .cloud-forecast-detail-table tr > :not(:first-child) {
-            width: 3.25rem;
-            min-width: 0;
-            padding-inline: 0;
-        }
-        .cloud-forecast-detail-table tbody tr + tr > * {
-            border-top: 0;
-        }
-        .cloud-forecast-detail-table tr:has(.forecast-reading) > th {
-            padding-block: 0;
-        }
-        .cloud-forecast-detail-table
-            tr.forecast-group-start:not(:first-child)
-            > * {
-            border-top: 3px solid var(--color-border);
-        }
-        .forecast-source-label {
-            display: block;
-            margin-bottom: 5px;
-            color: var(--color-primary);
-            font-size: 0.68rem;
-            font-weight: 700;
-            letter-spacing: 0.06em;
-            line-height: 1;
-            text-transform: uppercase;
-        }
-        .cloud-forecast-detail-table .forecast-reading {
-            padding: 0;
-        }
-        .cloud-forecast-note {
-            margin: 12px 0 0;
-            color: var(--color-muted);
-            font-size: 0.8rem;
         }
         .metar {
             display: block;

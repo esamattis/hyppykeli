@@ -3,6 +3,7 @@ import { Help } from "#app/shared/Help.js";
 import { formatClock, formatDate } from "#app/shared/dates.js";
 import { isNullish, whenAll } from "#app/shared/values.js";
 import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
 import { CloudCoverSquare } from "#app/weather/CloudIndicators.js";
 import { getLiftedCondensationLevel } from "#app/weather/calculations.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
@@ -22,6 +23,70 @@ function roundCloudForecastAltitude(altitude) {
  * @param {WeatherData[]} props.forecasts
  */
 export function CloudForecastTable(props) {
+    const scope = useScope(css`
+        .forecast-scroll {
+            isolation: isolate;
+        }
+        .cloud-forecast-detail-table {
+            font-size: 0.75rem;
+            line-height: 1.3;
+        }
+        .cloud-forecast-detail-table th,
+        .cloud-forecast-detail-table td {
+            padding: 4px 6px;
+        }
+        .cloud-forecast-detail-table thead th,
+        .cloud-forecast-detail-table tbody th {
+            font-size: 0.75rem;
+        }
+        .cloud-forecast-detail-table tr > :first-child {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: var(--color-surface-soft);
+            text-align: left;
+        }
+        .cloud-forecast-detail-table tbody th {
+            min-width: 9ch;
+        }
+        .cloud-forecast-detail-table tr > :not(:first-child) {
+            width: 2.75rem;
+            min-width: 0;
+            padding-inline: 0;
+        }
+        .cloud-forecast-detail-table tbody tr + tr > * {
+            border-top: 0;
+        }
+        .cloud-forecast-detail-table tr:has(.forecast-reading) > th {
+            padding-block: 0;
+        }
+        .cloud-forecast-detail-table
+            tr.forecast-group-start:not(:first-child)
+            > * {
+            border-top: 3px solid var(--color-border);
+        }
+        .forecast-source-label {
+            display: block;
+            margin-top: 4px;
+            margin-bottom: 3px;
+            color: var(--color-primary);
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            line-height: 1;
+            text-transform: uppercase;
+        }
+        .cloud-forecast-detail-table .forecast-reading {
+            position: relative;
+            height: 1.75rem;
+            padding: 0;
+        }
+        .cloud-forecast-note {
+            margin: 8px 0 0;
+            color: var(--color-muted);
+            font-size: 0.75rem;
+        }
+    `);
     const openMeteo = OM_DATA.value;
     const openMeteoIndexes = new Map(
         openMeteo?.hourly.time.map((time, index) => [
@@ -32,6 +97,7 @@ export function CloudForecastTable(props) {
 
     return html`
         <div class="cloud-forecast-details">
+            ${scope.style}
             <div
                 class="forecast-scroll"
                 tabindex="0"

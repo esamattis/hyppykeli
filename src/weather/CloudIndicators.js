@@ -68,12 +68,12 @@ export function PercentagePie(props) {
 export function CloudCoverSquare(props) {
     const scope = useScope(css`
         :scope {
+            position: absolute;
+            inset: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 3.25rem;
-            height: 3.25rem;
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             line-height: 1;
             font-variant-numeric: tabular-nums;
             background: var(--cloud-cover-background);

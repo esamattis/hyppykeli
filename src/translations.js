@@ -164,7 +164,7 @@ export const english = {
         "An estimate of the height above ground where rising air would begin to condense, calculated from FMI's forecast temperature and dew point and rounded to the nearest 100 metres. It is not a forecast or observation of every cloud layer's base. Clouds formed elsewhere can have a different base.",
     "cloud.altitudeMeters": (/** @type {string} */ altitude) => `${altitude} m`,
     "cloud.forecastTableHelp":
-        "Open-Meteo rows show cloud cover at modeled altitudes above sea level, rounded to the nearest 50 metres.",
+        "Percentages estimate cloud cover at each altitude or altitude range: 0% means no cover and 100% means complete cover. They do not indicate the probability of clouds.",
     "cloud.coverage": (/** @type {string} */ value) => `${value} of sky`,
     "cloud.condensationEstimate": "Condensation level estimate",
     "cloud.baseHelp":
@@ -592,7 +592,7 @@ const finnish = {
         "Arvio korkeudesta maanpinnasta, jolla nousevan ilman vesihöyry alkaa tiivistyä. Lasketaan Ilmatieteen laitoksen ennustamasta lämpötilasta ja kastepisteestä ja pyöristetään lähimpään 100 metriin. Se ei ole kaikkien pilvikerrosten alarajan ennuste tai havainto. Muualla syntyneiden pilvien alaraja voi olla eri korkeudella.",
     "cloud.altitudeMeters": (altitude) => `${altitude} m`,
     "cloud.forecastTableHelp":
-        "Open-Meteon rivit näyttävät pilvipeiton mallinnetuilla korkeuksilla merenpinnasta, pyöristettynä lähimpään 50 metriin.",
+        "Prosentit arvioivat pilvipeittoa kullakin korkeudella tai korkeusvälillä: 0 % tarkoittaa, ettei pilvipeittoa ole, ja 100 % tarkoittaa täyttä pilvipeittoa. Ne eivät kuvaa pilvien todennäköisyyttä.",
     "cloud.coverage": (value) => `${value} taivaasta`,
     "cloud.condensationEstimate": "Tiivistymiskorkeuden arvio",
     "cloud.baseHelp":
