@@ -186,7 +186,7 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     await expect(map.locator(".wind-level-choice")).toHaveCount(6);
     await expect(
         map.locator('.wind-level-choice[aria-label^="≈ 4000-1000 m:"]'),
-    ).toHaveAttribute("data-tooltip", /^4150-770 m:/);
+    ).toHaveAttribute("data-tooltip", /^4000 m–1000 m:/);
     await page
         .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
         .click();
@@ -426,4 +426,44 @@ test("drawn canopy paths join the opening and follow elevation-adjusted wind bou
     });
     await expect(page.locator(".freefall-drift-line")).toHaveCount(0);
     await expect(page.locator(".parachute-drift-line")).toHaveCount(0);
+});
+
+test("ranged wind average follows jump-run altitude down to 1000 m", async ({
+    page,
+}) => {
+    await page.goto(`${dz}&elevation=200`);
+    const result = await page.evaluate(async () => {
+        const { getMapWindData } = await import("#app/map/windData.js");
+        const { navigateQs } = await import("#app/app/settings.js");
+        const original = getMapWindData().averageWind;
+        const settings = {
+            direction: 0,
+            speedKmh: 157,
+            separationSeconds: 5,
+            exitHeight: 2500,
+        };
+        navigateQs({ map_run_settings: JSON.stringify(settings) });
+        const lower = getMapWindData().averageWind;
+        // Missing wind entirely below the averaged range does not invalidate it.
+        navigateQs({ MANUAL_upper_winds: "42,0;30,0;15,0;,;1.1,0" });
+        const missingBelow = getMapWindData().averageWind;
+        navigateQs({ MANUAL_upper_winds: "42,0;30,0;,;8,0;1.1,0" });
+        const missingInside = getMapWindData().averageWind;
+        navigateQs({
+            map_run_settings: JSON.stringify({ ...settings, exitHeight: 900 }),
+        });
+        const invalidRange = getMapWindData().averageWind;
+        return { original, lower, missingBelow, missingInside, invalidRange };
+    });
+    expect(result.original.label).toBe("≈ 4000-1000 m");
+    expect(result.original.speed).toBeCloseTo(27.15);
+    expect(result.original.direction).toBe(0);
+    expect(result.lower.label).toBe("≈ 2500-1000 m");
+    expect(result.lower.speed).toBeCloseTo(19.5);
+    expect(result.missingBelow).toEqual(result.lower);
+    expect(result.missingInside.speed).toBeNull();
+    expect(result.invalidRange.speed).toBeNull();
+    await expect(
+        page.locator('.wind-level-choice[aria-label^="≈ 900-1000 m:"]'),
+    ).toBeVisible();
 });

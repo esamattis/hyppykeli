@@ -1,10 +1,11 @@
 // @ts-check
+import { FREEFALL_EXIT, getFreefallDrift } from "#app/map/freefall.js";
+import { isValidJumpRunSettings } from "#app/map/mapState.js";
 import { parseUpperWinds } from "#app/manual/overrides.js";
 import { DROPZONE_ELEVATION, QUERY_PARAMS } from "#app/app/settings.js";
 import {
     formatExactAltitude,
     formatForecastAltitude,
-    roundForecastAltitude,
 } from "#app/weather/altitudes.js";
 import { t } from "#app/translations.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
@@ -105,10 +106,14 @@ export function getMapWindData(now = Date.now()) {
     const freefallWinds = overrides
         ? profile.filter((wind) => wind.id !== "1000")
         : profile;
-    const averageWind = averageFreeFallWind(
-        altitudeWinds.filter((wind) => wind.id !== "1000"),
-        Boolean(overrides),
-    );
+    let exitHeight = FREEFALL_EXIT;
+    try {
+        const settings = JSON.parse(
+            QUERY_PARAMS.value.map_run_settings ?? "null",
+        );
+        if (isValidJumpRunSettings(settings)) exitHeight = settings.exitHeight;
+    } catch {}
+    const averageWind = averageFreeFallWind(freefallWinds, exitHeight);
     /** @type {SelectableMapWindLevel[]} */
     const winds = [
         averageWind,
@@ -147,55 +152,34 @@ export function getMapWindData(now = Date.now()) {
     };
 }
 
-/** @param {FreefallWindLevel[]} winds @param {boolean} manual @returns {SelectableMapWindLevel} */
-function averageFreeFallWind(winds, manual) {
-    const hasHeights =
-        winds.length > 0 && winds.every((wind) => Number.isFinite(wind.height));
-    const top = winds[0]?.height ?? 0;
-    const bottom = winds.at(-1)?.height ?? 0;
-    /** @param {number} height */
-    const round = (height) =>
-        manual ? Math.round(height / 100) * 100 : roundForecastAltitude(height);
+/** @param {FreefallWindLevel[]} winds @param {number} exitHeight @returns {SelectableMapWindLevel} */
+function averageFreeFallWind(winds, exitHeight) {
+    const bottom = 1000;
     const average = {
         id: "average",
         legacyLabel: "≈ 4200-800 m",
-        label: hasHeights
-            ? `≈ ${round(top)}-${round(bottom)} m`
-            : t("map.averageWind"),
-        altitudeTooltip: hasHeights
-            ? `${Math.round(top)}-${formatExactAltitude(bottom)}`
-            : undefined,
+        label: `≈ ${exitHeight}-${bottom} m`,
+        altitudeTooltip: `${formatExactAltitude(exitHeight)}–${formatExactAltitude(bottom)}`,
         speed: /** @type {number | null} */ (null),
         direction: /** @type {number | null} */ (null),
     };
-    if (
-        winds.length === 0 ||
-        winds.some(
-            ({ height, speed, direction }) =>
-                !Number.isFinite(height) ||
-                speed === null ||
-                !Number.isFinite(speed) ||
-                speed < 0 ||
-                direction === null ||
-                !Number.isFinite(direction),
-        )
-    ) {
-        return average;
-    }
-
-    let speedSum = 0;
-    let sinSum = 0;
-    let cosSum = 0;
-    for (const wind of winds) {
-        speedSum += wind.speed ?? 0;
-        const radians = ((wind.direction ?? 0) * Math.PI) / 180;
-        sinSum += Math.sin(radians);
-        cosSum += Math.cos(radians);
-    }
-    average.speed = speedSum / winds.length;
+    // Constant descent speed makes drift / elapsed time the height-weighted
+    // wind vector over precisely the selected altitude range.
+    const descentSpeed = 50;
+    const drift = getFreefallDrift(
+        winds,
+        exitHeight,
+        descentSpeed * 3.6,
+        bottom,
+    )?.at(-1);
+    if (!drift) return average;
+    const seconds = (exitHeight - bottom) / descentSpeed;
+    const east = drift.east / seconds;
+    const north = drift.north / seconds;
+    average.speed = Math.hypot(east, north);
     average.direction =
-        Math.hypot(sinSum, cosSum) > 1e-10
-            ? ((Math.atan2(sinSum, cosSum) * 180) / Math.PI + 360) % 360
+        average.speed > 1e-10
+            ? ((Math.atan2(-east, -north) * 180) / Math.PI + 360) % 360
             : null;
     return average;
 }

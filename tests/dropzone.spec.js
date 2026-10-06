@@ -925,7 +925,7 @@ test("manual altitude table updates drift and persists missing values", async ({
     await table.locator('[name="MANUAL_upper_winds_0_speed"]').fill("20");
     await table.locator('[name="MANUAL_upper_winds_0_direction"]').fill("270");
     const upperEdited = await readDrift();
-    expect(upperEdited.mean.speed).toBe(12.5);
+    expect(upperEdited.mean.speed).toBeCloseTo(Math.hypot(8000, 26000) / 3000);
     expect(upperEdited.freefall.east).toBeGreaterThan(original.freefall.east);
     expect(upperEdited.canopy).toEqual(original.canopy);
     await table.locator('[name="MANUAL_upper_winds_4_speed"]').fill("30");
@@ -1939,7 +1939,7 @@ test("jump run turns into the selected wind around the opening center", async ({
     await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
     const opening = await middleOpening(page);
     for (const [label, direction] of [
-        ["≈ 4200-800 m", 292.5],
+        ["≈ 4000-1000 m", 284.97871603010344],
         ["≈ 4200 m", 225],
         ["≈ 3000 m", 270],
         ["≈ 1500 m", 315],
