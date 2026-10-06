@@ -4,6 +4,11 @@
 export function startTooltips() {
     const edgeMargin = 8;
     const targetGap = 8;
+    const hoverDelay = 300;
+    /** @type {number | undefined} */
+    let hoverTimer;
+    /** @type {HTMLElement | null} */
+    let pendingTarget = null;
     /** @type {HTMLElement | null} */
     let activeTarget = null;
     /** @type {HTMLElement | null} */
@@ -18,8 +23,15 @@ export function startTooltips() {
             : null;
     }
 
+    function cancelHover() {
+        window.clearTimeout(hoverTimer);
+        hoverTimer = undefined;
+        pendingTarget = null;
+    }
+
     /** @param {HTMLElement | null} [target] @param {boolean} [force] */
     function hide(target, force = false) {
+        if (force || !target || target === pendingTarget) cancelHover();
         if (!force && (touchTarget || (target && target !== activeTarget)))
             return;
         if (activeTarget) {
@@ -49,6 +61,7 @@ export function startTooltips() {
      */
     function show(target, retry = true) {
         if (touchTarget && target !== touchTarget) return;
+        cancelHover();
         const tooltip = document.getElementById("tooltip");
         const text = tooltip?.querySelector("[data-tooltip-text]");
         const arrow = tooltip?.querySelector(".tooltip-arrow");
@@ -120,7 +133,22 @@ export function startTooltips() {
         "pointerover",
         (event) => {
             const target = getTarget(event.target);
-            if (target) show(target);
+            if (
+                !target ||
+                event.pointerType === "touch" ||
+                touchTarget ||
+                target === activeTarget ||
+                target === pendingTarget ||
+                (event.relatedTarget instanceof Node &&
+                    target.contains(event.relatedTarget))
+            )
+                return;
+            cancelHover();
+            pendingTarget = target;
+            hoverTimer = window.setTimeout(() => {
+                cancelHover();
+                if (target.isConnected) show(target);
+            }, hoverDelay);
         },
         { passive: true },
     );

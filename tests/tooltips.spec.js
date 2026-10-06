@@ -57,6 +57,82 @@ test("keyboard focus shows tooltips and Escape dismisses them", async ({
     await expect(tooltip).toBeVisible();
 });
 
+test("hover waits briefly and moving within the target does not restart the delay", async ({
+    page,
+}) => {
+    const target = page
+        .locator(".freefall-toolbar button.arrow-action")
+        .first();
+    const tooltip = page.getByRole("tooltip");
+    const time = new Date();
+    await page.clock.install({ time });
+    await page.clock.pauseAt(new Date(time.getTime() + 60_000));
+    await target.dispatchEvent("pointerover", { pointerType: "mouse" });
+    await page.clock.runFor(150);
+    await target.locator("svg").dispatchEvent("pointerover", {
+        pointerType: "mouse",
+    });
+    await page.clock.runFor(149);
+    await expect(tooltip).toBeHidden();
+    await page.clock.runFor(1);
+    await expect(tooltip).toBeVisible();
+});
+
+test("leaving or dismissing during the hover delay cancels the tooltip", async ({
+    page,
+}) => {
+    const target = page
+        .locator(".freefall-toolbar button.arrow-action")
+        .first();
+    const tooltip = page.getByRole("tooltip");
+    const time = new Date();
+    await page.clock.install({ time });
+    await page.clock.pauseAt(new Date(time.getTime() + 60_000));
+    for (const event of [
+        "pointerout",
+        "click",
+        "keydown",
+        "scroll",
+        "resize",
+    ]) {
+        await target.dispatchEvent("pointerover", { pointerType: "mouse" });
+        await page.clock.runFor(150);
+        if (event === "scroll" || event === "resize")
+            await page.evaluate(
+                (type) => window.dispatchEvent(new Event(type)),
+                event,
+            );
+        else
+            await target.dispatchEvent(event, {
+                pointerType: "mouse",
+                key: "Escape",
+            });
+        await page.clock.runFor(300);
+        await expect(tooltip).toBeHidden();
+    }
+});
+
+test("moving to another tooltip target starts a fresh hover delay", async ({
+    page,
+}) => {
+    const buttons = page.locator(".freefall-toolbar button.arrow-action");
+    const tooltip = page.getByRole("tooltip");
+    const time = new Date();
+    await page.clock.install({ time });
+    await page.clock.pauseAt(new Date(time.getTime() + 60_000));
+    await buttons.nth(0).dispatchEvent("pointerover", { pointerType: "mouse" });
+    await page.clock.runFor(150);
+    await buttons.nth(0).dispatchEvent("pointerout", { pointerType: "mouse" });
+    await buttons.nth(1).dispatchEvent("pointerover", { pointerType: "mouse" });
+    await page.clock.runFor(299);
+    await expect(tooltip).toBeHidden();
+    await page.clock.runFor(1);
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip.locator("[data-tooltip-text]")).toHaveText(
+        await buttons.nth(1).getAttribute("aria-label"),
+    );
+});
+
 test("map summary values explain their meaning on hover and keyboard focus", async ({
     page,
 }) => {
