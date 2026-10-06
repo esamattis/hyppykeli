@@ -54,6 +54,22 @@ function getDefaultGraphOptions() {
  */
 function updateCharts(obs, fore) {
     const theme = getTheme();
+    const maxWind = [...OBSERVATIONS.value, ...FORECASTS.value].reduce(
+        (max, point) => Math.max(max, point.gust ?? 0, point.speed ?? 0),
+        11,
+    );
+    const yMax = Math.ceil(maxWind / 2) * 2;
+    for (const chart of [obs, fore]) {
+        if (chart) {
+            chart.options.scales = {
+                y: {
+                    min: 0,
+                    max: yMax,
+                    ticks: { stepSize: 2 },
+                },
+            };
+        }
+    }
     const shared = {
         spanGaps: true,
         borderJoinStyle: "round",
