@@ -215,7 +215,7 @@ export function DropzoneMap() {
         }
         .map-errors {
             position: absolute;
-            bottom: 32px;
+            bottom: calc(80px + env(safe-area-inset-bottom));
             left: 12px;
             z-index: 700;
             max-width: min(24rem, calc(100% - 24px));
@@ -228,6 +228,11 @@ export function DropzoneMap() {
             font-size: 0.75rem;
             line-height: 1.4;
             pointer-events: none;
+        }
+        @media (max-width: 360px) {
+            .map-errors {
+                bottom: calc(122px + env(safe-area-inset-bottom));
+            }
         }
         .map-errors p {
             margin: 0;
@@ -859,15 +864,39 @@ export function DropzoneMap() {
             automaticSettings,
             automaticGroup,
         );
-        const bounds = latLngBounds([
+        fitJumpRunView(
             automaticStart,
-            { lat: Number(landingLat), lng: Number(landingLon) },
-        ]);
-        for (const [index, jumper] of automaticGroup.entries()) {
+            automaticSettings,
+            automaticGroup,
+            calculation,
+            preserveVisibleView,
+        );
+    };
+    /**
+     * Fit the current flight paths using the same view as automatic placement.
+     * @param {import('leaflet').LatLngLiteral} start
+     * @param {JumpRunSettings} settings
+     * @param {JumpRunJumper[]} group
+     * @param {JumpRunCalculation} calculation
+     * @param {boolean} [preserveVisibleView]
+     */
+    const fitJumpRunView = (
+        start,
+        settings,
+        group,
+        calculation,
+        preserveVisibleView = false,
+    ) => {
+        const leafletMap = activeLeafletRef.current;
+        if (!leafletMap || !calculation.velocity) return;
+        const bounds = latLngBounds([start]);
+        if (hasLandingCoordinates)
+            bounds.extend({ lat: Number(landingLat), lng: Number(landingLon) });
+        for (const [index, jumper] of group.entries()) {
             const exit = latLng(
                 jumpRunCoordinates(
-                    automaticStart,
-                    automaticSettings,
+                    start,
+                    settings,
                     index,
                     calculation.velocity.ground,
                 ),
@@ -887,6 +916,12 @@ export function DropzoneMap() {
             return;
         leafletMap.fitBounds(bounds, { padding: [24, 24], animate: false });
         leafletMap.zoomOut(1, { animate: false });
+    };
+    const canPositionView =
+        !!leafletInstance && !!jumpRunStart && !!jumpRunVelocity;
+    const positionView = () => {
+        if (!jumpRunStart) return;
+        fitJumpRunView(jumpRunStart, jumpRunSettings, jumpers, calculation);
     };
     const initialPositionHandled = useRef(
         !!jumpRunStart || QUERY_PARAMS.peek().map_run_start === "null",
@@ -1597,6 +1632,8 @@ export function DropzoneMap() {
                         fullWindow,
                         canPosition: canPositionAutomatic,
                         onPosition: () => positionAutomaticJumpRun(true),
+                        canPositionView,
+                        onPositionView: positionView,
                         onShare: async () => {
                             setShareError("");
                             const url = new URL(location.href);

@@ -13,6 +13,8 @@ export function FreefallToolbar({
     onShare,
     canPosition,
     onPosition,
+    canPositionView,
+    onPositionView,
     arrowCount,
     onClear,
     onUndo,
@@ -26,18 +28,60 @@ export function FreefallToolbar({
             background: var(--color-surface-soft);
         }
         .toolbar-actions {
+            position: relative;
+            height: 0;
+            z-index: 800;
+        }
+        .toolbar-window-actions {
+            position: absolute;
+            top: 12px;
+            right: 12px;
             display: flex;
-            align-items: flex-start;
-            gap: 4px;
-            padding: 3px 8px;
+            gap: 6px;
         }
         .toolbar-controls {
             display: flex;
+            position: absolute;
+            bottom: calc(28px + env(safe-area-inset-bottom));
+            left: 12px;
+            right: 12px;
+            z-index: 800;
             align-items: center;
-            flex: 1;
-            min-width: 0;
+            justify-content: flex-start;
             flex-wrap: wrap;
-            gap: 4px 14px;
+            gap: 6px;
+            pointer-events: none;
+        }
+        .toolbar-controls .jump-run-controls {
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .toolbar-controls .arrow-action,
+        .toolbar-window-actions .arrow-action {
+            flex-shrink: 0;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface);
+            box-shadow: var(--shadow-floating);
+            pointer-events: auto;
+        }
+        .toolbar-controls .arrow-action:hover,
+        .toolbar-window-actions .arrow-action:hover {
+            background: var(--color-surface-hover);
+        }
+        .toolbar-controls .dropdown-menu,
+        .toolbar-controls dialog {
+            pointer-events: auto;
+        }
+        @media (max-width: 360px) {
+            .toolbar-controls {
+                left: 8px;
+                right: 8px;
+                gap: 4px;
+            }
+            .toolbar-controls .jump-run-controls {
+                gap: 4px;
+            }
         }
         .toolbar-map-actions {
             display: flex;
@@ -124,83 +168,69 @@ export function FreefallToolbar({
             aria-label=${t("toolbar.freefallValues")}
         >
             ${scope.style}
-            <div class="toolbar-actions">
-                <div class="toolbar-controls">
-                    ${h(
-                        JumpRunControls,
+            <div class="toolbar-controls">
+                ${h(
+                    JumpRunControls,
+                    {
+                        ...jumpRun,
+                        canPosition,
+                        onPosition,
+                        arrowCount,
+                        onUndo,
+                    },
+                    h(
+                        DropdownMenu,
                         {
-                            ...jumpRun,
-                            canPosition,
-                            onPosition,
-                            arrowCount,
-                            onUndo,
+                            id: "wind-level-menu",
+                            label: t("toolbar.windLevels"),
+                            icon: "windLevels",
+                            size: 20,
+                            menuClass: "wind-level-menu",
                         },
-                        h(
-                            DropdownMenu,
-                            {
-                                id: "wind-level-menu",
-                                label: t("toolbar.windLevels"),
-                                icon: "windLevels",
-                                size: 20,
-                                menuClass: "wind-level-menu",
-                            },
-                            html`
-                                <div class="wind-level-menu-list">
-                                    ${windLevels.levels.map(
-                                        (level) => html`
-                                            <button
-                                                type="button"
-                                                class="wind-level-choice"
-                                                aria-pressed=${level.selected}
-                                                onClick=${() =>
-                                                    windLevels.onSelect(
-                                                        level.label,
-                                                    )}
+                        html`
+                            <div class="wind-level-menu-list">
+                                ${windLevels.levels.map(
+                                    (level) => html`
+                                        <button
+                                            type="button"
+                                            class="wind-level-choice"
+                                            aria-pressed=${level.selected}
+                                            onClick=${() =>
+                                                windLevels.onSelect(
+                                                    level.label,
+                                                )}
+                                        >
+                                            <span>
+                                                <strong>${level.label}</strong>
+                                                <span>${level.text}</span>
+                                            </span>
+                                            <span
+                                                class="wind-level-choice-arrow"
                                             >
-                                                <span>
-                                                    <strong>
-                                                        ${level.label}
-                                                    </strong>
-                                                    <span>${level.text}</span>
-                                                </span>
-                                                <span
-                                                    class="wind-level-choice-arrow"
-                                                >
-                                                    ${level.graphic}
-                                                </span>
-                                            </button>
-                                        `,
-                                    )}
-                                </div>
-                            `,
-                        ),
-                    )}
-                    <div class="toolbar-map-actions">
-                        ${h(ToolbarButton, {
-                            label: t("toolbar.removeJumpRun"),
-                            icon: "trash",
-                            className: "clear-arrows",
-                            disabled: arrowCount === 0,
-                            onClick: onClear,
-                        })}
-                    </div>
+                                                ${level.graphic}
+                                            </span>
+                                        </button>
+                                    `,
+                                )}
+                            </div>
+                        `,
+                    ),
+                )}
+                <div class="toolbar-map-actions">
+                    ${h(ToolbarButton, {
+                        label: t("toolbar.positionView"),
+                        icon: "fitView",
+                        disabled: !canPositionView,
+                        onClick: onPositionView,
+                    })}
+                    ${h(ToolbarButton, {
+                        label: t("toolbar.removeJumpRun"),
+                        icon: "trash",
+                        className: "clear-arrows",
+                        disabled: arrowCount === 0,
+                        onClick: onClear,
+                    })}
                 </div>
-                ${h(ToolbarButton, {
-                    label: t("toolbar.shareMap"),
-                    icon: "share",
-                    disabled: typeof navigator.share !== "function",
-                    onClick: onShare,
-                })}
-                ${h(ToolbarButton, {
-                    label: fullWindow
-                        ? t("toolbar.restoreMap")
-                        : t("toolbar.expandMap"),
-                    icon: fullWindow ? "collapse" : "expand",
-                    size: 20,
-                    className: "window-toggle",
-                    pressed: fullWindow,
-                    onClick: onToggleFullWindow,
-                })}
             </div>
             <div class="toolbar-summary">
                 <span tabindex="0" data-tooltip=${t("toolbar.exitTooltip")}>
@@ -236,6 +266,26 @@ export function FreefallToolbar({
                         ${`${jumpRun.settings.separationSeconds} s`}
                     </strong>
                 </span>
+            </div>
+            <div class="toolbar-actions">
+                <div class="toolbar-window-actions">
+                    ${h(ToolbarButton, {
+                        label: t("toolbar.shareMap"),
+                        icon: "share",
+                        disabled: typeof navigator.share !== "function",
+                        onClick: onShare,
+                    })}
+                    ${h(ToolbarButton, {
+                        label: fullWindow
+                            ? t("toolbar.restoreMap")
+                            : t("toolbar.expandMap"),
+                        icon: fullWindow ? "collapse" : "expand",
+                        size: 20,
+                        className: "window-toggle",
+                        pressed: fullWindow,
+                        onClick: onToggleFullWindow,
+                    })}
+                </div>
             </div>
         </div>
     `;

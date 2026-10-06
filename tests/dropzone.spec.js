@@ -3066,7 +3066,7 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
     await expect(map.locator(".jump-run-jumper")).toHaveCount(0);
 
     // Another map click dismisses the callout without choosing a new point.
-    await map.click({ position: { x: 40, y: 400 } });
+    await map.click({ position: { x: 40, y: 340 } });
     await expect(confirm).toHaveCount(0);
     await page.waitForTimeout(400);
     await expect(confirm).toHaveCount(0);
@@ -4497,6 +4497,31 @@ test("automatic positioning fits all exits, freefall paths and canopy landings o
     for (const key of ["map_center_lat", "map_center_lon", "map_zoom"])
         expect(preservedView.get(key)).toBe(visibleView.get(key));
 
+    // Fit the edited run without automatically repositioning it.
+    const editedStart = JSON.parse(preservedView.get("map_run_start"));
+    editedStart.lat += 0.1;
+    await page.evaluate(async (start) => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs(
+            {
+                map_run_start: JSON.stringify(start),
+                map_center_lat: "60",
+                map_center_lon: "20",
+                map_zoom: "19",
+            },
+            { replace: true },
+        );
+    }, editedStart);
+    await expect.poll(pointsOutsideView).not.toEqual([]);
+    const editedRun = new URL(page.url()).searchParams;
+    await page
+        .getByRole("button", { name: "Sovita karttanäkymä hyppylinjaan" })
+        .click();
+    await expect.poll(pointsOutsideView).toEqual([]);
+    const fittedRun = new URL(page.url()).searchParams;
+    for (const key of ["map_run_start", "map_run_settings", "map_jumpers"])
+        expect(fittedRun.get(key)).toBe(editedRun.get(key));
+
     // Later weather updates preserve the view chosen by the user.
     await centerMapOn(page, { lat: 62.5, lng: 25.7 });
     const view = new URL(page.url()).searchParams;
@@ -4504,6 +4529,41 @@ test("automatic positioning fits all exits, freefall paths and canopy landings o
     const refreshedView = new URL(page.url()).searchParams;
     for (const key of ["map_center_lat", "map_center_lon", "map_zoom"])
         expect(refreshedView.get(key)).toBe(view.get(key));
+});
+
+test("viewport positioning fits a saved run without landing coordinates and disables after clearing", async ({
+    page,
+}) => {
+    const start = { lat: 62.4, lng: 25.6 };
+    const params = new URLSearchParams({
+        map_run_start: JSON.stringify(start),
+        map_center_lat: "60",
+        map_center_lon: "20",
+        map_zoom: "19",
+    });
+    await page.goto(`${developerPath}&${params}`);
+    const fit = page.getByRole("button", {
+        name: "Sovita karttanäkymä hyppylinjaan",
+    });
+    await expect(fit).toBeDisabled();
+    await setUniformFreefallWind(page);
+    await expect(fit).toBeEnabled();
+    const original = new URL(page.url()).searchParams;
+    await fit.click();
+    const fitted = new URL(page.url()).searchParams;
+    expect(fitted.get("map_run_start")).toBe(original.get("map_run_start"));
+    expect(fitted.get("map_run_settings")).toBe(
+        original.get("map_run_settings"),
+    );
+    expect(fitted.get("map_jumpers")).toBe(original.get("map_jumpers"));
+    const point = await mapPoint(page, start);
+    const bounds = await page.locator(".dz-map").boundingBox();
+    expect(point.x).toBeGreaterThan(0);
+    expect(point.x).toBeLessThan(bounds.width);
+    expect(point.y).toBeGreaterThan(0);
+    expect(point.y).toBeLessThan(bounds.height);
+    await page.getByRole("button", { name: "Poista hyppylinja" }).click();
+    await expect(fit).toBeDisabled();
 });
 
 test("automatic positioning preserves the current direction and reset restores the default into current wind", async ({

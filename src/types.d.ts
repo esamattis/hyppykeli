@@ -160,6 +160,8 @@ interface ToolbarWindLevel {
 interface FreefallToolbarProps {
     canPosition: boolean;
     onPosition: () => void;
+    canPositionView: boolean;
+    onPositionView: () => void;
     fullWindow: boolean;
     onToggleFullWindow: () => void;
     onShare: () => void;
@@ -599,6 +601,7 @@ interface IconProps {
         | "settings"
         | "share"
         | "expand"
+        | "fitView"
         | "collapse"
         | "close"
         | "help"

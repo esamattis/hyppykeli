@@ -27,6 +27,10 @@ const artwork = {
     expand: html`
         <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5" />
     `,
+    fitView: html`
+        <path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5" />
+        <rect x="8" y="8" width="8" height="8" rx="1" />
+    `,
     collapse: html`
         <path d="M3 8h5V3M21 8h-5V3M16 21v-5h5M8 21v-5H3" />
     `,
