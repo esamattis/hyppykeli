@@ -44,6 +44,7 @@ import {
     circleMarker,
     DomEvent,
     latLng,
+    latLngBounds,
     layerGroup,
     map,
     point,
@@ -836,22 +837,56 @@ export function DropzoneMap() {
         [automaticPlacementKey],
     );
     const canPositionAutomatic = !!automaticStart;
-    const positionAutomaticJumpRun = () => {
-        if (!automaticStart) return;
+    /** @param {boolean} [preserveVisibleView] */
+    const positionAutomaticJumpRun = (preserveVisibleView = false) => {
+        const leafletMap = activeLeafletRef.current;
+        if (!automaticStart || !leafletMap) return;
         setPlacingJumpRunDirection(false);
+        const calculation = calculateAutomaticRun(
+            freefallWinds,
+            automaticSettings,
+        );
         const target = openingTargetForRun(
             automaticStart,
             automaticSettings,
             automaticGroup,
-            calculateAutomaticRun(freefallWinds, automaticSettings),
+            calculation,
         );
-        if (target)
-            savePositionedRun(
-                target,
-                automaticStart,
-                automaticSettings,
-                automaticGroup,
+        if (!target || !calculation.velocity) return;
+        savePositionedRun(
+            target,
+            automaticStart,
+            automaticSettings,
+            automaticGroup,
+        );
+        const bounds = latLngBounds([
+            automaticStart,
+            { lat: Number(landingLat), lng: Number(landingLon) },
+        ]);
+        for (const [index, jumper] of automaticGroup.entries()) {
+            const exit = latLng(
+                jumpRunCoordinates(
+                    automaticStart,
+                    automaticSettings,
+                    index,
+                    calculation.velocity.ground,
+                ),
             );
+            bounds.extend(exit);
+            const freefall = calculation
+                .drift(jumper)
+                ?.map((offset) => driftCoordinates(exit, offset));
+            for (const position of freefall ?? []) bounds.extend(position);
+            const opening = freefall?.at(-1);
+            if (!opening) continue;
+            const canopy = getCanopyDrift(canopyWinds, jumper.openingHeight);
+            for (const offset of canopy ?? [])
+                bounds.extend(driftCoordinates(latLng(opening), offset));
+        }
+        if (preserveVisibleView && leafletMap.getBounds().contains(bounds))
+            return;
+        leafletMap.fitBounds(bounds, { padding: [24, 24], animate: false });
+        leafletMap.zoomOut(1, { animate: false });
     };
     const initialPositionHandled = useRef(
         !!jumpRunStart || QUERY_PARAMS.peek().map_run_start === "null",
@@ -1561,7 +1596,7 @@ export function DropzoneMap() {
                     ${h(FreefallToolbar, {
                         fullWindow,
                         canPosition: canPositionAutomatic,
-                        onPosition: positionAutomaticJumpRun,
+                        onPosition: () => positionAutomaticJumpRun(true),
                         onShare: async () => {
                             setShareError("");
                             const url = new URL(location.href);

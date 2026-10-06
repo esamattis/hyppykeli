@@ -4373,6 +4373,139 @@ for (const [axis, wind, speed, expected] of [
     });
 }
 
+test("automatic positioning fits all exits, freefall paths and canopy landings on load and button click", async ({
+    page,
+}) => {
+    const group = [
+        { speedKmh: 180, openingHeight: 800 },
+        { speedKmh: 80, openingHeight: 1500 },
+        { speedKmh: 240, openingHeight: 1200 },
+        { speedKmh: 180, openingHeight: 800 },
+    ];
+    const params = new URLSearchParams({
+        lat: "62.4",
+        lon: "25.6",
+        default_jump_run_direction: "90",
+        DEV_ground_obs: "10,10,0,1",
+        DEV_upper_winds: Array(5).fill("10,0").join(";"),
+        map_jumpers: JSON.stringify(group),
+        map_run_settings: JSON.stringify({
+            direction: 90,
+            speedKmh: 157,
+            separationSeconds: 30,
+            exitHeight: 4000,
+        }),
+        map_center_lat: "60",
+        map_center_lon: "20",
+        map_zoom: "19",
+    });
+    await page.goto(`${developerPath}&${params}`);
+    await setUniformFreefallWind(page);
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(group.length);
+    await expect(page.locator(".parachute-drift-line")).toHaveCount(
+        group.length,
+    );
+
+    const pointsOutsideView = () =>
+        page.locator(".dz-map").evaluate(async (element) => {
+            const { CRS, latLng, latLngBounds, point } =
+                await import("leaflet");
+            const { getMapWindData } = await import("#app/map/windData.js");
+            const { getCanopyDrift } = await import("#app/map/canopy.js");
+            const { createJumpRunCalculator } =
+                await import("#app/map/jumpRun.js");
+            const { driftCoordinates, jumpRunCoordinates } =
+                await import("#app/map/freefall.js");
+            const params = new URL(location.href).searchParams;
+            const zoom = Number(params.get("map_zoom"));
+            const center = CRS.EPSG3857.latLngToPoint(
+                latLng(
+                    Number(params.get("map_center_lat")),
+                    Number(params.get("map_center_lon")),
+                ),
+                zoom,
+            );
+            const halfSize = point(
+                element.clientWidth / 2,
+                element.clientHeight / 2,
+            );
+            const bounds = latLngBounds(
+                CRS.EPSG3857.pointToLatLng(center.subtract(halfSize), zoom),
+                CRS.EPSG3857.pointToLatLng(center.add(halfSize), zoom),
+            );
+            const start = JSON.parse(params.get("map_run_start"));
+            const settings = JSON.parse(params.get("map_run_settings"));
+            const group = JSON.parse(params.get("map_jumpers"));
+            const { freefallWinds, canopyWinds } = getMapWindData();
+            const calculation = createJumpRunCalculator()(
+                freefallWinds,
+                settings,
+            );
+            const positions = [
+                latLng(Number(params.get("lat")), Number(params.get("lon"))),
+            ];
+            for (const [index, jumper] of group.entries()) {
+                const exit = latLng(
+                    jumpRunCoordinates(
+                        start,
+                        settings,
+                        index,
+                        calculation.velocity.ground,
+                    ),
+                );
+                positions.push(exit);
+                const freefall = calculation
+                    .drift(jumper)
+                    .map((offset) => latLng(driftCoordinates(exit, offset)));
+                positions.push(...freefall);
+                const opening = freefall.at(-1);
+                positions.push(
+                    ...getCanopyDrift(canopyWinds, jumper.openingHeight).map(
+                        (offset) => latLng(driftCoordinates(opening, offset)),
+                    ),
+                );
+            }
+            return positions.filter((position) => !bounds.contains(position));
+        });
+
+    await expect.poll(pointsOutsideView).toEqual([]);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs(
+            { map_center_lat: "60", map_center_lon: "20", map_zoom: "19" },
+            { replace: true },
+        );
+    });
+    await expect.poll(pointsOutsideView).not.toEqual([]);
+    await page
+        .getByRole("button", { name: "Hyppylinjan automaattinen sijoitus" })
+        .click();
+    await expect.poll(pointsOutsideView).toEqual([]);
+
+    // Keep a user-chosen view when the automatically positioned run already fits.
+    const fittedView = new URL(page.url()).searchParams;
+    await centerMapOn(page, {
+        lat: Number(fittedView.get("map_center_lat")) + 0.001,
+        lng: Number(fittedView.get("map_center_lon")) + 0.001,
+    });
+    await expect.poll(pointsOutsideView).toEqual([]);
+    const visibleView = new URL(page.url()).searchParams;
+    await page
+        .getByRole("button", { name: "Hyppylinjan automaattinen sijoitus" })
+        .click();
+    const preservedView = new URL(page.url()).searchParams;
+    for (const key of ["map_center_lat", "map_center_lon", "map_zoom"])
+        expect(preservedView.get(key)).toBe(visibleView.get(key));
+
+    // Later weather updates preserve the view chosen by the user.
+    await centerMapOn(page, { lat: 62.5, lng: 25.7 });
+    const view = new URL(page.url()).searchParams;
+    await setUniformFreefallWind(page);
+    const refreshedView = new URL(page.url()).searchParams;
+    for (const key of ["map_center_lat", "map_center_lon", "map_zoom"])
+        expect(refreshedView.get(key)).toBe(view.get(key));
+});
+
 test("automatic positioning preserves the current direction and reset restores the default into current wind", async ({
     page,
 }) => {
