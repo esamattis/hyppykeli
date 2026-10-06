@@ -59,9 +59,9 @@ export function App() {
                 "title title"
                 "clouds clouds"
                 "winds winds"
+                "dropzone-map dropzone-map"
                 "observations-graph observations-graph"
                 "forecasts-graph forecasts-graph"
-                "dropzone-map dropzone-map"
                 "high-winds-details high-winds-details"
                 "high-winds-today high-winds-today"
                 "info info";
@@ -73,8 +73,8 @@ export function App() {
                     ${ERRORS.value.length > 0 ? '"errors errors"' : ""}
                     "title title"
                     "clouds winds"
-                    "observations-graph forecasts-graph"
                     "dropzone-map dropzone-map"
+                    "observations-graph forecasts-graph"
                     "high-winds-today high-winds-today"
                     "high-winds-details high-winds-details"
                     "info info";
@@ -218,6 +218,7 @@ export function App() {
                 ${h(Compass, { floating: false })}
             </div>
 
+            ${h(LazyDropzoneMap, {})}
             ${h(Compass, { floating: true })}
             ${h(Graph, {
                 observationsTable: h(TableDialog, {
@@ -261,8 +262,6 @@ export function App() {
                     `,
                 }),
             })}
-            ${h(LazyDropzoneMap, {})}
-
             <${HighWinds} />
             <${Info} />
         </div>
