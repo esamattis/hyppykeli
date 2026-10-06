@@ -154,6 +154,7 @@ interface ToolbarWindLevel {
     label: string;
     text: string;
     graphic: import("preact").ComponentChildren;
+    arrow: import("preact").ComponentChildren;
     selected: boolean;
 }
 

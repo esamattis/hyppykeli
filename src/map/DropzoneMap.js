@@ -106,27 +106,6 @@ function windReading(wind) {
     return { text, graphic };
 }
 
-/** @param {{ wind: MapWindLevel, selected: boolean, onSelect: () => void }} props */
-function WindLevel({ wind, selected, onSelect }) {
-    const reading = windReading(wind);
-    return html`
-        <li class="wind-level">
-            <button
-                type="button"
-                class="wind-level-button"
-                aria-pressed=${selected}
-                onClick=${onSelect}
-            >
-                <div>
-                    <strong>${wind.label}</strong>
-                    <div>${reading.text}</div>
-                </div>
-                <span class="wind-level-arrow">${reading.graphic}</span>
-            </button>
-        </li>
-    `;
-}
-
 export function DropzoneMap() {
     const mapLayerScope = useScope(css`
         .weather-station-callout {
@@ -306,43 +285,7 @@ export function DropzoneMap() {
             font-size: 0.8rem;
             pointer-events: none;
         }
-        .wind-profile {
-            min-width: 0;
-        }
         ${cardHeadingStyles}
-        ul {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(0, 9rem));
-            gap: 4px 16px;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .wind-level-button {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            align-items: center;
-            gap: 4px;
-            font-size: 0.8rem;
-            padding: 4px 2px 4px 8px;
-            border: 0;
-            border-radius: var(--radius-sm);
-            background: transparent;
-            color: inherit;
-            text-align: left;
-            font-weight: 400;
-        }
-        .wind-level-button:hover,
-        .wind-level-button[aria-pressed="true"] {
-            background: var(--color-surface-hover);
-        }
-        .wind-level svg {
-            flex-shrink: 0;
-            width: 20px;
-            height: 20px;
-            color: var(--color-primary);
-        }
     `);
     /** @type {import('preact').RefObject<HTMLDivElement>} */
     const mapRef = useRef(null);
@@ -1616,18 +1559,6 @@ export function DropzoneMap() {
                 })}
             </div>
             <div class="map-layout">
-                <aside class="wind-profile">
-                    <ul>
-                        ${winds.map((wind) =>
-                            h(WindLevel, {
-                                key: wind.label,
-                                wind,
-                                selected: wind.label === selectedWind.label,
-                                onSelect: () => setSelectedLabel(wind.label),
-                            }),
-                        )}
-                    </ul>
-                </aside>
                 <div class=${`map-frame${fullWindow ? " full-window" : ""}`}>
                     ${h(FreefallToolbar, {
                         fullWindow,
@@ -1697,6 +1628,7 @@ export function DropzoneMap() {
                                 return {
                                     label: wind.label,
                                     text: reading.text,
+                                    arrow: reading.graphic,
                                     graphic: h(WindBarb, {
                                         speed: wind.speed,
                                         direction: wind.direction,

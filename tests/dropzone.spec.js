@@ -211,17 +211,6 @@ function windIcon(page, label) {
     );
 }
 
-/**
- * The altitude row stays on the page alongside the map icons.
- * @param {import("@playwright/test").Page} page
- * @param {string} label
- */
-function windLevel(page, label) {
-    return page.locator("#dropzone-map .wind-profile .wind-level-button", {
-        hasText: label,
-    });
-}
-
 function openMeteoResponse() {
     const start = new Date();
     start.setMinutes(0, 0, 0);
@@ -489,7 +478,10 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
     expect(new URL(request.url()).searchParams.get("wind_speed_unit")).toBe(
         "ms",
     );
-    await expect(windLevel(page, "≈ 4200 m")).toContainText("10 m/s 270°");
+    await expect(windIcon(page, "≈ 4200 m")).toHaveAttribute(
+        "aria-label",
+        /10 m\/s 270°/,
+    );
     await expect(
         page.locator(".upperwinds-compact .wind-speed").first(),
     ).toHaveText("10 m/s");
@@ -548,7 +540,10 @@ test("Open-Meteo refreshes cached winds with incompatible units", async ({
     const requestPromise = page.waitForRequest("https://api.open-meteo.com/**");
     await page.goto("/dz/?name=Wind+DZ&lat=40.7&lon=-74");
     await requestPromise;
-    await expect(windLevel(page, "≈ 4200 m")).toContainText("12 m/s 200°");
+    await expect(windIcon(page, "≈ 4200 m")).toHaveAttribute(
+        "aria-label",
+        /12 m\/s 200°/,
+    );
     const units = await page.evaluate(
         () =>
             JSON.parse(
@@ -1224,7 +1219,7 @@ test("map toolbar expands only the map in both modes and restores", async ({
         1,
     );
     await expect(
-        frame.locator(":scope > h2, .wind-profile, .flight-details"),
+        frame.locator(":scope > h2, :scope > .wind-profile, .flight-details"),
     ).toHaveCount(0);
     const bounds = await frame.boundingBox();
     expect(bounds.x).toBe(0);
@@ -1233,7 +1228,7 @@ test("map toolbar expands only the map in both modes and restores", async ({
     expect(bounds.height).toBe(page.viewportSize().height);
     const restore = card.getByRole("button", { name: "Palauta Tuulikartta" });
     await expect(restore).toHaveAttribute("aria-pressed", "true");
-    await expect(card.locator(".wind-level-button").first()).toBeVisible();
+    await expect(card.locator(".wind-profile")).toBeHidden();
     await expect(frame.locator(".wind-level-icons")).toBeVisible();
     await expect(windIcon(page, "≈ 4200 m")).toBeVisible();
     await restore.click();
@@ -1328,15 +1323,38 @@ for (const settingDirection of [false, true]) {
     });
 }
 
-test("map wind profile shows the developer average and ground wind", async ({
+test("wind barb help shows the developer average and ground wind", async ({
     page,
 }) => {
     await page.goto(
         `${developerPath}&DEV_upper_winds=15,276;14,272;12,246;12,238;3,204`,
     );
-    await expect(windLevel(page, "≈ 4200-800 m")).toContainText("13 m/s 258°");
-    await expect(windLevel(page, "≈ 110 m")).toContainText("3 m/s 204°");
-    await expect(windLevel(page, "Maanpinta")).toContainText("4 m/s 194°");
+    await expect(page.locator(".wind-profile")).toBeHidden();
+    await page.locator("#wind-barb-help").click();
+    const readings = page.getByRole("dialog").locator(".wind-level");
+    await expect(readings).toHaveCount(7);
+    await expect(readings.locator("strong")).toHaveText([
+        "≈ 4200-800 m",
+        "≈ 4200 m",
+        "≈ 3000 m",
+        "≈ 1500 m",
+        "≈ 800 m",
+        "≈ 110 m",
+        "Maanpinta",
+    ]);
+    await expect(readings.nth(0)).toContainText("13 m/s 258°");
+    await expect(readings.nth(5)).toContainText("3 m/s 204°");
+    await expect(readings.nth(6)).toContainText("4 m/s 194°");
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const { QUERY_PARAMS } = await import("#app/app/settings.js");
+        QUERY_PARAMS.value = {
+            ...QUERY_PARAMS.value,
+            DEV_upper_winds: undefined,
+        };
+        OM_DATA.value = null;
+    });
+    await expect(readings.nth(1)).toContainText("Ei tietoa");
 });
 
 test("upper-wind forecast help explains how forecast readings are received", async ({
@@ -1378,7 +1396,7 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
         OM_DATA.value = { utc_offset_seconds: 0, hourly };
     });
 
-    const average = windLevel(page, "≈ 4200-800 m");
+    const average = windIcon(page, "≈ 4200-800 m");
     await expect(average).toHaveAttribute("aria-pressed", "true");
     for (const label of [
         "≈ 4200 m",
@@ -1389,14 +1407,14 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
         "Maanpinta",
         "≈ 4200-800 m",
     ]) {
-        const button = windLevel(page, label);
+        const button = windIcon(page, label);
         await button.click();
         await expect(button).toHaveAttribute("aria-pressed", "true");
         await expect(
-            profile.locator('.wind-level-button[aria-pressed="true"]'),
+            profile.locator('.wind-level-choice[aria-pressed="true"]'),
         ).toHaveCount(1);
     }
-    const altitude = windLevel(page, "≈ 4200 m");
+    const altitude = windIcon(page, "≈ 4200 m");
     await altitude.focus();
     await page.keyboard.press("Enter");
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
@@ -1405,11 +1423,11 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
         const { OM_DATA } = await import("#app/weather/state.js");
         OM_DATA.value = null;
     });
-    await expect(altitude).toContainText("Ei tietoa");
+    await expect(altitude).toHaveAttribute("aria-label", /Ei tietoa/);
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
 });
 
-test("map wind icons select the same altitude as the wind profile in full window", async ({
+test("map wind icons update the selected reading in full window", async ({
     page,
 }) => {
     await setUniformFreefallWind(page);
@@ -1427,15 +1445,11 @@ test("map wind icons select the same altitude as the wind profile in full window
     );
     await expect(page.locator("[data-tooltip-text]")).toContainText("10 m/s");
     await choice.click();
-    await expect(windLevel(page, "≈ 1500 m")).toHaveAttribute(
-        "aria-pressed",
-        "true",
-    );
     await expect(choice).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator(".selected-wind-summary")).toContainText(
         "≈ 1500 m · 10 m/s 0°",
     );
-    await windLevel(page, "≈ 3000 m").click();
+    await windIcon(page, "≈ 3000 m").click();
     await expect(windIcon(page, "≈ 3000 m")).toHaveAttribute(
         "aria-pressed",
         "true",
@@ -1468,10 +1482,6 @@ test("map wind icons select the same altitude as the wind profile in full window
     await choice.focus();
     await page.keyboard.press("Enter");
     await expect(choice).toHaveAttribute("aria-pressed", "true");
-    await expect(windLevel(page, "≈ 1500 m")).toHaveAttribute(
-        "aria-pressed",
-        "true",
-    );
     await expect(
         page.locator('.wind-level-icons [aria-pressed="true"]'),
     ).toHaveCount(1);
@@ -1496,6 +1506,15 @@ test("wind barb help explains direction and speed markings in both languages", a
     await expect(dialog).toContainText("10 solmua");
     await expect(dialog).toContainText("50 solmua");
     await expect(dialog).toContainText("10 + 5 = 15 solmua");
+    await expect(dialog).toContainText(
+        "Ympyrä ilman vartta tarkoittaa tyyntä.",
+    );
+    await expect(dialog).toContainText(
+        "Kysymysmerkki tarkoittaa, ettei tuulitietoa ole saatavilla.",
+    );
+    await expect(
+        dialog.getByRole("heading", { name: "Nykyiset tuulet" }),
+    ).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(dialog).toBeHidden();
     await expect(help).toBeFocused();
@@ -1509,6 +1528,15 @@ test("wind barb help explains direction and speed markings in both languages", a
     await expect(dialog).toContainText("10 knots");
     await expect(dialog).toContainText("50 knots");
     await expect(dialog).toContainText("10 + 5 = 15 knots");
+    await expect(dialog).toContainText(
+        "A circle without a shaft means calm wind.",
+    );
+    await expect(dialog).toContainText(
+        "A question mark means wind data is unavailable.",
+    );
+    await expect(
+        dialog.getByRole("heading", { name: "Current winds" }),
+    ).toBeVisible();
 });
 
 test("freefall drift integrates altitude winds from 4000 to 800 metres", async ({
@@ -1918,8 +1946,11 @@ test.describe("upper wind forecast timezones", () => {
                 OM_DATA.value = { utc_offset_seconds: offset, hourly };
             }, offset);
 
-            const altitude = windLevel(page, "≈ 4200 m");
-            await expect(altitude).toContainText("19 m/s 242°");
+            const altitude = windIcon(page, "≈ 4200 m");
+            await expect(altitude).toHaveAttribute(
+                "aria-label",
+                /19 m\/s 242°/,
+            );
             const compact = page.locator(".upperwinds-compact");
             await expect(compact.locator("th.current-column")).toHaveText(
                 "11:00",
@@ -2610,7 +2641,7 @@ test("jump run turns into the selected wind around the opening center", async ({
         const previous = new URL(page.url()).searchParams.get(
             "map_run_settings",
         );
-        await windLevel(page, label).click();
+        await windIcon(page, label).click();
         expect(new URL(page.url()).searchParams.get("map_run_settings")).toBe(
             previous,
         );
@@ -2649,7 +2680,7 @@ test("turning into wind requires a valid selected wind and uses refreshed data",
     await map.scrollIntoViewIfNeeded();
     await map.click({ position: { x: 120, y: 160 } });
     await page.getByRole("button", { name: "Avaus" }).click();
-    await windLevel(page, "≈ 4200 m").click();
+    await windIcon(page, "≈ 4200 m").click();
     const intoWind = directionControl(page, directionControls.intoWind);
     await expect(intoWind).toBeEnabled();
     for (const [speed, direction] of [
@@ -4912,7 +4943,10 @@ test("reload shows cached weather before refresh and retains it through failures
             }),
         )
         .toBe(true);
-    await expect(windLevel(page, "≈ 4200 m")).toContainText("12 m/s");
+    await expect(windIcon(page, "≈ 4200 m")).toHaveAttribute(
+        "aria-label",
+        /12 m\/s/,
+    );
     mode = "failed";
     release();
     await expect(page.locator("#errors")).toContainText(

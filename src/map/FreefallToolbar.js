@@ -131,6 +131,25 @@ export function FreefallToolbar({
             align-items: center;
             gap: 8px;
         }
+        .wind-profile ul {
+            display: grid;
+            gap: 8px;
+            list-style: none;
+            padding: 0;
+            margin: 16px 0 0;
+        }
+        .wind-level {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .wind-level > div {
+            flex: 1;
+        }
+        .wind-level svg {
+            flex-shrink: 0;
+            color: var(--color-primary);
+        }
         .wind-level-choice {
             display: flex;
             align-items: center;
@@ -282,6 +301,7 @@ export function FreefallToolbar({
                         Help,
                         {
                             id: "wind-barb-help",
+                            wide: true,
                             label: t("map.windBarbHelpTitle"),
                         },
                         html`
@@ -304,7 +324,35 @@ export function FreefallToolbar({
                                 ${h(WindBarb, { speed: 7.716666, direction: 0 })}
                                 ${t("map.windBarbCombinedHelp")}
                             </p>
-                            <p>${t("map.windBarbStatesHelp")}</p>
+                            <p class="wind-barb-legend">
+                                ${h(WindBarb, { speed: 0, direction: null })}
+                                ${t("map.windBarbCalmHelp")}
+                            </p>
+                            <p class="wind-barb-legend">
+                                ${h(WindBarb, { speed: null, direction: null })}
+                                ${t("map.windBarbMissingHelp")}
+                            </p>
+                            <h3>${t("map.currentWinds")}</h3>
+                            <div class="wind-profile">
+                                <ul>
+                                    ${windLevels.levels.map(
+                                        (level) => html`
+                                            <li
+                                                class="wind-level"
+                                                key=${level.label}
+                                            >
+                                                ${level.arrow} ${level.graphic}
+                                                <div>
+                                                    <strong>
+                                                        ${level.label}
+                                                    </strong>
+                                                    <div>${level.text}</div>
+                                                </div>
+                                            </li>
+                                        `,
+                                    )}
+                                </ul>
+                            </div>
                         `,
                     )}
                 </div>
