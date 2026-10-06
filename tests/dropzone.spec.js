@@ -540,6 +540,16 @@ for (const stationParam of ["fmisid", "roadsid"]) {
 test("FMI takes priority over a configured Fintraffic station and supplies coordinates", async ({
     page,
 }) => {
+    await page.route("https://opendata.fmi.fi/**", (route) =>
+        route.fulfill({
+            contentType: "application/xml",
+            path: new URL(route.request().url()).searchParams
+                .get("storedquery_id")
+                .includes("observations")
+                ? "tests/fixtures/observations.xml"
+                : "tests/fixtures/forecast.xml",
+        }),
+    );
     await page.route("https://api.open-meteo.com/**", (route) =>
         route.fulfill({ json: openMeteoResponse() }),
     );
@@ -548,7 +558,7 @@ test("FMI takes priority over a configured Fintraffic station and supplies coord
         if (request.url().startsWith("https://tie.digitraffic.fi/"))
             roadRequests++;
     });
-    await page.goto("/dz/?fmisid=137208&roadsid=5004&DEV_mock=1");
+    await page.goto("/dz/?fmisid=101191&roadsid=5004");
 
     await expect(page.locator("#winds .source-note")).toHaveText("Lähde: FMI");
     await expect
@@ -784,6 +794,7 @@ test("developer banner opens the editor and applies METAR changes", async ({
         exact: true,
     });
     await expect(editor).toBeVisible();
+    await expect(editor.getByRole("checkbox")).toHaveCount(0);
     const metarInput = editor.getByRole("textbox", { name: "METAR-teksti" });
     const query = editor.getByRole("region", { name: "Kyselymerkkijono" });
     await expect(query).toContainText('"fmisid": "137208"');
@@ -3521,8 +3532,8 @@ test("FMI XML caches survive reload and moving request times without refetching"
             path: url.searchParams
                 .get("storedquery_id")
                 .includes("observations")
-                ? "example_data/observations.xml"
-                : "example_data/forecast.xml",
+                ? "tests/fixtures/observations.xml"
+                : "tests/fixtures/forecast.xml",
         });
     });
     await page.goto("/dz/?fmisid=101339");

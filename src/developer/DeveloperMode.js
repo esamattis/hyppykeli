@@ -18,18 +18,6 @@ import {
 import { h, html } from "htm/preact";
 import { useImperativeHandle, useRef, useState } from "preact/hooks";
 
-function fields() {
-    return /** @type {DeveloperField[]} */ ([
-        {
-            key: "DEV_debug",
-            label: t("developer.debug"),
-            checkbox: true,
-        },
-        { key: "DEV_mock", label: t("developer.mock"), checkbox: true },
-        { key: "DEV_metar", label: t("developer.metar") },
-    ]);
-}
-
 /** @param {DeveloperObservation[]} observations */
 function toObservationInputs(observations) {
     return observations.map(({ gust, speed, direction, age }) => ({
@@ -169,15 +157,6 @@ export function DeveloperMode(props) {
         label {
             display: grid;
             gap: 6px;
-        }
-        label.developer-checkbox {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        input[type="checkbox"] {
-            width: auto;
-            flex-shrink: 0;
         }
         input,
         textarea {
@@ -422,12 +401,7 @@ export function DeveloperMode(props) {
         }
         const params = {
             DEV_upper_winds: upper,
-            ...Object.fromEntries(
-                fields().map(({ key }) => [
-                    key,
-                    editedValues[key]?.trim() || undefined,
-                ]),
-            ),
+            DEV_metar: metar || undefined,
             DEV_ground_obs: groundObservations,
             DEV_ground_gust: undefined,
             DEV_ground_avg: undefined,
@@ -502,66 +476,29 @@ export function DeveloperMode(props) {
                     onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
                 >
                     <div class="developer-fields">
-                        ${fields().map(({ key, label, max, checkbox }) => {
-                            /** @param {Event & { currentTarget: HTMLInputElement | HTMLTextAreaElement }} event */
-                            const onInput = (event) => {
-                                const editedValues = {
-                                    ...values,
-                                    [key]:
-                                        checkbox &&
-                                        event.currentTarget instanceof
-                                            HTMLInputElement
-                                            ? event.currentTarget.checked
-                                                ? "1"
-                                                : undefined
-                                            : event.currentTarget.value,
-                                };
-                                setValues(editedValues);
-                                setStatus("");
-                                setCopyUrl("");
-                                applyValues(editedValues);
-                            };
-                            if (checkbox) {
-                                return html`
-                                    <label class="developer-checkbox">
-                                        <input
-                                            name=${key}
-                                            type="checkbox"
-                                            checked=${values[key] === "1"}
-                                            onInput=${onInput}
-                                        />
-                                        ${label}
-                                    </label>
-                                `;
-                            }
-                            return html`
-                                <label>
-                                    ${label}
-                                    ${
-                                        key === "DEV_metar"
-                                            ? html`
-                                                  <textarea
-                                                      name=${key}
-                                                      value=${values[key] ?? ""}
-                                                      onInput=${onInput}
-                                                      spellcheck="false"
-                                                  />
-                                              `
-                                            : html`
-                                                  <input
-                                                      name=${key}
-                                                      type="number"
-                                                      min="0"
-                                                      max=${max}
-                                                      step="any"
-                                                      value=${values[key] ?? ""}
-                                                      onInput=${onInput}
-                                                  />
-                                              `
+                        <label>
+                            ${t("developer.metar")}
+                            <textarea
+                                name="DEV_metar"
+                                value=${values.DEV_metar ?? ""}
+                                onInput=${
+                                    /** @param {Event & { currentTarget: HTMLTextAreaElement }} event */ (
+                                        event,
+                                    ) => {
+                                        const editedValues = {
+                                            ...values,
+                                            DEV_metar:
+                                                event.currentTarget.value,
+                                        };
+                                        setValues(editedValues);
+                                        setStatus("");
+                                        setCopyUrl("");
+                                        applyValues(editedValues);
                                     }
-                                </label>
-                            `;
-                        })}
+                                }
+                                spellcheck="false"
+                            />
+                        </label>
                     </div>
                     <h3>${t("developer.upperTitle")}</h3>
                     <p>${t("developer.upperHelp")}</p>

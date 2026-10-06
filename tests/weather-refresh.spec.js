@@ -31,7 +31,7 @@ for (const explicit of [false, true]) {
             if (params.get("storedquery_id").includes("observations")) {
                 return route.fulfill({
                     contentType: "application/xml",
-                    path: "example_data/observations.xml",
+                    path: "tests/fixtures/observations.xml",
                 });
             }
             forecastLocations.push(params.get("latlon"));
@@ -100,7 +100,7 @@ test("changing locations supersedes a blocked refresh without stale writes or er
         if (coordinates === "60,25") await blocked;
         await route.fulfill({
             contentType: "application/xml",
-            path: "example_data/forecast.xml",
+            path: "tests/fixtures/forecast.xml",
         });
     });
     await openRefreshHarness(page);
@@ -159,7 +159,7 @@ test("refreshing the same station preserves coordinates; switching stations clea
         return query.includes("observations")
             ? route.fulfill({
                   contentType: "application/xml",
-                  path: "example_data/observations.xml",
+                  path: "tests/fixtures/observations.xml",
               })
             : route.fulfill({ status: 503 });
     });

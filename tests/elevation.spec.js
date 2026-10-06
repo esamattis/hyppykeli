@@ -2,13 +2,23 @@ import { expect, test } from "@playwright/test";
 
 const label = "Hyppypaikan korkeus merenpinnasta (m)";
 const dz =
-    "/dz/?fmisid=101191&DEV_mock=1&DEV_ground_obs=2,2,0,1&DEV_upper_winds=42,0;30,0;15,0;8,0;1.1,0";
+    "/dz/?fmisid=101191&DEV_ground_obs=2,2,0,1&DEV_upper_winds=42,0;30,0;15,0;8,0;1.1,0";
 
 test.beforeEach(async ({ page, baseURL }) => {
     await page.route("**/*", (route) =>
         new URL(route.request().url()).origin === new URL(baseURL).origin
             ? route.continue()
             : route.abort(),
+    );
+    await page.route("https://opendata.fmi.fi/**", (route) =>
+        route.fulfill({
+            contentType: "application/xml",
+            path: new URL(route.request().url()).searchParams
+                .get("storedquery_id")
+                .includes("observations")
+                ? "tests/fixtures/observations.xml"
+                : "tests/fixtures/forecast.xml",
+        }),
     );
 });
 

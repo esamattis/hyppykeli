@@ -334,8 +334,6 @@ interface QueryParams {
     map_jumpers?: string;
     map_next_jumper?: string;
     map_run_settings?: string;
-    DEV_debug?: string;
-    DEV_mock?: string;
     DEV_ground_obs?: string;
     DEV_ground_gust?: string;
     DEV_ground_avg?: string;
@@ -381,13 +379,6 @@ interface DeveloperObservationInput {
     speed: string;
     direction: string;
     age: number;
-}
-
-interface DeveloperField {
-    key: DeveloperKey;
-    label: string;
-    max?: number;
-    checkbox?: boolean;
 }
 
 /**
@@ -728,7 +719,6 @@ interface FmiRequestOptions {
     signal?: AbortSignal;
     cacheOnly?: boolean;
     onCacheStatus?: (stale: boolean) => void;
-    mock: boolean;
     onLoading: (delta: number) => void;
 }
 

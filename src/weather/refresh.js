@@ -1,7 +1,7 @@
 // @ts-check
 import { QUERY_PARAMS } from "#app/app/settings.js";
 import { t } from "#app/translations.js";
-import { DEV_MOCK, mockAllEntries } from "#app/developer/overrides.js";
+import { mockAllEntries } from "#app/developer/overrides.js";
 import { parseMetarMessages } from "#app/weather/metarMessages.js";
 import { getObservationStartTime } from "#app/weather/observationRange.js";
 import { hasValidWindData } from "#app/weather/calculations.js";
@@ -47,7 +47,6 @@ function requestOptions(cacheOnly, signal) {
     return {
         cacheOnly,
         signal,
-        mock: DEV_MOCK.value,
         /** @param {number} delta */
         onLoading(delta) {
             LOADING.value += delta;

@@ -10,14 +10,11 @@ import { t } from "#app/translations.js";
  * Makes a request to the FMI API with the given options.
  * @param {StoredQuery} storedQuery - The stored query ID for the request.
  * @param {Object} params - The parameters for the request.
- * @param {string | undefined} exampleUrl
  * @param {FmiRequestOptions & {cache: ResponseCachePolicy<string>}} options
  * @returns {Promise<Document|undefined|"error">} The parsed XML document from the response.
  * @throws Will throw an error if the request fails.
  */
-export async function fmiRequest(storedQuery, params, exampleUrl, options) {
-    const useExample = options.mock;
-
+export async function fmiRequest(storedQuery, params, options) {
     const url = new URL(`https://opendata.fmi.fi/wfs?request=getFeature`);
     url.searchParams.set("storedquery_id", storedQuery);
     for (const [k, v] of Object.entries(params)) {
@@ -26,40 +23,28 @@ export async function fmiRequest(storedQuery, params, exampleUrl, options) {
 
     options.onLoading(1);
     try {
-        /** @type {string | undefined} */
-        let text;
-        if (useExample) {
-            if (options.cacheOnly) return;
-            const response = await fetch(exampleUrl ?? url, {
-                signal: options.signal,
-            });
-            if (response.status === 404) return;
-            if (!response.ok) return "error";
-            text = await response.text();
-        } else {
-            /** @type {CachedFetchResult<string> | undefined} */
-            const result = await fetchCached(url.toString(), {
-                format: "text",
-                signal: options.signal,
-                cacheOnly: options.cacheOnly,
-                validate: (text) => {
-                    const doc = new DOMParser().parseFromString(
-                        text,
-                        "application/xml",
-                    );
-                    return (
-                        !doc.querySelector("parsererror") &&
-                        doc.getElementsByTagNameNS("*", "ExceptionReport")
-                            .length === 0 &&
-                        doc.getElementsByTagNameNS("*", "MeasurementTimeseries")
-                            .length > 0
-                    );
-                },
-                cache: options.cache,
-            });
-            text = result?.data;
-            options.onCacheStatus?.(result?.stale ?? true);
-        }
+        /** @type {CachedFetchResult<string> | undefined} */
+        const result = await fetchCached(url.toString(), {
+            format: "text",
+            signal: options.signal,
+            cacheOnly: options.cacheOnly,
+            validate: (text) => {
+                const doc = new DOMParser().parseFromString(
+                    text,
+                    "application/xml",
+                );
+                return (
+                    !doc.querySelector("parsererror") &&
+                    doc.getElementsByTagNameNS("*", "ExceptionReport")
+                        .length === 0 &&
+                    doc.getElementsByTagNameNS("*", "MeasurementTimeseries")
+                        .length > 0
+                );
+            },
+            cache: options.cache,
+        });
+        const text = result?.data;
+        options.onCacheStatus?.(result?.stale ?? true);
         if (text === undefined) return;
         const data = new DOMParser().parseFromString(text, "application/xml");
 
@@ -186,7 +171,6 @@ export async function fetchFmiForecasts(coordinates, options) {
             // place: "Utti",
             latlon: coordinates,
         },
-        "/example_data/forecast.xml",
         {
             ...options,
             cache: fmiForecastCache(
@@ -326,7 +310,6 @@ export async function fetchFmiObservations(fmisid, options) {
             ],
             fmisid,
         },
-        "/example_data/observations.xml",
         {
             ...options,
             cache: fmiObservationCache(fmisid, obsStartTime),

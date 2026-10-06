@@ -2,21 +2,15 @@
 import { QUERY_PARAMS } from "#app/app/settings.js";
 import { computed } from "@preact/signals";
 
-export const DEV_DEBUG = computed(() => QUERY_PARAMS.value.DEV_debug === "1");
-export const DEV_MOCK = computed(() => QUERY_PARAMS.value.DEV_mock === "1");
-
-/**
- * Logs wind calculations when developer debug mode is enabled.
- * @param {...any} args
- */
-export function debug(...args) {
-    if (DEV_DEBUG.value) console.log(...args);
-}
-
 export const DEV_ACTIVE = computed(() =>
-    Object.entries(QUERY_PARAMS.value).some(
-        ([key, value]) => key.startsWith("DEV_") && !!value?.trim(),
-    ),
+    [
+        QUERY_PARAMS.value.DEV_ground_obs,
+        QUERY_PARAMS.value.DEV_ground_gust,
+        QUERY_PARAMS.value.DEV_ground_avg,
+        QUERY_PARAMS.value.DEV_ground_direction,
+        QUERY_PARAMS.value.DEV_metar,
+        QUERY_PARAMS.value.DEV_upper_winds,
+    ].some((value) => !!value?.trim()),
 );
 
 /**

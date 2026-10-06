@@ -6,7 +6,7 @@ test.beforeEach(async ({ page, baseURL }) => {
             return route.abort();
         return route.continue();
     });
-    await page.goto("/dz/?lat=62&lon=25&DEV_mock=1");
+    await page.goto("/dz/?lat=62&lon=25");
     await expect(page.locator(".freefall-toolbar")).toBeVisible();
 });
 

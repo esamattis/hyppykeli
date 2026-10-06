@@ -21,11 +21,17 @@ test("weather modules stay idle until startup and repeated startup polls only on
                 }</script>`,
             });
         }
+        if (url.hostname === "opendata.fmi.fi") {
+            forecastRequests++;
+            return route.fulfill({
+                contentType: "application/xml",
+                path: "tests/fixtures/forecast.xml",
+            });
+        }
         if (url.origin !== new URL(baseURL).origin) return route.abort();
-        if (url.pathname === "/example_data/forecast.xml") forecastRequests++;
         return route.continue();
     });
-    await page.goto("/startup-test?lat=62&lon=25&DEV_mock=1");
+    await page.goto("/startup-test?lat=62&lon=25");
     await page.evaluate(async () => {
         await import("#app/weather/state.js");
         await import("#app/map/windData.js");
@@ -50,6 +56,9 @@ test("weather modules stay idle until startup and repeated startup polls only on
             }),
         )
         .toBe(true);
+    // Expire the forecast cache before the next scheduled poll.
+    const expired = await page.evaluate(() => Date.now() + 10 * 60_000);
+    await page.clock.setSystemTime(expired);
     await page.clock.runFor(60_000);
     await expect.poll(() => forecastRequests).toBe(2);
 });
@@ -74,7 +83,7 @@ test("weather UI renders before the map module and waits for Leaflet styles", as
         return route.continue();
     });
     // DOMContentLoaded must not depend on the deferred map's module tree.
-    await page.goto("/dz/?lat=62&lon=25&DEV_mock=1", {
+    await page.goto("/dz/?lat=62&lon=25", {
         waitUntil: "domcontentloaded",
     });
     await expect(page.locator("#winds .latest-wind-cell")).toHaveCount(3);
@@ -115,7 +124,7 @@ test("map stylesheet failures leave the weather usable and can be retried", asyn
             return route.abort();
         return route.continue();
     });
-    await page.goto("/dz/?lat=62&lon=25&DEV_mock=1");
+    await page.goto("/dz/?lat=62&lon=25");
     await expect(page.locator("#winds .latest-wind-cell")).toHaveCount(3);
     await page.getByRole("button", { name: "Yritä uudelleen" }).click();
     await expect(page.locator(".leaflet-container")).toHaveCount(1);
