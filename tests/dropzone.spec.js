@@ -544,7 +544,7 @@ test("coordinate-only dropzone uses Open-Meteo without an observations card or M
     await expect(clouds.getByRole("tablist")).toHaveCount(0);
     await expect(clouds.locator(".cloud-profile-layer")).toHaveCount(5);
     await expect(clouds.locator(".cloud-profile-layer").first()).toContainText(
-        "4000 m",
+        "4200 m",
     );
     await expect(clouds.locator(".cloud-profile-layer").first()).toContainText(
         "40 %",
@@ -853,7 +853,7 @@ test("Fintraffic station supplies observations and fallback coordinates", async 
     expect(locations).toEqual({ landing: "60.21,24.91", station: "60.2,24.9" });
 });
 
-test("METAR cloud layers show coverage, heights and conversion help", async ({
+test("METAR cloud layers expose descriptions and original feet in tooltips", async ({
     page,
 }) => {
     const metar =
@@ -861,86 +861,41 @@ test("METAR cloud layers show coverage, heights and conversion help", async ({
     const params = new URLSearchParams(manualPath.split("?")[1]);
     params.set("MANUAL_metar", metar);
     await page.goto(`/dz/?${params}`);
-
     const card = page.locator("#clouds");
     const layers = card.locator(".cloud-layer");
     await expect(layers).toHaveCount(4);
-    await expect(layers.locator(".cloud-layer-name")).toHaveText([
-        "Täysi pilvikatto",
-        "Rakoileva",
-        "Hajanaisia",
-        "Muutamia",
-    ]);
-    await expect(layers.locator(".cloud-layer-base b")).toHaveText([
-        "≈ 1800 m",
-        "≈ 900 m",
-        "≈ 500 m",
-        "≈ 200 m",
-    ]);
-    await expect(layers.locator(".cloud-layer-coverage")).toHaveText([
-        "8/8 taivaasta",
-        "5–7/8 taivaasta",
-        "3–4/8 taivaasta",
-        "1–2/8 taivaasta",
-    ]);
-
-    const conversions = [
-        {
-            metar: "OVC060",
-            conversion: "6000 ft = 1828,8 m",
-            tooltip: "1829 m (6000 ft)",
-        },
-        {
-            metar: "BKN030CB",
-            conversion: "3000 ft = 914,4 m",
-            tooltip: "914 m (3000 ft)",
-        },
-        {
-            metar: "SCT015",
-            conversion: "1500 ft = 457,2 m",
-            tooltip: "457 m (1500 ft)",
-        },
-        {
-            metar: "FEW005",
-            conversion: "500 ft = 152,4 m",
-            tooltip: "152 m (500 ft)",
-        },
+    const tooltips = [
+        "Muutamia · Pilven alaraja: 500 ft",
+        "Hajanaisia · Pilven alaraja: 1500 ft",
+        "Rakoileva · Pilven alaraja: 3000 ft",
+        "Täysi pilvikatto · Pilven alaraja: 6000 ft",
     ];
-    for (const [index, expected] of conversions.entries()) {
-        const layer = layers.nth(index);
-        await layer.locator(".cloud-layer-base [data-tooltip]").focus();
-        await expect(page.getByRole("tooltip")).toHaveText(expected.tooltip);
+    for (const [index, tooltip] of tooltips.entries()) {
+        await layers.nth(index).focus();
+        await expect(page.getByRole("tooltip")).toHaveText(tooltip);
         await page.keyboard.press("Escape");
-        await layer.getByRole("button", { name: "Ohje", exact: true }).click();
-        const help = layer.getByRole("dialog");
-        await expect(help).toBeVisible();
-        await expect(help.locator(".metar")).toHaveText(expected.metar);
-        await expect(help.locator(".cloud-base-conversion")).toHaveText(
-            expected.conversion,
-        );
-        if (expected.metar.endsWith("CB")) {
-            await expect(help).toContainText("CB tarkoittaa cumulonimbusta", {
-                useInnerText: true,
-            });
-            await expect(help).toContainText(
-                "äkillisiä muutoksia tuulen nopeudessa ja suunnassa",
-                { useInnerText: true },
-            );
-        }
-        await help.getByRole("button", { name: "Sulje", exact: true }).click();
     }
-
-    await expect(card.locator(".cloud-warning")).toHaveCount(0);
     await expect(
         layers.getByRole("img", { name: "Ukkospilviä", exact: true }),
     ).toHaveCount(1);
     await expect(
-        layers.nth(1).getByRole("img", { name: "Ukkospilviä", exact: true }),
+        layers.nth(2).getByRole("img", { name: "Ukkospilviä", exact: true }),
     ).toBeVisible();
     await card.locator(".cloud-metar-details summary").click();
-    const report = card.getByLabel("METAR", { exact: true });
-    await expect(report).toBeVisible();
-    await expect(report).toHaveText(metar);
+    await expect(card.getByLabel("METAR", { exact: true })).toHaveText(metar);
+});
+
+test("CAVOK exposes its clear-weather explanation in a tooltip", async ({
+    page,
+}) => {
+    const params = new URLSearchParams(manualPath.split("?")[1]);
+    params.set("MANUAL_metar", "METAR EFJY 041200Z 00000KT CAVOK 10/05 Q1014=");
+    await page.goto(`/dz/?${params}`);
+    const clear = page.locator("#clouds .cloud-clear");
+    await clear.focus();
+    await expect(page.getByRole("tooltip")).toHaveText(
+        "Ei pilviä alle 1500M (CAVOK)",
+    );
 });
 
 test("unlocated thunderclouds show a separate warning with wind-change help", async ({
@@ -966,7 +921,7 @@ test("unlocated thunderclouds show a separate warning with wind-change help", as
     await expect(help.locator(".metar")).toHaveText("//////CB");
 });
 
-test("obscured sky METAR shows vertical visibility and conversion help", async ({
+test("obscured sky METAR exposes original vertical visibility in its tooltip", async ({
     page,
 }) => {
     const params = new URLSearchParams(manualPath.split("?")[1]);
@@ -975,28 +930,11 @@ test("obscured sky METAR shows vertical visibility and conversion help", async (
         "METAR EFJY 041200Z 00000KT 0200 FG VV002 08/08 Q1014=",
     );
     await page.goto(`/dz/?${params}`);
-
     const layer = page.locator("#clouds .cloud-layer");
     await expect(layer).toHaveCount(1);
-    await expect(layer.locator(".cloud-layer-name")).toHaveText(
-        "SUMUA PERKELE",
-    );
-    await expect(layer.locator(".cloud-layer-coverage")).toHaveText(
-        "Taivas peittynyt",
-    );
-    await expect(layer.locator(".cloud-layer-base b")).toHaveText("≈ 100 m");
-    await expect(layer.locator(".cloud-base-label")).toHaveText(
-        "Pystynäkyvyys",
-    );
-    await layer.locator(".cloud-layer-base [data-tooltip]").focus();
-    await expect(page.getByRole("tooltip")).toHaveText("61 m (200 ft)");
-    await page.keyboard.press("Escape");
-    await layer.getByRole("button", { name: "Ohje", exact: true }).click();
-    const help = layer.getByRole("dialog");
-    await expect(help).toBeVisible();
-    await expect(help.locator(".metar")).toHaveText("VV002");
-    await expect(help.locator(".cloud-base-conversion")).toHaveText(
-        "200 ft = 60,96 m",
+    await layer.focus();
+    await expect(page.getByRole("tooltip")).toHaveText(
+        "SUMUA PERKELE · Pystynäkyvyys: 200 ft",
     );
 });
 
@@ -1028,11 +966,11 @@ test("manual banner opens the editor, applies METAR changes and restores live da
     await expect(page).toHaveURL(
         (url) => url.searchParams.get("MANUAL_metar") === metar,
     );
-    await expect(page.locator("#clouds .cloud-layer-base b")).toHaveText([
-        "≈ 1800 m",
-        "≈ 900 m",
-        "≈ 500 m",
+    await expect(page.locator("#clouds .map-cloud-height")).toHaveText([
         "≈ 200 m",
+        "≈ 500 m",
+        "≈ 900 m",
+        "≈ 1800 m",
     ]);
     await editor.getByRole("button", { name: "Sulje", exact: true }).click();
     await expect(editor).not.toBeVisible();
@@ -3735,7 +3673,7 @@ test("full-window cloud summary prefers METAR and falls back to current Open-Met
         "sitten",
     );
     await expect(summary.locator(".map-cloud-layer").first()).toHaveText(
-        /OVC\s*≈ 200 m/,
+        /≈ 200 m/,
     );
     await expect(summary.locator(".map-cloud-warning")).toHaveText(
         "Ukkospilviä",
@@ -3749,7 +3687,7 @@ test("full-window cloud summary prefers METAR and falls back to current Open-Met
     await summary.click();
     await expect(summary).toHaveAttribute("aria-expanded", "true");
     await expect(summary.locator(".map-cloud-layer").first()).toContainText(
-        "OVC",
+        "≈ 200 m",
     );
     await summary.press("Enter");
     await expect(summary).toHaveAttribute("aria-expanded", "false");
@@ -4143,23 +4081,17 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
     await expect(card.locator(".cloud-layer a")).toHaveCount(0);
     const rows = card.getByRole("tabpanel").locator(".cloud-profile-layer");
     await expect(rows).toHaveCount(3);
-    await expect(rows.first()).toContainText("4500 m");
-    const altitude = rows.first().locator(".cloud-layer-base [data-tooltip]");
+    await expect(rows.first()).toContainText("4300 m");
+    const altitude = rows.first();
     await altitude.focus();
     await expect(page.getByRole("tooltip")).toContainText("4274 m");
     await page.keyboard.press("Escape");
 
     await expect(rows.nth(1)).toContainText("3000 m");
     await expect(rows.nth(1)).toContainText("75 %");
-    await rows
-        .nth(1)
-        .getByRole("button", { name: "Ohje", exact: true })
-        .click();
-    await expect(page.getByRole("dialog")).toContainText("700 hPa");
-    await page
-        .getByRole("dialog")
-        .getByRole("button", { name: "Sulje", exact: true })
-        .click();
+    await rows.nth(1).focus();
+    await expect(page.getByRole("tooltip")).toContainText("700 hPa");
+    await page.keyboard.press("Escape");
     await modelTab.press("ArrowLeft");
     await expect(metarTab).toBeFocused();
     await expect(metarTab).toHaveAttribute("aria-selected", "true");
@@ -4175,20 +4107,14 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
     await expect(rows).toHaveCount(2);
     await expect(rows.nth(1)).toContainText("2000 m");
     await expect(page.locator("#title")).toContainText("1001 m merenpinnasta");
-    await rows
-        .nth(1)
-        .getByRole("button", { name: "Ohje", exact: true })
-        .click();
-    await expect(page.getByRole("dialog")).toContainText(
+    await rows.nth(1).focus();
+    await expect(page.getByRole("tooltip")).toContainText(
         "Korkeus hyppypaikan maanpinnasta: 2000 m",
     );
-    await expect(page.getByRole("dialog")).toContainText(
+    await expect(page.getByRole("tooltip")).toContainText(
         "Korkeus merenpinnasta: 3000 m",
     );
-    await page
-        .getByRole("dialog")
-        .getByRole("button", { name: "Sulje", exact: true })
-        .click();
+    await page.keyboard.press("Escape");
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs({ elevation: undefined });

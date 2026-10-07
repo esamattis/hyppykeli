@@ -1,23 +1,23 @@
 // @ts-check
-import { cloudTypes } from "#app/weather/cloudTypes.js";
+import {
+    CompactCavok,
+    CompactCloudLayer,
+    CompactOpenMeteoCloudLayer,
+} from "#app/weather/CompactCloudLayer.js";
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { Help } from "#app/shared/Help.js";
 import { formatClock, formatDate } from "#app/shared/dates.js";
-import { CloudCoverIcon, Icon } from "#app/shared/icons.js";
+import { Icon } from "#app/shared/icons.js";
 import { isNullish, whenAll } from "#app/shared/values.js";
-import { cloudLayerStyles, summaryStyles } from "#app/styles.js";
+import { summaryStyles } from "#app/styles.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
-import { ForecastAltitude } from "#app/weather/ForecastAltitude.js";
 import { CloudForecastTable } from "#app/weather/CloudForecastTable.js";
 import { PercentageCloudCover } from "#app/weather/CloudIndicators.js";
 import { DataSource } from "#app/weather/DataSource.js";
 import { TableDialog } from "#app/weather/WeatherTables.js";
-import {
-    formatCloudBase,
-    getLiftedCondensationLevel,
-} from "#app/weather/calculations.js";
+import { getLiftedCondensationLevel } from "#app/weather/calculations.js";
 import { getOpenMeteoCloudProfile } from "#app/weather/providers/openMeteo.js";
 import {
     FORECAST_SOURCE,
@@ -29,158 +29,6 @@ import {
 } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 import { useId, useState } from "preact/hooks";
-
-/** @param {{ cloud: CloudLayer }} props */
-function CloudLayer({ cloud }) {
-    const scope = useScope(cloudLayerStyles);
-    const type = cloudTypes()[cloud.amount];
-    const hasBase =
-        Number.isFinite(cloud.base) && !["NCD", "NSC"].includes(cloud.amount);
-    return html`
-        <li class="cloud-layer py-3.5 px-0">
-            ${scope.style}
-            <span class="cloud-layer-icon">
-                ${h(Icon, { name: type?.icon ?? "cloudOvercast", size: 30 })}
-                ${
-                    cloud.cumulonimbus
-                        ? html`
-                              <span class="cloud-lightning">
-                                  ${h(Icon, { name: "lightning", size: 20, label: t("cloud.cumulonimbus") })}
-                              </span>
-                          `
-                        : null
-                }
-            </span>
-            <div>
-                <a class="cloud-layer-name" href=${cloud.href}>
-                    ${type?.label ?? cloud.amount}
-                </a>
-                <span class="cloud-layer-coverage">
-                    ${type?.coverage ?? cloud.amount}
-                </span>
-            </div>
-            <div class="cloud-layer-base">
-                ${
-                    hasBase
-                        ? html`
-                              <b
-                                  tabindex="0"
-                                  data-tooltip=${`${formatCloudBase(cloud.base, cloud.unit, { maximumFractionDigits: 0 })} (${cloud.base} ${cloud.unit})`}
-                              >
-                                  ${formatCloudBase(cloud.base, cloud.unit, { approximate: true })}
-                              </b>
-                              <span class="cloud-base-label">
-                                  ${cloud.amount === "VV" ? t("cloud.verticalVisibility") : t("cloud.base")}
-                              </span>
-                          `
-                        : null
-                }
-            </div>
-            ${h(
-                Help,
-                {},
-                html`
-                    <h3>
-                        ${cloud.amount === "VV" ? t("cloud.verticalVisibility") : t("cloud.layer")}
-                    </h3>
-                    <p>
-                        ${type?.explanation ?? `Pilvikerroksen METAR-koodi on ${cloud.amount}.`}
-                    </p>
-                    ${
-                        cloud.cumulonimbus
-                            ? html`
-                                  <p>${t("cloud.cumulonimbusDescription")}</p>
-                              `
-                            : null
-                    }
-                    ${
-                        hasBase
-                            ? html`
-                                  ${
-                                      cloud.amount !== "VV"
-                                          ? html`
-                                                <p>${t("cloud.baseHelp")}</p>
-                                            `
-                                          : null
-                                  }
-                                  <p>${t("cloud.roundingHelp")}</p>
-                              `
-                            : null
-                    }
-                    <h3>METAR</h3>
-                    <p class="metar mt-2 pb-1">
-                        ${cloud.metarCode ?? cloud.amount}
-                    </p>
-                    ${
-                        hasBase
-                            ? html`
-                                  <p>${t("cloud.metarHeightHelp")}</p>
-                                  <p class="cloud-base-conversion">
-                                      ${`${cloud.base} ${cloud.unit} = ${formatCloudBase(cloud.base, cloud.unit)}`}
-                                  </p>
-                              `
-                            : null
-                    }
-                `,
-            )}
-        </li>
-    `;
-}
-
-/** @param {{ layer: OpenMeteoCloudProfile["layers"][number] }} props */
-function OpenMeteoCloudLayer({ layer }) {
-    const scope = useScope(css`
-        ${cloudLayerStyles}
-        :scope {
-            grid-template-columns: 36px minmax(0, 1fr) auto auto;
-            gap: var(--spacing-2-5);
-        }
-        .cloud-layer-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-        }
-        .cloud-layer-base b {
-            font-size: 1.2rem;
-        }
-    `);
-    return html`
-        <li class="cloud-layer cloud-profile-layer py-2 px-0">
-            ${scope.style}
-            <span class="cloud-layer-icon">
-                ${h(CloudCoverIcon, { percentage: layer.cover, size: 26 })}
-            </span>
-            <div>
-                <span class="cloud-layer-name">
-                    ${layer.cover.toFixed(0)} %
-                </span>
-            </div>
-            <div class="cloud-layer-base">
-                <b>
-                    ${h(ForecastAltitude, { height: layer.height, reference: t("cloud.altitudeAboveDropzone"), approximate: true })}
-                </b>
-            </div>
-            ${h(
-                Help,
-                {},
-                html`
-                    <h3>Open-Meteo · ${layer.pressure} hPa</h3>
-                    <p>
-                        ${t("cloud.altitudeAboveDropzone")}: ${" "}
-                        ${h(ForecastAltitude, { height: layer.height, reference: t("cloud.altitudeAboveDropzone") })}
-                    </p>
-                    <p>
-                        ${t("cloud.altitudeSeaLevel")}: ${" "}
-                        ${h(ForecastAltitude, { height: layer.height + DROPZONE_ELEVATION.value, reference: t("cloud.altitudeSeaLevel") })}
-                    </p>
-                    <p>${t("cloud.modelRoundingHelp")}</p>
-                    <p>${t("cloud.modelledMeaning")}</p>
-                    <p>${t("cloud.modelledCoverage")}</p>
-                `,
-            )}
-        </li>
-    `;
-}
 
 /** @param {{ profile: OpenMeteoCloudProfile | null }} props */
 function OpenMeteoClouds({ profile }) {
@@ -213,11 +61,11 @@ function OpenMeteoClouds({ profile }) {
                 ${
                     profile
                         ? html`
-                              <ul
-                                  class="cloud-list cloud-layers cloud-profile-layers p-0 m-0"
+                              <div
+                                  class="cloud-list cloud-layers compact-cloud-layers cloud-profile-layers p-0 my-3"
                               >
-                                  ${profile.layers.map((layer) => h(OpenMeteoCloudLayer, { layer }))}
-                              </ul>
+                                  ${profile.layers.map((layer) => h(CompactOpenMeteoCloudLayer, { layer }))}
+                              </div>
                               <p class="summary-time">
                                   ${h(FromNow, { date: profile.time })}
                               </p>
@@ -290,8 +138,11 @@ export function CloudSummary() {
             display: grid;
             gap: 0;
         }
-        .cloud-layer + .cloud-layer {
-            border-top: 1px solid var(--color-border);
+        .compact-cloud-layers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-3);
+            font-weight: 650;
         }
         .cloud-observation-heading {
             color: var(--color-muted);
@@ -299,16 +150,12 @@ export function CloudSummary() {
             font-weight: 500;
             letter-spacing: 0.03em;
         }
-        .cloud-clear,
         .cloud-warning {
             display: flex;
             align-items: center;
             gap: var(--spacing-3);
             border-radius: var(--radius-sm);
             font-size: 0.9rem;
-        }
-        .cloud-clear {
-            background: var(--color-surface-soft);
         }
         .cloud-warning {
             color: var(--color-danger);
@@ -450,11 +297,7 @@ export function CloudSummary() {
     const forecasts =
         FORECAST_SOURCE.value === "FMI" ? HOURLY_CLOUD_FORECASTS.value : [];
 
-    let msg = "";
-
-    if (metar?.clouds.length === 0 && metar.metar.includes("CAVOK")) {
-        msg = t("cloud.cavokMessage");
-    }
+    const cavok = metar?.clouds.length === 0 && metar.metar.includes("CAVOK");
 
     return html`
         <div class="cloud-summary">
@@ -536,33 +379,29 @@ export function CloudSummary() {
                                   ${h(DataSource, { sources: ["METAR"] })}
                               </div>
                               ${
-                                  msg
+                                  cavok
                                       ? html`
                                             <div
-                                                class="cloud-clear mt-3 py-3 px-3.5"
+                                                class="compact-cloud-layers my-3"
                                             >
-                                                ${h(Icon, { name: "cloudClear", size: 32 })}
-                                                <span>
-                                                    ${t("cloud.cavok")}
-                                                    <small>(CAVOK)</small>
-                                                </span>
+                                                ${h(CompactCavok, { focusable: true })}
                                             </div>
                                         `
                                       : html`
-                                            <ul
-                                                class="cloud-list cloud-layers p-0 m-0"
+                                            <div
+                                                class="cloud-list cloud-layers compact-cloud-layers p-0 my-3"
                                             >
                                                 ${metar.clouds
                                                     .toSorted(
                                                         (a, b) =>
-                                                            b.base - a.base,
+                                                            a.base - b.base,
                                                     )
                                                     .map((cloud) =>
-                                                        h(CloudLayer, {
+                                                        h(CompactCloudLayer, {
                                                             cloud,
                                                         }),
                                                     )}
-                                            </ul>
+                                            </div>
                                         `
                               }
                               ${

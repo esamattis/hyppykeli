@@ -2,11 +2,14 @@
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { formatClock } from "#app/shared/dates.js";
-import { CloudCoverIcon, Icon } from "#app/shared/icons.js";
+import { Icon } from "#app/shared/icons.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
-import { formatCloudBase } from "#app/weather/calculations.js";
-import { cloudTypes } from "#app/weather/cloudTypes.js";
+import {
+    CompactCavok,
+    CompactCloudLayer,
+    CompactOpenMeteoCloudLayer,
+} from "#app/weather/CompactCloudLayer.js";
 import { getOpenMeteoCloudProfile } from "#app/weather/providers/openMeteo.js";
 import { METARS, OM_DATA } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
@@ -96,7 +99,6 @@ export function MapCloudSummary() {
         : getOpenMeteoCloudProfile(OM_DATA.value, DROPZONE_ELEVATION.value);
     if (!hasMetarClouds && !profile) return null;
     const time = hasMetarClouds ? metar?.time : profile?.time;
-    const types = cloudTypes();
     const label = t(minimized ? "cloud.restore" : "cloud.minimize");
 
     return html`
@@ -132,47 +134,17 @@ export function MapCloudSummary() {
                               ${
                                   hasMetarClouds
                                       ? html`
-                                            ${metar?.clouds.map(
-                                                (cloud) => html`
-                                                    <div
-                                                        class="map-cloud-layer"
-                                                        data-tooltip=${`${types[cloud.amount]?.label ?? cloud.amount}${Number.isFinite(cloud.base) && !["NCD", "NSC"].includes(cloud.amount) ? ` · ${t(cloud.amount === "VV" ? "cloud.verticalVisibility" : "cloud.base")}: ${cloud.base} ${cloud.unit}` : ""}`}
-                                                    >
-                                                        ${h(Icon, { name: types[cloud.amount]?.icon ?? "cloudOvercast", size: 20, label: types[cloud.amount]?.label ?? cloud.amount })}
-                                                        ${cloud.cumulonimbus ? h(Icon, { name: "lightning", size: 14, label: t("cloud.cumulonimbus") }) : null}
-                                                        ${
-                                                            Number.isFinite(
-                                                                cloud.base,
-                                                            ) &&
-                                                            ![
-                                                                "NCD",
-                                                                "NSC",
-                                                            ].includes(
-                                                                cloud.amount,
-                                                            )
-                                                                ? html`
-                                                                      <span
-                                                                          class="map-cloud-height"
-                                                                      >
-                                                                          ${formatCloudBase(cloud.base, cloud.unit, { approximate: true })}
-                                                                      </span>
-                                                                  `
-                                                                : null
-                                                        }
-                                                    </div>
-                                                `,
+                                            ${metar?.clouds.map((cloud) =>
+                                                h(CompactCloudLayer, {
+                                                    cloud,
+                                                    focusable: false,
+                                                }),
                                             )}
                                             ${
                                                 cavok && !metar?.clouds.length
-                                                    ? html`
-                                                          <div
-                                                              class="map-cloud-layer"
-                                                              data-tooltip=${t("cloud.cavokMessage")}
-                                                          >
-                                                              ${h(Icon, { name: "cloudNsc", size: 20 })}
-                                                              <span>CAVOK</span>
-                                                          </div>
-                                                      `
+                                                    ? h(CompactCavok, {
+                                                          focusable: false,
+                                                      })
                                                     : null
                                             }
                                             ${
@@ -190,23 +162,11 @@ export function MapCloudSummary() {
                                                     : null
                                             }
                                         `
-                                      : profile?.layers.map(
-                                            (layer) => html`
-                                                <div
-                                                    class="map-cloud-layer"
-                                                    data-tooltip=${t("cloud.altitudeAboveDropzone")}
-                                                >
-                                                    ${h(CloudCoverIcon, { percentage: layer.cover, size: 20 })}
-                                                    <span>
-                                                        ${`${layer.cover.toFixed(0)} %`}
-                                                    </span>
-                                                    <span
-                                                        class="map-cloud-height"
-                                                    >
-                                                        ${formatCloudBase(layer.height, "m", { approximate: true })}
-                                                    </span>
-                                                </div>
-                                            `,
+                                      : profile?.layers.map((layer) =>
+                                            h(CompactOpenMeteoCloudLayer, {
+                                                layer,
+                                                focusable: false,
+                                            }),
                                         )
                               }
                           </div>
