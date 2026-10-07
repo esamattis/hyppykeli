@@ -18,7 +18,7 @@ export function MapCompass() {
             right: var(--spacing-3);
             bottom: calc(var(--spacing-7) + env(safe-area-inset-bottom));
             z-index: 700;
-            width: min(240px, 35vh);
+            width: min(240px, 35cqh);
             padding: 0;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-panel);
@@ -39,6 +39,7 @@ export function MapCompass() {
             background: var(--color-map-control-hover);
         }
         .map-compass-gust {
+            display: none;
             position: absolute;
             right: 0;
             bottom: calc(100% + var(--spacing-2));
@@ -58,9 +59,22 @@ export function MapCompass() {
             outline: 2px solid var(--color-primary);
             outline-offset: 2px;
         }
-        @media (min-width: 900px) {
+        /* Leave room above the overlays for the wind-level selector. */
+        @container fullscreen-map (min-width: 900px) and (min-height: 48rem) {
             :scope {
                 display: grid;
+            }
+        }
+        @container fullscreen-map (min-height: 56rem) {
+            .map-compass-gust {
+                display: block;
+            }
+        }
+        @container fullscreen-map (aspect-ratio > 1 / 1) {
+            .map-compass-gust {
+                display: block;
+                right: calc(100% + var(--spacing-2));
+                bottom: 0;
             }
         }
     `);

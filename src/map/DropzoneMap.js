@@ -192,6 +192,7 @@ export function DropzoneMap() {
             flex: 1;
             min-height: 0;
             display: flex;
+            container: fullscreen-map / size;
         }
         .map-frame.full-window .dz-map {
             flex: 1;
