@@ -1,9 +1,8 @@
 // @ts-check
-import { getCanopyDrift } from "#app/map/canopy.js";
+import { getCanopyDrift, getCanopyWindAtHeight } from "#app/map/canopy.js";
 import {
     EARTH_RADIUS_METRES,
     driftCoordinates,
-    getWindAtHeight,
     jumpRunCoordinates,
 } from "#app/map/freefall.js";
 
@@ -129,7 +128,7 @@ export function startForAutomaticRun(
                 .map((wind) => wind.height),
         ];
         const vectors = heights.map((height) =>
-            getWindAtHeight(profile, height),
+            getCanopyWindAtHeight(profile, height),
         );
         const drift = getCanopyDrift(profile, jumper.openingHeight)?.at(-1);
         if (!drift) return null;

@@ -81,13 +81,13 @@ test("the furthest downwind opening controls the offset for a long group", () =>
     );
 });
 
-test("canopy drift weights nearest-level regions by descent time, including higher openings", () => {
+test("canopy drift integrates interpolated winds by descent time, including higher openings", () => {
     const winds = profile(0, 0);
     winds.find((wind) => wind.height === 800).speed = 2;
     winds.find((wind) => wind.height === 110).speed = 4;
     winds.find((wind) => wind.height === 0).speed = 6;
     const low = place(winds).openings[0];
-    // Regions: 345 m at 2 m/s, 400 m at 4 m/s, 55 m at 6 m/s; descend at 5 m/s.
+    // Linear sections average 3 and 5 m/s; descend at 5 m/s.
     expect(low.north).toBeCloseTo((690 * 3 + 110 * 5) / 5, 1);
     const high = place(winds, [{ ...jumper, openingHeight: 1500 }]).openings[0];
     expect(high.north - low.north).toBeCloseTo((700 * 1) / 5, 1);

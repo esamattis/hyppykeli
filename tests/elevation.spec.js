@@ -127,7 +127,7 @@ test("elevation adjusts freefall, exit wind and canopy heights", async ({
     expect(result.exit.east).toBeCloseTo(0);
     expect(result.exit.north).toBe(-42);
     expect(result.canopyEnd.height).toBe(0);
-    expect(result.canopyEnd.north).toBeCloseTo(-920, 5);
+    expect(result.canopyEnd.north).toBeCloseTo(-(600 * 5 + 200 * 9) / 5, 5);
     expect(result.extended.at(-1).north).toBeCloseTo(-1668 - 42 / 50, 5);
     expect(result.invalid).toEqual([7000, 5500, 4200, 3000, 1500, 800, 110]);
 });
@@ -203,7 +203,7 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
             50,
         5,
     );
-    expect(result.canopy.north).toBeCloseTo((-415 * 7.7) / 5, 5);
+    expect(result.canopy.north).toBeCloseTo(-(800 * 4) / 5, 5);
     expect(result.aircraft.ground.north).toBeCloseTo(50 - 41.5025, 5);
     const map = page.locator("#dropzone-map");
     await expect(page.locator("#title")).toContainText("201 m merenpinnasta");
@@ -353,7 +353,7 @@ test("model terrain and missing forecast heights never fall back to nominal heig
     expect(result.rawTop).toBe(4300);
 });
 
-test("drawn canopy paths join the opening and follow elevation-adjusted wind boundaries", async ({
+test("drawn canopy paths join the opening and integrate elevation-adjusted wind levels", async ({
     page,
 }) => {
     const start = { lat: 62.4, lng: 25.6 };
@@ -412,7 +412,7 @@ test("drawn canopy paths join the opening and follow elevation-adjusted wind bou
     const canopy = initial["parachute-drift-line"];
     expect(canopy[0].lat).toBeCloseTo(opening.lat, 10);
     expect(canopy[0].lng).toBeCloseTo(opening.lng, 10);
-    // 900/50/0 m levels switch at 475 and 25 m above the DZ.
+    // Interpolate the 900/50/0 m levels, starting partway down at 800 m.
     const endpointError = (end, east, north) =>
         page.evaluate(
             async ({ opening, end, east, north }) => {
@@ -428,8 +428,8 @@ test("drawn canopy paths join the opening and follow elevation-adjusted wind bou
     expect(
         await endpointError(
             canopy.at(-1),
-            (-450 * 4) / 5,
-            -(325 * 8 + 25 * 2) / 5,
+            -(750 * ((4 + (4 * 100) / 850) / 2) + 50 * 2) / 5,
+            -(750 * ((8 * 750) / 850 / 2) + 50 * 1) / 5,
         ),
     ).toBeLessThan(1e-6);
 
@@ -509,4 +509,38 @@ test("ranged wind average follows jump-run altitude down to 1000 m", async ({
     await expect(
         page.locator('.wind-level-choice[aria-label^="≈ 900-1000 m:"]'),
     ).toBeVisible();
+});
+
+test("ground wind disagreement appears for opposing winds and excludes stale observations", async ({
+    page,
+}) => {
+    await page.goto(dz);
+    const notice = page.locator(".ground-wind-disagreement");
+    await expect(page.locator("#dropzone-map")).toBeVisible();
+    await expect(notice).toHaveCount(0);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({
+            MANUAL_upper_winds:
+                "42,0,7000;42,0,5500;42,0,4200;30,0,3000;15,0,1500;8,0,800;4,180,110",
+        });
+    });
+    await expect(notice).toContainText("Maatuuli ja alin ylätuuli poikkeavat");
+    const future = await page.evaluate(async () => {
+        const { getMapWindData } = await import("#app/map/windData.js");
+        const { hasGroundWindDisagreement } =
+            await import("#app/map/canopy.js");
+        return hasGroundWindDisagreement(
+            getMapWindData(Date.now() + 2 * 60 * 60 * 1000).canopyWinds,
+        );
+    });
+    expect(future).toBe(false);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({
+            MANUAL_upper_winds:
+                "42,0,7000;42,0,5500;42,0,4200;30,0,3000;15,0,1500;8,0,800;4,0,110",
+        });
+    });
+    await expect(notice).toHaveCount(0);
 });

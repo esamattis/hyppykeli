@@ -221,7 +221,7 @@ export const english = {
     "map.forecastNatureHelp":
         "The upper-level winds are not measurements taken at the dropzone. They are hourly weather-model forecasts retrieved from Open-Meteo for the selected forecast coordinates.",
     "map.forecastLevelsHelp":
-        "Open-Meteo provides wind speed, direction, and geopotential height at pressure levels. The map subtracts the dropzone elevation and uses the nearest wind level by height above the dropzone, both within and outside the forecast range. Levels below model terrain or at/below the dropzone are excluded. Manual winds retain their fixed sea-level heights of 110, 800, 1,500, 3,000, and 4,200 m before this adjustment.",
+        "Open-Meteo provides wind speed, direction, and geopotential height at pressure levels. The map subtracts the dropzone elevation and uses the nearest wind level for freefall and aircraft wind correction. Canopy drift linearly interpolates wind vectors between reported heights, including the ground observation, and holds the nearest endpoint wind outside the available range. This assumes a gradual transition through unmeasured heights. Levels below model terrain or at/below the dropzone are excluded. Manual winds retain their fixed sea-level heights of 110, 800, 1,500, 3,000, and 4,200 m before this adjustment.",
     "map.forecastImplicationHelp":
         "Actual winds at the dropzone can differ from the forecast, especially between the modelled levels or when conditions change. Treat the drift arrow and jump-run layout as planning estimates, verify the current conditions with observations and information from the pilot or dropzone, and do not use the map as the sole basis for operational decisions.",
     "map.groundObservationHelp":
@@ -235,7 +235,7 @@ export const english = {
     "map.automaticUpdate": "Update automatically",
     "map.automaticHelpTitle": "Automatic placement",
     "map.automaticHelp":
-        "On initial placement, the configured default axis is reversed when necessary to face into the average upper wind. Every predicted opening is placed at least 50 m upwind of the landing target relative to each non-calm wind layer at or below that opening. The preferred offset estimates canopy wind drift at a constant descent speed of 5 m/s, using ground wind and the nearest forecast level at each height. This does not model canopy glide or guarantee landing-area reachability.",
+        "On initial placement, the configured default axis is reversed when necessary to face into the average upper wind. Every predicted opening is placed at least 50 m upwind of the landing target relative to each non-calm wind layer at or below that opening. The preferred offset estimates canopy wind drift at a constant descent speed of 5 m/s, interpolating wind vectors between the ground observation and upper wind levels. This does not model canopy glide or guarantee landing-area reachability.",
     "map.automaticLimitsHelp":
         "Automatic placement requires a ground observation no older than one hour and current forecast winds. Missing data, an unachievable ground track, or conflicting wind directions can prevent placement. The positioning button reverses the current direction by 180° when needed to face into the average upper wind, then repeats the calculation for the configured landing coordinates. With Update automatically checked, new wind data repeats placement. Manual edits uncheck it and can leave openings outside these limits.",
     "map.positioningHelpTitle": "Manual positioning",
@@ -256,6 +256,8 @@ export const english = {
     "map.averageHelp":
         "Height-weighted average wind over the displayed freefall range above the dropzone. Uses forecast heights or manually entered measurements to provide a rough freefall-drift estimate.",
     "map.shareFailed": "Sharing the map failed.",
+    "map.groundWindDisagreement":
+        "Ground and lowest upper winds differ substantially. The canopy drift estimate assumes a gradual transition between them.",
     "map.driftUnavailable":
         "Drift estimate unavailable: upper-wind data is missing.",
     "map.automaticRunUnavailable":
@@ -666,7 +668,7 @@ const finnish = {
     "map.forecastNatureHelp":
         "Korkeuksien tuulet eivät ole hyppypaikalla mitattuja arvoja. Ne ovat Open-Meteosta valitun ennustesijainnin koordinaateille haettuja säämallin tuntiennusteita.",
     "map.forecastLevelsHelp":
-        "Open-Meteo antaa tuulen nopeuden, suunnan ja geopotentiaalikorkeuden painepinnoilla. Kartta vähentää hyppypaikan korkeuden merenpinnasta ja käyttää korkeudeltaan lähintä tuulitasoa sekä ennustekorkeuksien välillä että niiden ulkopuolella. Mallin maaston alapuoliset sekä hyppypaikan tasolla tai sen alapuolella olevat tasot jätetään pois. Käsin syötettyjen tuulten kiinteät korkeudet ennen korjausta ovat 110, 800, 1 500, 3 000 ja 4 200 m merenpinnasta.",
+        "Open-Meteo antaa tuulen nopeuden, suunnan ja geopotentiaalikorkeuden painepinnoilla. Kartta vähentää hyppypaikan korkeuden merenpinnasta ja käyttää korkeudeltaan lähintä tuulitasoa vapaapudotuksessa ja lentokoneen tuulikorjauksessa. Varjon varassa tapahtuva ajautuminen interpoloidaan lineaarisesti tuulivektoreista ilmoitettujen korkeuksien välillä, mukaan lukien maatuulihavainto. Korkeusvälin ulkopuolella käytetään lähintä päätepisteen tuulta. Tämä olettaa asteittaisen muutoksen mittaamattomilla korkeuksilla. Mallin maaston alapuoliset sekä hyppypaikan tasolla tai sen alapuolella olevat tasot jätetään pois. Käsin syötettyjen tuulten kiinteät korkeudet ennen korjausta ovat 110, 800, 1 500, 3 000 ja 4 200 m merenpinnasta.",
     "map.forecastImplicationHelp":
         "Hyppypaikan todellinen tuuli voi poiketa ennusteesta etenkin mallinnettujen korkeuksien välillä tai sään muuttuessa. Käytä ajautumisnuolta ja hyppylinjaa suunnittelun arvioina, varmista vallitsevat olosuhteet havainnoista sekä lentäjältä tai hyppypaikalta äläkä tee operatiivisia päätöksiä pelkän kartan perusteella.",
     "map.groundObservationHelp":
@@ -680,7 +682,7 @@ const finnish = {
     "map.automaticUpdate": "Päivitä automaattisesti",
     "map.automaticHelpTitle": "Automaattinen sijoitus",
     "map.automaticHelp":
-        "Ensimmäisessä sijoituksessa määritetty oletusakseli käännetään tarvittaessa vasten yläkorkeuksien keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskohteen tuulenpuolelle suhteessa jokaiseen avautumiskorkeuden tai sen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin käyttäen maatuulta ja kullakin korkeudella lähintä ennustetasoa. Arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä.",
+        "Ensimmäisessä sijoituksessa määritetty oletusakseli käännetään tarvittaessa vasten yläkorkeuksien keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskohteen tuulenpuolelle suhteessa jokaiseen avautumiskorkeuden tai sen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin interpoloimalla tuulivektoreita maatuulihavainnon ja ylätuulitasojen välillä. Arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä.",
     "map.automaticLimitsHelp":
         "Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ennustetuulet. Puuttuvat tiedot, lentorata jota ei voi lentää tai ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike kääntää nykyistä suuntaa tarvittaessa 180° vasten yläkorkeuksien keskituulta ja toistaa laskennan määritetyille laskeutumiskoordinaateille. Kun Päivitä automaattisesti on valittuna, uudet tuulitiedot toistavat sijoituksen. Käsin tehdyt muutokset poistavat valinnan ja voivat jättää avautumiskohtia näiden rajojen ulkopuolelle.",
     "map.positioningHelpTitle": "Sijoittaminen käsin",
@@ -701,6 +703,8 @@ const finnish = {
     "map.averageHelp":
         "Korkeudella painotettu keskituuli näytetyllä vapaapudotuksen korkeusvälillä hyppypaikan maanpinnasta. Käyttää ennusteen korkeuksia tai käsin syötettyjä mittauksia ja antaa karkean arvion vapaapudotusajautumisesta.",
     "map.shareFailed": "Kartan jakaminen epäonnistui.",
+    "map.groundWindDisagreement":
+        "Maatuuli ja alin ylätuuli poikkeavat huomattavasti toisistaan. Varjon ajautumisarvio olettaa niiden välille asteittaisen muutoksen.",
     "map.driftUnavailable":
         "Ajautumisarvio ei saatavilla: ylätuulitietoja puuttuu.",
     "map.automaticRunUnavailable":
