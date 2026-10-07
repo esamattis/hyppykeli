@@ -80,8 +80,6 @@ interface MapWindLevel {
 interface SelectableMapWindLevel extends MapWindLevel {
     altitudeTooltip?: string;
     id: string;
-    /** Older shared URLs stored nominal altitude labels as the selection. */
-    legacyLabel: string;
 }
 
 interface MapAltitudeWindLevel
@@ -375,9 +373,6 @@ interface QueryParams {
     map_next_jumper?: string;
     map_run_settings?: string;
     MANUAL_ground_obs?: string;
-    MANUAL_ground_gust?: string;
-    MANUAL_ground_avg?: string;
-    MANUAL_ground_direction?: string;
     MANUAL_metar?: string;
     MANUAL_upper_winds?: string;
     __gusts?: string;
@@ -411,8 +406,8 @@ interface ManualObservation {
 
 interface ManualUpperWindInput {
     pressure?: OpenMeteoPressureLevel;
-    /** Metres above the dropzone; omitted in legacy URLs. */
-    height?: string;
+    /** Metres above the dropzone; empty values use the forecast height. */
+    height: string;
     speed: string;
     direction: string;
 }

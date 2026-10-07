@@ -1576,11 +1576,7 @@ export function DropzoneMap() {
         jumperCount,
     ]);
     const selectedWind =
-        winds.find(
-            (wind) =>
-                wind.id === selectedWindId ||
-                wind.legacyLabel === selectedWindId,
-        ) ?? averageWind;
+        winds.find((wind) => wind.id === selectedWindId) ?? averageWind;
     const selectedWindDirection =
         selectedWind.speed !== null &&
         isFiniteNumber(selectedWind.speed) &&

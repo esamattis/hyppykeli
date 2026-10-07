@@ -5,16 +5,13 @@ import { computed } from "@preact/signals";
 export const MANUAL_ACTIVE = computed(() =>
     [
         QUERY_PARAMS.value.MANUAL_ground_obs,
-        QUERY_PARAMS.value.MANUAL_ground_gust,
-        QUERY_PARAMS.value.MANUAL_ground_avg,
-        QUERY_PARAMS.value.MANUAL_ground_direction,
         QUERY_PARAMS.value.MANUAL_metar,
         QUERY_PARAMS.value.MANUAL_upper_winds,
     ].some((value) => !!value?.trim()),
 );
 
 /**
- * Decode seven altitude rows (or five for older URLs): speed, direction, optional height above the DZ.
+ * Decode seven altitude rows: speed, direction, height above the DZ.
  * Empty cells use forecast defaults; invalid overrides use live data.
  * @param {string | undefined} text
  * @returns {ManualUpperWindInput[] | undefined}
@@ -22,11 +19,11 @@ export const MANUAL_ACTIVE = computed(() =>
 export function parseUpperWinds(text) {
     if (!text?.trim()) return undefined;
     const rows = text.split(";").map((row) => row.split(","));
-    if (rows.length !== 5 && rows.length !== 7) return undefined;
+    if (rows.length !== 7) return undefined;
     const winds = [];
     for (const row of rows) {
-        if (row.length !== 2 && row.length !== 3) return undefined;
-        const [speed = "", direction = "", height] = row.map((value) =>
+        if (row.length !== 3) return undefined;
+        const [speed = "", direction = "", height = ""] = row.map((value) =>
             value.trim(),
         );
         if (
@@ -40,7 +37,7 @@ export function parseUpperWinds(text) {
         winds.push({
             speed,
             direction,
-            ...(height !== undefined ? { height } : {}),
+            height,
         });
     }
     return winds;

@@ -2,7 +2,32 @@ import { expect, test } from "@playwright/test";
 
 const label = "Hyppypaikan korkeus merenpinnasta (m)";
 const dz =
-    "/dz/?fmisid=101191&MANUAL_ground_obs=2,2,0,1&MANUAL_upper_winds=42,0;30,0;15,0;8,0;1.1,0";
+    "/dz/?fmisid=101191&MANUAL_ground_obs=2,2,0,1&MANUAL_upper_winds=42,0,7000;42,0,5500;42,0,4200;30,0,3000;15,0,1500;8,0,800;1.1,0,110";
+
+async function useForecastWinds(page) {
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
+        navigateQs({ MANUAL_upper_winds: undefined });
+        const hourly = {
+            time: [new Date().toISOString().slice(0, 13) + ":00"],
+        };
+        for (const [level, height, speed] of [
+            [400, 7000, 42],
+            [500, 5500, 42],
+            [600, 4200, 42],
+            [700, 3000, 30],
+            [850, 1500, 15],
+            [925, 800, 8],
+            [1000, 110, 1.1],
+        ]) {
+            hourly[`geopotential_height_${level}hPa`] = [height];
+            hourly[`windspeed_${level}hPa`] = [speed];
+            hourly[`winddirection_${level}hPa`] = [0];
+        }
+        OM_DATA.value = { utc_offset_seconds: 0, elevation: 0, hourly };
+    });
+}
 
 test.beforeEach(async ({ page, baseURL }) => {
     await page.route("**/*", (route) =>
@@ -62,6 +87,7 @@ test("elevation adjusts freefall, exit wind and canopy heights", async ({
     page,
 }) => {
     await page.goto(`${dz}&elevation=200`);
+    await useForecastWinds(page);
     const result = await page.evaluate(async () => {
         const { getMapWindData } = await import("#app/map/windData.js");
         const { getFreefallDrift, getWindAtHeight } =
@@ -90,8 +116,10 @@ test("elevation adjusts freefall, exit wind and canopy heights", async ({
             invalid,
         };
     });
-    expect(result.heights).toEqual([4000, 2800, 1300, 600]);
-    expect(result.canopyHeights).toEqual([4000, 2800, 1300, 600, 0]);
+    expect(result.heights).toEqual([6800, 5300, 4000, 2800, 1300, 600]);
+    expect(result.canopyHeights).toEqual([
+        6800, 5300, 4000, 2800, 1300, 600, 0,
+    ]);
     // Each nearest-level region is integrated at 50 m/s.
     expect(result.path.height).toBe(800);
     expect(result.path.north).toBeCloseTo(-1668, 5);
@@ -101,7 +129,7 @@ test("elevation adjusts freefall, exit wind and canopy heights", async ({
     expect(result.canopyEnd.height).toBe(0);
     expect(result.canopyEnd.north).toBeCloseTo(-920, 5);
     expect(result.extended.at(-1).north).toBeCloseTo(-1668 - 42 / 50, 5);
-    expect(result.invalid).toEqual([4200, 3000, 1500, 800]);
+    expect(result.invalid).toEqual([7000, 5500, 4200, 3000, 1500, 800, 110]);
 });
 
 test("landing form includes elevation in the dropzone URL", async ({
@@ -121,7 +149,7 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     page,
 }) => {
     await page.goto(
-        `${dz}&elevation=200.5&map_wind=${encodeURIComponent(JSON.stringify("≈ 3000 m"))}`,
+        `${dz}&elevation=200.5&map_wind=${encodeURIComponent(JSON.stringify("700"))}`,
     );
     const result = await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
@@ -180,7 +208,7 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     const map = page.locator("#dropzone-map");
     await expect(page.locator("#title")).toContainText("201 m merenpinnasta");
     const selected = map.locator('.wind-level-choice[aria-pressed="true"]');
-    // Old URLs selecting the nominal 3000 m label still select 700 hPa.
+    // Wind selection uses the stable pressure-level ID.
     await expect(selected).toHaveAttribute("aria-label", /^≈ 3000 m:/);
     await expect(selected).toHaveAttribute("data-tooltip", /^3000 m:/);
     await selected.focus();
@@ -297,7 +325,10 @@ test("model terrain and missing forecast heights never fall back to nominal heig
                 getCanopyDrift(getMapWindData().canopyWinds, 800),
             );
         }
-        navigateQs({ MANUAL_upper_winds: "42,0;30,0;15,0;8,0;1.1,0" });
+        navigateQs({
+            MANUAL_upper_winds:
+                "42,0,7000;42,0,5500;42,0,4200;30,0,3000;15,0,1500;8,0,800;1.1,0,110",
+        });
         const manual = getMapWindData();
         return {
             ids: aboveTerrain.winds.map((wind) => wind.id),
@@ -316,7 +347,9 @@ test("model terrain and missing forecast heights never fall back to nominal heig
     expect(result.fiveDrift.north).toBeCloseTo(-640, 5);
     expect(result.missingDrift).toBeNull();
     expect(result.invalidCanopies).toEqual([null, null, null]);
-    expect(result.manualHeights).toEqual([4000, 2800, 1300, 600]);
+    expect(result.manualHeights).toEqual([
+        7000, 5500, 4200, 3000, 1500, 800, 110,
+    ]);
     expect(result.rawTop).toBe(4300);
 });
 
@@ -440,6 +473,7 @@ test("ranged wind average follows jump-run altitude down to 1000 m", async ({
     page,
 }) => {
     await page.goto(`${dz}&elevation=200`);
+    await useForecastWinds(page);
     const result = await page.evaluate(async () => {
         const { getMapWindData } = await import("#app/map/windData.js");
         const { navigateQs } = await import("#app/app/settings.js");
@@ -453,9 +487,10 @@ test("ranged wind average follows jump-run altitude down to 1000 m", async ({
         navigateQs({ map_run_settings: JSON.stringify(settings) });
         const lower = getMapWindData().averageWind;
         // Missing wind entirely below the averaged range does not invalidate it.
-        navigateQs({ MANUAL_upper_winds: "42,0;30,0;15,0;,;1.1,0" });
+        const { OM_DATA } = await import("#app/weather/state.js");
+        OM_DATA.value.hourly.windspeed_925hPa = [null];
         const missingBelow = getMapWindData().averageWind;
-        navigateQs({ MANUAL_upper_winds: "42,0;30,0;,;8,0;1.1,0" });
+        OM_DATA.value.hourly.windspeed_850hPa = [null];
         const missingInside = getMapWindData().averageWind;
         navigateQs({
             map_run_settings: JSON.stringify({ ...settings, exitHeight: 900 }),

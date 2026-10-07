@@ -1075,44 +1075,193 @@ test("jump-run settings share the editable wind table with manual mode", async (
     expect(params().get("MANUAL_ground_obs")).not.toBe(ground);
 });
 
-test("older five-row wind links offer the higher levels without changing saved measurements", async ({
+test("old wind formats are ignored and editing creates seven ground-relative rows", async ({
     page,
 }) => {
-    const saved = "42,0;30,0;15,0;8,0;1.1,0";
-    await page.evaluate(async (saved) => {
-        const { navigateQs } = await import("#app/app/settings.js");
-        navigateQs({ MANUAL_upper_winds: saved });
-    }, saved);
     await setUniformFreefallWind(page);
+    for (const saved of [
+        "42,0;30,0;15,0;8,0;1.1,0",
+        "42,0,4200;30,0,3000;15,0,1500;8,0,800;1.1,0,110",
+        Array(7).fill("42,0").join(";"),
+    ]) {
+        const result = await page.evaluate(async (saved) => {
+            const { navigateQs } = await import("#app/app/settings.js");
+            const { parseUpperWinds } =
+                await import("#app/manual/overrides.js");
+            const { getMapWindData } = await import("#app/map/windData.js");
+            navigateQs({ MANUAL_upper_winds: saved });
+            return {
+                parsed: parseUpperWinds(saved),
+                winds: getMapWindData().freefallWinds.map(
+                    ({ height, speed }) => ({ height, speed }),
+                ),
+            };
+        }, saved);
+        expect(result.parsed).toBeUndefined();
+        expect(result.winds).toEqual(
+            [7000, 5500, 4200, 3000, 1500, 800, 110].map((height) => ({
+                height,
+                speed: 10,
+            })),
+        );
+    }
     await page
         .locator(".developer-banner")
         .getByRole("button", { name: "Muokkaa", exact: true })
         .click();
     const table = page.locator(".developer-upper-winds");
-    await expect(table.locator("tbody tr")).toHaveCount(7);
-    await expect(
-        table.locator('[name="MANUAL_upper_winds_0_height"]'),
-    ).toHaveAttribute("placeholder", "7000");
-    await expect(
-        table.locator('[name="MANUAL_upper_winds_1_height"]'),
-    ).toHaveAttribute("placeholder", "5500");
-    await expect(
-        table.locator('[name="MANUAL_upper_winds_2_speed"]'),
-    ).toHaveValue("42");
+    const speed = table.locator('[name="MANUAL_upper_winds_2_speed"]');
+    await expect(speed).toHaveValue("");
+    await expect(speed).toHaveAttribute("placeholder", "10.0");
+    await speed.fill("22");
     expect(new URL(page.url()).searchParams.get("MANUAL_upper_winds")).toBe(
-        saved,
-    );
-    const heights = await page.evaluate(async () =>
-        (await import("#app/map/windData.js"))
-            .getMapWindData()
-            .freefallWinds.map((wind) => wind.height),
-    );
-    expect(heights).toEqual([4200, 3000, 1500, 800]);
-    await table.locator('[name="MANUAL_upper_winds_1_speed"]').fill("22");
-    expect(new URL(page.url()).searchParams.get("MANUAL_upper_winds")).toBe(
-        ",,;22,,;42,0,;30,0,;15,0,;8,0,;1.1,0,",
+        ",,;,,;22,,;,,;,,;,,;,,",
     );
 });
+
+test("partial manual winds and capture preserve model-terrain exclusions", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
+        navigateQs({ elevation: "200" });
+        OM_DATA.value = {
+            ...OM_DATA.value,
+            elevation: 300,
+            hourly: {
+                ...OM_DATA.value.hourly,
+                geopotential_height_1000hPa: [250],
+            },
+        };
+    });
+    const read = () =>
+        page.evaluate(async () => {
+            const { getMapWindData } = await import("#app/map/windData.js");
+            const { getCanopyDrift } = await import("#app/map/canopy.js");
+            const data = getMapWindData();
+            return {
+                levels: data.freefallWinds.map((wind) => wind.id),
+                canopy: getCanopyDrift(data.canopyWinds, 800)?.at(-1),
+            };
+        });
+    const original = await read();
+    expect(original.levels).not.toContain("1000");
+    expect(original.canopy).toBeDefined();
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    const editor = page.locator("#developer-mode");
+    await editor.locator('[name="MANUAL_upper_winds_2_speed"]').fill("20");
+    expect(await read()).toEqual(original);
+    await editor
+        .getByRole("button", {
+            name: "Tallenna nykyiset arvot manuaaliarvoiksi",
+        })
+        .click();
+    expect(await read()).toEqual(original);
+    const height = editor.locator('[name="MANUAL_upper_winds_6_height"]');
+    await expect(height).toHaveJSProperty("placeholder", "");
+    // An explicit measurement can supply a level independently of model terrain.
+    await height.fill("50");
+    expect((await read()).levels).toContain("1000");
+    await height.fill("");
+    expect(await read()).toEqual(original);
+});
+
+for (const source of ["metar", "openmeteo", "stale-station"]) {
+    test(`ground editor does not offer unavailable observation defaults (${source})`, async ({
+        page,
+    }) => {
+        await expect
+            .poll(() =>
+                page.evaluate(
+                    async () =>
+                        (await import("#app/weather/state.js")).LOADING.value,
+                ),
+            )
+            .toBe(0);
+        const original = await page.evaluate(async (source) => {
+            const { navigateQs, QUERY_PARAMS } =
+                await import("#app/app/settings.js");
+            const {
+                LIVE_OBSERVATIONS,
+                OPEN_METEO_CURRENT,
+                LATEST_OBSERVATION,
+            } = await import("#app/weather/state.js");
+            navigateQs({
+                MANUAL_ground_obs: undefined,
+                MANUAL_metar:
+                    source === "metar"
+                        ? QUERY_PARAMS.value.MANUAL_metar
+                        : undefined,
+            });
+            const { updateWeatherData } =
+                await import("#app/weather/refresh.js");
+            await updateWeatherData();
+            const reading = {
+                time: new Date(),
+                gust: 8,
+                speed: 5,
+                direction: 180,
+            };
+            LIVE_OBSERVATIONS.value =
+                source === "stale-station"
+                    ? [
+                          {
+                              ...reading,
+                              source: "fmi",
+                              time: new Date(Date.now() - 2 * 3600000),
+                          },
+                      ]
+                    : [];
+            OPEN_METEO_CURRENT.value = { ...reading, source: "openmeteo" };
+            const latest = LATEST_OBSERVATION.value;
+            return { speed: latest.speed, direction: latest.direction };
+        }, source);
+        await page
+            .getByRole("button", { name: "Valikko", exact: true })
+            .click();
+        await page
+            .locator(".side-menu")
+            .getByRole("button", { name: "Manuaalitila", exact: true })
+            .click();
+        const editor = page.locator("#developer-mode");
+        const gust = editor.locator('[name="MANUAL_ground_obs_0_gust"]');
+        const speed = editor.locator('[name="MANUAL_ground_obs_0_speed"]');
+        const direction = editor.locator(
+            '[name="MANUAL_ground_obs_0_direction"]',
+        );
+        for (const input of [gust, speed, direction]) {
+            await expect(input).toHaveValue("");
+            await expect(input).toHaveJSProperty("placeholder", "");
+        }
+        await gust.fill("9");
+        await speed.fill("7");
+        await speed.locator("..").getByRole("button").click();
+        await expect(speed).toHaveJSProperty("placeholder", "");
+        expect(
+            await page.evaluate(async () => {
+                const { OBSERVATIONS } = await import("#app/weather/state.js");
+                return OBSERVATIONS.value[0].speed;
+            }),
+        ).toBeUndefined();
+        await gust.locator("..").getByRole("button").click();
+        expect(new URL(page.url()).searchParams.has("MANUAL_ground_obs")).toBe(
+            false,
+        );
+        expect(
+            await page.evaluate(async () => {
+                const { LATEST_OBSERVATION } =
+                    await import("#app/weather/state.js");
+                const { speed, direction } = LATEST_OBSERVATION.value;
+                return { speed, direction };
+            }),
+        ).toEqual(original);
+    });
+}
 
 test("higher forecast levels supply exit winds and drift at 6000 metres", async ({
     page,
@@ -2584,7 +2733,7 @@ test("jump run turns into the selected wind around the opening center", async ({
     page,
 }) => {
     await page.goto(
-        `${manualPath}&lat=62.4&lon=25.6&MANUAL_upper_winds=10,225;10,270;10,315;10,360;10,90`,
+        `${manualPath}&lat=62.4&lon=25.6&MANUAL_upper_winds=10,225,7000;10,225,5500;10,225,4200;10,270,3000;10,315,1500;10,360,800;10,90,110`,
     );
     const intoWind = directionControl(page, directionControls.intoWind);
     await expect(intoWind).toBeDisabled();
@@ -2596,11 +2745,11 @@ test("jump run turns into the selected wind around the opening center", async ({
     const opening = await middleOpening(page);
     for (const [label, direction] of [
         ["≈ 4000-1000 m", 284.97871603010344],
-        ["≈ 4200 m", 225],
-        ["≈ 3000 m", 270],
-        ["≈ 1500 m", 315],
-        ["≈ 800 m", 0],
-        ["≈ 100 m", 90],
+        ["4200 m", 225],
+        ["3000 m", 270],
+        ["1500 m", 315],
+        ["800 m", 0],
+        ["110 m", 90],
         ["Maanpinta", 194],
     ]) {
         const previous = new URL(page.url()).searchParams.get(
@@ -2623,7 +2772,7 @@ test("jump run turns into the selected wind around the opening center", async ({
             name: "Laajenna Hyppylinja koko ikkunaan",
         })
         .click();
-    await windIcon(page, "≈ 1500 m").click();
+    await windIcon(page, "1500 m").click();
     await clickDirection(page, directionControls.intoWind);
     expect(
         JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
@@ -2833,7 +2982,10 @@ for (const input of ["mouse", "touch"]) {
         await setUniformFreefallWind(page);
         await page.evaluate(async () => {
             const { navigateQs } = await import("#app/app/settings.js");
-            navigateQs({ MANUAL_upper_winds: "10,0;10,0;10,0;10,0;10,0" });
+            navigateQs({
+                MANUAL_upper_winds:
+                    "10,0,7000;10,0,5500;10,0,4200;10,0,3000;10,0,1500;10,0,800;10,0,110",
+            });
         });
         const map = page.locator(".dz-map");
         await map.scrollIntoViewIfNeeded();
@@ -3918,7 +4070,7 @@ for (const [axis, wind, speed, expected] of [
         page,
     }) => {
         await page.goto(
-            `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=${axis}&default_jump_group_count=4&MANUAL_upper_winds=${Array(5).fill(`${speed},${wind}`).join(";")}`,
+            `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=${axis}&default_jump_group_count=4&MANUAL_upper_winds=${[7000, 5500, 4200, 3000, 1500, 800, 110].map((height) => `${speed},${wind},${height}`).join(";")}`,
         );
         expect(
             new URL(page.url()).searchParams.get("map_run_start"),
@@ -4022,7 +4174,7 @@ test("automatic positioning reverses the current axis into wind and reset restor
     page,
 }) => {
     await page.goto(
-        `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=180&MANUAL_upper_winds=10,180;10,180;10,180;10,0;10,0`,
+        `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=180&MANUAL_upper_winds=10,180,7000;10,180,5500;10,180,4200;10,180,3000;10,180,1500;10,0,800;10,0,110`,
     );
     await setUniformFreefallWind(page);
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
@@ -4033,7 +4185,8 @@ test("automatic positioning reverses the current axis into wind and reset restor
         const settings = JSON.parse(QUERY_PARAMS.value.map_run_settings);
         navigateQs(
             {
-                MANUAL_upper_winds: "10,0;10,0;10,0;10,0;10,0",
+                MANUAL_upper_winds:
+                    "10,0,7000;10,0,5500;10,0,4200;10,0,3000;10,0,1500;10,0,800;10,0,110",
                 map_run_start: JSON.stringify({ lat: 62.41, lng: 25.61 }),
                 map_run_settings: JSON.stringify({
                     ...settings,
@@ -4091,7 +4244,7 @@ test("automatic positioning is disabled for an infeasible current direction and 
     page,
 }) => {
     await page.goto(
-        `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=180&MANUAL_upper_winds=10,0;10,180;10,180;10,90;10,0`,
+        `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=180&MANUAL_upper_winds=10,0,7000;10,0,5500;10,0,4200;10,180,3000;10,180,1500;10,90,800;10,0,110`,
     );
     await setUniformFreefallWind(page);
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
@@ -4388,7 +4541,7 @@ test("automatic jump run follows new winds until edited and can be reenabled", a
     page,
 }) => {
     await page.goto(
-        `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&MANUAL_upper_winds=10,0;10,0;10,0;10,0;10,0`,
+        `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&MANUAL_upper_winds=10,0,7000;10,0,5500;10,0,4200;10,0,3000;10,0,1500;10,0,800;10,0,110`,
     );
     const automatic = page.getByRole("checkbox", {
         name: "Päivitä automaattisesti",
@@ -4400,7 +4553,9 @@ test("automatic jump run follows new winds until edited and can be reenabled", a
         await page.evaluate(async (speed) => {
             const { navigateQs } = await import("#app/app/settings.js");
             navigateQs(
-                { MANUAL_upper_winds: `${speed},0;10,0;10,0;10,0;10,0` },
+                {
+                    MANUAL_upper_winds: `${speed},0,7000;${speed},0,5500;${speed},0,4200;10,0,3000;10,0,1500;10,0,800;10,0,110`,
+                },
                 { replace: true },
             );
         }, speed);

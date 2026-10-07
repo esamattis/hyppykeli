@@ -61,18 +61,6 @@ function currentGroundObservations(now = Date.now(), useManual = true) {
     if (!recent.length) {
         // Provide an editable hour even when the station has no recent data.
         recent = Array.from({ length: 7 }, (_, index) => ({
-            gust: (useManual
-                ? LATEST_OBSERVATION.value
-                : LIVE_OBSERVATIONS.value[0]
-            )?.gust,
-            speed: (useManual
-                ? LATEST_OBSERVATION.value
-                : LIVE_OBSERVATIONS.value[0]
-            )?.speed,
-            direction: (useManual
-                ? LATEST_OBSERVATION.value
-                : LIVE_OBSERVATIONS.value[0]
-            )?.direction,
             age: index * 10,
         }));
     }
@@ -349,9 +337,6 @@ export function ManualMode(props) {
     function resetGroundObservations() {
         resetOverrides({
             MANUAL_ground_obs: undefined,
-            MANUAL_ground_gust: undefined,
-            MANUAL_ground_avg: undefined,
-            MANUAL_ground_direction: undefined,
         });
         const ground = currentGroundObservations();
         setObservations(ground);
@@ -382,9 +367,6 @@ export function ManualMode(props) {
             MANUAL_ground_obs: serializeObservations(inputs),
             MANUAL_metar: METARS.value?.[0]?.metar,
             MANUAL_upper_winds: serializeUpperWinds(winds),
-            MANUAL_ground_gust: undefined,
-            MANUAL_ground_avg: undefined,
-            MANUAL_ground_direction: undefined,
         };
         navigateQs(captured);
         setValues({ ...QUERY_PARAMS.value });
@@ -469,9 +451,6 @@ export function ManualMode(props) {
         const params = {
             MANUAL_metar: metar || undefined,
             MANUAL_ground_obs: groundObservations,
-            MANUAL_ground_gust: undefined,
-            MANUAL_ground_avg: undefined,
-            MANUAL_ground_direction: undefined,
         };
         if (
             Object.entries(params).some(

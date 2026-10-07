@@ -24,8 +24,7 @@ function currentInputs() {
     const keys = /** @type {const} */ (["height", "speed", "direction"]);
     const defaults = new Set(
         winds.flatMap((_, index) => {
-            const savedIndex = index - (saved?.length === 5 ? 2 : 0);
-            const row = saved?.[savedIndex];
+            const row = saved?.[index];
             return keys
                 .filter((key) => !row || !row[key])
                 .map((key) => `MANUAL_upper_winds_${index}_${key}`);

@@ -93,7 +93,7 @@ test("automatic placement waits for station coordinates and uses them as the lan
     page,
 }) => {
     await page.goto(
-        "/dz/?name=EFOU&MANUAL_ground_obs=10,10,0,1&MANUAL_upper_winds=10,0;10,0;10,0;10,0;10,0",
+        "/dz/?name=EFOU&MANUAL_ground_obs=10,10,0,1&MANUAL_upper_winds=10,0,7000;10,0,5500;10,0,4200;10,0,3000;10,0,1500;10,0,800;10,0,110",
     );
     await expect(page.locator(".jump-run-jumper")).toHaveCount(0);
     await page.evaluate(async () => {
