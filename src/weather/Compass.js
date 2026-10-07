@@ -96,8 +96,8 @@ function calculateNeedleLength(gust) {
     }
 }
 
-/** @param {{ floating?: boolean }} props */
-export function Compass({ floating = false } = {}) {
+/** @param {{ floating?: boolean, id?: string, showControls?: boolean }} props */
+export function Compass({ floating = false, id, showControls = true } = {}) {
     const animated = !floating && COMPASS_ANIMATION_ENABLED.value;
     /** @type {import('preact').RefObject<HTMLDivElement>} */
     const compassRef = useRef(null);
@@ -267,7 +267,7 @@ export function Compass({ floating = false } = {}) {
 
     // prettier-ignore
     return html`
-        <div ref=${compassRef} id=${floating ? "hovered-compass" : "compass"} class=${["compass", floating && "floating", animated && "animations-enabled", animated && active && "animations-running"].filter(Boolean).join(" ")}>
+        <div ref=${compassRef} id=${id ?? (floating ? "hovered-compass" : "compass")} class=${["compass", floating && "floating", animated && "animations-enabled", animated && active && "animations-running"].filter(Boolean).join(" ")}>
             ${scope.style}
             <svg
                 class=${[bouncing && "bouncing", spinning && "spinning"].filter(Boolean).join(" ")}
@@ -320,7 +320,7 @@ export function Compass({ floating = false } = {}) {
 
             </svg>
 
-            ${!floating && html`
+            ${!floating && showControls && html`
                 <div class="compass-controls mt-3">
                 ${h(CheckboxField, {
                     className: "compass-animation-toggle",

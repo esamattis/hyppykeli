@@ -66,6 +66,10 @@ const artwork = {
             d="M3 8h13a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h6a2 2 0 1 1-2 2"
         />
     `,
+    compass: html`
+        <circle cx="12" cy="12" r="9" />
+        <path d="m16 8-2.5 5.5L8 16l2.5-5.5L16 8Z" />
+    `,
     windLevels: html`
         <path d="m12 3 8 4-8 4-8-4 8-4Z" />
         <path d="m4 12 8 4 8-4" />

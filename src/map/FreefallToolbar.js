@@ -1,5 +1,6 @@
 // @ts-check
 import { Help } from "#app/shared/Help.js";
+import { CheckboxField } from "#app/shared/FormFields.js";
 import { WindBarb } from "#app/map/WindBarb.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { t } from "#app/translations.js";
@@ -11,12 +12,12 @@ import { h, html } from "htm/preact";
 /** @param {FreefallToolbarProps} props */
 export function FreefallToolbar({
     fullWindow,
+    automaticJumpRun,
+    onAutomaticJumpRunChange,
     onToggleFullWindow,
     onShare,
     canPosition,
     onPosition,
-    canPositionView,
-    onPositionView,
     arrowCount,
     onClear,
     onUndo,
@@ -113,6 +114,17 @@ export function FreefallToolbar({
         .toolbar-summary > .arrow-action {
             flex-shrink: 0;
         }
+        .toolbar-summary .toolbar-automatic-jump-run {
+            display: none;
+            flex-shrink: 0;
+            white-space: nowrap;
+            font-size: 0.7rem;
+        }
+        @media (min-width: 900px) {
+            .toolbar-summary .toolbar-automatic-jump-run {
+                display: inline-flex;
+            }
+        }
         .toolbar-summary-values {
             display: flex;
             align-items: baseline;
@@ -189,16 +201,23 @@ export function FreefallToolbar({
         }
         .wind-level-choice {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
             width: 100%;
-            height: 36px;
+            min-height: 36px;
             border: 0;
             border-radius: 0;
             background: transparent;
             color: var(--color-text);
             box-shadow: none;
+        }
+        .wind-level-height {
+            font-size: 0.5rem;
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+            white-space: pre-line;
         }
         .wind-level-choice:first-child {
             border-radius: var(--radius-sm) var(--radius-sm) 0 0;
@@ -211,11 +230,29 @@ export function FreefallToolbar({
             color: var(--color-on-primary);
         }
         #wind-barb-help {
+            align-self: center;
+            margin: 0;
+            margin-top: var(--spacing-1-5);
             background: var(--color-map-control);
         }
         .wind-level-choice[aria-pressed="false"]:hover,
         #wind-barb-help:hover {
             background: var(--color-map-control-hover);
+        }
+        @media (min-width: 900px) {
+            .wind-level-icons {
+                width: 48px;
+            }
+            .wind-level-choice {
+                min-height: 48px;
+            }
+            .wind-level-choice > svg {
+                width: 44px;
+                height: 48px;
+            }
+            .wind-level-height {
+                font-size: 0.65rem;
+            }
         }
         @media (min-width: 700px) {
             .toolbar-actions .wind-level-icons dialog.help-dialog-wide {
@@ -232,22 +269,13 @@ export function FreefallToolbar({
         >
             ${scope.style}
             <div class="toolbar-controls">
-                ${h(
-                    JumpRunControls,
-                    {
-                        ...jumpRun,
-                        canPosition,
-                        onPosition,
-                        arrowCount,
-                        onUndo,
-                    },
-                    h(ToolbarButton, {
-                        label: t("toolbar.positionView"),
-                        icon: "fitView",
-                        disabled: !canPositionView,
-                        onClick: onPositionView,
-                    }),
-                )}
+                ${h(JumpRunControls, {
+                    ...jumpRun,
+                    canPosition,
+                    onPosition,
+                    arrowCount,
+                    onUndo,
+                })}
                 <div class="toolbar-map-actions">
                     ${h(ToolbarButton, {
                         label: t("toolbar.removeJumpRun"),
@@ -343,6 +371,15 @@ export function FreefallToolbar({
                     }
                 </div>
                 <div class="toolbar-window-actions ml-auto">
+                    ${
+                        fullWindow &&
+                        h(CheckboxField, {
+                            className: "toolbar-automatic-jump-run",
+                            label: t("map.automaticUpdate"),
+                            checked: automaticJumpRun,
+                            onCheckedChange: onAutomaticJumpRunChange,
+                        })
+                    }
                     ${h(ToolbarButton, {
                         label: t("toolbar.shareMap"),
                         icon: "share",
@@ -372,14 +409,20 @@ export function FreefallToolbar({
                             (level) => html`
                                 <button
                                     type="button"
-                                    class="wind-level-choice p-0"
+                                    class="wind-level-choice p-0 pb-0.5"
                                     aria-label=${`${level.label}: ${level.text}`}
-                                    data-tooltip=${`${level.altitudeTooltip ?? level.label}: ${level.text}`}
+                                    data-tooltip=${level.text}
                                     aria-pressed=${level.selected}
                                     onClick=${() =>
                                         windLevels.onSelect(level.id)}
                                 >
                                     ${level.graphic}
+                                    <span
+                                        class="wind-level-height"
+                                        aria-hidden="true"
+                                    >
+                                        ${level.heightLabel}
+                                    </span>
                                 </button>
                             `,
                         )}

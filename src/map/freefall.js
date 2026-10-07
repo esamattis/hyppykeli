@@ -245,6 +245,26 @@ function hasDescendingWindHeights(winds) {
 }
 
 /**
+ * Levels selected anywhere in an altitude range by the nearest-height rule.
+ * Keep the complete profile when calculating drift: excluded neighbours still
+ * define the boundaries of the selected levels.
+ * @param {FreefallWindLevel[]} winds Descending altitude order.
+ * @param {number} bottomHeight
+ * @param {number} topHeight
+ * @returns {FreefallWindLevel[]}
+ */
+export function getWindLevelsInRange(winds, bottomHeight, topHeight) {
+    if (!hasDescendingWindHeights(winds)) return [];
+    return winds.filter((wind, index) => {
+        const above = winds[index - 1];
+        const below = winds[index + 1];
+        const top = above ? (above.height + wind.height) / 2 : Infinity;
+        const bottom = below ? (below.height + wind.height) / 2 : -Infinity;
+        return top > bottomHeight && bottom <= topHeight;
+    });
+}
+
+/**
  * Next height where the nearest wind level changes during descent.
  * @param {FreefallWindLevel[]} winds Descending altitude order.
  * @param {number} height

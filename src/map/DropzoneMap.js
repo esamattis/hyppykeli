@@ -29,7 +29,13 @@ import {
 import { WindBarb, windBarbKnots } from "#app/map/WindBarb.js";
 import { FreefallToolbar } from "#app/map/FreefallToolbar.js";
 import { MapWindOverlay } from "#app/map/MapWindOverlay.js";
-import { driftCoordinates, jumpRunCoordinates } from "#app/map/freefall.js";
+import { MapCompass } from "#app/map/MapCompass.js";
+import { MapNavigationControls } from "#app/map/MapNavigationControls.js";
+import {
+    driftCoordinates,
+    getWindLevelsInRange,
+    jumpRunCoordinates,
+} from "#app/map/freefall.js";
 import {
     isFiniteNumber,
     isValidJumpRunSettings,
@@ -504,6 +510,7 @@ export function DropzoneMap() {
             return;
         const container = mapRef.current;
         const leafletMap = map(container, {
+            zoomControl: false,
             scrollWheelZoom: false,
             touchZoom: true,
             bounceAtZoomLimits: false,
@@ -621,18 +628,12 @@ export function DropzoneMap() {
             leafletInstance.keyboard,
         ];
         const enabledHandlers = handlers.filter((handler) => handler.enabled());
-        const zoomControl = /** @type {import("leaflet").Control.Zoom & {
-            disable: () => import("leaflet").Control.Zoom;
-            enable: () => import("leaflet").Control.Zoom;
-        }} */ (leafletInstance.zoomControl);
         handlers.forEach((handler) => handler.disable());
-        zoomControl.disable();
         return () => {
             // Coordinate changes and unmounts can remove the map before this
             // cleanup runs. Only restore controls on the map still in use.
             if (activeLeafletRef.current !== leafletInstance) return;
             enabledHandlers.forEach((handler) => handler.enable());
-            zoomControl.enable();
         };
     }, [leafletInstance, placingJumpRunDirection]);
 
@@ -1576,8 +1577,36 @@ export function DropzoneMap() {
         jumpRunSettings,
         jumperCount,
     ]);
+    const openingHeights = [...jumpers, nextJumper].map(
+        (jumper) => jumper.openingHeight,
+    );
+    const usedHeights = new Set(
+        [
+            ...getWindLevelsInRange(
+                freefallWinds,
+                Math.min(...openingHeights),
+                jumpRunSettings.exitHeight,
+            ),
+            ...getWindLevelsInRange(
+                canopyWinds,
+                0,
+                Math.max(...openingHeights),
+            ),
+        ].map((wind) => wind.height),
+    );
+    const displayedWinds = winds.filter(
+        (wind) =>
+            wind.id === "average" ||
+            (wind.id === "ground"
+                ? usedHeights.has(0)
+                : freefallWinds.some(
+                      (level) =>
+                          level === wind && usedHeights.has(level.height),
+                  )),
+    );
     const selectedWind =
-        winds.find((wind) => wind.id === selectedWindId) ?? averageWind;
+        displayedWinds.find((wind) => wind.id === selectedWindId) ??
+        averageWind;
     const selectedWindDirection =
         selectedWind.speed !== null &&
         isFiniteNumber(selectedWind.speed) &&
@@ -1609,6 +1638,17 @@ export function DropzoneMap() {
                 console.error(error);
         previousErrorsRef.current = errors;
     }, [driftError, jumpRunError, shareError]);
+
+    /** @param {boolean} checked */
+    function changeAutomaticJumpRun(checked) {
+        setAutomaticJumpRun(checked);
+        if (checked) {
+            lastAutomaticUpdate.current = null;
+            if (!jumpRunStart)
+                navigateQs({ map_run_start: undefined }, { replace: true });
+            positionAutomaticJumpRun();
+        }
+    }
 
     return html`
         <section
@@ -1673,18 +1713,7 @@ export function DropzoneMap() {
                     className: "automatic-jump-run",
                     label: t("map.automaticUpdate"),
                     checked: automaticJumpRun,
-                    onCheckedChange: (checked) => {
-                        setAutomaticJumpRun(checked);
-                        if (checked) {
-                            lastAutomaticUpdate.current = null;
-                            if (!jumpRunStart)
-                                navigateQs(
-                                    { map_run_start: undefined },
-                                    { replace: true },
-                                );
-                            positionAutomaticJumpRun();
-                        }
-                    },
+                    onCheckedChange: changeAutomaticJumpRun,
                 })}
                 ${h(DataSource, {
                     sources: [
@@ -1697,10 +1726,10 @@ export function DropzoneMap() {
                 <div class=${`map-frame${fullWindow ? " full-window" : ""}`}>
                     ${h(FreefallToolbar, {
                         fullWindow,
+                        automaticJumpRun,
+                        onAutomaticJumpRunChange: changeAutomaticJumpRun,
                         canPosition: canPositionAutomatic,
                         onPosition: () => positionAutomaticJumpRun(true),
-                        canPositionView,
-                        onPositionView: positionView,
                         onShare: async () => {
                             setShareError("");
                             const url = new URL(location.href);
@@ -1758,10 +1787,16 @@ export function DropzoneMap() {
                                 applyJumpers([...jumpers, { ...nextJumper }]),
                         },
                         windLevels: {
-                            levels: winds.map((wind) => {
+                            levels: displayedWinds.map((wind) => {
                                 const reading = windReading(wind);
                                 return {
                                     id: wind.id,
+                                    heightLabel:
+                                        wind.id === "ground"
+                                            ? "0 m"
+                                            : wind.label
+                                                  .replace(/^≈ /, "")
+                                                  .replace("-", "–\n"),
                                     altitudeTooltip: wind.altitudeTooltip,
                                     label: wind.label,
                                     text: reading.text,
@@ -1879,6 +1914,14 @@ export function DropzoneMap() {
                             ${!coordinates ? t("common.waitingCoordinates") : null}
                         </div>
                         ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
+                        ${fullWindow ? h(MapCompass, {}) : null}
+                        ${h(MapNavigationControls, {
+                            map: leafletInstance,
+                            zoom,
+                            disabled: placingJumpRunDirection,
+                            canFit: canPositionView,
+                            onFit: positionView,
+                        })}
                     </div>
                 </div>
             </div>

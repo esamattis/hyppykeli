@@ -61,6 +61,8 @@ export const english = {
         "Coverage of mid-level clouds, usually 2–7 kilometres (about 6,500–23,000 feet) above sea level.",
     "weather.rainHelp": "Probability of precipitation as a percentage.",
     "compass.animation": "Animation",
+    "compass.minimize": "Minimize wind compass",
+    "compass.restore": "Show wind compass",
     "compass.help":
         "The ranges below the wind readings show the minimum and maximum gust, mean wind, and direction observed during the last hour. Values are rounded to whole numbers. The arrow shows wind direction and its length shows the gust. The inner circle is the student limit (8 m/s), and the outer circle is the licence limit (11 m/s). The animation replays the last hour chronologically. When it is off, the arrow shows the latest observation.",
     "source.openMeteoModeled": "Open-Meteo (modeled)",
@@ -235,7 +237,7 @@ export const english = {
         "Automatic placement requires a ground observation no older than one hour and current forecast winds. Missing data, an unachievable ground track, or conflicting wind directions can prevent placement. The positioning button reverses the current direction by 180° when needed to face into the average upper wind, then repeats the calculation for the configured landing coordinates. With Update automatically checked, new wind data repeats placement. Manual edits uncheck it and can leave openings outside these limits.",
     "map.positioningHelpTitle": "Manual positioning",
     "map.positioningHelp":
-        "Click or tap the map, then choose Opening to place the central predicted opening point there, Center jump run to place the middle of the exit sequence there, or Landing to use that point as the landing target for automatic placement with the current direction. For an even number of jumpers, the central opening point is the midpoint of the two middle openings. Clicking elsewhere cancels the callout. Press Enter on the focused map to place the central opening point at the map centre. Add jumpers with the plus button.",
+        "Click or tap the map, then choose Opening to place the central predicted opening point there, Jump run to place the middle of the exit sequence there, or Landing to use that point as the landing target for automatic placement with the current direction. For an even number of jumpers, the central opening point is the midpoint of the two middle openings. Clicking elsewhere cancels the callout. Press Enter on the focused map to place the central opening point at the map centre. Add jumpers with the plus button.",
     "map.directionHelpTitle": "Direction controls",
     "map.directionControlsHelp":
         "The direction menu contains drag mode, 90° rotations, and reset. In drag mode, drag with the mouse or a finger to rotate the run around the middle of its exit sequence. For an even number of groups, this is halfway between the two middle exits. Click the map or press the direction button again to finish. The 90° rotations and reset keep the central predicted opening point fixed. Reset restores the configured default axis, reversed when necessary to face into the average wind.",
@@ -244,7 +246,7 @@ export const english = {
     "map.flowHelp":
         "Moving lines show the selected wind's flow direction. Stronger wind appears as longer, faster-moving lines.",
     "map.confirmJumpRunPosition": "Opening",
-    "map.centerJumpRunPosition": "Center jump run",
+    "map.centerJumpRunPosition": "Jump run",
     "map.parachuteLandingPosition": "Landing",
     "map.directionPrompt": "Drag to set the jump-run direction.",
     "map.averageWind": "Average wind",
@@ -269,6 +271,8 @@ export const english = {
     "toolbar.removeJumpRun": "Remove jump run",
     "toolbar.positionJumpRun": "Automatic jump run position",
     "toolbar.positionView": "Fit map to jump run",
+    "toolbar.zoomIn": "Zoom in",
+    "toolbar.zoomOut": "Zoom out",
     "toolbar.shareMap": "Share jump run",
     "toolbar.restoreMap": "Restore jump run",
     "toolbar.expandMap": "Expand jump run to full window",
@@ -515,6 +519,8 @@ const finnish = {
         "Keskikerroksen pilvien peittävyys, yleensä 2–7 kilometriä merenpinnasta.",
     "weather.rainHelp": "Sateen todennäköisyys prosentteina.",
     "compass.animation": "Animaatio",
+    "compass.minimize": "Pienennä tuulikompassi",
+    "compass.restore": "Näytä tuulikompassi",
     "compass.help":
         "Tuulilukemien alla näkyvät vaihteluvälit kertovat puuskan, keskituulen ja suunnan pienimmän ja suurimman havaitun arvon viimeisen tunnin ajalta. Arvot on pyöristetty kokonaisluvuiksi. Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Sisempi ympyrä on oppilasraja (8 m/s) ja ulompi ympyrä on kelppariraja (11 m/s). Animaatio toistaa viimeisen tunnin havainnot aikajärjestyksessä. Kun animaatio on pois päältä, nuoli näyttää uusimman havainnon.",
     "source.openMeteoModeled": "Open-Meteo (mallinnettu)",
@@ -672,7 +678,7 @@ const finnish = {
         "Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ennustetuulet. Puuttuvat tiedot, lentorata jota ei voi lentää tai ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike kääntää nykyistä suuntaa tarvittaessa 180° vasten yläkorkeuksien keskituulta ja toistaa laskennan määritetyille laskeutumiskoordinaateille. Kun Päivitä automaattisesti on valittuna, uudet tuulitiedot toistavat sijoituksen. Käsin tehdyt muutokset poistavat valinnan ja voivat jättää avautumiskohtia näiden rajojen ulkopuolelle.",
     "map.positioningHelpTitle": "Sijoittaminen käsin",
     "map.positioningHelp":
-        "Klikkaa tai napauta karttaa ja valitse Avaus sijoittaaksesi keskimmäisen ennustetun avautumiskohdan siihen, Keskitä hyppylinja sijoittaaksesi uloshyppyjonon keskikohdan siihen tai Laskeutuminen käyttääksesi kohtaa automaattisen sijoituksen laskeutumiskohteena nykyisellä suunnalla. Kun hyppääjien määrä on parillinen, keskimmäinen avautumiskohta on kahden keskimmäisen avautumiskohdan puolivälissä. Klikkaus muualle sulkee puhekuplan. Enter kohdistetulla kartalla sijoittaa keskimmäisen avautumiskohdan kartan keskikohtaan. Lisää hyppääjiä pluspainikkeesta.",
+        "Klikkaa tai napauta karttaa ja valitse Avaus sijoittaaksesi keskimmäisen ennustetun avautumiskohdan siihen, Hyppylinja sijoittaaksesi uloshyppyjonon keskikohdan siihen tai Laskeutuminen käyttääksesi kohtaa automaattisen sijoituksen laskeutumiskohteena nykyisellä suunnalla. Kun hyppääjien määrä on parillinen, keskimmäinen avautumiskohta on kahden keskimmäisen avautumiskohdan puolivälissä. Klikkaus muualle sulkee puhekuplan. Enter kohdistetulla kartalla sijoittaa keskimmäisen avautumiskohdan kartan keskikohtaan. Lisää hyppääjiä pluspainikkeesta.",
     "map.directionHelpTitle": "Suunnan säätäminen",
     "map.directionControlsHelp":
         "Suuntavalikko sisältää vetotilan, 90° kierrot ja palautuksen. Vedä vetotilassa hiirellä tai sormella kiertääksesi hyppylinjaa uloshyppyjonon keskikohdan ympäri. Parillisella ryhmämäärällä tämä on kahden keskimmäisen uloshypyn puoliväli. Klikkaa karttaa tai paina suuntapainiketta uudelleen lopettaaksesi. 90° kierrot ja palautus pitävät keskimmäisen ennustetun avautumiskohdan paikallaan. Palautus palauttaa määritetyn oletusakselin, tarvittaessa käännettynä vasten keskituulta.",
@@ -681,7 +687,7 @@ const finnish = {
     "map.flowHelp":
         "Kartan liikkuvat viivat näyttävät valitun tuulen virtaussuunnan. Voimakkaampi tuuli näkyy pidempinä ja nopeammin liikkuvina viivoina.",
     "map.confirmJumpRunPosition": "Avaus",
-    "map.centerJumpRunPosition": "Keskitä hyppylinja",
+    "map.centerJumpRunPosition": "Hyppylinja",
     "map.parachuteLandingPosition": "Laskeutuminen",
     "map.directionPrompt": "Vedä asettaaksesi hyppylinjan suunnan.",
     "map.averageWind": "Keskituuli",
@@ -706,6 +712,8 @@ const finnish = {
     "toolbar.removeJumpRun": "Poista hyppylinja",
     "toolbar.positionJumpRun": "Hyppylinjan automaattinen sijoitus",
     "toolbar.positionView": "Sovita karttanäkymä hyppylinjaan",
+    "toolbar.zoomIn": "Lähennä karttaa",
+    "toolbar.zoomOut": "Loitonna karttaa",
     "toolbar.shareMap": "Jaa hyppylinja",
     "toolbar.restoreMap": "Palauta Hyppylinja",
     "toolbar.expandMap": "Laajenna Hyppylinja koko ikkunaan",

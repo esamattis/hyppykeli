@@ -1776,7 +1776,7 @@ test("map toolbar expands only the map in both modes and restores", async ({
     await expect(restore).toHaveAttribute("aria-pressed", "true");
     await expect(card.locator(".wind-profile")).toBeHidden();
     await expect(frame.locator(".wind-level-icons")).toBeVisible();
-    await expect(windIcon(page, "600 hPa")).toBeVisible();
+    await expect(windIcon(page, "≈ 4000-1000 m")).toBeVisible();
     await restore.click();
     await expect(heading).toBeVisible();
     await expect(help).toBeVisible();
@@ -1798,7 +1798,7 @@ for (const settingDirection of [false, true]) {
         page.on("pageerror", (error) => errors.push(error.message));
         const map = page.locator(".dz-map");
         await expect(
-            map.getByRole("button", { name: "Zoom in" }),
+            page.getByRole("button", { name: "Lähennä karttaa" }),
         ).toBeVisible();
 
         const directionButton = directionControl(page, directionControls.drag);
@@ -1812,8 +1812,8 @@ for (const settingDirection of [false, true]) {
                 "true",
             );
             await expect(
-                map.getByRole("button", { name: "Zoom in" }),
-            ).toHaveAttribute("aria-disabled", "true");
+                page.getByRole("button", { name: "Lähennä karttaa" }),
+            ).toBeDisabled();
         }
 
         await page.evaluate(async () => {
@@ -1826,13 +1826,13 @@ for (const settingDirection of [false, true]) {
         });
 
         await expect(
-            map.getByRole("button", { name: "Zoom in" }),
+            page.getByRole("button", { name: "Lähennä karttaa" }),
         ).toBeVisible();
         await expect(directionButton).toHaveAttribute("aria-checked", "false");
         await expect(
-            map.getByRole("button", { name: "Zoom in" }),
-        ).toHaveAttribute("aria-disabled", "false");
-        await map.getByRole("button", { name: "Zoom in" }).click();
+            page.getByRole("button", { name: "Lähennä karttaa" }),
+        ).toBeEnabled();
+        await page.getByRole("button", { name: "Lähennä karttaa" }).click();
         await expect
             .poll(() => new URL(page.url()).searchParams.get("map_zoom"))
             .toBe("15");
@@ -1877,6 +1877,10 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
 
     const average = windIcon(page, "≈ 4000-1000 m");
     await expect(average).toHaveAttribute("aria-pressed", "true");
+    await expect(windIcon(page, "≈ 7000 m")).toHaveCount(0);
+    await expect(windIcon(page, "≈ 5500 m")).toHaveCount(0);
+    // The 4200 m layer is used at a 4000 m exit despite being above it.
+    await expect(windIcon(page, "≈ 4000 m")).toHaveCount(1);
     for (const label of [
         "≈ 4000 m",
         "≈ 3000 m",
@@ -1897,14 +1901,53 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     await altitude.focus();
     await page.keyboard.press("Enter");
     await expect(altitude).toHaveAttribute("aria-pressed", "true");
-    // A forecast refresh updates the selected level instead of resetting it.
+    // Raising the exit adds the nearest higher layers to the bar.
+    await page.evaluate(async () => {
+        const { QUERY_PARAMS, navigateQs } =
+            await import("#app/app/settings.js");
+        const settings = JSON.parse(
+            QUERY_PARAMS.value.map_run_settings ??
+                '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
+        );
+        navigateQs({
+            map_run_settings: JSON.stringify({ ...settings, exitHeight: 6000 }),
+        });
+    });
+    await expect(windIcon(page, "≈ 5500 m")).toHaveCount(1);
+    await expect(windIcon(page, "≈ 7000 m")).toHaveCount(0);
+    await page.evaluate(async () => {
+        const { QUERY_PARAMS, navigateQs } =
+            await import("#app/app/settings.js");
+        const settings = JSON.parse(
+            QUERY_PARAMS.value.map_run_settings ??
+                '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
+        );
+        navigateQs({
+            map_run_settings: JSON.stringify({ ...settings, exitHeight: 6500 }),
+        });
+    });
+    await windIcon(page, "≈ 7000 m").click();
+    await page.evaluate(async () => {
+        const { QUERY_PARAMS, navigateQs } =
+            await import("#app/app/settings.js");
+        const settings = JSON.parse(
+            QUERY_PARAMS.value.map_run_settings ??
+                '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
+        );
+        navigateQs({
+            map_run_settings: JSON.stringify({ ...settings, exitHeight: 4000 }),
+        });
+    });
+    await expect(windIcon(page, "≈ 7000 m")).toHaveCount(0);
+    await expect(average).toHaveAttribute("aria-pressed", "true");
+    // Missing forecast heights cannot supply drift layers.
     await page.evaluate(async () => {
         const { OM_DATA } = await import("#app/weather/state.js");
         OM_DATA.value = null;
     });
-    const unavailable = windIcon(page, "600 hPa");
-    await expect(unavailable).toHaveAttribute("aria-label", /Ei tietoa/);
-    await expect(unavailable).toHaveAttribute("aria-pressed", "true");
+    await expect(windIcon(page, "600 hPa")).toHaveCount(0);
+    await expect(average).toHaveAttribute("aria-label", /Ei tietoa/);
+    await expect(average).toHaveAttribute("aria-pressed", "true");
 });
 
 test("freefall drift integrates altitude winds from 4000 to 800 metres", async ({
@@ -3080,7 +3123,7 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
     await map.click({ position: { x: 120, y: 160 } });
     await expect(confirm).toBeVisible();
     await expect(
-        map.getByRole("button", { name: "Keskitä hyppylinja" }),
+        map.getByRole("button", { name: "Hyppylinja", exact: true }),
     ).toBeVisible();
     await expect(
         map.getByRole("button", { name: "Laskeutuminen" }),
@@ -3104,7 +3147,7 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
 
     // Controls and clicks outside the map also dismiss pending repositioning.
     for (const cancel of [
-        () => map.getByRole("button", { name: "Zoom in" }).click(),
+        () => page.getByRole("button", { name: "Lähennä karttaa" }).click(),
         () => page.locator(".toolbar-summary").click(),
         () => page.keyboard.press("Escape"),
     ]) {
@@ -3134,7 +3177,7 @@ test("centering the jump run puts its middle exit at the tapped point", async ({
     await map.click({
         position: { x: bounds.width / 2, y: bounds.height / 2 },
     });
-    await page.getByRole("button", { name: "Keskitä hyppylinja" }).click();
+    await page.getByRole("button", { name: "Hyppylinja", exact: true }).click();
     await expect(map.locator(".jump-run-jumper")).toHaveCount(jumperCount);
     await expect(map.locator(".jump-run-placement")).toHaveCount(0);
     const distance = await page.evaluate(async (target) => {
@@ -3246,7 +3289,9 @@ for (const [description, ground] of [
         const map = page.locator(".dz-map");
         await map.scrollIntoViewIfNeeded();
         await map.click({ position: { x: 120, y: 160 } });
-        await page.getByRole("button", { name: "Keskitä hyppylinja" }).click();
+        await page
+            .getByRole("button", { name: "Hyppylinja", exact: true })
+            .click();
         const start = new URL(page.url()).searchParams.get("map_run_start");
         expect(start).not.toBeNull();
         const errors = [];
@@ -3541,7 +3586,7 @@ test("dragging sets jump run direction and clicking exits without moving the run
     await page.mouse.move(originX, originY + 140);
     await page.evaluate(() => new Promise(requestAnimationFrame));
     expect(settings().direction).toBeCloseTo(aimed, 0);
-    await map.click({ position: { x: 40, y: 80 } });
+    await map.click({ position: { x: 100, y: 100 } });
     await page.waitForTimeout(400);
     expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
     await expect(hint).toHaveCount(0);
@@ -3556,6 +3601,89 @@ test("dragging sets jump run direction and clicking exits without moving the run
     expect(settings().direction).toBeCloseTo(aimed, 0);
     expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
     expect(await runCenterDistance(page, center)).toBeLessThan(1);
+});
+
+test("full-window desktop toolbar controls automatic updates", async ({
+    page,
+    isMobile,
+}) => {
+    const card = page.locator("#dropzone-map");
+    const summary = card.locator(".toolbar-summary");
+    const checkbox = summary.getByRole("checkbox", {
+        name: "Päivitä automaattisesti",
+    });
+    await expect(checkbox).toHaveCount(0);
+    await card
+        .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
+        .click();
+    if (isMobile) {
+        await expect(checkbox).toBeHidden();
+    } else {
+        await expect(checkbox).toBeVisible();
+        await expect(checkbox).toBeChecked();
+        await checkbox.uncheck();
+        await expect
+            .poll(() =>
+                new URL(page.url()).searchParams.get("map_run_automatic"),
+            )
+            .toBe("false");
+        await checkbox.check();
+        await expect
+            .poll(() =>
+                new URL(page.url()).searchParams.get("map_run_automatic"),
+            )
+            .toBe("true");
+        await checkbox.uncheck();
+    }
+    await page.keyboard.press("Escape");
+    await expect(checkbox).toHaveCount(0);
+    if (!isMobile)
+        await expect(
+            card
+                .locator(".card-heading")
+                .getByRole("checkbox", { name: "Päivitä automaattisesti" }),
+        ).not.toBeChecked();
+});
+
+test("full-window map compass collapses and restores on desktop", async ({
+    page,
+    isMobile,
+}) => {
+    const card = page.locator("#dropzone-map");
+    await expect(card.locator(".map-compass")).toHaveCount(0);
+    await card
+        .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
+        .click();
+    const compass = card.locator(".map-compass");
+    if (isMobile) {
+        await expect(compass).toBeHidden();
+    } else {
+        await expect(compass).toBeVisible();
+        await expect(compass).toHaveAttribute("aria-expanded", "true");
+        await expect
+            .poll(() =>
+                compass
+                    .locator("polygon.animated")
+                    .evaluateAll(
+                        (needles) =>
+                            needles
+                                .flatMap((needle) => needle.getAnimations())
+                                .filter(
+                                    (animation) =>
+                                        animation.playState === "running",
+                                ).length,
+                    ),
+            )
+            .toBeGreaterThan(0);
+        await compass.click();
+        await expect(compass).toHaveAttribute("aria-expanded", "false");
+        await expect(compass.locator("#map-compass")).toHaveCount(0);
+        await compass.press("Enter");
+        await expect(compass).toHaveAttribute("aria-expanded", "true");
+        await expect(compass.locator("#map-compass")).toBeVisible();
+    }
+    await page.keyboard.press("Escape");
+    await expect(compass).toHaveCount(0);
 });
 
 test("wheel zoom follows full-window mode and Escape exits direction mode first", async ({
@@ -3711,7 +3839,7 @@ test("map setup survives URL reload and shares in full-window mode", async ({
         .getByRole("button", { name: "Lisää hyppääjä", exact: true })
         .click();
     await expect(map.locator(".freefall-drift-line")).toHaveCount(7);
-    await map.getByRole("button", { name: "Zoom in" }).click();
+    await page.getByRole("button", { name: "Lähennä karttaa" }).click();
     await expect
         .poll(() => new URL(page.url()).searchParams.get("map_zoom"))
         .toBe("15");
@@ -4110,7 +4238,10 @@ for (const [axis, wind, speed, expected] of [
         await page.evaluate(async (direction) => {
             const { navigateQs, QUERY_PARAMS } =
                 await import("#app/app/settings.js");
-            const settings = JSON.parse(QUERY_PARAMS.value.map_run_settings);
+            const settings = JSON.parse(
+                QUERY_PARAMS.value.map_run_settings ??
+                    '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
+            );
             navigateQs(
                 {
                     map_run_settings: JSON.stringify({
@@ -4133,6 +4264,30 @@ for (const [axis, wind, speed, expected] of [
         await expectAutomaticOpeningsUpwind(page);
     });
 }
+
+test("map zoom buttons update the saved view and stop at zoom limits", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const controls = page.locator(".map-navigation-controls");
+    const zoomIn = controls.getByRole("button", { name: "Lähennä karttaa" });
+    const zoomOut = controls.getByRole("button", { name: "Loitonna karttaa" });
+    const zoom = () =>
+        Number(new URL(page.url()).searchParams.get("map_zoom") ?? "14");
+    const initialZoom = zoom();
+    await zoomIn.click();
+    await expect.poll(zoom).toBe(initialZoom + 1);
+    await zoomOut.click();
+    await expect.poll(zoom).toBe(initialZoom);
+    for (const limit of [19, 0]) {
+        await page.evaluate(async (limit) => {
+            const { navigateQs } = await import("#app/app/settings.js");
+            navigateQs({ map_zoom: String(limit) }, { replace: true });
+        }, limit);
+        await expect(limit === 19 ? zoomIn : zoomOut).toBeDisabled();
+        await expect(limit === 19 ? zoomOut : zoomIn).toBeEnabled();
+    }
+});
 
 test("viewport positioning fits a saved run without landing coordinates and disables after clearing", async ({
     page,
@@ -4182,7 +4337,10 @@ test("automatic positioning reverses the current axis into wind and reset restor
     await page.evaluate(async () => {
         const { navigateQs, QUERY_PARAMS } =
             await import("#app/app/settings.js");
-        const settings = JSON.parse(QUERY_PARAMS.value.map_run_settings);
+        const settings = JSON.parse(
+            QUERY_PARAMS.value.map_run_settings ??
+                '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
+        );
         navigateQs(
             {
                 MANUAL_upper_winds:

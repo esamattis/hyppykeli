@@ -181,6 +181,7 @@ interface JumpRunPositionControlsProps extends JumpRunControlsProps {
 
 interface ToolbarWindLevel {
     altitudeTooltip?: string;
+    heightLabel: string;
     id: string;
     label: string;
     text: string;
@@ -191,10 +192,10 @@ interface ToolbarWindLevel {
 }
 
 interface FreefallToolbarProps {
+    automaticJumpRun: boolean;
+    onAutomaticJumpRunChange: (checked: boolean) => void;
     canPosition: boolean;
     onPosition: () => void;
-    canPositionView: boolean;
-    onPositionView: () => void;
     fullWindow: boolean;
     onToggleFullWindow: () => void;
     onShare: () => void;
@@ -207,6 +208,14 @@ interface FreefallToolbarProps {
         levels: ToolbarWindLevel[];
         onSelect: (id: string) => void;
     };
+}
+
+interface MapNavigationControlsProps {
+    map: import("leaflet").Map | null;
+    zoom: number;
+    disabled: boolean;
+    canFit: boolean;
+    onFit: () => void;
 }
 
 interface MapWindMotion {
@@ -650,6 +659,7 @@ interface IconProps {
         | "chart"
         | "wind"
         | "windLevels"
+        | "compass"
         | "pen"
         | "undo"
         | "trash"
