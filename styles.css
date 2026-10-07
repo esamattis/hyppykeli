@@ -249,9 +249,6 @@
 
     @media (min-width: 900px) {
         :root {
-            /* Desktop map controls use solid surfaces over map tiles. */
-            --color-map-control: var(--color-surface);
-            --color-map-control-hover: var(--color-surface-hover);
             --compass-width: 200px;
         }
     }

@@ -205,6 +205,7 @@ export function DropzoneMap() {
             gap: var(--spacing-4);
         }
         .map-frame {
+            container: dropzone-map / inline-size;
             position: relative;
             width: calc(100% + 2 * var(--panel-padding));
             margin: 0 calc(-1 * var(--panel-padding))
@@ -215,6 +216,13 @@ export function DropzoneMap() {
         }
         .map-viewport {
             position: relative;
+        }
+        @container dropzone-map (min-width: 900px) {
+            .freefall-toolbar,
+            .map-viewport {
+                --color-map-control: var(--color-surface);
+                --color-map-control-hover: var(--color-surface-hover);
+            }
         }
         .map-errors {
             position: absolute;
@@ -232,7 +240,7 @@ export function DropzoneMap() {
             line-height: 1.4;
             pointer-events: none;
         }
-        @media (max-width: 360px) {
+        @container dropzone-map (max-width: 360px) {
             .map-errors {
                 bottom: calc(122px + env(safe-area-inset-bottom));
             }
@@ -925,7 +933,7 @@ export function DropzoneMap() {
             for (const offset of canopy ?? [])
                 bounds.extend(driftCoordinates(latLng(opening), offset));
         }
-        const padding = matchMedia("(min-width: 900px)").matches ? 200 : 75;
+        const padding = leafletMap.getSize().x >= 900 ? 200 : 75;
         leafletMap.flyToBounds(bounds, {
             padding: [padding, padding],
             animate:

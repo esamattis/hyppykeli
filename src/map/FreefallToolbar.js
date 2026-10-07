@@ -89,7 +89,7 @@ export function FreefallToolbar({
         .toolbar-controls dialog {
             pointer-events: auto;
         }
-        @media (max-width: 360px) {
+        @container dropzone-map (max-width: 360px) {
             .toolbar-controls {
                 left: 8px;
                 right: 8px;
@@ -120,7 +120,7 @@ export function FreefallToolbar({
             white-space: nowrap;
             font-size: 0.7rem;
         }
-        @media (min-width: 900px) {
+        @container dropzone-map (min-width: 900px) {
             .toolbar-summary .toolbar-automatic-jump-run {
                 display: inline-flex;
             }
@@ -251,7 +251,7 @@ export function FreefallToolbar({
         #wind-barb-help:hover {
             background: var(--color-map-control-hover);
         }
-        @media (min-width: 900px) {
+        @container dropzone-map (min-width: 900px) {
             .wind-level-icons {
                 width: 48px;
             }
@@ -267,9 +267,12 @@ export function FreefallToolbar({
                 font-size: 0.65rem;
             }
         }
-        @media (min-width: 700px) {
+        .toolbar-actions .wind-level-icons dialog.help-dialog-wide {
+            width: clamp(300px, 400px, 95cqw);
+        }
+        @container dropzone-map (min-width: 700px) {
             .toolbar-actions .wind-level-icons dialog.help-dialog-wide {
-                width: min(600px, 90vw);
+                width: min(600px, 90cqw);
             }
         }
     `);
