@@ -933,7 +933,13 @@ export function DropzoneMap() {
             for (const offset of canopy ?? [])
                 bounds.extend(driftCoordinates(latLng(opening), offset));
         }
-        const padding = leafletMap.getSize().x >= 900 ? 200 : 75;
+        const size = leafletMap.getSize();
+        // Keep at least half of each dimension available for the flight paths.
+        const padding = Math.min(
+            size.x >= 900 ? 200 : 75,
+            size.x / 4,
+            size.y / 4,
+        );
         leafletMap.flyToBounds(bounds, {
             padding: [padding, padding],
             animate:

@@ -4455,6 +4455,47 @@ test("viewport positioning fits a saved run without landing coordinates and disa
     await expect(fit).toBeDisabled();
 });
 
+test("viewport positioning keeps the flight path visible in a wide, short map", async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 1280, height: 320 });
+    const start = { lat: 62.4, lng: 25.6 };
+    const params = new URLSearchParams({
+        map_run_start: JSON.stringify(start),
+        map_run_automatic: "false",
+        map_zoom: "19",
+        map_full_window: "true",
+        map_run_settings: JSON.stringify({
+            exitHeight: 4000,
+            speedKmh: 120,
+            direction: 180,
+            separationSeconds: 5,
+        }),
+        map_jumpers: JSON.stringify([{ speedKmh: 180, openingHeight: 800 }]),
+    });
+    await page.goto(`${manualPath}&${params}`);
+    await setUniformFreefallWind(page);
+    const fit = page.getByRole("button", {
+        name: "Sovita karttanäkymä hyppylinjaan",
+    });
+    await expect(fit).toBeEnabled();
+    await fit.click();
+    await expect
+        .poll(() => Number(new URL(page.url()).searchParams.get("map_zoom")))
+        .toBeGreaterThan(0);
+    await expect
+        .poll(() => Number(new URL(page.url()).searchParams.get("map_zoom")))
+        .toBeLessThan(19);
+    const bounds = await page.locator(".dz-map").boundingBox();
+    for (const coordinates of [start, await middleOpening(page)]) {
+        const point = await mapPoint(page, coordinates);
+        expect(point.x).toBeGreaterThan(0);
+        expect(point.x).toBeLessThan(bounds.width);
+        expect(point.y).toBeGreaterThan(0);
+        expect(point.y).toBeLessThan(bounds.height);
+    }
+});
+
 test("automatic positioning reverses the current axis into wind and reset restores the default axis", async ({
     page,
 }) => {
