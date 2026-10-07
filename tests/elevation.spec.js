@@ -141,6 +141,8 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
             time: [new Date().toISOString().slice(0, 13) + ":00"],
         };
         for (const [level, altitude] of Object.entries({
+            400: 7000,
+            500: 5500,
             600: 4350.75,
             700: 3100.25,
             850: 1620.5,
@@ -165,7 +167,9 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
             }),
         };
     });
-    expect(result.heights).toEqual([4150.25, 2899.75, 1420, 770]);
+    expect(result.heights).toEqual([
+        6799.5, 5299.5, 4150.25, 2899.75, 1420, 770,
+    ]);
     expect(result.drift.north).toBeCloseTo(
         -(475 * 41.5025 + 1365.125 * 28.9975 + 1064.875 * 14.2 + 295 * 7.7) /
             50,
@@ -183,7 +187,7 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     await expect(page.getByRole("tooltip")).toContainText("3000 m");
     await page.keyboard.press("Escape");
 
-    await expect(map.locator(".wind-level-choice")).toHaveCount(6);
+    await expect(map.locator(".wind-level-choice")).toHaveCount(8);
     await expect(
         map.locator('.wind-level-choice[aria-label^="≈ 4000-1000 m:"]'),
     ).toHaveAttribute("data-tooltip", /^4000 m–1000 m:/);
@@ -256,6 +260,8 @@ test("model terrain and missing forecast heights never fall back to nominal heig
             time: [new Date().toISOString().slice(0, 13) + ":00"],
         };
         for (const [level, height] of Object.entries({
+            400: 7000,
+            500: 5500,
             600: 4300,
             700: 3100,
             850: 1600,
@@ -306,7 +312,7 @@ test("model terrain and missing forecast heights never fall back to nominal heig
     });
     expect(result.ids).not.toContain("1000");
     expect(result.ground).toBe(0);
-    expect(result.fiveHeights).toEqual([4100, 2900, 1400, 900, 50]);
+    expect(result.fiveHeights).toEqual([6800, 5300, 4100, 2900, 1400, 900, 50]);
     expect(result.fiveDrift.north).toBeCloseTo(-640, 5);
     expect(result.missingDrift).toBeNull();
     expect(result.invalidCanopies).toEqual([null, null, null]);
@@ -348,6 +354,8 @@ test("drawn canopy paths join the opening and follow elevation-adjusted wind bou
             time: [new Date().toISOString().slice(0, 13) + ":00"],
         };
         for (const [level, height] of Object.entries({
+            400: 7000,
+            500: 5500,
             600: 4300,
             700: 3100,
             850: 1600,

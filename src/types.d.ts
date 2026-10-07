@@ -46,14 +46,30 @@ interface OpenMeteoHourlyUnits {
     windspeed_850hPa: string;
     windspeed_700hPa: string;
     windspeed_600hPa: string;
+    windspeed_500hPa: string;
+    windspeed_400hPa: string;
     winddirection_1000hPa: string;
     winddirection_925hPa: string;
     winddirection_850hPa: string;
     winddirection_700hPa: string;
     winddirection_600hPa: string;
+    winddirection_500hPa: string;
+    winddirection_400hPa: string;
 }
 
-type OpenMeteoPressureLevel = "1000" | "925" | "850" | "700" | "600";
+type OpenMeteoPressureLevel =
+    | "1000"
+    | "925"
+    | "850"
+    | "700"
+    | "600"
+    | "500"
+    | "400";
+
+type OpenMeteoCloudPressureLevel = Exclude<
+    OpenMeteoPressureLevel,
+    "400" | "500"
+>;
 
 interface MapWindLevel {
     label: string;
@@ -228,7 +244,7 @@ interface OpenMeteoCloudProfile {
 type OpenMeteoCloudHourlyData = {
     [
         Field in
-            | `cloud_cover_${OpenMeteoPressureLevel}hPa`
+            | `cloud_cover_${OpenMeteoCloudPressureLevel}hPa`
             | `geopotential_height_${OpenMeteoPressureLevel}hPa`
     ]: (number | null)[];
 };
@@ -240,11 +256,15 @@ interface OpenMeteoHourlyData extends OpenMeteoCloudHourlyData {
     windspeed_850hPa: number[];
     windspeed_700hPa: number[];
     windspeed_600hPa: number[];
+    windspeed_500hPa: number[];
+    windspeed_400hPa: number[];
     winddirection_1000hPa: number[];
     winddirection_925hPa: number[];
     winddirection_850hPa: number[];
     winddirection_700hPa: number[];
     winddirection_600hPa: number[];
+    winddirection_500hPa: number[];
+    winddirection_400hPa: number[];
     wind_speed_10m: (number | null)[];
     wind_gusts_10m: (number | null)[];
     wind_direction_10m: (number | null)[];
@@ -390,6 +410,9 @@ interface ManualObservation {
 }
 
 interface ManualUpperWindInput {
+    pressure?: OpenMeteoPressureLevel;
+    /** Metres above the dropzone; omitted in legacy URLs. */
+    height?: string;
     speed: string;
     direction: string;
 }
@@ -723,8 +746,10 @@ type CheckboxFieldProps = Omit<
 
 interface ClearableInputProps {
     name: string;
+    id?: string;
     label: string;
-    placeholder: string;
+    "aria-label"?: string;
+    placeholder?: string;
     value: string;
     type?: "text" | "number";
     step?: string;

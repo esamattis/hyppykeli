@@ -1,45 +1,26 @@
 // @ts-check
 import { openMeteoCache } from "#app/weather/providers/cachePolicies.js";
 import { fetchCached } from "#app/shared/fetchCached.js";
+import { WIND_LEVELS } from "#app/weather/windLevels.js";
 import { isNullish } from "#app/shared/values.js";
 
 /**
  * @type {Array<{ pressure: string, key: `windspeed_${OpenMeteoPressureLevel}hPa`, directionKey: `winddirection_${OpenMeteoPressureLevel}hPa` }>}
  */
-export const PRESSURE_LEVELS_RAW = [
-    {
-        pressure: "600 hPa",
-        key: "windspeed_600hPa",
-        directionKey: "winddirection_600hPa",
-    },
-    {
-        pressure: "700 hPa",
-        key: "windspeed_700hPa",
-        directionKey: "winddirection_700hPa",
-    },
-    {
-        pressure: "850 hPa",
-        key: "windspeed_850hPa",
-        directionKey: "winddirection_850hPa",
-    },
-    {
-        pressure: "925 hPa",
-        key: "windspeed_925hPa",
-        directionKey: "winddirection_925hPa",
-    },
-    {
-        pressure: "1000 hPa",
-        key: "windspeed_1000hPa",
-        directionKey: "winddirection_1000hPa",
-    },
-];
+export const PRESSURE_LEVELS_RAW = WIND_LEVELS.map(({ level }) => ({
+    pressure: `${level} hPa`,
+    key: `windspeed_${level}hPa`,
+    directionKey: `winddirection_${level}hPa`,
+}));
 
-/** @type {OpenMeteoPressureLevel[]} */
+/** @type {OpenMeteoCloudPressureLevel[]} */
 const CLOUD_PRESSURE_LEVELS = ["1000", "925", "850", "700", "600"];
-const CLOUD_FIELDS = CLOUD_PRESSURE_LEVELS.flatMap((level) => [
-    `cloud_cover_${level}hPa`,
-    `geopotential_height_${level}hPa`,
-]);
+const CLOUD_FIELDS = CLOUD_PRESSURE_LEVELS.map(
+    (level) => `cloud_cover_${level}hPa`,
+);
+const HEIGHT_FIELDS = WIND_LEVELS.map(
+    ({ level }) => `geopotential_height_${level}hPa`,
+);
 
 const SURFACE_FIELDS = [
     "wind_speed_10m",
@@ -112,6 +93,7 @@ function isWindForecast(data) {
         ]),
         ...SURFACE_FIELDS,
         ...CLOUD_FIELDS,
+        ...HEIGHT_FIELDS,
     ].every((field) => {
         const values = hourly[field];
         return (
@@ -149,6 +131,7 @@ async function fetchDataWithCoordinates(
         ]),
         ...SURFACE_FIELDS,
         ...CLOUD_FIELDS,
+        ...HEIGHT_FIELDS,
     ].join(",");
     const params = new URLSearchParams({
         latitude: latitude.toString(),
@@ -206,7 +189,7 @@ export async function fetchHighWinds(
  * Keep the cached API heights above sea level; returned heights are above DZ.
  * @param {OpenMeteoWeatherData | null} data
  * @param {number | undefined} index
- * @param {OpenMeteoPressureLevel} pressure
+ * @param {OpenMeteoCloudPressureLevel} pressure
  * @param {number} elevation Dropzone elevation above sea level, in metres.
  * @returns {OpenMeteoCloudProfile["layers"][number] | null}
  */

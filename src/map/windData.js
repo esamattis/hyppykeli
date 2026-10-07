@@ -11,19 +11,12 @@ import { t } from "#app/translations.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
 import { OBSERVATIONS, OM_DATA } from "#app/weather/state.js";
 
+import { WIND_LEVELS } from "#app/weather/windLevels.js";
+
 const MAX_GROUND_WIND_AGE_MS = 60 * 60 * 1000;
 
-/** @type {Array<{ level: OpenMeteoPressureLevel, height: number }>} */
-const LEVELS = [
-    { level: "600", height: 4200 },
-    { level: "700", height: 3000 },
-    { level: "850", height: 1500 },
-    { level: "925", height: 800 },
-    { level: "1000", height: 110 },
-];
-
-/** @param {number} [now] */
-export function getMapWindData(now = Date.now()) {
+/** @param {number} [now] @param {boolean} [useManual] */
+export function getMapWindData(now = Date.now(), useManual = true) {
     const data = OM_DATA.value;
     const index =
         data?.hourly.time.findIndex((time) => {
@@ -42,60 +35,98 @@ export function getMapWindData(now = Date.now()) {
             (latest, obs) => (!latest || obs.time > latest.time ? obs : latest),
             /** @type {WeatherData | undefined} */ (undefined),
         );
-    const overrides = parseUpperWinds(QUERY_PARAMS.value.MANUAL_upper_winds);
+    const overrides = useManual
+        ? parseUpperWinds(QUERY_PARAMS.value.MANUAL_upper_winds)
+        : undefined;
     const elevation = DROPZONE_ELEVATION.value;
+    const customHeights = overrides?.some((wind) => wind.height !== undefined);
     const terrain = overrides
         ? elevation
         : Math.max(elevation, data?.elevation ?? 0);
+    /** @type {ManualUpperWindInput[]} */
+    const upperWindInputs = [];
+    // Five-row URLs retain their original pressure-level mapping.
+    const levels = overrides?.length === 5 ? WIND_LEVELS.slice(2) : WIND_LEVELS;
     /** @type {MapAltitudeWindLevel[]} */
-    const altitudeWinds = LEVELS.flatMap(
+    const altitudeWinds = levels.flatMap(
         ({ level, height: nominalHeight }, row) => {
             const altitude = overrides
                 ? nominalHeight
                 : index >= 0
                   ? data?.hourly[`geopotential_height_${level}hPa`]?.[index]
                   : undefined;
+            const enteredHeight = overrides?.[row]?.height;
+            const forecastAltitude =
+                index >= 0
+                    ? data?.hourly[`geopotential_height_${level}hPa`]?.[index]
+                    : undefined;
             const height =
-                typeof altitude === "number" && Number.isFinite(altitude)
-                    ? altitude - elevation
-                    : NaN;
-            // Never use a pressure surface at/below the DZ or below model terrain.
-            if (
+                enteredHeight !== undefined
+                    ? enteredHeight
+                        ? Number(enteredHeight)
+                        : typeof forecastAltitude === "number"
+                          ? forecastAltitude - elevation
+                          : NaN
+                    : typeof altitude === "number" && Number.isFinite(altitude)
+                      ? altitude - elevation
+                      : NaN;
+            const speed = overrides
+                ? overrides[row]?.speed
+                    ? Number(overrides[row].speed)
+                    : index >= 0
+                      ? (data?.hourly[`windspeed_${level}hPa`][index] ?? null)
+                      : null
+                : index >= 0
+                  ? (data?.hourly[`windspeed_${level}hPa`][index] ?? null)
+                  : null;
+            const direction = overrides
+                ? overrides[row]?.direction
+                    ? Number(overrides[row].direction)
+                    : index >= 0
+                      ? (data?.hourly[`winddirection_${level}hPa`][index] ??
+                        null)
+                      : null
+                : index >= 0
+                  ? (data?.hourly[`winddirection_${level}hPa`][index] ?? null)
+                  : null;
+            const belowGround =
                 Number.isFinite(height) &&
-                (height <= 0 || (altitude ?? 0) < terrain)
-            )
-                return [];
+                (height <= 0 ||
+                    (enteredHeight === undefined && (altitude ?? 0) < terrain));
+            // Show below-DZ heights, but do not capture a pressure surface that
+            // is above the DZ yet buried below the forecast model's terrain.
+            const unavailable = belowGround && height > 0;
+            upperWindInputs.push({
+                pressure: level,
+                height:
+                    Number.isFinite(height) && !unavailable
+                        ? height.toString()
+                        : "",
+                speed: !unavailable ? (speed?.toString() ?? "") : "",
+                direction: !unavailable ? (direction?.toString() ?? "") : "",
+            });
+            // Never use a pressure surface at/below the DZ or below model terrain.
+            if (belowGround) return [];
             return [
                 {
                     id: level,
                     legacyLabel: `≈ ${nominalHeight} m`,
                     height,
                     label: Number.isFinite(height)
-                        ? `≈ ${overrides ? `${Math.round(height / 100) * 100} m` : formatForecastAltitude(height)}`
+                        ? enteredHeight !== undefined
+                            ? formatExactAltitude(height)
+                            : `≈ ${overrides ? `${Math.round(height / 100) * 100} m` : formatForecastAltitude(height)}`
                         : `${level} hPa`,
                     altitudeTooltip: Number.isFinite(height)
                         ? formatForecastAltitude(height)
                         : undefined,
-                    speed: overrides
-                        ? overrides[row]?.speed
-                            ? Number(overrides[row].speed)
-                            : null
-                        : index >= 0
-                          ? (data?.hourly[`windspeed_${level}hPa`][index] ??
-                            null)
-                          : null,
-                    direction: overrides
-                        ? overrides[row]?.direction
-                            ? Number(overrides[row].direction)
-                            : null
-                        : index >= 0
-                          ? (data?.hourly[`winddirection_${level}hPa`][index] ??
-                            null)
-                          : null,
+                    speed,
+                    direction,
                 },
             ];
         },
     );
+    if (customHeights) altitudeWinds.sort((a, b) => b.height - a.height);
     // Missing heights cannot be replaced with nominal heights or silently skipped.
     const hasHeights = altitudeWinds.every(
         (wind, i) =>
@@ -103,9 +134,10 @@ export function getMapWindData(now = Date.now()) {
             (i === 0 || wind.height < (altitudeWinds[i - 1]?.height ?? 0)),
     );
     const profile = hasHeights ? altitudeWinds : [];
-    const freefallWinds = overrides
-        ? profile.filter((wind) => wind.id !== "1000")
-        : profile;
+    const freefallWinds =
+        overrides && !customHeights
+            ? profile.filter((wind) => wind.id !== "1000")
+            : profile;
     let exitHeight = FREEFALL_EXIT;
     try {
         const settings = JSON.parse(
@@ -144,6 +176,7 @@ export function getMapWindData(now = Date.now()) {
     return {
         data,
         time,
+        upperWindInputs,
         winds,
         averageWind,
         ground,

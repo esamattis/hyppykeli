@@ -15,7 +15,7 @@ import {
 import { OM_DATA } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 
-/** @type {OpenMeteoPressureLevel[]} */
+/** @type {OpenMeteoCloudPressureLevel[]} */
 const CLOUD_FORECAST_LEVELS = ["600", "700", "850", "925", "1000"];
 
 /**

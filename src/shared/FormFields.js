@@ -114,7 +114,9 @@ export function NumberInput({
 /** @param {ClearableInputProps} props */
 export function ClearableInput({
     name,
+    id,
     label,
+    "aria-label": ariaLabel,
     placeholder,
     value,
     type = "text",
@@ -154,6 +156,7 @@ export function ClearableInput({
     const inputRef = useRef(null);
 
     function clear() {
+        if (inputRef.current) inputRef.current.value = "";
         onClear();
         inputRef.current?.focus();
     }
@@ -163,9 +166,10 @@ export function ClearableInput({
             ${scope.style}
             <input
                 ref=${inputRef}
-                id=${name}
+                id=${id ?? name}
                 type=${type}
                 name=${name}
+                aria-label=${ariaLabel}
                 placeholder=${placeholder}
                 step=${step}
                 min=${min}

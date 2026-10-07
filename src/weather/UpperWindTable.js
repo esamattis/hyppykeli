@@ -10,17 +10,15 @@ import {
 } from "#app/weather/providers/openMeteo.js";
 import { ForecastAltitude } from "#app/weather/ForecastAltitude.js";
 import { formatExactAltitude } from "#app/weather/altitudes.js";
+import { WIND_LEVELS } from "#app/weather/windLevels.js";
 import { OM_DATA } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 
 // Nominal heights identify warning bands; displayed labels use forecast heights.
-const PRESSURE_LEVELS = [
-    { pressure: "600 hPa", height: "4200" },
-    { pressure: "700 hPa", height: "3000" },
-    { pressure: "850 hPa", height: "1500" },
-    { pressure: "925 hPa", height: "800" },
-    { pressure: "1000 hPa", height: "110" },
-];
+const PRESSURE_LEVELS = WIND_LEVELS.map(({ level, height }) => ({
+    pressure: `${level} hPa`,
+    height: height.toString(),
+}));
 
 const TIME_SLOTS = [0, 3, 6, 9, 12, 15, 18, 21];
 
@@ -32,7 +30,7 @@ const WIND_SPEED_CLASSES = [
 ];
 
 const ON_CANOPY_HEIGHTS = ["110", "800"];
-const FREE_FALL_HEIGHTS = ["1500", "3000", "4200"];
+const FREE_FALL_HEIGHTS = ["1500", "3000", "4200", "5500", "7000"];
 
 /**
  * @param {OpenMeteoWeatherData} forecast
@@ -94,7 +92,7 @@ function getAverageData(hourly, targetHour, dayOffset, offset) {
     /**
      * @type {OpenMeteoPressureLevel[]}
      */
-    const pressureLevels = ["1000", "925", "850", "700", "600"];
+    const pressureLevels = WIND_LEVELS.map(({ level }) => level);
 
     /**
      * @type {AverageWindSpeeds}

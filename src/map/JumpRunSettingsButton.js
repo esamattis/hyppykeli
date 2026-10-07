@@ -2,6 +2,7 @@
 import { FieldHelp, FormField, NumberInput } from "#app/shared/FormFields.js";
 import { DROPZONE_ELEVATION, navigateQs } from "#app/app/settings.js";
 import { Dialog } from "#app/shared/Dialog.js";
+import { ManualWindTable } from "#app/manual/ManualWindTable.js";
 import { FreefallHelp } from "#app/map/FreefallHelp.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { Icon, WindArrow } from "#app/shared/icons.js";
@@ -146,6 +147,7 @@ export function JumpRunSettingsButton({
         }
     `);
     const titleId = useId();
+    const [windSession, setWindSession] = useState(0);
     /** @type {import('preact').RefObject<HTMLDialogElement>} */
     const dialogRef = useRef(null);
     const [speedDraft, setSpeedDraft] = useState(String(settings.speedKmh));
@@ -187,6 +189,7 @@ export function JumpRunSettingsButton({
         onAdd();
     };
     const open = () => {
+        setWindSession((session) => session + 1);
         setNextDraft({
             openingHeight: String(nextJumper.openingHeight),
             speedKmh: String(nextJumper.speedKmh),
@@ -571,6 +574,7 @@ export function JumpRunSettingsButton({
                         `
                     }
                 </form>
+                ${h(ManualWindTable, { refreshKey: windSession, idPrefix: titleId, tableClassName: "jump-run-wind-table", explainDrift: true })}
             `,
         )}
     `;

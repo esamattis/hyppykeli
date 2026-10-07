@@ -1,23 +1,37 @@
 // @ts-check
-import { FormField, NumberInput } from "#app/shared/FormFields.js";
+import { ClearableInput, FormField } from "#app/shared/FormFields.js";
 import { QUERY_PARAMS, navigateQs } from "#app/app/settings.js";
-import { getMapWindData } from "#app/map/windData.js";
+import { ManualWindTable } from "#app/manual/ManualWindTable.js";
+import {
+    currentUpperWinds,
+    serializeUpperWinds,
+} from "#app/manual/windInputs.js";
 import { Dialog } from "#app/shared/Dialog.js";
 import { t } from "#app/translations.js";
+import { manualObservationTableStyles } from "#app/styles.js";
 import { css, useScope } from "#app/useScope.js";
 import { parseMetarMessages } from "#app/weather/metarMessages.js";
 import {
     LATEST_OBSERVATION,
+    LIVE_OBSERVATIONS,
     METARS,
     OBSERVATIONS,
 } from "#app/weather/state.js";
 import {
     MANUAL_ACTIVE,
     parseGroundObservations,
-    parseUpperWinds,
 } from "#app/manual/overrides.js";
 import { h, html } from "htm/preact";
 import { useId, useImperativeHandle, useRef, useState } from "preact/hooks";
+
+/** @param {number} count */
+function observationFieldNames(count) {
+    return Array.from({ length: count }, (_, index) =>
+        ["gust", "speed", "direction"].map(
+            (key) => `MANUAL_ground_obs_${index}_${key}`,
+        ),
+    ).flat();
+}
 
 /** @param {ManualObservation[]} observations */
 function toObservationInputs(observations) {
@@ -29,6 +43,52 @@ function toObservationInputs(observations) {
     }));
 }
 
+/** @param {number} [now] @param {boolean} [useManual] */
+function currentGroundObservations(now = Date.now(), useManual = true) {
+    const saved = useManual
+        ? parseGroundObservations(QUERY_PARAMS.value.MANUAL_ground_obs)
+        : undefined;
+    /** @type {ManualObservation[]} */
+    let recent = (useManual ? OBSERVATIONS.value : LIVE_OBSERVATIONS.value)
+        .filter((observation) => {
+            const age = now - observation.time.getTime();
+            return age >= 0 && age <= 60 * 60 * 1000;
+        })
+        .map((observation) => ({
+            ...observation,
+            age: Math.round((now - observation.time.getTime()) / 6000) / 10,
+        }));
+    if (!recent.length) {
+        // Provide an editable hour even when the station has no recent data.
+        recent = Array.from({ length: 7 }, (_, index) => ({
+            gust: (useManual
+                ? LATEST_OBSERVATION.value
+                : LIVE_OBSERVATIONS.value[0]
+            )?.gust,
+            speed: (useManual
+                ? LATEST_OBSERVATION.value
+                : LIVE_OBSERVATIONS.value[0]
+            )?.speed,
+            direction: (useManual
+                ? LATEST_OBSERVATION.value
+                : LIVE_OBSERVATIONS.value[0]
+            )?.direction,
+            age: index * 10,
+        }));
+    }
+    if (saved) {
+        const merged = OBSERVATIONS.value;
+        recent = saved.map((row, index) => ({
+            ...merged[index],
+            ...row,
+            gust: row.gust ?? merged[index]?.gust,
+            speed: row.speed ?? merged[index]?.speed,
+            direction: row.direction ?? merged[index]?.direction,
+        }));
+    }
+    return toObservationInputs(recent);
+}
+
 /** @param {ManualObservationInput[]} observations */
 function serializeObservations(observations) {
     return (
@@ -38,23 +98,6 @@ function serializeObservations(observations) {
             )
             .join(";") || undefined
     );
-}
-
-/** @param {number} [now] @returns {ManualUpperWindInput[]} */
-function currentUpperWinds(now) {
-    return getMapWindData(now)
-        .winds.slice(1, 6)
-        .map(({ speed, direction }) => ({
-            speed: speed?.toString() ?? "",
-            direction: direction?.toString() ?? "",
-        }));
-}
-
-/** @param {ManualUpperWindInput[]} winds */
-function serializeUpperWinds(winds) {
-    return winds
-        .map(({ speed, direction }) => `${speed.trim()},${direction.trim()}`)
-        .join(";");
 }
 
 function clearOverrides() {
@@ -146,6 +189,7 @@ export function ManualMode(props) {
         }
         :scope:is(dialog) {
             width: 520px;
+            padding-inline-end: 64px;
             max-height: calc(100dvh - 24px);
             box-sizing: border-box;
         }
@@ -166,21 +210,19 @@ export function ManualMode(props) {
             resize: vertical;
             font-family: var(--font-mono);
         }
-        .developer-observations {
-            width: 100%;
-            margin-top: 14px;
-            border-collapse: collapse;
-        }
-        .developer-observations th,
-        .developer-observations td {
-            padding: 4px;
-            text-align: left;
+        ${manualObservationTableStyles}
+        .developer-observations th:first-child {
+            width: 3.25rem;
         }
         .developer-observations input {
-            min-width: 0;
+            padding-inline-start: 4px;
         }
-        .developer-observations th:first-child {
-            white-space: nowrap;
+        .ground-observations-title {
+            margin: 20px 0 0;
+            font-size: 0.8rem;
+        }
+        .ground-table-actions {
+            margin-top: 12px;
         }
         .developer-actions {
             display: flex;
@@ -219,10 +261,23 @@ export function ManualMode(props) {
     );
     const [observationsEdited, setObservationsEdited] = useState(false);
 
-    const [upperWinds, setUpperWinds] = useState(
-        /** @type {ManualUpperWindInput[]} */ ([]),
+    const [windSession, setWindSession] = useState(0);
+
+    const [defaultFields, setDefaultFields] = useState(
+        /** @type {Set<string>} */ (new Set()),
     );
-    const [upperWindsEdited, setUpperWindsEdited] = useState(false);
+
+    /** @param {string} name @param {string} value @param {number} [decimals] */
+    function inputValues(name, value, decimals = 0) {
+        return defaultFields.has(name)
+            ? {
+                  value: "",
+                  placeholder: value
+                      ? Number(value).toFixed(decimals)
+                      : undefined,
+              }
+            : { value };
+    }
 
     function open() {
         setValues({ ...QUERY_PARAMS.value });
@@ -230,35 +285,29 @@ export function ManualMode(props) {
         setStatus("");
         setCopyUrl("");
         const now = Date.now();
-        const saved = parseGroundObservations(
-            QUERY_PARAMS.value.MANUAL_ground_obs,
+        const ground = currentGroundObservations(now);
+        setDefaultFields(
+            new Set(
+                observationFieldNames(ground.length).filter((name) => {
+                    const [, index, key] =
+                        name.match(
+                            /MANUAL_ground_obs_(\d+)_(gust|speed|direction)/,
+                        ) ?? [];
+                    const row = parseGroundObservations(
+                        QUERY_PARAMS.value.MANUAL_ground_obs,
+                    )?.[Number(index)];
+                    return (
+                        !row ||
+                        row[
+                            /** @type {"gust" | "speed" | "direction"} */ (key)
+                        ] === undefined
+                    );
+                }),
+            ),
         );
-        let recent =
-            saved ??
-            OBSERVATIONS.value
-                .filter((observation) => {
-                    const age = now - observation.time.getTime();
-                    return age >= 0 && age <= 60 * 60 * 1000;
-                })
-                .map((observation) => ({
-                    ...observation,
-                    age:
-                        Math.round((now - observation.time.getTime()) / 6000) /
-                        10,
-                }));
-        if (!recent.length) {
-            // Provide an editable hour even when the station has no recent data.
-            recent = Array.from({ length: 7 }, (_, index) => ({
-                gust: LATEST_OBSERVATION.value?.gust,
-                speed: LATEST_OBSERVATION.value?.speed,
-                direction: LATEST_OBSERVATION.value?.direction,
-                age: index * 10,
-            }));
-        }
-        setObservations(toObservationInputs(recent));
+        setWindSession((session) => session + 1);
+        setObservations(ground);
         setObservationsEdited(false);
-        setUpperWinds(currentUpperWinds(now));
-        setUpperWindsEdited(false);
         dialogRef.current?.showModal();
         props.onOpen();
     }
@@ -268,35 +317,49 @@ export function ManualMode(props) {
     /**
      * @param {number} index
      * @param {"gust" | "speed" | "direction"} key
-     * @param {Event & { currentTarget: HTMLInputElement }} event
+     * @param {string} value
      */
-    function editObservation(index, key, event) {
-        const value = event.currentTarget.value;
+    function editObservation(index, key, value) {
+        const name = `MANUAL_ground_obs_${index}_${key}`;
+        const defaults = new Set(defaultFields);
+        if (value) defaults.delete(name);
+        else defaults.add(name);
+        setDefaultFields(defaults);
+        const live =
+            currentGroundObservations(undefined, false)[index]?.[key] ?? "";
         const edited = observations.map((row, rowIndex) =>
-            rowIndex === index ? { ...row, [key]: value } : row,
+            rowIndex === index ? { ...row, [key]: value || live } : row,
         );
         setObservations(edited);
         setObservationsEdited(true);
         setStatus("");
         setCopyUrl("");
-        applyValues(values, edited, true);
+        applyValues(values, edited, true, defaults);
     }
 
-    /**
-     * @param {number} index
-     * @param {"speed" | "direction"} key
-     * @param {Event & { currentTarget: HTMLInputElement }} event
-     */
-    function editUpperWind(index, key, event) {
-        const value = event.currentTarget.value;
-        const edited = upperWinds.map((row, rowIndex) =>
-            rowIndex === index ? { ...row, [key]: value } : row,
-        );
-        setUpperWinds(edited);
-        setUpperWindsEdited(true);
+    /** @param {QueryParams} params */
+    function resetOverrides(params) {
+        navigateQs(params, { replace: true });
+        setValues({ ...values, ...params });
+        setError("");
         setStatus("");
         setCopyUrl("");
-        applyValues(values, observations, observationsEdited, edited, true);
+    }
+
+    function resetGroundObservations() {
+        resetOverrides({
+            MANUAL_ground_obs: undefined,
+            MANUAL_ground_gust: undefined,
+            MANUAL_ground_avg: undefined,
+            MANUAL_ground_direction: undefined,
+        });
+        const ground = currentGroundObservations();
+        setObservations(ground);
+        setDefaultFields(
+            (fields) =>
+                new Set([...fields, ...observationFieldNames(ground.length)]),
+        );
+        setObservationsEdited(false);
     }
 
     function captureCurrentValues() {
@@ -325,9 +388,9 @@ export function ManualMode(props) {
         };
         navigateQs(captured);
         setValues({ ...QUERY_PARAMS.value });
+        setDefaultFields(new Set());
         setObservations(inputs);
-        setUpperWinds(winds);
-        setUpperWindsEdited(false);
+        setWindSession((session) => session + 1);
         setObservationsEdited(false);
         setError("");
         setCopyUrl("");
@@ -354,15 +417,13 @@ export function ManualMode(props) {
      * @param {QueryParams} [editedValues]
      * @param {ManualObservationInput[]} [editedObservations]
      * @param {boolean} [groundEdited]
-     * @param {ManualUpperWindInput[]} [editedUpperWinds]
-     * @param {boolean} [upperEdited]
+     * @param {Set<string>} [defaults]
      */
     function applyValues(
         editedValues = values,
         editedObservations = observations,
         groundEdited = observationsEdited,
-        editedUpperWinds = upperWinds,
-        upperEdited = upperWindsEdited,
+        defaults = defaultFields,
     ) {
         if (!dialogRef.current?.querySelector("form")?.checkValidity()) {
             setError(t("manual.windInvalid"));
@@ -380,8 +441,23 @@ export function ManualMode(props) {
                 return false;
             }
         }
+        const overrides = editedObservations.map((row, index) => ({
+            ...row,
+            ...Object.fromEntries(
+                /** @type {const} */ (["gust", "speed", "direction"]).map(
+                    (key) => [
+                        key,
+                        defaults.has(`MANUAL_ground_obs_${index}_${key}`)
+                            ? ""
+                            : row[key],
+                    ],
+                ),
+            ),
+        }));
         const groundObservations = groundEdited
-            ? serializeObservations(editedObservations)
+            ? overrides.some((row) => row.gust || row.speed || row.direction)
+                ? serializeObservations(overrides)
+                : undefined
             : editedValues.MANUAL_ground_obs;
         if (
             groundObservations &&
@@ -390,15 +466,7 @@ export function ManualMode(props) {
             setError(t("manual.observationsInvalid"));
             return false;
         }
-        const upper = upperEdited
-            ? serializeUpperWinds(editedUpperWinds)
-            : editedValues.MANUAL_upper_winds;
-        if (upper && !parseUpperWinds(upper)) {
-            setError(t("manual.windInvalid"));
-            return false;
-        }
         const params = {
-            MANUAL_upper_winds: upper,
             MANUAL_metar: metar || undefined,
             MANUAL_ground_obs: groundObservations,
             MANUAL_ground_gust: undefined,
@@ -447,6 +515,15 @@ export function ManualMode(props) {
                     </button>
                     <button type="button" onClick=${copyCurrentUrl}>
                         ${t("manual.copyUrl")}
+                    </button>
+                    <button
+                        type="button"
+                        onClick=${() => {
+                            clearOverrides();
+                            dialogRef.current?.close();
+                        }}
+                    >
+                        ${t("manual.clear")}
                     </button>
                 </div>
                 <p>${t("manual.immediate")}</p>
@@ -515,63 +592,21 @@ export function ManualMode(props) {
                             `,
                         )}
                     </div>
-                    <h3>${t("manual.upperTitle")}</h3>
-                    <p>${t("manual.upperHelp")}</p>
-                    <table class="developer-observations developer-upper-winds">
-                        <thead>
-                            <tr>
-                                <th scope="col">${t("manual.altitude")}</th>
-                                <th scope="col">${t("manual.meanWindUnit")}</th>
-                                <th scope="col">
-                                    ${t("manual.directionUnit")}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${upperWinds.map((wind, index) => {
-                                const height = [4200, 3000, 1500, 800, 110][
-                                    index
-                                ];
-                                return html`
-                                    <tr>
-                                        <th scope="row">≈ ${height} m</th>
-                                        ${
-                                            /** @type {const} */ ([
-                                                "speed",
-                                                "direction",
-                                            ]).map(
-                                                (key) => html`
-                                                    <td>
-                                                        ${h(NumberInput, {
-                                                            name: `MANUAL_upper_winds_${index}_${key}`,
-                                                            "aria-label": `${key === "speed" ? t("manual.meanWind") : t("weather.direction")}, ≈ ${height} m`,
-                                                            min: 0,
-                                                            max:
-                                                                key ===
-                                                                "direction"
-                                                                    ? 360
-                                                                    : undefined,
-                                                            step: "any",
-                                                            value: wind[key],
-                                                            onInput: (event) =>
-                                                                editUpperWind(
-                                                                    index,
-                                                                    key,
-                                                                    event,
-                                                                ),
-                                                        })}
-                                                    </td>
-                                                `,
-                                            )
-                                        }
-                                    </tr>
-                                `;
-                            })}
-                        </tbody>
-                    </table>
-                    <h3>${t("manual.groundTitle")}</h3>
-                    <p>${t("manual.groundHelp")}</p>
-                    <table class="developer-observations">
+                    ${h(ManualWindTable, {
+                        refreshKey: windSession,
+                        tableClassName: "developer-upper-winds",
+                        onChange: () => {
+                            setStatus("");
+                            setCopyUrl("");
+                            setError("");
+                        },
+                    })}
+                    <h3 class="ground-observations-title">
+                        ${t("manual.groundTitle")}
+                    </h3>
+                    <table
+                        class="manual-observation-table developer-observations"
+                    >
                         <thead>
                             <tr>
                                 <th scope="col">${t("manual.minutesAgo")}</th>
@@ -601,8 +636,16 @@ export function ManualMode(props) {
                                                 }[key];
                                                 return html`
                                                     <td>
-                                                        ${h(NumberInput, {
+                                                        ${h(ClearableInput, {
                                                             name: `MANUAL_ground_obs_${index}_${key}`,
+                                                            type: "number",
+                                                            label: `${label}, ${observation.age} min sitten`,
+                                                            onClear: () =>
+                                                                editObservation(
+                                                                    index,
+                                                                    key,
+                                                                    "",
+                                                                ),
                                                             "aria-label": `${label}, ${observation.age} min sitten`,
                                                             min:
                                                                 key ===
@@ -615,14 +658,23 @@ export function ManualMode(props) {
                                                                     ? 360
                                                                     : undefined,
                                                             step: "any",
-                                                            value: observation[
-                                                                key
-                                                            ],
+                                                            ...inputValues(
+                                                                `MANUAL_ground_obs_${index}_${key}`,
+                                                                observation[
+                                                                    key
+                                                                ],
+                                                                key ===
+                                                                    "direction"
+                                                                    ? 0
+                                                                    : 1,
+                                                            ),
                                                             onInput: (event) =>
                                                                 editObservation(
                                                                     index,
                                                                     key,
-                                                                    event,
+                                                                    event
+                                                                        .currentTarget
+                                                                        .value,
                                                                 ),
                                                         })}
                                                     </td>
@@ -634,6 +686,15 @@ export function ManualMode(props) {
                             )}
                         </tbody>
                     </table>
+                    <div class="ground-table-actions">
+                        <button
+                            type="button"
+                            onClick=${resetGroundObservations}
+                        >
+                            ${t("manual.resetGroundObservations")}
+                        </button>
+                    </div>
+                    <p>${t("manual.groundHelp")}</p>
                     ${
                         error
                             ? html`
@@ -643,17 +704,6 @@ export function ManualMode(props) {
                               `
                             : null
                     }
-                    <div class="developer-actions">
-                        <button
-                            type="button"
-                            onClick=${() => {
-                                clearOverrides();
-                                dialogRef.current?.close();
-                            }}
-                        >
-                            ${t("manual.clear")}
-                        </button>
-                    </div>
                 </form>
                 <section
                     class="developer-query"

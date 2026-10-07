@@ -55,9 +55,9 @@ export const OBSERVATIONS = computed(() => {
         ...recent[index],
         source: /** @type {const} */ ("mock"),
         time: new Date(now - age * 60 * 1000),
-        gust,
-        speed,
-        direction,
+        gust: gust ?? recent[index]?.gust,
+        speed: speed ?? recent[index]?.speed,
+        direction: direction ?? recent[index]?.direction,
     }));
     return [
         ...edited,

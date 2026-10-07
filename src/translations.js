@@ -249,7 +249,7 @@ export const english = {
     "map.directionPrompt": "Drag to set the jump-run direction.",
     "map.averageWind": "Average wind",
     "map.averageHelp":
-        "Average speed and direction of the 925, 850, 700, and 600 hPa levels above ground (the corresponding fixed heights for manual winds). The displayed range is above the dropzone. Direction averaging accounts for crossing north and provides a rough freefall-drift estimate.",
+        "Height-weighted average wind over the displayed freefall range above the dropzone. Uses forecast heights or manually entered measurements to provide a rough freefall-drift estimate.",
     "map.shareFailed": "Sharing the map failed.",
     "map.driftUnavailable":
         "Drift estimate unavailable: upper-wind data is missing.",
@@ -349,7 +349,7 @@ export const english = {
     "highWinds.helpForecast":
         "These are forecasts, not measurements. The app requests hourly wind speed and direction from Open-Meteo for the forecast coordinates.",
     "highWinds.helpLevels":
-        "The values come from the 1,000, 925, 850, 700, and 600 hPa pressure levels. Row heights use the current period, or the first available period, above sea level and are rounded to 500 m. Row and cell tooltips show heights to the nearest metre; other periods may have different heights.",
+        "The values come from the 1,000, 925, 850, 700, 600, 500, and 400 hPa pressure levels. Row heights use the current period, or the first available period, above sea level and are rounded to 500 m. Row and cell tooltips show heights to the nearest metre; other periods may have different heights.",
     "highWinds.helpPeriods":
         "The summary shows three-hour periods. The current period uses the forecast for the current hour; other periods average three hourly forecasts. Details shows every hour separately. Data for each location is fetched at most once per hour and cached in the browser.",
     "highWinds.showSummary": "Show summary",
@@ -365,14 +365,24 @@ export const english = {
     "manual.title": "Manual mode",
     "manual.metar": "METAR text",
     "manual.upperTitle": "Open-Meteo winds for the current hour",
-    "manual.altitude": "Altitude",
+    "manual.altitude": "Height above ground (m)",
+    "manual.belowGroundHelp":
+        "A negative height is below the dropzone ground level. Rows at or below ground level are excluded from drift calculations.",
+    "manual.freefallWindHelp":
+        "Freefall drift uses the nearest wind level at each height from exit to opening, switching halfway between level heights. Wind at exit also affects aircraft ground speed and the spacing between jumpers.",
+    "manual.canopyWindHelp":
+        "Canopy drift uses the same wind profile from opening to ground, including recent ground observations at zero height. Drift depends on the time spent descending through each wind layer.",
+    "manual.windRangeHelp":
+        "Outside the available height range, the nearest wind level is reused. Rows at or below ground are excluded. If a required wind value is missing, that drift estimate is unavailable.",
     "manual.upperHelp":
-        "Editing this table replaces the five altitude winds used by the map, freefall and canopy drift calculations. An empty value means missing wind data. Ground wind comes from the observations below.",
+        "Editing this table replaces the altitude winds used by the map, freefall and canopy drift calculations. Heights are measured above the dropzone ground level and default to the current forecast heights. You can replace them with aircraft measurements. Placeholders show rounded defaults. Clearing an entered value restores the forecast default. Ground wind comes from the observations below.",
     "manual.description":
         "Manual values are stored in MANUAL_ URL parameters. An empty METAR field uses real data.",
     "manual.capture": "Save current values as manual values",
     "manual.copyUrl": "Copy URL",
     "manual.clear": "Clear manual values",
+    "manual.resetUpperWinds": "Restore forecast winds",
+    "manual.resetGroundObservations": "Restore live observations",
     "manual.groundTitle": "Ground observations from the last hour",
     "manual.minutesAgo": "Minutes ago",
     "manual.meanWindUnit": "Mean (m/s)",
@@ -380,7 +390,8 @@ export const english = {
     "manual.saved": "Current values saved in the URL.",
     "manual.copied": "URL copied.",
     "manual.copyFailed": "Copy failed. Copy the URL from the field below.",
-    "manual.windInvalid": "Check the allowed wind-value and direction ranges.",
+    "manual.windInvalid":
+        "Check the allowed height, wind speed and direction ranges.",
     "manual.metarInvalid": "Could not parse the METAR text. Check the text.",
     "manual.observationsInvalid":
         "Check the observation wind values and directions.",
@@ -388,7 +399,7 @@ export const english = {
         "Changes take effect immediately and are stored in the URL.",
     "manual.shareUrl": "Shareable URL",
     "manual.groundHelp":
-        "The newest row is the current ground wind. Editing the table replaces the last hour of observations. An empty wind value means a missing observation. Direction −1 means variable wind.",
+        "The newest row is the current ground wind. Editing the table replaces the last hour of observations. Clearing a wind value restores the live observation. Direction −1 means variable wind.",
     "manual.meanWind": "Mean wind",
     "manual.queryString": "Query string",
     "footer.stationDistance": (/** @type {string} */ km) =>
@@ -675,7 +686,7 @@ const finnish = {
     "map.directionPrompt": "Vedä asettaaksesi hyppylinjan suunnan.",
     "map.averageWind": "Keskituuli",
     "map.averageHelp":
-        "Nopeuden ja suunnan keskiarvo maanpinnan yläpuolisilta 925, 850, 700 ja 600 hPa:n tasoilta (käsin syötetyillä tuulilla vastaavilta kiinteiltä korkeuksilta). Näytetty korkeusväli on hyppypaikan maanpinnasta. Suunnan keskiarvo huomioi pohjoissuunnan ylityksen ja antaa karkean arvion vapaapudotusajautumisesta.",
+        "Korkeudella painotettu keskituuli näytetyllä vapaapudotuksen korkeusvälillä hyppypaikan maanpinnasta. Käyttää ennusteen korkeuksia tai käsin syötettyjä mittauksia ja antaa karkean arvion vapaapudotusajautumisesta.",
     "map.shareFailed": "Kartan jakaminen epäonnistui.",
     "map.driftUnavailable":
         "Ajautumisarvio ei saatavilla: ylätuulitietoja puuttuu.",
@@ -773,7 +784,7 @@ const finnish = {
     "highWinds.helpForecast":
         "Nämä ovat ennusteita, eivät mittaushavaintoja. Sovellus pyytää Open-Meteon rajapinnasta tuntikohtaisen tuulen nopeuden ja suunnan ennustesijainnin koordinaateille.",
     "highWinds.helpLevels":
-        "Arvot tulevat painepinnoilta 1 000, 925, 850, 700 ja 600 hPa. Rivien korkeudet ovat nykyisen tai ensimmäisen saatavilla olevan jakson korkeuksia merenpinnasta, pyöristettyinä 500 metriin. Rivien ja solujen työkaluvihjeet näyttävät korkeudet metrin tarkkuudella; muiden jaksojen korkeudet voivat poiketa näistä.",
+        "Arvot tulevat painepinnoilta 1 000, 925, 850, 700, 600, 500 ja 400 hPa. Rivien korkeudet ovat nykyisen tai ensimmäisen saatavilla olevan jakson korkeuksia merenpinnasta, pyöristettyinä 500 metriin. Rivien ja solujen työkaluvihjeet näyttävät korkeudet metrin tarkkuudella; muiden jaksojen korkeudet voivat poiketa näistä.",
     "highWinds.helpPeriods":
         "Kooste näyttää kolmen tunnin jaksot. Meneillään oleva jakso käyttää nykyisen tunnin ennustetta, ja muut jaksot ovat kolmen tuntiennusteen keskiarvoja. Tarkat tiedot näyttävät jokaisen tunnin erikseen. Tiedot haetaan kullekin sijainnille enintään kerran tunnissa ja säilytetään selaimen välimuistissa.",
     "highWinds.showSummary": "Näytä kooste",
@@ -789,14 +800,24 @@ const finnish = {
     "manual.title": "Manuaalitila",
     "manual.metar": "METAR-teksti",
     "manual.upperTitle": "Open-Meteon tuulet nykyiselle tunnille",
-    "manual.altitude": "Korkeus",
+    "manual.altitude": "Korkeus maasta (m)",
+    "manual.belowGroundHelp":
+        "Negatiivinen korkeus on hyppypaikan maanpinnan alapuolella. Maanpinnan tasolla tai sen alapuolella olevia rivejä ei käytetä ajautumislaskennassa.",
+    "manual.freefallWindHelp":
+        "Vapaapudotusajautuminen käyttää kullakin korkeudella lähintä tuulitasoa uloshypystä avaukseen. Tuulitaso vaihtuu korkeuksien puolivälissä. Uloshyppykorkeuden tuuli vaikuttaa myös lentokoneen maanopeuteen ja hyppääjien välisiin etäisyyksiin.",
+    "manual.canopyWindHelp":
+        "Varjon varassa ajautuminen käyttää samaa tuuliprofiilia avauksesta maanpintaan sekä tuoreita maanpinnan havaintoja nollakorkeudella. Ajautuminen riippuu kussakin tuulikerroksessa laskeutumiseen kuluvasta ajasta.",
+    "manual.windRangeHelp":
+        "Saatavilla olevan korkeusvälin ulkopuolella käytetään lähintä tuulitasoa. Maanpinnan tasolla tai sen alapuolella olevat rivit jätetään pois. Jos tarvittava tuuliarvo puuttuu, kyseinen ajautumisarvio ei ole saatavilla.",
     "manual.upperHelp":
-        "Taulukon muokkaus korvaa kartan, vapaapudotuksen ja varjon varassa ajautumisen laskennassa käytettävät viiden korkeuden tuulet. Tyhjä arvo tarkoittaa puuttuvaa tuulitietoa. Maanpinnan tuuli tulee alla olevista havainnoista.",
+        "Taulukon muokkaus korvaa kartan, vapaapudotuksen ja varjon varassa ajautumisen laskennassa käytettävät korkeustuulet. Korkeudet ovat hyppypaikan maanpinnasta, ja oletuksena käytetään nykyisen ennusteen korkeuksia. Voit korvata ne lentokoneesta mitatuilla korkeuksilla. Paikkamerkit näyttävät pyöristetyt oletusarvot. Syötetyn arvon tyhjentäminen palauttaa ennusteen oletusarvon. Maanpinnan tuuli tulee alla olevista havainnoista.",
     "manual.description":
         "Käsin syötetyt arvot tallennetaan osoitteen MANUAL_-parametreihin. Tyhjä METAR-kenttä käyttää oikeita tietoja.",
     "manual.capture": "Tallenna nykyiset arvot manuaaliarvoiksi",
     "manual.copyUrl": "Kopioi URL",
     "manual.clear": "Tyhjennä manuaaliarvot",
+    "manual.resetUpperWinds": "Palauta ennustetuulet",
+    "manual.resetGroundObservations": "Palauta oikeat havainnot",
     "manual.groundTitle": "Maanpinnan havainnot viimeiseltä tunnilta",
     "manual.minutesAgo": "Min sitten",
     "manual.meanWindUnit": "Keski (m/s)",
@@ -805,7 +826,8 @@ const finnish = {
     "manual.copied": "Osoite kopioitu.",
     "manual.copyFailed":
         "Kopiointi ei onnistunut. Kopioi osoite alla olevasta kentästä.",
-    "manual.windInvalid": "Tarkista tuuliarvojen ja suuntien sallitut rajat.",
+    "manual.windInvalid":
+        "Tarkista korkeuden, tuulen nopeuden ja suunnan sallitut rajat.",
     "manual.metarInvalid":
         "METAR-tekstin lukeminen epäonnistui. Tarkista teksti.",
     "manual.observationsInvalid": "Tarkista havaintojen tuuliarvot ja suunnat.",
@@ -813,7 +835,7 @@ const finnish = {
         "Muokkaukset tulevat voimaan heti ja tallentuvat osoitteeseen.",
     "manual.shareUrl": "Jaettava osoite",
     "manual.groundHelp":
-        "Uusin rivi on nykyinen maanpinnan tuuli. Taulukon muokkaus korvaa viimeisen tunnin havainnot. Tyhjä tuuliarvo tarkoittaa puuttuvaa havaintoa. Suunta −1 tarkoittaa vaihtelevaa tuulta.",
+        "Uusin rivi on nykyinen maanpinnan tuuli. Taulukon muokkaus korvaa viimeisen tunnin havainnot. Tuuliarvon tyhjentäminen palauttaa oikean havainnon. Suunta −1 tarkoittaa vaihtelevaa tuulta.",
     "manual.meanWind": "Keskituuli",
     "manual.queryString": "Kyselymerkkijono",
     "footer.stationDistance": (km) => `Etäisyys havaintoasemalle ${km} km.`,

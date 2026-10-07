@@ -249,3 +249,45 @@ export const cloudLayerStyles = css`
         }
     }
 `;
+
+export const manualObservationTableStyles = css`
+    .manual-observation-table {
+        width: 100%;
+        margin-top: 6px;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 0.8rem;
+    }
+    .manual-observation-table th,
+    .manual-observation-table td {
+        padding: 4px;
+        border-bottom: 1px solid var(--color-border);
+        text-align: start;
+    }
+    .manual-observation-table thead th {
+        color: var(--color-muted);
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    .manual-observation-table th:first-child {
+        width: 2.3rem;
+        white-space: normal;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+    }
+    .manual-observation-table input {
+        width: 100%;
+        min-width: 0;
+        min-height: 36px;
+        padding: 6px;
+        font-size: 0.8rem;
+        box-sizing: border-box;
+    }
+    .manual-observation-table td > div:has(.clear-input) input {
+        padding-inline-end: 22px;
+    }
+    .manual-observation-table .clear-input {
+        width: 20px;
+        right: 2px;
+    }
+`;

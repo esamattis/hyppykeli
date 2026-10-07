@@ -14,35 +14,41 @@ export const MANUAL_ACTIVE = computed(() =>
 );
 
 /**
- * Decode five altitude rows, highest first: speed, direction.
- * Empty cells represent missing wind data; invalid overrides use live data.
+ * Decode seven altitude rows (or five for older URLs): speed, direction, optional height above the DZ.
+ * Empty cells use forecast defaults; invalid overrides use live data.
  * @param {string | undefined} text
  * @returns {ManualUpperWindInput[] | undefined}
  */
 export function parseUpperWinds(text) {
     if (!text?.trim()) return undefined;
     const rows = text.split(";").map((row) => row.split(","));
-    if (rows.length !== 5) return undefined;
+    if (rows.length !== 5 && rows.length !== 7) return undefined;
     const winds = [];
     for (const row of rows) {
-        if (row.length !== 2) return undefined;
-        const [speed = "", direction = ""] = row.map((value) => value.trim());
+        if (row.length !== 2 && row.length !== 3) return undefined;
+        const [speed = "", direction = "", height] = row.map((value) =>
+            value.trim(),
+        );
         if (
-            [speed, direction].some(
+            [speed, direction, height].some(
                 (value) => value && !Number.isFinite(Number(value)),
             ) ||
             (speed && Number(speed) < 0) ||
             (direction && (Number(direction) < 0 || Number(direction) > 360))
         )
             return undefined;
-        winds.push({ speed, direction });
+        winds.push({
+            speed,
+            direction,
+            ...(height !== undefined ? { height } : {}),
+        });
     }
     return winds;
 }
 
 /**
  * Decode newest-first rows: gust, average speed, direction, age in minutes.
- * Empty wind values represent missing data. Invalid overrides use live data.
+ * Empty wind values use live observations. Invalid overrides use live data.
  * @param {string | undefined} text
  * @returns {ManualObservation[] | undefined}
  */

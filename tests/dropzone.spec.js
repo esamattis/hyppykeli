@@ -20,9 +20,25 @@ async function setUniformFreefallWind(page) {
         const hourly = {
             time: [new Date().toISOString().slice(0, 13) + ":00"],
         };
-        for (const level of ["600", "700", "850", "925", "1000"]) {
+        for (const level of [
+            "400",
+            "500",
+            "600",
+            "700",
+            "850",
+            "925",
+            "1000",
+        ]) {
             hourly[`geopotential_height_${level}hPa`] = [
-                { 600: 4200, 700: 3000, 850: 1500, 925: 800, 1000: 110 }[level],
+                {
+                    400: 7000,
+                    500: 5500,
+                    600: 4200,
+                    700: 3000,
+                    850: 1500,
+                    925: 800,
+                    1000: 110,
+                }[level],
             ];
             hourly[`windspeed_${level}hPa`] = [10];
             hourly[`winddirection_${level}hPa`] = [0];
@@ -247,7 +263,7 @@ function openMeteoResponse() {
         wind_speed_10m: "m/s",
         wind_gusts_10m: "m/s",
     };
-    for (const level of ["600", "700", "850", "925", "1000"]) {
+    for (const level of ["400", "500", "600", "700", "850", "925", "1000"]) {
         hourly_units[`windspeed_${level}hPa`] = "m/s";
         hourly[`windspeed_${level}hPa`] = time.map(() => 12);
         hourly[`winddirection_${level}hPa`] = time.map(() => 200);
@@ -260,6 +276,8 @@ function openMeteoResponse() {
                     850: 1500,
                     700: 3000,
                     600: 4200,
+                    500: 5500,
+                    400: 7000,
                 })[level],
         );
     }
@@ -492,7 +510,7 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
     response.hourly.geopotential_height_600hPa = response.hourly.time.map(
         () => 4321.4,
     );
-    for (const level of ["600", "700", "850", "925", "1000"]) {
+    for (const level of ["400", "500", "600", "700", "850", "925", "1000"]) {
         response.hourly[`windspeed_${level}hPa`] = response.hourly.time.map(
             () => 10,
         );
@@ -509,6 +527,12 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
     expect(new URL(request.url()).searchParams.get("wind_speed_unit")).toBe(
         "ms",
     );
+    const fields = new URL(request.url()).searchParams.get("hourly").split(",");
+    for (const pressure of [400, 500]) {
+        expect(fields).toContain(`windspeed_${pressure}hPa`);
+        expect(fields).toContain(`winddirection_${pressure}hPa`);
+        expect(fields).toContain(`geopotential_height_${pressure}hPa`);
+    }
     await expect(windIcon(page, "≈ 4500 m")).toHaveAttribute(
         "aria-label",
         /10 m\/s 270°/,
@@ -519,7 +543,7 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
 
     const summaryAltitude = page
         .locator(".upperwinds-compact .pressure-cell [data-tooltip]")
-        .first();
+        .nth(2);
     await expect(summaryAltitude).toHaveText("4500 m");
     await summaryAltitude.focus();
     await expect(page.getByRole("tooltip")).toContainText("4321 m");
@@ -529,7 +553,7 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
         .click();
     const rawAltitude = page
         .locator(".upperwinds-raw .pressure-cell [data-tooltip]")
-        .first();
+        .nth(2);
     await expect(rawAltitude).toHaveText("4500 m");
     await rawAltitude.focus();
     await expect(page.getByRole("tooltip")).toContainText("4321 m");
@@ -552,7 +576,7 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
             jump: getFreefallDrift(winds, 4000, 180, 800, velocity.air).at(-1),
         };
     });
-    expect(result.speeds).toEqual([10, 10, 10, 10, 10]);
+    expect(result.speeds).toEqual([10, 10, 10, 10, 10, 10, 10]);
     // 3200 m / 50 m/s = 64 s of wind drift at 10 m/s.
     expect(result.windOnly.east).toBeCloseTo(640);
     expect(result.windOnly.north).toBeCloseTo(0);
@@ -569,7 +593,7 @@ test("Open-Meteo refreshes cached winds with incompatible units", async ({
     page,
 }) => {
     const cached = openMeteoResponse();
-    for (const level of ["600", "700", "850", "925", "1000"])
+    for (const level of ["400", "500", "600", "700", "850", "925", "1000"])
         cached.hourly_units[`windspeed_${level}hPa`] = "km/h";
     await page.addInitScript((cached) => {
         localStorage.setItem(
@@ -975,7 +999,495 @@ test("manual banner opens the editor, applies METAR changes and restores live da
     await expect(banner).toHaveCount(0);
 });
 
-test("manual altitude table updates drift and persists missing values", async ({
+test("jump-run settings share the editable wind table with manual mode", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const params = () => new URL(page.url()).searchParams;
+    const ground = params().get("MANUAL_ground_obs");
+    const metar = params().get("MANUAL_metar");
+    const readDrift = () =>
+        page.evaluate(async () => {
+            const { getMapWindData } = await import("#app/map/windData.js");
+            const { getFreefallDrift } = await import("#app/map/freefall.js");
+            return getFreefallDrift(getMapWindData().freefallWinds)?.at(-1);
+        });
+    const original = await readDrift();
+    const settings = page.getByRole("dialog", {
+        name: "Hyppylinjan asetukset",
+        exact: true,
+    });
+    const openSettings = page.getByRole("button", {
+        name: "Hyppylinjan asetukset",
+        exact: true,
+    });
+    await openSettings.click();
+    const section = settings.locator(":scope > section:last-child");
+    const table = section.locator(".jump-run-wind-table");
+    await expect(table.locator("tbody tr")).toHaveCount(7);
+    await expect(section).toContainText(
+        "Tuulitaso vaihtuu korkeuksien puolivälissä.",
+    );
+    await expect(section).toContainText(
+        "Varjon varassa ajautuminen käyttää samaa tuuliprofiilia",
+    );
+    await expect(section).toContainText(
+        "Saatavilla olevan korkeusvälin ulkopuolella käytetään lähintä tuulitasoa.",
+    );
+    const speed = table.locator('[name="MANUAL_upper_winds_2_speed"]');
+    await expect(speed).toHaveAttribute("placeholder", "10.0");
+    await speed.fill("20");
+    expect(await readDrift()).not.toEqual(original);
+    const saved = params().get("MANUAL_upper_winds");
+    const direction = table.locator('[name="MANUAL_upper_winds_2_direction"]');
+    await direction.fill("361");
+    await expect(section.getByRole("alert")).toBeVisible();
+    expect(params().get("MANUAL_upper_winds")).toBe(saved);
+    await direction.locator("..").getByRole("button").click();
+    await expect(section.getByRole("alert")).toHaveCount(0);
+    expect(await readDrift()).toBeDefined();
+    await expect(direction).toHaveAttribute("placeholder", "0");
+    await direction.fill("0");
+    await settings.getByRole("button", { name: "Sulje", exact: true }).click();
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    const manual = page.locator("#developer-mode");
+    const manualSpeed = manual.locator('[name="MANUAL_upper_winds_2_speed"]');
+    await expect(manualSpeed).toHaveValue("20");
+    await manualSpeed.fill("24");
+    const upper = params().get("MANUAL_upper_winds");
+    await manual.locator('[name="MANUAL_ground_obs_0_gust"]').fill("8");
+    expect(params().get("MANUAL_upper_winds")).toBe(upper);
+    await manual.getByRole("button", { name: "Sulje", exact: true }).click();
+    await openSettings.click();
+    await expect(speed).toHaveValue("24");
+    await setUniformFreefallWind(page);
+    await section
+        .getByRole("button", { name: "Palauta ennustetuulet" })
+        .click();
+    await expect(settings).toBeVisible();
+    await expect(speed).toHaveValue("");
+    await expect(speed).toHaveAttribute("placeholder", "10.0");
+    expect(params().has("MANUAL_upper_winds")).toBe(false);
+    expect(params().get("MANUAL_metar")).toBe(metar);
+    expect(params().get("MANUAL_ground_obs")).not.toBe(ground);
+});
+
+test("older five-row wind links offer the higher levels without changing saved measurements", async ({
+    page,
+}) => {
+    const saved = "42,0;30,0;15,0;8,0;1.1,0";
+    await page.evaluate(async (saved) => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ MANUAL_upper_winds: saved });
+    }, saved);
+    await setUniformFreefallWind(page);
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    const table = page.locator(".developer-upper-winds");
+    await expect(table.locator("tbody tr")).toHaveCount(7);
+    await expect(
+        table.locator('[name="MANUAL_upper_winds_0_height"]'),
+    ).toHaveAttribute("placeholder", "7000");
+    await expect(
+        table.locator('[name="MANUAL_upper_winds_1_height"]'),
+    ).toHaveAttribute("placeholder", "5500");
+    await expect(
+        table.locator('[name="MANUAL_upper_winds_2_speed"]'),
+    ).toHaveValue("42");
+    expect(new URL(page.url()).searchParams.get("MANUAL_upper_winds")).toBe(
+        saved,
+    );
+    const heights = await page.evaluate(async () =>
+        (await import("#app/map/windData.js"))
+            .getMapWindData()
+            .freefallWinds.map((wind) => wind.height),
+    );
+    expect(heights).toEqual([4200, 3000, 1500, 800]);
+    await table.locator('[name="MANUAL_upper_winds_1_speed"]').fill("22");
+    expect(new URL(page.url()).searchParams.get("MANUAL_upper_winds")).toBe(
+        ",,;22,,;42,0,;30,0,;15,0,;8,0,;1.1,0,",
+    );
+});
+
+test("higher forecast levels supply exit winds and drift at 6000 metres", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const result = await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const { navigateQs } = await import("#app/app/settings.js");
+        const { getMapWindData } = await import("#app/map/windData.js");
+        const { getFreefallDrift, getWindAtHeight, getJumpRunVelocity } =
+            await import("#app/map/freefall.js");
+        const settings = {
+            exitHeight: 6000,
+            direction: 0,
+            speedKmh: 180,
+            separationSeconds: 5,
+        };
+        navigateQs({ map_run_settings: JSON.stringify(settings) });
+        OM_DATA.value.hourly.windspeed_400hPa = [30];
+        OM_DATA.value.hourly.winddirection_400hPa = [270];
+        OM_DATA.value.hourly.windspeed_500hPa = [20];
+        OM_DATA.value.hourly.winddirection_500hPa = [90];
+        const { freefallWinds: winds, averageWind } = getMapWindData();
+        const lower = winds.filter((wind) => wind.height <= 4200);
+        return {
+            heights: winds.map((wind) => wind.height),
+            exit: getWindAtHeight(winds, 6000),
+            top: getWindAtHeight(winds, 7000),
+            drift: getFreefallDrift(winds, 6000)?.at(-1),
+            lowerDrift: getFreefallDrift(lower, 6000)?.at(-1),
+            velocity: getJumpRunVelocity(winds, settings),
+            averageWind,
+        };
+    });
+    expect(result.heights).toEqual([7000, 5500, 4200, 3000, 1500, 800, 110]);
+    expect(result.exit.east).toBeCloseTo(-20);
+    expect(result.top.east).toBeCloseTo(30);
+    expect(result.drift.east).not.toBeCloseTo(result.lowerDrift.east);
+    expect(result.velocity.air.east).toBeCloseTo(20);
+    expect(result.averageWind.label).toBe("≈ 6000-1000 m");
+});
+
+test("below-ground wind defaults remain visible and are excluded from drift", async ({
+    page,
+}) => {
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ elevation: "200" });
+    });
+    await setUniformFreefallWind(page);
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    const editor = page.locator("#developer-mode");
+    const height = editor.locator('[name="MANUAL_upper_winds_6_height"]');
+    const speed = editor.locator('[name="MANUAL_upper_winds_6_speed"]');
+    await expect(height).toHaveValue("");
+    await expect(height).toHaveAttribute("placeholder", "-90");
+    await expect(speed).toHaveAttribute("placeholder", "10.0");
+    await expect(editor).toContainText(
+        "Negatiivinen korkeus on hyppypaikan maanpinnan alapuolella.",
+    );
+    const read = () =>
+        page.evaluate(async () => {
+            const { getMapWindData } = await import("#app/map/windData.js");
+            const data = getMapWindData();
+            return {
+                freefall: data.freefallWinds.map((wind) => wind.height),
+                canopy: data.canopyWinds.map((wind) => wind.height),
+            };
+        });
+    const original = await read();
+    await editor
+        .getByRole("button", {
+            name: "Tallenna nykyiset arvot manuaaliarvoiksi",
+        })
+        .click();
+    expect(
+        new URL(page.url()).searchParams
+            .get("MANUAL_upper_winds")
+            .split(";")[6],
+    ).toBe("10,0,-90");
+    expect(await read()).toEqual(original);
+    await page.reload();
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    await expect(height).toHaveValue("-90");
+    expect(await read()).toEqual(original);
+    await height.fill("100");
+    expect((await read()).canopy).toEqual([
+        ...original.canopy.slice(0, -1),
+        100,
+        0,
+    ]);
+});
+
+test("manual table resets restore only their live values and keep the dialog open", async ({
+    page,
+}) => {
+    await expect
+        .poll(() =>
+            page.evaluate(
+                async () =>
+                    (await import("#app/weather/state.js")).LOADING.value,
+            ),
+        )
+        .toBe(0);
+    await setUniformFreefallWind(page);
+    await page.evaluate(async () => {
+        const { LIVE_OBSERVATIONS } = await import("#app/weather/state.js");
+        LIVE_OBSERVATIONS.value = [
+            {
+                source: "fmi",
+                time: new Date(),
+                gust: 3,
+                speed: 2,
+                direction: 180,
+            },
+        ];
+    });
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    const editor = page.locator("#developer-mode");
+    const speed = editor.locator('[name="MANUAL_upper_winds_2_speed"]');
+    const gust = editor.locator('[name="MANUAL_ground_obs_0_gust"]');
+    const params = () => new URL(page.url()).searchParams;
+    const metar = params().get("MANUAL_metar");
+    await speed.fill("20");
+    await gust.fill("99");
+    const ground = params().get("MANUAL_ground_obs");
+    await speed.fill("-1");
+    await setUniformFreefallWind(page);
+    await editor.getByRole("button", { name: "Palauta ennustetuulet" }).click();
+    await expect(editor).toBeVisible();
+    await expect(speed).toHaveValue("");
+    await expect(speed).toHaveAttribute("placeholder", "10.0");
+    await expect(gust).toHaveValue("99");
+    expect(params().has("MANUAL_upper_winds")).toBe(false);
+    expect(params().get("MANUAL_ground_obs")).toBe(ground);
+    expect(params().get("MANUAL_metar")).toBe(metar);
+    // Editing the other table must not reapply a reset override.
+    await gust.fill("98");
+    expect(params().has("MANUAL_upper_winds")).toBe(false);
+    await speed.fill("21");
+    const upper = params().get("MANUAL_upper_winds");
+    await gust.fill("-1");
+    await page.evaluate(async () => {
+        const { LIVE_OBSERVATIONS } = await import("#app/weather/state.js");
+        LIVE_OBSERVATIONS.value = [
+            {
+                source: "fmi",
+                time: new Date(),
+                gust: 3.4,
+                speed: 2.6,
+                direction: 180.5,
+            },
+        ];
+    });
+    await editor
+        .getByRole("button", { name: "Palauta oikeat havainnot" })
+        .click();
+    await expect(editor).toBeVisible();
+    await expect(gust).toHaveValue("");
+    await expect(gust).toHaveAttribute("placeholder", "3.4");
+    await expect(
+        editor.locator('[name="MANUAL_ground_obs_0_speed"]'),
+    ).toHaveAttribute("placeholder", "2.6");
+    await expect(
+        editor.locator('[name="MANUAL_ground_obs_0_direction"]'),
+    ).toHaveAttribute("placeholder", "181");
+    await expect(speed).toHaveValue("21");
+    expect(params().has("MANUAL_ground_obs")).toBe(false);
+    expect(params().get("MANUAL_upper_winds")).toBe(upper);
+    expect(params().get("MANUAL_metar")).toBe(metar);
+    await speed.fill("22");
+    expect(params().has("MANUAL_ground_obs")).toBe(false);
+    const clearAll = editor.getByRole("button", {
+        name: "Tyhjennä manuaaliarvot",
+    });
+    await clearAll.click();
+    expect([...params().keys()].some((key) => key.startsWith("MANUAL_"))).toBe(
+        false,
+    );
+});
+
+test("manual clear buttons restore live values and focus the input", async ({
+    page,
+}) => {
+    await expect
+        .poll(() =>
+            page.evaluate(
+                async () =>
+                    (await import("#app/weather/state.js")).LOADING.value,
+            ),
+        )
+        .toBe(0);
+    await setUniformFreefallWind(page);
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    const editor = page.locator("#developer-mode");
+    const height = editor.locator('[name="MANUAL_upper_winds_2_height"]');
+    await height.fill("4200");
+    await height.locator("..").getByRole("button").click();
+    await expect(height).toHaveValue("");
+    await expect(height).toBeFocused();
+    expect(new URL(page.url()).searchParams.has("MANUAL_upper_winds")).toBe(
+        false,
+    );
+    await expect(height).toHaveAttribute("placeholder", "4200");
+    await height.fill("4200");
+    const direction = editor.locator('[name="MANUAL_upper_winds_2_direction"]');
+    await direction.fill("361");
+    await expect(editor.getByRole("alert")).toBeVisible();
+    await direction.locator("..").getByRole("button").click();
+    await expect(direction).toHaveValue("");
+    await expect(editor.getByRole("alert")).toHaveCount(0);
+    expect(
+        new URL(page.url()).searchParams
+            .get("MANUAL_upper_winds")
+            .split(";")[2],
+    ).toBe(",,4200");
+    await expect(direction).toHaveAttribute("placeholder", "0");
+    await page.evaluate(async () => {
+        const { LIVE_OBSERVATIONS } = await import("#app/weather/state.js");
+        LIVE_OBSERVATIONS.value = Array.from({ length: 6 }, (_, index) => ({
+            source: "fmi",
+            time: new Date(Date.now() - index * 10 * 60000),
+            gust: 12.5,
+            speed: 5,
+            direction: 210,
+        }));
+    });
+    const gust = editor.locator('[name="MANUAL_ground_obs_0_gust"]');
+    await gust.locator("..").getByRole("button").click();
+    await expect(gust).toHaveValue("");
+    await expect(gust).toBeFocused();
+    await expect(gust).toHaveAttribute("placeholder", "12.5");
+    expect(
+        await page.evaluate(
+            async () =>
+                (await import("#app/weather/state.js")).OBSERVATIONS.value[0]
+                    .gust,
+        ),
+    ).toBe(12.5);
+    expect(
+        new URL(page.url()).searchParams
+            .get("MANUAL_ground_obs")
+            .split(";")[0]
+            .split(",")[0],
+    ).toBe("");
+    await page.reload();
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    await expect(direction).toHaveValue("");
+    await expect(gust).toHaveValue("");
+    await editor
+        .getByRole("button", { name: "Palauta oikeat havainnot", exact: true })
+        .click();
+    await gust.fill("25");
+    expect(new URL(page.url()).searchParams.has("MANUAL_ground_obs")).toBe(
+        true,
+    );
+    await gust.fill("");
+    expect(new URL(page.url()).searchParams.has("MANUAL_ground_obs")).toBe(
+        false,
+    );
+    // The sole upper override is also removed when cleared, after reload.
+    await height.fill("");
+    expect(new URL(page.url()).searchParams.has("MANUAL_upper_winds")).toBe(
+        false,
+    );
+});
+
+test("manual wind heights default above ground and preserve aircraft measurements", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
+        navigateQs({ elevation: "100", MANUAL_upper_winds: undefined });
+        const heights = [7100.4, 5600.2, 4400.4, 3100.2, 1600.4, 900.3, 160.1];
+        for (const [index, level] of [
+            "400",
+            "500",
+            "600",
+            "700",
+            "850",
+            "925",
+            "1000",
+        ].entries()) {
+            OM_DATA.value.hourly[`geopotential_height_${level}hPa`] = [
+                heights[index],
+            ];
+            OM_DATA.value.hourly[`windspeed_${level}hPa`] = [
+                index === 2 ? 20 : 10,
+            ];
+        }
+    });
+    const read = () =>
+        page.evaluate(async () => {
+            const { getMapWindData } = await import("#app/map/windData.js");
+            const { getFreefallDrift } = await import("#app/map/freefall.js");
+            const { getCanopyDrift } = await import("#app/map/canopy.js");
+            const data = getMapWindData();
+            return {
+                heights: data.freefallWinds.map((wind) => wind.height),
+                freefall: getFreefallDrift(data.freefallWinds)?.at(-1),
+                canopy: getCanopyDrift(data.canopyWinds, 800)?.at(-1),
+            };
+        });
+    const original = await read();
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    const editor = page.locator("#developer-mode");
+    const height = (index) =>
+        editor.locator(`[name="MANUAL_upper_winds_${index}_height"]`);
+    for (const [index, expected] of [
+        7000, 5500, 4300, 3000, 1500, 800, 60,
+    ].entries()) {
+        await expect(height(index)).toHaveValue("");
+        await expect(height(index)).toHaveAttribute(
+            "placeholder",
+            String(expected),
+        );
+    }
+    await editor
+        .getByRole("button", {
+            name: "Tallenna nykyiset arvot manuaaliarvoiksi",
+        })
+        .click();
+    expect(await read()).toEqual(original);
+    await height(2).fill("4600");
+    const upperEdited = await read();
+    expect(upperEdited.heights[2]).toBe(4600);
+    expect(upperEdited.freefall).not.toEqual(original.freefall);
+    // Moving a measurement past another row sorts the calculation profile.
+    await height(6).fill("1200");
+    const lowerEdited = await read();
+    expect(lowerEdited.heights).toEqual([
+        7000.4, 5500.2, 4600, 3000.2, 1500.4, 1200, 800.3,
+    ]);
+    expect(lowerEdited.canopy).not.toEqual(original.canopy);
+    await height(2).fill("");
+    expect((await read()).freefall).toBeDefined();
+    await expect(height(2)).toHaveAttribute("placeholder", "4300");
+    await height(2).fill("4600");
+    // Entered AGL heights do not change when elevation or live forecasts change.
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ elevation: "200" });
+    });
+    expect(await read()).toEqual(lowerEdited);
+    await page.reload();
+    expect((await read()).heights).toEqual(lowerEdited.heights);
+    await page
+        .locator(".developer-banner")
+        .getByRole("button", { name: "Muokkaa", exact: true })
+        .click();
+    await expect(height(2)).toHaveValue("4600");
+    await expect(height(6)).toHaveValue("1200");
+});
+
+test("manual altitude table updates drift and restores cleared values", async ({
     page,
 }) => {
     await setUniformFreefallWind(page);
@@ -986,7 +1498,7 @@ test("manual altitude table updates drift and persists missing values", async ({
             const { getCanopyDrift } = await import("#app/map/canopy.js");
             const data = getMapWindData();
             return {
-                winds: data.winds.slice(1, 6),
+                winds: data.winds.slice(3, 8),
                 mean: data.averageWind,
                 freefall: getFreefallDrift(data.freefallWinds)?.at(-1),
                 canopy: getCanopyDrift(data.canopyWinds, 800)?.at(-1),
@@ -1008,15 +1520,27 @@ test("manual altitude table updates drift and persists missing values", async ({
         .click();
     const editor = page.locator("#developer-mode");
     const table = editor.locator(".developer-upper-winds");
-    await expect(table.locator("tbody tr")).toHaveCount(5);
+    await expect(table.locator("tbody tr")).toHaveCount(7);
+    await expect(table.locator("tbody th[scope='row']")).toHaveText([
+        "400",
+        "500",
+        "600",
+        "700",
+        "850",
+        "925",
+        "1000",
+    ]);
     await expect(
         editor.locator(
             '[name="MANUAL_map_speed"], [name="MANUAL_map_direction"]',
         ),
     ).toHaveCount(0);
     await expect(
-        table.locator('[name="MANUAL_upper_winds_0_speed"]'),
-    ).toHaveValue("10");
+        table.locator('[name="MANUAL_upper_winds_2_speed"]'),
+    ).toHaveValue("");
+    await expect(
+        table.locator('[name="MANUAL_upper_winds_2_speed"]'),
+    ).toHaveAttribute("placeholder", "10.0");
     await editor
         .getByRole("button", {
             name: "Tallenna nykyiset arvot manuaaliarvoiksi",
@@ -1025,34 +1549,37 @@ test("manual altitude table updates drift and persists missing values", async ({
     await expect(page).toHaveURL(
         (url) =>
             url.searchParams.get("MANUAL_upper_winds") ===
-            "10,0;10,0;10,0;10,0;10,0",
+            "10,0,7000;10,0,5500;10,0,4200;10,0,3000;10,0,1500;10,0,800;10,0,110",
     );
-    await table.locator('[name="MANUAL_upper_winds_0_speed"]').fill("20");
-    await table.locator('[name="MANUAL_upper_winds_0_direction"]').fill("270");
+    await table.locator('[name="MANUAL_upper_winds_2_speed"]').fill("20");
+    await table.locator('[name="MANUAL_upper_winds_2_direction"]').fill("270");
     const upperEdited = await readDrift();
     expect(upperEdited.mean.speed).toBeCloseTo(Math.hypot(8000, 26000) / 3000);
     expect(upperEdited.freefall.east).toBeGreaterThan(original.freefall.east);
     expect(upperEdited.canopy).toEqual(original.canopy);
-    await table.locator('[name="MANUAL_upper_winds_4_speed"]').fill("30");
-    await table.locator('[name="MANUAL_upper_winds_4_direction"]').fill("90");
+    await table.locator('[name="MANUAL_upper_winds_6_speed"]').fill("30");
+    await table.locator('[name="MANUAL_upper_winds_6_direction"]').fill("90");
     const lowerEdited = await readDrift();
     expect(lowerEdited.freefall).toEqual(upperEdited.freefall);
     expect(lowerEdited.canopy.east).toBeLessThan(upperEdited.canopy.east);
     const saved = new URL(page.url()).searchParams.get("MANUAL_upper_winds");
-    await table.locator('[name="MANUAL_upper_winds_4_direction"]').fill("361");
+    await table.locator('[name="MANUAL_upper_winds_6_direction"]').fill("361");
     await expect(editor.getByRole("alert")).toBeVisible();
     expect(new URL(page.url()).searchParams.get("MANUAL_upper_winds")).toBe(
         saved,
     );
-    await table.locator('[name="MANUAL_upper_winds_4_direction"]').fill("");
+    await table.locator('[name="MANUAL_upper_winds_6_direction"]').fill("");
     const missing = await readDrift();
-    expect(missing.winds[4].direction).toBeNull();
-    expect(missing.canopy).toBeUndefined();
-    await expect(page.locator(".parachute-drift-line")).toHaveCount(0);
+    expect(missing.winds[4].direction).toBe(0);
+    expect(missing.canopy).toBeDefined();
+    await expect(page.locator(".parachute-drift-line")).toHaveCount(1);
     await expect(page.locator(".freefall-drift-line")).toHaveCount(1);
-    await table.locator('[name="MANUAL_upper_winds_0_speed"]').fill("");
-    await expect(page.locator(".freefall-drift-line")).toHaveCount(0);
-    await table.locator('[name="MANUAL_upper_winds_0_speed"]').fill("20");
+    await table.locator('[name="MANUAL_upper_winds_2_speed"]').fill("");
+    await expect(page.locator(".freefall-drift-line")).toHaveCount(1);
+    await expect(
+        table.locator('[name="MANUAL_upper_winds_2_speed"]'),
+    ).toHaveAttribute("placeholder", "10.0");
+    await table.locator('[name="MANUAL_upper_winds_2_speed"]').fill("20");
     await expect(page.locator(".freefall-drift-line")).toHaveCount(1);
     await page.reload();
     await setUniformFreefallWind(page);
@@ -1062,7 +1589,7 @@ test("manual altitude table updates drift and persists missing values", async ({
         .getByRole("button", { name: "Muokkaa", exact: true })
         .click();
     await expect(
-        table.locator('[name="MANUAL_upper_winds_4_direction"]'),
+        table.locator('[name="MANUAL_upper_winds_6_direction"]'),
     ).toHaveValue("");
     await editor
         .getByRole("button", { name: "Tyhjennä manuaaliarvot" })
@@ -1174,6 +1701,8 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
             time: [new Date().toISOString().slice(0, 13) + ":00"],
         };
         for (const [index, level] of [
+            "400",
+            "500",
             "600",
             "700",
             "850",
@@ -1181,10 +1710,18 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
             "1000",
         ].entries()) {
             hourly[`geopotential_height_${level}hPa`] = [
-                { 600: 4200, 700: 3000, 850: 1500, 925: 800, 1000: 110 }[level],
+                {
+                    400: 7000,
+                    500: 5500,
+                    600: 4200,
+                    700: 3000,
+                    850: 1500,
+                    925: 800,
+                    1000: 110,
+                }[level],
             ];
-            hourly[`windspeed_${level}hPa`] = [index + 1];
-            hourly[`winddirection_${level}hPa`] = [index * 90];
+            hourly[`windspeed_${level}hPa`] = [Math.max(1, index - 1)];
+            hourly[`winddirection_${level}hPa`] = [((index + 2) % 4) * 90];
         }
         OM_DATA.value = { utc_offset_seconds: 0, hourly };
     });
@@ -1617,11 +2154,25 @@ test.describe("upper wind forecast timezones", () => {
                         .slice(0, 16),
                 );
                 const hourly = { time };
-                for (const level of ["600", "700", "850", "925", "1000"]) {
+                for (const level of [
+                    "400",
+                    "500",
+                    "400",
+                    "500",
+                    "600",
+                    "700",
+                    "850",
+                    "925",
+                    "1000",
+                ]) {
                     hourly[`geopotential_height_${level}hPa`] = time.map(
                         () =>
                             ({
+                                400: 7000,
+                                500: 5500,
                                 600: 4200,
+                                500: 5500,
+                                400: 7000,
                                 700: 3000,
                                 850: 1500,
                                 925: 800,
@@ -2264,7 +2815,7 @@ test("rotation preserves the current opening after settings, group, and wind edi
     await page.evaluate(async () => {
         const { OM_DATA } = await import("#app/weather/state.js");
         const data = structuredClone(OM_DATA.value);
-        for (const level of ["600", "700", "850", "925", "1000"])
+        for (const level of ["400", "500", "600", "700", "850", "925", "1000"])
             data.hourly[`windspeed_${level}hPa`] = [15];
         OM_DATA.value = data;
     });
@@ -3941,7 +4492,7 @@ test("elevated Utti dropzone keeps a 4000 m jump run when 600 hPa falls below ex
     const fields = new URL((await requested).url()).searchParams
         .get("hourly")
         .split(",");
-    expect(fields).not.toContain("windspeed_500hPa");
+    expect(fields).toContain("windspeed_500hPa");
     await expect(windIcon(page, "≈ 4000 m")).toHaveAttribute(
         "aria-label",
         /24 m\/s 300°/,
@@ -3968,7 +4519,7 @@ test("elevated Utti dropzone keeps a 4000 m jump run when 600 hPa falls below ex
         const { getMapWindData } = await import("#app/map/windData.js");
         return getMapWindData().freefallWinds.map((wind) => wind.height);
     });
-    expect(heights[0]).toBeCloseTo(3935.6728, 4);
+    expect(heights[2]).toBeCloseTo(3935.6728, 4);
     // Missing wind at the nearest level must still suppress the calculation.
     await page.evaluate(async () => {
         const { OM_DATA } = await import("#app/weather/state.js");

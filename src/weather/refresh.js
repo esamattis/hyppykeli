@@ -274,6 +274,7 @@ export function weatherSettingsKey() {
                 ([key]) =>
                     !key.startsWith("map_") &&
                     key !== "MANUAL_upper_winds" &&
+                    !key.startsWith("MANUAL_ground_") &&
                     key !== "elevation" &&
                     key !== "default_jump_run_direction" &&
                     key !== "default_jump_group_count",
