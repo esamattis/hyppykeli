@@ -771,6 +771,7 @@ interface SpeedPresetsProps {
 }
 
 interface ToolbarButtonProps {
+    showTooltip?: boolean;
     label: string;
     icon: IconProps["name"];
     size?: IconProps["size"];

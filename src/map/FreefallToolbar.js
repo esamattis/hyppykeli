@@ -403,6 +403,7 @@ export function FreefallToolbar({
                         label: fullWindow
                             ? t("toolbar.restoreMap")
                             : t("toolbar.expandMap"),
+                        showTooltip: false,
                         icon: fullWindow ? "collapse" : "expand",
                         size: 20,
                         className: "window-toggle",

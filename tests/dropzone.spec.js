@@ -3655,6 +3655,99 @@ test("full-window desktop toolbar controls automatic updates", async ({
         ).not.toBeChecked();
 });
 
+test("full-window cloud summary prefers METAR and falls back to current Open-Meteo layers", async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 1280, height: 1000 });
+    const card = page.locator("#dropzone-map");
+    const summary = card.locator(".map-cloud-summary");
+    await expect(summary).toHaveCount(0);
+    await card
+        .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
+        .click();
+    await expect(summary).toBeVisible();
+    await expect(summary.locator(".map-cloud-source")).toContainText("METAR");
+    await expect(summary.locator(".map-cloud-source .from-now")).toContainText(
+        "sitten",
+    );
+    await expect(summary.locator(".map-cloud-layer").first()).toHaveText(
+        /OVC\s*≈ 200 m/,
+    );
+    await expect(summary.locator(".map-cloud-warning")).toHaveText(
+        "Ukkospilviä",
+        { useInnerText: true },
+    );
+    await expect(summary).toHaveAttribute("aria-expanded", "true");
+    await summary.click();
+    await expect(summary).toHaveAttribute("aria-expanded", "false");
+    await expect(summary).toHaveAccessibleName("Näytä pilviyhteenveto");
+    await expect(summary.locator(".map-cloud-layers")).toHaveCount(0);
+    await summary.click();
+    await expect(summary).toHaveAttribute("aria-expanded", "true");
+    await expect(summary.locator(".map-cloud-layer").first()).toContainText(
+        "OVC",
+    );
+    await summary.press("Enter");
+    await expect(summary).toHaveAttribute("aria-expanded", "false");
+    await summary.press("Space");
+    await expect(summary).toHaveAttribute("aria-expanded", "true");
+
+    const forecast = openMeteoResponse();
+    for (const level of ["1000", "925", "700", "600"]) {
+        forecast.hourly[`cloud_cover_${level}hPa`] = forecast.hourly.time.map(
+            () => null,
+        );
+    }
+    forecast.hourly.cloud_cover_850hPa[0] = 99;
+    await page.evaluate(async (forecast) => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        OM_DATA.value = forecast;
+    }, forecast);
+    await expect(summary.locator(".map-cloud-source")).toContainText("METAR");
+
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({
+            MANUAL_metar: "METAR EFJY 041200Z 00000KT CAVOK 10/05 Q1014=",
+        });
+    });
+    await expect(summary.locator(".map-cloud-layer")).toHaveText(["CAVOK"], {
+        useInnerText: true,
+    });
+    await expect(summary.locator(".map-cloud-source")).toContainText("METAR");
+
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({
+            MANUAL_metar: "METAR EFJY 041200Z 00000KT 9999 10/05 Q1014=",
+        });
+    });
+    await expect(summary.locator(".map-cloud-source")).toContainText(
+        "Open-Meteo",
+    );
+    await expect(summary.locator(".map-cloud-layer")).toHaveText([
+        /40 %\s*≈ 1500 m/,
+    ]);
+
+    await page.evaluate(async () => {
+        const { LIVE_METARS, OM_DATA } = await import("#app/weather/state.js");
+        const { navigateQs } = await import("#app/app/settings.js");
+        LIVE_METARS.value = undefined;
+        navigateQs({ MANUAL_metar: undefined });
+        OM_DATA.value = { ...OM_DATA.value };
+    });
+    await expect(summary.locator(".map-cloud-source")).toContainText(
+        "Open-Meteo",
+    );
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        OM_DATA.value = null;
+    });
+    await expect(summary).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(summary).toHaveCount(0);
+});
+
 test("full-window map compass collapses and restores on desktop", async ({
     page,
     isMobile,

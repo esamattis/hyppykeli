@@ -15,6 +15,7 @@ export function ToolbarButton({
     expanded,
     controls,
     popoverTarget,
+    showTooltip = true,
     onClick,
 }) {
     const scope = useScope(css`
@@ -45,7 +46,7 @@ export function ToolbarButton({
             type="button"
             class=${`arrow-action p-0${className ? ` ${className}` : ""}`}
             aria-label=${label}
-            data-tooltip=${label}
+            data-tooltip=${showTooltip ? label : undefined}
             aria-pressed=${pressed}
             aria-expanded=${expanded === undefined ? undefined : String(expanded)}
             aria-controls=${controls}

@@ -1,4 +1,5 @@
 // @ts-check
+import { cloudTypes } from "#app/weather/cloudTypes.js";
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { Help } from "#app/shared/Help.js";
@@ -28,53 +29,6 @@ import {
 } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
 import { useId, useState } from "preact/hooks";
-
-function cloudTypes() {
-    return /** @type {Record<string, CloudTypeDetails>} */ ({
-        NCD: {
-            label: t("cloud.none"),
-            icon: "cloudClear",
-            coverage: t("cloud.noneObserved"),
-            explanation: t("cloud.noneDescription"),
-        },
-        NSC: {
-            label: t("cloud.noSignificant"),
-            icon: "cloudNsc",
-            coverage: t("cloud.noSignificantCoverage"),
-            explanation: t("cloud.noSignificantDescription"),
-        },
-        FEW: {
-            label: t("cloud.fewShort"),
-            icon: "cloudFew",
-            coverage: t("cloud.coverage", "1–2/8"),
-            explanation: t("cloud.fewDescription"),
-        },
-        SCT: {
-            label: t("cloud.scatteredShort"),
-            icon: "cloudScattered",
-            coverage: t("cloud.coverage", "3–4/8"),
-            explanation: t("cloud.scatteredDescription"),
-        },
-        BKN: {
-            label: t("cloud.brokenShort"),
-            icon: "cloudBroken",
-            coverage: t("cloud.coverage", "5–7/8"),
-            explanation: t("cloud.brokenDescription"),
-        },
-        OVC: {
-            label: t("cloud.overcast"),
-            icon: "cloudOvercast",
-            coverage: t("cloud.coverage", "8/8"),
-            explanation: t("cloud.overcastDescription"),
-        },
-        VV: {
-            label: t("cloud.fogEmphasis"),
-            icon: "cloudFog",
-            coverage: t("cloud.skyObscured"),
-            explanation: t("cloud.verticalVisibilityDescription"),
-        },
-    });
-}
 
 /** @param {{ cloud: CloudLayer }} props */
 function CloudLayer({ cloud }) {

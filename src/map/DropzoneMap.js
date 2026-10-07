@@ -29,6 +29,7 @@ import {
 import { WindBarb, windBarbKnots } from "#app/map/WindBarb.js";
 import { FreefallToolbar } from "#app/map/FreefallToolbar.js";
 import { MapWindOverlay } from "#app/map/MapWindOverlay.js";
+import { MapCloudSummary } from "#app/map/MapCloudSummary.js";
 import { MapCompass } from "#app/map/MapCompass.js";
 import { MapNavigationControls } from "#app/map/MapNavigationControls.js";
 import {
@@ -1937,6 +1938,7 @@ export function DropzoneMap() {
                             ${!coordinates ? t("common.waitingCoordinates") : null}
                         </div>
                         ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
+                        ${fullWindow ? h(MapCloudSummary, {}) : null}
                         ${fullWindow ? h(MapCompass, {}) : null}
                         ${h(MapNavigationControls, {
                             map: leafletInstance,

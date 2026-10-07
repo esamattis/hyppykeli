@@ -64,6 +64,8 @@ export const english = {
     "compass.animation": "Animation",
     "compass.minimize": "Minimize wind compass",
     "compass.restore": "Show wind compass",
+    "cloud.minimize": "Minimize cloud summary",
+    "cloud.restore": "Show cloud summary",
     "compass.help":
         "The ranges below the wind readings show the minimum and maximum gust, mean wind, and direction observed during the last hour. Values are rounded to whole numbers. The arrow shows wind direction and its length shows the gust. The inner circle is the student limit (8 m/s), and the outer circle is the licence limit (11 m/s). The animation replays the last hour chronologically. When it is off, the arrow shows the latest observation.",
     "source.openMeteoModeled": "Open-Meteo (modeled)",
@@ -523,6 +525,8 @@ const finnish = {
     "compass.animation": "Animaatio",
     "compass.minimize": "Pienennä tuulikompassi",
     "compass.restore": "Näytä tuulikompassi",
+    "cloud.minimize": "Pienennä pilviyhteenveto",
+    "cloud.restore": "Näytä pilviyhteenveto",
     "compass.help":
         "Tuulilukemien alla näkyvät vaihteluvälit kertovat puuskan, keskituulen ja suunnan pienimmän ja suurimman havaitun arvon viimeisen tunnin ajalta. Arvot on pyöristetty kokonaisluvuiksi. Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Sisempi ympyrä on oppilasraja (8 m/s) ja ulompi ympyrä on kelppariraja (11 m/s). Animaatio toistaa viimeisen tunnin havainnot aikajärjestyksessä. Kun animaatio on pois päältä, nuoli näyttää uusimman havainnon.",
     "source.openMeteoModeled": "Open-Meteo (mallinnettu)",
