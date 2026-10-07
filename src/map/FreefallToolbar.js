@@ -32,8 +32,11 @@ export function FreefallToolbar({
             background: var(--color-surface-soft);
         }
         .toolbar-actions {
-            position: relative;
-            height: 0;
+            position: absolute;
+            width: 100%;
+            height: var(--map-viewport-height, 440px);
+            container: wind-barb-map / size;
+            pointer-events: none;
             z-index: 800;
         }
         .toolbar-window-actions {
@@ -251,7 +254,7 @@ export function FreefallToolbar({
         #wind-barb-help:hover {
             background: var(--color-map-control-hover);
         }
-        @container dropzone-map (min-width: 900px) {
+        @container wind-barb-map (min-width: 900px) and (min-height: 560px) {
             .wind-level-icons {
                 width: 48px;
             }
