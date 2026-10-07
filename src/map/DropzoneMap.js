@@ -2,7 +2,7 @@
 import { CheckboxField } from "#app/shared/FormFields.js";
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
 import { holdAnimations } from "#app/app/animationState.js";
-import { getCanopyDrift, hasGroundWindDisagreement } from "#app/map/canopy.js";
+import { getCanopyDrift } from "#app/map/canopy.js";
 import {
     DROPZONE_ELEVATION,
     QUERY_PARAMS,
@@ -773,7 +773,6 @@ export function DropzoneMap() {
         freefallWinds,
         canopyWinds,
     } = getMapWindData(now);
-    const groundWindDisagreement = hasGroundWindDisagreement(canopyWinds);
     const elevation = DROPZONE_ELEVATION.value;
     const upperWindOverride = QUERY_PARAMS.value.MANUAL_upper_winds;
     const calculation = calculateJumpRun(freefallWinds, jumpRunSettings);
@@ -1804,19 +1803,6 @@ export function DropzoneMap() {
                     ],
                 })}
             </div>
-            ${
-                groundWindDisagreement
-                    ? html`
-                          <p
-                              class="ground-wind-disagreement mt-2"
-                              role="status"
-                          >
-                              ${t("map.groundWindDisagreement")}
-                          </p>
-                      `
-                    : null
-            }
-
             <div class="map-layout">
                 <div
                     class=${`map-frame${fullWindow ? " full-window" : ""}${placingJumpRunDirection ? " direction-setting" : ""}`}

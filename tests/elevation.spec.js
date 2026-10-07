@@ -510,37 +510,3 @@ test("ranged wind average follows jump-run altitude down to 1000 m", async ({
         page.locator('.wind-level-choice[aria-label^="≈ 900-1000 m:"]'),
     ).toBeVisible();
 });
-
-test("ground wind disagreement appears for opposing winds and excludes stale observations", async ({
-    page,
-}) => {
-    await page.goto(dz);
-    const notice = page.locator(".ground-wind-disagreement");
-    await expect(page.locator("#dropzone-map")).toBeVisible();
-    await expect(notice).toHaveCount(0);
-    await page.evaluate(async () => {
-        const { navigateQs } = await import("#app/app/settings.js");
-        navigateQs({
-            MANUAL_upper_winds:
-                "42,0,7000;42,0,5500;42,0,4200;30,0,3000;15,0,1500;8,0,800;4,180,110",
-        });
-    });
-    await expect(notice).toContainText("Maatuuli ja alin ylätuuli poikkeavat");
-    const future = await page.evaluate(async () => {
-        const { getMapWindData } = await import("#app/map/windData.js");
-        const { hasGroundWindDisagreement } =
-            await import("#app/map/canopy.js");
-        return hasGroundWindDisagreement(
-            getMapWindData(Date.now() + 2 * 60 * 60 * 1000).canopyWinds,
-        );
-    });
-    expect(future).toBe(false);
-    await page.evaluate(async () => {
-        const { navigateQs } = await import("#app/app/settings.js");
-        navigateQs({
-            MANUAL_upper_winds:
-                "42,0,7000;42,0,5500;42,0,4200;30,0,3000;15,0,1500;8,0,800;4,0,110",
-        });
-    });
-    await expect(notice).toHaveCount(0);
-});

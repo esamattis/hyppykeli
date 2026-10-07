@@ -256,8 +256,6 @@ export const english = {
     "map.averageHelp":
         "Height-weighted average wind over the displayed freefall range above the dropzone. Uses forecast heights or manually entered measurements to provide a rough freefall-drift estimate.",
     "map.shareFailed": "Sharing the map failed.",
-    "map.groundWindDisagreement":
-        "Ground and lowest upper winds differ substantially. The canopy drift estimate assumes a gradual transition between them.",
     "map.driftUnavailable":
         "Drift estimate unavailable: upper-wind data is missing.",
     "map.automaticRunUnavailable":
@@ -703,8 +701,6 @@ const finnish = {
     "map.averageHelp":
         "Korkeudella painotettu keskituuli näytetyllä vapaapudotuksen korkeusvälillä hyppypaikan maanpinnasta. Käyttää ennusteen korkeuksia tai käsin syötettyjä mittauksia ja antaa karkean arvion vapaapudotusajautumisesta.",
     "map.shareFailed": "Kartan jakaminen epäonnistui.",
-    "map.groundWindDisagreement":
-        "Maatuuli ja alin ylätuuli poikkeavat huomattavasti toisistaan. Varjon ajautumisarvio olettaa niiden välille asteittaisen muutoksen.",
     "map.driftUnavailable":
         "Ajautumisarvio ei saatavilla: ylätuulitietoja puuttuu.",
     "map.automaticRunUnavailable":

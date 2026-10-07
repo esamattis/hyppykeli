@@ -1,9 +1,5 @@
 import { test, expect } from "@playwright/test";
-import {
-    getCanopyDrift,
-    getCanopyWindAtHeight,
-    hasGroundWindDisagreement,
-} from "../src/map/canopy.js";
+import { getCanopyDrift, getCanopyWindAtHeight } from "../src/map/canopy.js";
 
 test("canopy descent integrates changing wind through opening and ground", () => {
     const winds = [
@@ -85,25 +81,4 @@ test("missing bracketing data cannot be hidden by a closer valid reading", () =>
     expect(getCanopyDrift(winds, 850)).toBeNull();
     expect(getCanopyDrift(winds, 800)).not.toBeNull();
     expect(getCanopyDrift([...winds].reverse(), 800)).toBeNull();
-});
-
-test("ground disagreement uses vector difference and needs valid readings", () => {
-    const winds = [
-        { height: 110, speed: 4, direction: 0 },
-        { height: 0, speed: 4, direction: 180 },
-    ];
-    expect(hasGroundWindDisagreement(winds)).toBe(true);
-    expect(
-        hasGroundWindDisagreement([winds[0], { ...winds[1], direction: 10 }]),
-    ).toBe(false);
-    expect(
-        hasGroundWindDisagreement([winds[0], { ...winds[1], speed: null }]),
-    ).toBe(false);
-    expect(hasGroundWindDisagreement([winds[0]])).toBe(false);
-    expect(
-        hasGroundWindDisagreement([
-            { height: 110, speed: 5, direction: 0 },
-            { height: 0, speed: 0, direction: null },
-        ]),
-    ).toBe(false);
 });

@@ -39,20 +39,6 @@ export function getCanopyWindAtHeight(winds, height) {
 }
 
 /**
- * A 5 m/s vector difference is a display threshold, not a wind-shear limit.
- * Missing/stale ground data is represented by null readings in this profile.
- * @param {FreefallWindLevel[]} winds Descending altitude order, including ground.
- */
-export function hasGroundWindDisagreement(winds) {
-    const ground = winds.at(-1);
-    const lowest = winds.at(-2);
-    if (!ground || ground.height !== 0 || !lowest) return false;
-    const a = getCanopyWindAtHeight(winds, ground.height);
-    const b = getCanopyWindAtHeight(winds, lowest.height);
-    return !!a && !!b && Math.hypot(a.east - b.east, a.north - b.north) > 5;
-}
-
-/**
  * Integrate canopy drift from opening to ground using interpolated wind vectors between levels.
  * Offsets are metres east/north of the opening position.
  * @param {FreefallWindLevel[]} winds Descending altitude order, including ground.
