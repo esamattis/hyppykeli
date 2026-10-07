@@ -30,6 +30,7 @@ function useInterval(setter) {
 /**
  * @param {Object} props
  * @param {Date} [props.date]
+ * @param {boolean} [props.showClock]
  */
 export function FromNow(props) {
     const createFromNow = useCallback(() => {
@@ -49,15 +50,20 @@ export function FromNow(props) {
         return t("fromNow.minutes", diffInMinutes);
     }, [props.date]);
 
+    const fromNow = useInterval(createFromNow);
+
     if (!props.date) {
         return null;
     }
 
-    const fromNow = useInterval(createFromNow);
-
     return html`
         <span class="from-now">${fromNow}</span>
-        ${" "}
-        <small>(${t("time.clock", formatClock(props.date))})</small>
+        ${
+            props.showClock !== false &&
+            html`
+                ${" "}
+                <small>(${t("time.clock", formatClock(props.date))})</small>
+            `
+        }
     `;
 }

@@ -210,15 +210,15 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     const selected = map.locator('.wind-level-choice[aria-pressed="true"]');
     // Wind selection uses the stable pressure-level ID.
     await expect(selected).toHaveAttribute("aria-label", /^≈ 3000 m:/);
-    await expect(selected).toHaveAttribute("data-tooltip", /^\d+ m\/s 0°$/);
+    await expect(selected.locator(".wind-level-speed")).toHaveText("29 m/s");
+    await expect(selected).not.toHaveAttribute("data-tooltip");
     await selected.focus();
-    await expect(page.getByRole("tooltip")).toContainText("29 m/s 0°");
-    await page.keyboard.press("Escape");
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
 
     await expect(map.locator(".wind-level-choice")).toHaveCount(6);
     await expect(
         map.locator('.wind-level-choice[aria-label^="≈ 4000-1000 m:"]'),
-    ).toHaveAttribute("data-tooltip", /^\d+ m\/s 0°$/);
+    ).toHaveAttribute("aria-label", /: \d+ m\/s 0°$/);
     await page
         .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
         .click();
@@ -244,7 +244,7 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     await expect(exit).not.toHaveAttribute("max");
     await dialog.getByRole("button", { name: "Sulje", exact: true }).click();
     await expect(selected).toHaveAttribute("aria-label", /^≈ 3000 m:/);
-    await expect(selected).toHaveAttribute("data-tooltip", /^\d+ m\/s 0°$/);
+    await expect(selected).toHaveAttribute("aria-label", /: \d+ m\/s 0°$/);
     await selected.click();
     expect(JSON.parse(new URL(page.url()).searchParams.get("map_wind"))).toBe(
         "700",
@@ -254,7 +254,7 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
         navigateQs({ elevation: "250.5" });
     });
     await expect(selected).toHaveAttribute("aria-label", /^≈ 3000 m:/);
-    await expect(selected).toHaveAttribute("data-tooltip", /^\d+ m\/s 0°$/);
+    await expect(selected).toHaveAttribute("aria-label", /: \d+ m\/s 0°$/);
     // A forecast above the old 4200 m ceiling can be used and shared.
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");

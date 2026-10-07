@@ -1881,6 +1881,15 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     await expect(windIcon(page, "≈ 5500 m")).toHaveCount(0);
     // The 4200 m layer is used at a 4000 m exit despite being above it.
     await expect(windIcon(page, "≈ 4000 m")).toHaveCount(1);
+    await expect(
+        windIcon(page, "≈ 4000 m").locator(".wind-level-speed"),
+    ).toHaveText("1 m/s");
+    await expect(
+        windIcon(page, "≈ 3000 m").locator(".wind-level-speed"),
+    ).toHaveText("2 m/s");
+    await expect(
+        windIcon(page, "Maanpinta").locator(".wind-level-speed"),
+    ).toHaveText("4 m/s");
     for (const label of [
         "≈ 4000 m",
         "≈ 3000 m",
@@ -1947,6 +1956,7 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     });
     await expect(windIcon(page, "600 hPa")).toHaveCount(0);
     await expect(average).toHaveAttribute("aria-label", /Ei tietoa/);
+    await expect(average.locator(".wind-level-speed")).toHaveText("Ei tietoa");
     await expect(average).toHaveAttribute("aria-pressed", "true");
 });
 
@@ -3660,6 +3670,28 @@ test("full-window map compass collapses and restores on desktop", async ({
     } else {
         await expect(compass).toBeVisible();
         await expect(compass).toHaveAttribute("aria-expanded", "true");
+        const gust = compass.locator(".latest-gust");
+        await expect(gust).toHaveText(/^6\s*m\/s$/);
+        await expect(compass.locator(".map-compass-gust-label")).toHaveText(
+            "Puuska maassa",
+        );
+        await expect(compass.locator(".map-compass-gust-age")).toHaveText(
+            "5 minuuttia sitten",
+        );
+        await page.evaluate(async () => {
+            const { HOVERED_OBSERVATION, LATEST_OBSERVATION } =
+                await import("#app/weather/state.js");
+            HOVERED_OBSERVATION.value = {
+                ...LATEST_OBSERVATION.value,
+                gust: 99,
+            };
+        });
+        await expect(gust).toHaveText(/^6\s*m\/s$/);
+        await page.evaluate(async () => {
+            const { HOVERED_OBSERVATION } =
+                await import("#app/weather/state.js");
+            HOVERED_OBSERVATION.value = undefined;
+        });
         await expect
             .poll(() =>
                 compass
@@ -3678,9 +3710,11 @@ test("full-window map compass collapses and restores on desktop", async ({
         await compass.click();
         await expect(compass).toHaveAttribute("aria-expanded", "false");
         await expect(compass.locator("#map-compass")).toHaveCount(0);
+        await expect(gust).toHaveCount(0);
         await compass.press("Enter");
         await expect(compass).toHaveAttribute("aria-expanded", "true");
         await expect(compass.locator("#map-compass")).toBeVisible();
+        await expect(gust).toHaveText(/^6\s*m\/s$/);
     }
     await page.keyboard.press("Escape");
     await expect(compass).toHaveCount(0);

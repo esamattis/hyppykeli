@@ -3,8 +3,8 @@ import { summaryStyles, windStatusStyles } from "#app/styles.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { WindDirection } from "#app/weather/WeatherTables.js";
+import { GustReading } from "#app/weather/GustReading.js";
 import {
-    getWarningLevel,
     getHourlyWindRange,
     hasValidAverageWindData,
 } from "#app/weather/calculations.js";
@@ -83,12 +83,7 @@ export function WindSummary() {
             <dl class="summary-metrics wind-metrics">
                 <div class="latest-wind-cell">
                     <dt>${t("weather.gust")}</dt>
-                    <dd
-                        class=${"latest-value latest-gust " + getWarningLevel(obs?.gust ?? 0)}
-                    >
-                        ${obs?.gust?.toFixed(0) ?? "-"}
-                        <span class="unit">m/s</span>
-                    </dd>
+                    <dd>${h(GustReading, {})}</dd>
                     ${hourlyRange("gust")}
                 </div>
                 <div class="latest-wind-cell">

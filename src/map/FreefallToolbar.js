@@ -156,12 +156,19 @@ export function FreefallToolbar({
             pointer-events: auto;
             box-sizing: border-box;
             width: 36px;
+            max-height: calc(
+                var(--map-viewport-height, 440px) - var(--spacing-3) -
+                    var(--spacing-7) - env(safe-area-inset-bottom)
+            );
         }
         .wind-level-bar {
             display: flex;
             flex-direction: column;
             border-radius: var(--radius-sm);
             background: var(--color-map-control);
+            min-height: 0;
+            overflow-y: auto;
+            scrollbar-width: none;
         }
         .wind-barb-legend {
             display: flex;
@@ -213,7 +220,8 @@ export function FreefallToolbar({
             color: var(--color-text);
             box-shadow: none;
         }
-        .wind-level-height {
+        .wind-level-height,
+        .wind-level-speed {
             font-size: 0.5rem;
             line-height: 1.1;
             font-variant-numeric: tabular-nums;
@@ -221,6 +229,9 @@ export function FreefallToolbar({
         }
         .wind-level-choice:first-child {
             border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        }
+        .wind-level-choice + .wind-level-choice {
+            border-top: 1px solid var(--color-primary);
         }
         .wind-level-choice:last-child {
             border-radius: 0 0 var(--radius-sm) var(--radius-sm);
@@ -230,6 +241,7 @@ export function FreefallToolbar({
             color: var(--color-on-primary);
         }
         #wind-barb-help {
+            flex-shrink: 0;
             align-self: center;
             margin: 0;
             margin-top: var(--spacing-1-5);
@@ -250,7 +262,8 @@ export function FreefallToolbar({
                 width: 44px;
                 height: 48px;
             }
-            .wind-level-height {
+            .wind-level-height,
+            .wind-level-speed {
                 font-size: 0.65rem;
             }
         }
@@ -411,12 +424,17 @@ export function FreefallToolbar({
                                     type="button"
                                     class="wind-level-choice p-0 pb-0.5"
                                     aria-label=${`${level.label}: ${level.text}`}
-                                    data-tooltip=${level.text}
                                     aria-pressed=${level.selected}
                                     onClick=${() =>
                                         windLevels.onSelect(level.id)}
                                 >
                                     ${level.graphic}
+                                    <span
+                                        class="wind-level-speed mb-0.5"
+                                        aria-hidden="true"
+                                    >
+                                        ${level.speedLabel}
+                                    </span>
                                     <span
                                         class="wind-level-height"
                                         aria-hidden="true"

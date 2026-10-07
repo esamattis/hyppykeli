@@ -112,7 +112,7 @@ function windReading(wind) {
                     size: 20,
                     label: t("map.windLabelMissing", wind.label),
                 });
-    return { text, graphic };
+    return { text, speedLabel, graphic };
 }
 
 export function DropzoneMap() {
@@ -570,9 +570,16 @@ export function DropzoneMap() {
         leafletMap.on("zoomstart", pauseMapAnimations);
         leafletMap.on("zoomend", releaseMapAnimations);
         saveView();
-        const observer = new ResizeObserver(() =>
-            leafletMap.invalidateSize({ pan: false }),
-        );
+        const observer = new ResizeObserver(([entry]) => {
+            const frame = container.closest(".map-frame");
+            if (entry && frame instanceof HTMLElement) {
+                frame.style.setProperty(
+                    "--map-viewport-height",
+                    `${entry.contentRect.height}px`,
+                );
+            }
+            leafletMap.invalidateSize({ pan: false });
+        });
         observer.observe(mapRef.current);
         return () => {
             leafletMap.off("zoomstart", pauseMapAnimations);
@@ -1814,6 +1821,7 @@ export function DropzoneMap() {
                                     altitudeTooltip: wind.altitudeTooltip,
                                     label: wind.label,
                                     text: reading.text,
+                                    speedLabel: reading.speedLabel,
                                     knots: windBarbKnots(wind.speed),
                                     arrow: reading.graphic,
                                     graphic: h(WindBarb, {

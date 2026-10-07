@@ -182,6 +182,7 @@ interface JumpRunPositionControlsProps extends JumpRunControlsProps {
 interface ToolbarWindLevel {
     altitudeTooltip?: string;
     heightLabel: string;
+    speedLabel: string;
     id: string;
     label: string;
     text: string;
