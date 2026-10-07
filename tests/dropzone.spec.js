@@ -299,6 +299,36 @@ test.beforeEach(async ({ page, baseURL }) => {
     );
 });
 
+test("zero-height wind selection prefers observations and falls back to the forecast", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const groundLabel = await page.evaluate(async () => {
+        const { t } = await import("#app/translations.js");
+        return t("map.ground");
+    });
+    await expect(windIcon(page, groundLabel)).toHaveCount(1);
+    await expect(windIcon(page, "≈ 0 m")).toHaveCount(0);
+
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        const { LIVE_OBSERVATIONS } = await import("#app/weather/state.js");
+        navigateQs({ MANUAL_ground_obs: undefined });
+        await updateWeatherData();
+        LIVE_OBSERVATIONS.value = [];
+    });
+    await setUniformFreefallWind(page);
+    const heights = await page.evaluate(async () => {
+        const { getMapWindData } = await import("#app/map/windData.js");
+        return getMapWindData().canopyWinds.map((wind) => wind.height);
+    });
+    // The low forecast and ground endpoint remain in the calculation profile.
+    expect(heights.slice(-2)).toEqual([110, 0]);
+    await expect(windIcon(page, "≈ 0 m")).toHaveCount(1);
+    await expect(windIcon(page, groundLabel)).toHaveCount(0);
+});
+
 test("satellite toggle switches tiles and attribution without changing the view", async ({
     page,
 }) => {
@@ -1892,12 +1922,12 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     await expect(
         windIcon(page, "Maanpinta").locator(".wind-level-speed"),
     ).toHaveText("4 m/s");
+    await expect(windIcon(page, "≈ 0 m")).toHaveCount(0);
     for (const label of [
         "≈ 4000 m",
         "≈ 3000 m",
         "≈ 1500 m",
         "≈ 1000 m",
-        "≈ 0 m",
         "Maanpinta",
         "≈ 4000-1000 m",
     ]) {

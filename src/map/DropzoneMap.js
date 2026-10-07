@@ -1674,14 +1674,25 @@ export function DropzoneMap() {
             ),
         ].map((wind) => wind.height),
     );
+    const hasGroundObservation =
+        ground?.speed != null &&
+        Number.isFinite(ground.speed) &&
+        ground.speed >= 0;
+    const hasZeroForecastWind = freefallWinds.some(
+        (wind) => usedHeights.has(wind.height) && wind.label === "≈ 0 m",
+    );
     const displayedWinds = winds.filter(
         (wind) =>
             wind.id === "average" ||
             (wind.id === "ground"
-                ? usedHeights.has(0)
+                ? usedHeights.has(0) &&
+                  (hasGroundObservation || !hasZeroForecastWind)
                 : freefallWinds.some(
                       (level) =>
-                          level === wind && usedHeights.has(level.height),
+                          level === wind &&
+                          usedHeights.has(level.height) &&
+                          // Prefer observations for the displayed 0 m level.
+                          (!hasGroundObservation || wind.label !== "≈ 0 m"),
                   )),
     );
     const selectedWind =
