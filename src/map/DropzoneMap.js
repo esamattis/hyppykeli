@@ -271,7 +271,6 @@ export function DropzoneMap() {
         .direction-setting .dz-map {
             cursor: crosshair;
         }
-        .direction-setting .map-wind-overlay,
         .direction-setting .map-cloud-summary,
         .direction-setting .map-compass,
         .direction-setting .map-navigation-controls,
