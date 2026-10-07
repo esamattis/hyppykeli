@@ -1,4 +1,5 @@
-@layer base, components;
+@layer base, components, utilities;
+@import url("/spacing.css");
 
 /* Shared sky-blue theme. Override these tokens to customize the whole app. */
 @layer base {
@@ -82,6 +83,31 @@
         --color-backdrop: rgb(18 49 69 / 35%);
         --color-shadow-panel: rgb(25 79 108 / 7%);
         --color-shadow-floating: rgb(25 79 108 / 16%);
+        /* Spacing: one Tailwind-style step is 4px at the default font size. */
+        --spacing: 0.25rem;
+        --spacing-0: 0px;
+        --spacing-0-5: calc(var(--spacing) * 0.5);
+        --spacing-1: calc(var(--spacing) * 1);
+        --spacing-1-5: calc(var(--spacing) * 1.5);
+        --spacing-2: calc(var(--spacing) * 2);
+        --spacing-2-5: calc(var(--spacing) * 2.5);
+        --spacing-3: calc(var(--spacing) * 3);
+        --spacing-3-5: calc(var(--spacing) * 3.5);
+        --spacing-4: calc(var(--spacing) * 4);
+        --spacing-5: calc(var(--spacing) * 5);
+        --spacing-5-5: calc(var(--spacing) * 5.5);
+        --spacing-6: calc(var(--spacing) * 6);
+        --spacing-7: calc(var(--spacing) * 7);
+        --spacing-8: calc(var(--spacing) * 8);
+        --spacing-9-5: calc(var(--spacing) * 9.5);
+        --spacing-10: calc(var(--spacing) * 10);
+        --spacing-11: calc(var(--spacing) * 11);
+        --spacing-12: calc(var(--spacing) * 12);
+        --spacing-14: calc(var(--spacing) * 14);
+        --spacing-16: calc(var(--spacing) * 16);
+        --spacing-20: calc(var(--spacing) * 20);
+        --spacing-24: calc(var(--spacing) * 24);
+        --spacing-25: calc(var(--spacing) * 25);
         --radius-sm: 8px;
         --radius-panel: 16px;
         --shadow-panel: 0 4px 20px var(--color-shadow-panel);
@@ -94,7 +120,7 @@
     }
 
     html {
-        scroll-padding-bottom: 80px;
+        scroll-padding-bottom: var(--spacing-20);
     }
 
     html:has(dialog:modal),
@@ -125,7 +151,7 @@
     }
     h2 {
         font-size: 1.3rem;
-        margin: 0 0 16px;
+        margin: 0 0 var(--spacing-4);
     }
     h3 {
         font-size: 1.05rem;
@@ -139,7 +165,7 @@
     }
 
     button {
-        padding: 8px 14px;
+        padding: var(--spacing-2) var(--spacing-3-5);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-sm);
         background: var(--color-surface-hover);
@@ -160,7 +186,7 @@
     select,
     textarea {
         max-width: 100%;
-        padding: 8px 10px;
+        padding: var(--spacing-2) var(--spacing-2-5);
         color: var(--color-text);
         background: var(--color-surface);
         border: 1px solid var(--color-border);
@@ -193,19 +219,19 @@
     }
 
     fieldset {
-        margin: 16px 0;
-        padding: 20px;
+        margin: var(--spacing-4) 0;
+        padding: var(--spacing-5);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-panel);
     }
     legend {
         color: var(--color-primary);
         font-weight: 600;
-        padding: 0 8px;
+        padding: 0 var(--spacing-2);
     }
     dialog {
         overscroll-behavior: contain;
-        padding: 24px;
+        padding: var(--spacing-6);
         max-width: calc(100vw - 24px);
         color: var(--color-text);
         background: var(--color-surface);

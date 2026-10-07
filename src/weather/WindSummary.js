@@ -22,17 +22,17 @@ export function WindSummary() {
         }
         .latest-wind-cell + .latest-wind-cell {
             border-left: 1px solid var(--color-border);
-            padding-left: 12px;
+            padding-left: var(--spacing-3);
         }
         .wind-metrics .latest-value {
             display: flex;
             align-items: baseline;
-            gap: 3px;
+            gap: var(--spacing-1);
             font-size: clamp(1.25rem, 3vw, 1.75rem);
             white-space: nowrap;
         }
         .wind-metrics .hourly-range {
-            margin-top: 4px;
+            margin-top: var(--spacing-1);
             color: var(--color-muted);
             font-size: 0.8rem;
             font-weight: normal;

@@ -24,7 +24,6 @@ export function ToolbarButton({
             justify-content: center;
             width: 36px;
             height: 36px;
-            padding: 0;
             border: none;
             background: transparent;
             color: var(--color-text);
@@ -44,7 +43,7 @@ export function ToolbarButton({
     return html`
         <button
             type="button"
-            class=${`arrow-action${className ? ` ${className}` : ""}`}
+            class=${`arrow-action p-0${className ? ` ${className}` : ""}`}
             aria-label=${label}
             data-tooltip=${label}
             aria-pressed=${pressed}

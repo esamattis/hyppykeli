@@ -83,7 +83,7 @@ function CloudLayer({ cloud }) {
     const hasBase =
         Number.isFinite(cloud.base) && !["NCD", "NSC"].includes(cloud.amount);
     return html`
-        <li class="cloud-layer">
+        <li class="cloud-layer py-3.5 px-0">
             ${scope.style}
             <span class="cloud-layer-icon">
                 ${h(Icon, { name: type?.icon ?? "cloudOvercast", size: 30 })}
@@ -154,7 +154,9 @@ function CloudLayer({ cloud }) {
                             : null
                     }
                     <h3>METAR</h3>
-                    <p class="metar">${cloud.metarCode ?? cloud.amount}</p>
+                    <p class="metar mt-2 pb-1">
+                        ${cloud.metarCode ?? cloud.amount}
+                    </p>
                     ${
                         hasBase
                             ? html`
@@ -177,8 +179,7 @@ function OpenMeteoCloudLayer({ layer }) {
         ${cloudLayerStyles}
         :scope {
             grid-template-columns: 36px minmax(0, 1fr) auto auto;
-            gap: 10px;
-            padding: 9px 0;
+            gap: var(--spacing-2-5);
         }
         .cloud-layer-icon {
             width: 36px;
@@ -190,7 +191,7 @@ function OpenMeteoCloudLayer({ layer }) {
         }
     `);
     return html`
-        <li class="cloud-layer cloud-profile-layer">
+        <li class="cloud-layer cloud-profile-layer py-2 px-0">
             ${scope.style}
             <span class="cloud-layer-icon">
                 ${h(CloudCoverIcon, { percentage: layer.cover, size: 26 })}
@@ -231,7 +232,6 @@ function OpenMeteoCloudLayer({ layer }) {
 function OpenMeteoClouds({ profile }) {
     const scope = useScope(css`
         :scope {
-            margin-top: 12px;
         }
         .cloud-profile-content {
             display: flow-root;
@@ -243,14 +243,14 @@ function OpenMeteoClouds({ profile }) {
         .cloud-profile-header {
             display: flex;
             justify-content: space-between;
-            gap: 12px;
+            gap: var(--spacing-3);
         }
     `);
     return html`
-        <section class="open-meteo-clouds" aria-label="Open-Meteo">
+        <section class="open-meteo-clouds mt-3" aria-label="Open-Meteo">
             ${scope.style}
             <div class="cloud-profile-header">
-                <h3 class="cloud-observation-heading">
+                <h3 class="cloud-observation-heading m-0">
                     ${t("cloud.modelledLayers")}
                 </h3>
                 ${h(DataSource, { sources: ["Open-Meteo"] })}
@@ -260,7 +260,7 @@ function OpenMeteoClouds({ profile }) {
                     profile
                         ? html`
                               <ul
-                                  class="cloud-list cloud-layers cloud-profile-layers"
+                                  class="cloud-list cloud-layers cloud-profile-layers p-0 m-0"
                               >
                                   ${profile.layers.map((layer) => h(OpenMeteoCloudLayer, { layer }))}
                               </ul>
@@ -287,8 +287,7 @@ export function CloudSummary() {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 8px;
-            margin-bottom: 16px;
+            gap: var(--spacing-2);
         }
         .cloud-card-heading h2 {
             margin: 0;
@@ -296,10 +295,10 @@ export function CloudSummary() {
         .cloud-source-tabs {
             display: flex;
             flex-shrink: 0;
-            gap: 4px;
+            gap: var(--spacing-1);
         }
         .cloud-source-tabs button {
-            padding: 5px 8px;
+            padding: var(--spacing-1) var(--spacing-2);
             font-size: 0.75rem;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
@@ -320,20 +319,18 @@ export function CloudSummary() {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            gap: 12px;
+            gap: var(--spacing-3);
         }
         .summary-metrics .condensation {
             display: grid;
             grid-template-columns: minmax(0, 1fr) auto;
-            gap: 4px 16px;
+            gap: var(--spacing-1) var(--spacing-4);
         }
         .condensation > .source-note {
             grid-column: 1 / -1;
         }
         .cloud-list {
             list-style: none;
-            padding: 0;
-            margin: 0;
         }
         .cloud-layers {
             display: grid;
@@ -343,7 +340,6 @@ export function CloudSummary() {
             border-top: 1px solid var(--color-border);
         }
         .cloud-observation-heading {
-            margin: 0;
             color: var(--color-muted);
             font-size: 0.75rem;
             font-weight: 500;
@@ -353,17 +349,14 @@ export function CloudSummary() {
         .cloud-warning {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
+            gap: var(--spacing-3);
             border-radius: var(--radius-sm);
             font-size: 0.9rem;
         }
         .cloud-clear {
             background: var(--color-surface-soft);
-            margin-top: 12px;
         }
         .cloud-warning {
-            margin-top: 8px;
             color: var(--color-danger);
             background: var(--color-danger-soft);
             font-weight: 600;
@@ -373,7 +366,6 @@ export function CloudSummary() {
         }
         .cloud-observation-footer {
             position: relative;
-            margin-top: 12px;
             color: var(--color-muted);
             font-size: 0.75rem;
         }
@@ -396,15 +388,13 @@ export function CloudSummary() {
         }
         .cloud-estimates {
             min-height: 5rem;
-            margin-top: 16px;
-            padding-top: 16px;
             border-top: 1px solid var(--color-border);
         }
         .summary-metrics > div {
             display: flex;
             align-items: baseline;
             justify-content: space-between;
-            gap: 16px;
+            gap: var(--spacing-4);
         }
         .summary-metrics dt {
             margin: 0;
@@ -414,8 +404,6 @@ export function CloudSummary() {
             font-size: 1.1rem;
         }
         .cloud-forecast {
-            margin-top: 16px;
-            padding: 12px 14px;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
             background: var(--color-surface-soft);
@@ -424,8 +412,7 @@ export function CloudSummary() {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: var(--spacing-3);
             font-size: 0.85rem;
             font-weight: 650;
         }
@@ -441,7 +428,6 @@ export function CloudSummary() {
             overflow-x: auto;
             overscroll-behavior-x: contain;
             scrollbar-width: thin;
-            padding-bottom: 6px;
         }
         .forecast-scroll:focus-visible {
             outline: 2px solid var(--color-primary);
@@ -455,7 +441,7 @@ export function CloudSummary() {
         }
         .cloud-forecast-table th,
         .cloud-forecast-table td {
-            padding: 10px 12px;
+            padding: var(--spacing-2-5) var(--spacing-3);
             text-align: center;
             white-space: nowrap;
         }
@@ -486,8 +472,6 @@ export function CloudSummary() {
             display: block;
             width: 100%;
             min-width: 0;
-            margin-top: 8px;
-            padding-bottom: 4px;
             overflow-wrap: anywhere;
             white-space: normal;
             font-family: var(--font-mono);
@@ -521,7 +505,7 @@ export function CloudSummary() {
     return html`
         <div class="cloud-summary">
             ${scope.style}
-            <div class="cloud-card-heading">
+            <div class="cloud-card-heading mb-4">
                 <h2 class="h2-with-icon">${t("weather.clouds")}</h2>
                 ${
                     showTabs
@@ -592,7 +576,7 @@ export function CloudSummary() {
                     selectedSource === "METAR" && metar
                         ? html`
                               <div class="cloud-observation-header">
-                                  <h3 class="cloud-observation-heading">
+                                  <h3 class="cloud-observation-heading m-0">
                                       ${t("cloud.observedLayers")}
                                   </h3>
                                   ${h(DataSource, { sources: ["METAR"] })}
@@ -600,7 +584,9 @@ export function CloudSummary() {
                               ${
                                   msg
                                       ? html`
-                                            <div class="cloud-clear">
+                                            <div
+                                                class="cloud-clear mt-3 py-3 px-3.5"
+                                            >
                                                 ${h(Icon, { name: "cloudClear", size: 32 })}
                                                 <span>
                                                     ${t("cloud.cavok")}
@@ -609,7 +595,9 @@ export function CloudSummary() {
                                             </div>
                                         `
                                       : html`
-                                            <ul class="cloud-list cloud-layers">
+                                            <ul
+                                                class="cloud-list cloud-layers p-0 m-0"
+                                            >
                                                 ${metar.clouds
                                                     .toSorted(
                                                         (a, b) =>
@@ -626,7 +614,9 @@ export function CloudSummary() {
                               ${
                                   metar.cbWithoutLayer
                                       ? html`
-                                            <div class="cloud-warning">
+                                            <div
+                                                class="cloud-warning mt-2 py-3 px-3.5"
+                                            >
                                                 ${h(Icon, { name: "storm", size: 24 })}
                                                 <span>
                                                     ${t("cloud.cumulonimbus")}
@@ -649,7 +639,9 @@ export function CloudSummary() {
                                                             ${t("cloud.cumulonimbusUnknown")}
                                                         </p>
                                                         <h3>METAR</h3>
-                                                        <p class="metar">
+                                                        <p
+                                                            class="metar mt-2 pb-1"
+                                                        >
                                                             //////CB
                                                         </p>
                                                     `,
@@ -658,14 +650,14 @@ export function CloudSummary() {
                                         `
                                       : null
                               }
-                              <div class="cloud-observation-footer">
+                              <div class="cloud-observation-footer mt-3">
                                   <div class="summary-time">
                                       ${h(FromNow, { date: time })}
                                   </div>
                                   <details class="cloud-metar-details">
                                       <summary>METAR</summary>
                                       <code
-                                          class="metar"
+                                          class="metar mt-2 pb-1"
                                           tabindex="0"
                                           aria-label="METAR"
                                       >
@@ -678,7 +670,7 @@ export function CloudSummary() {
                 }
             </div>
 
-            <dl class="summary-metrics cloud-estimates">
+            <dl class="summary-metrics cloud-estimates mt-4 pt-4">
                 ${whenAll(
                     [latest?.temperature, latest?.dewPoint],
                     (temp, dew) => html`
@@ -709,10 +701,10 @@ export function CloudSummary() {
                 forecasts.length
                     ? html`
                           <section
-                              class="cloud-forecast"
+                              class="cloud-forecast mt-4 py-3 px-3.5"
                               aria-label=${t("cloud.forecast")}
                           >
-                              <div class="forecast-heading">
+                              <div class="forecast-heading mb-3">
                                   <h3>${t("cloud.forecast12h")}</h3>
                                   ${h(DataSource, {
                                       sources: ["FMI"],
@@ -733,7 +725,7 @@ export function CloudSummary() {
                                   )}
                               </div>
                               <div
-                                  class="forecast-scroll"
+                                  class="forecast-scroll pb-1.5"
                                   tabindex="0"
                                   role="region"
                                   aria-label=${t("cloud.hourlyForecast")}

@@ -131,7 +131,7 @@ export function DropzoneMap() {
         }
         .jump-run-placement .leaflet-popup-content > div {
             display: grid;
-            gap: 6px;
+            gap: var(--spacing-1-5);
         }
         .jump-run-placement button {
             font: inherit;
@@ -194,7 +194,7 @@ export function DropzoneMap() {
         .map-layout {
             display: grid;
             grid-template-columns: minmax(0, 1fr);
-            gap: 16px;
+            gap: var(--spacing-4);
         }
         .map-frame {
             position: relative;
@@ -214,7 +214,7 @@ export function DropzoneMap() {
             left: 12px;
             z-index: 700;
             max-width: min(24rem, calc(100% - 24px));
-            padding: 8px 10px;
+            padding: var(--spacing-2) var(--spacing-2-5);
             border: 1px solid var(--color-warning);
             border-radius: var(--radius-sm);
             background: var(--color-surface);
@@ -233,7 +233,7 @@ export function DropzoneMap() {
             margin: 0;
         }
         .map-errors p + p {
-            margin-top: 6px;
+            margin-top: var(--spacing-1-5);
         }
         .dz-map {
             position: relative;
@@ -295,7 +295,6 @@ export function DropzoneMap() {
             transform: translateX(-50%);
             z-index: 600;
             max-width: calc(100% - 100px);
-            padding: 8px 12px;
             border: 1px solid var(--color-primary);
             border-radius: var(--radius-sm);
             background: var(--color-surface);
@@ -1612,7 +1611,11 @@ export function DropzoneMap() {
     }, [driftError, jumpRunError, shareError]);
 
     return html`
-        <section id="dropzone-map" aria-label=${t("map.region")}>
+        <section
+            class="p-panel"
+            id="dropzone-map"
+            aria-label=${t("map.region")}
+        >
             ${scope.style}
             <div class="card-heading">
                 <h2>
@@ -1848,7 +1851,7 @@ export function DropzoneMap() {
                                           !draggingJumpRunDirection
                                               ? html`
                                                     <div
-                                                        class="direction-hint"
+                                                        class="direction-hint py-2 px-3"
                                                         role="status"
                                                     >
                                                         ${t("map.directionPrompt")}

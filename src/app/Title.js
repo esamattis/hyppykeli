@@ -20,8 +20,6 @@ export function Title() {
     const scope = useScope(css`
         :scope {
             grid-area: title;
-            margin: 0;
-            padding-left: 8px;
             box-sizing: border-box;
             max-width: 100%;
             width: 100%;
@@ -34,7 +32,7 @@ export function Title() {
         .title-name-row {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: var(--spacing-1);
         }
 
         .title-name {
@@ -55,7 +53,6 @@ export function Title() {
             justify-content: center;
             width: 32px;
             height: 32px;
-            padding: 5px;
             color: var(--color-primary);
             background: transparent;
             border: 0;
@@ -90,7 +87,7 @@ export function Title() {
         }
 
         .name-field {
-            --form-field-gap: 8px;
+            --form-field-gap: var(--spacing-2);
         }
 
         .name-hint {
@@ -101,7 +98,6 @@ export function Title() {
         .name-actions {
             display: flex;
             justify-content: flex-end;
-            margin-top: 20px;
         }
     `);
     /** @type {import('preact').RefObject<HTMLDialogElement>} */
@@ -138,12 +134,12 @@ export function Title() {
           };
 
     return html`
-        <h1 id="title">
+        <h1 id="title" class="m-0 pl-2">
             ${scope.style}
             <span class="title-name-row">
                 <span class="title-name">${NAME}</span>
                 <button
-                    class="edit-name"
+                    class="edit-name p-1"
                     type="button"
                     aria-label=${t("title.edit")}
                     title=${t("title.edit")}
@@ -225,7 +221,7 @@ export function Title() {
                             }),
                         )}
                         <p class="name-hint">${t("title.emptyName")}</p>
-                        <div class="name-actions">
+                        <div class="name-actions mt-5">
                             <button type="submit">${t("common.save")}</button>
                         </div>
                     </form>

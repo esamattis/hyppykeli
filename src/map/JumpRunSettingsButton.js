@@ -34,25 +34,23 @@ export function JumpRunSettingsButton({
         form {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 6px 8px;
+            gap: var(--spacing-1-5) var(--spacing-2);
         }
         fieldset {
-            margin: 8px 0 0;
+            margin: var(--spacing-2) 0 0;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
         }
         .next-jumper {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 6px 8px;
-            padding: 8px 10px 10px;
+            gap: var(--spacing-1-5) var(--spacing-2);
         }
         .next-jumper legend {
-            padding: 0 4px;
+            padding: 0 var(--spacing-1);
             font-size: 0.8rem;
         }
         .next-jumper-help {
-            margin: 0 0 4px;
             font-size: 0.7rem;
             line-height: 1.4;
         }
@@ -62,7 +60,6 @@ export function JumpRunSettingsButton({
             grid-column: 1 / -1;
         }
         .current-jumpers-title {
-            margin: 8px 0 0;
             font-size: 0.8rem;
         }
         .direction-field,
@@ -77,7 +74,7 @@ export function JumpRunSettingsButton({
         .direction-row {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: var(--spacing-3);
         }
         .direction-row input {
             flex: 1;
@@ -86,7 +83,7 @@ export function JumpRunSettingsButton({
         .direction-reading {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: var(--spacing-1-5);
             min-width: 6ch;
             font-size: 0.8rem;
             white-space: nowrap;
@@ -97,10 +94,9 @@ export function JumpRunSettingsButton({
         .add-jumper {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: var(--spacing-1-5);
             justify-content: center;
             min-height: 36px;
-            padding: 6px 8px;
             font-size: 0.8rem;
         }
         .remove-jumper {
@@ -109,7 +105,6 @@ export function JumpRunSettingsButton({
             justify-content: center;
             width: 36px;
             height: 36px;
-            padding: 0;
             border: 0;
             background: var(--color-surface-hover);
             color: var(--color-text);
@@ -123,7 +118,7 @@ export function JumpRunSettingsButton({
         }
         .jumper-table th,
         .jumper-table td {
-            padding: 4px;
+            padding: var(--spacing-1);
             border-bottom: 1px solid var(--color-border);
             text-align: start;
         }
@@ -427,9 +422,9 @@ export function JumpRunSettingsButton({
                             onValueChange: onDefaultJumperCountChange,
                         }),
                     )}
-                    <fieldset class="next-jumper">
+                    <fieldset class="next-jumper px-2.5 pt-2 pb-2.5">
                         <legend>${t("settings.nextJumper")}</legend>
-                        <p class="next-jumper-help">
+                        <p class="next-jumper-help m-0 mb-1">
                             ${t("settings.nextJumperHelp")}
                         </p>
                         ${h(FreefallFields, {
@@ -461,7 +456,7 @@ export function JumpRunSettingsButton({
                         })}
                         <button
                             type="button"
-                            class="add-jumper"
+                            class="add-jumper py-1.5 px-2"
                             onClick=${addJumper}
                         >
                             ${h(Icon, { name: "plus", size: 16 })}
@@ -471,7 +466,7 @@ export function JumpRunSettingsButton({
                     ${
                         jumperDrafts.length > 0 &&
                         html`
-                            <h3 class="current-jumpers-title">
+                            <h3 class="current-jumpers-title m-0 mt-2">
                                 ${t("settings.currentJumpers")}
                             </h3>
                             <table
@@ -558,7 +553,7 @@ export function JumpRunSettingsButton({
                                                 <td>
                                                     <button
                                                         type="button"
-                                                        class="remove-jumper"
+                                                        class="remove-jumper p-0"
                                                         aria-label=${t("settings.removeJumper", index + 1)}
                                                         data-tooltip=${t("settings.removeJumper", index + 1)}
                                                         onClick=${() => removeJumper(index)}

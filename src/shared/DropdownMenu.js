@@ -55,8 +55,7 @@ export function DropdownMenu({
             width: auto;
             height: auto;
             min-height: 40px;
-            padding: 4px 28px 4px 8px;
-            gap: 8px;
+            gap: var(--spacing-2);
             justify-content: flex-start;
             border: none;
             background: transparent;
@@ -75,15 +74,13 @@ export function DropdownMenu({
         .dropdown-menu:popover-open {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: var(--spacing-0-5);
             position: fixed;
             inset: unset;
             width: max-content;
             max-width: min(22rem, calc(100vw - 16px));
             max-height: calc(100vh - 16px);
             overflow: auto;
-            margin: 0;
-            padding: 4px;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
             background: var(--color-surface);
@@ -93,10 +90,9 @@ export function DropdownMenu({
         .dropdown-item {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: var(--spacing-2-5);
             width: 100%;
             min-height: 40px;
-            padding: 8px 10px;
             border: none;
             background: transparent;
             color: var(--color-text);
@@ -273,7 +269,7 @@ export function DropdownMenu({
                     ? html`
                           <button
                               type="button"
-                              class="dropdown-trigger dropdown-trigger-labeled"
+                              class="dropdown-trigger dropdown-trigger-labeled py-1 pl-2 pr-7"
                               aria-label=${label}
                               aria-haspopup="menu"
                               aria-expanded=${String(open)}
@@ -300,7 +296,7 @@ export function DropdownMenu({
             }
             <div
                 id=${menuId}
-                class=${`dropdown-menu${menuClass ? ` ${menuClass}` : ""}`}
+                class=${`dropdown-menu m-0 p-1${menuClass ? ` ${menuClass}` : ""}`}
                 popover="auto"
                 role=${items.length > 0 && !children ? "menu" : "group"}
                 aria-label=${label}
@@ -328,7 +324,7 @@ export function DropdownMenu({
                     return html`
                         <button
                             type="button"
-                            class="dropdown-item"
+                            class="dropdown-item py-2 px-2.5"
                             role=${toggle ? "menuitemcheckbox" : "menuitem"}
                             aria-label=${item.label}
                             aria-checked=${toggle ? String(item.pressed) : undefined}

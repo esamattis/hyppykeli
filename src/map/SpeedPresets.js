@@ -14,13 +14,11 @@ export function SpeedPresets({ onSelect }) {
         :scope {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 4px;
-            margin: 0;
+            gap: var(--spacing-1);
         }
         button {
             min-width: 0;
             min-height: 40px;
-            padding: 4px;
             background: var(--color-surface-hover);
             color: var(--color-text);
             box-shadow: none;
@@ -34,11 +32,12 @@ export function SpeedPresets({ onSelect }) {
         }
     `);
     return html`
-        <div class="presets">
+        <div class="presets m-0">
             ${scope.style}
             ${presets.map(
                 (preset) => html`
                     <button
+                        class="p-1"
                         type="button"
                         onClick=${() => onSelect(preset.value)}
                     >

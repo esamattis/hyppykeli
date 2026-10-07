@@ -8,9 +8,7 @@ export function Tooltips() {
         :scope {
             position: fixed;
             inset: auto;
-            margin: 0;
             max-width: min(320px, calc(100vw - 16px));
-            padding: 4px 8px;
             border: none;
             border-radius: var(--radius-sm);
             background: var(--color-text);
@@ -38,7 +36,13 @@ export function Tooltips() {
         }
     `);
     return html`
-        <div id="tooltip" role="tooltip" popover="manual" hidden>
+        <div
+            class="m-0 py-1 px-2"
+            id="tooltip"
+            role="tooltip"
+            popover="manual"
+            hidden
+        >
             ${scope.style}
             <span data-tooltip-text></span>
             <span class="tooltip-arrow" aria-hidden="true"></span>

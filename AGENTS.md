@@ -108,6 +108,17 @@ such as `transparent`, `currentColor`, and `none` are allowed. Static metadata
 that cannot read CSS variables, such as `manifest.json`, must match the shared
 palette.
 
+## Spacing
+
+Use the Tailwind-style margin and padding classes in `spacing.css` for ordinary
+spacing (for example, `p-4`, `px-3`, `mt-2`, `mx-auto`, or `ps-1.5`). The scale is
+based on `--spacing` (0.25rem); numbered tokens such as `--spacing-4` and
+`--spacing-1-5` are defined in `styles.css`. Use those tokens for gaps and spacing
+in responsive, descendant, or calculated CSS rules. Keep geometry-dependent
+spacing coordinated: `p-panel` uses `--panel-padding`, which also controls the
+map's full-bleed margins. Utilities are layered after components; unlayered
+custom CSS still overrides them. No Tailwind dependency or build step is needed.
+
 ## Local runtime
 
 The app is served by the user systemd unit `hyppykeli.service`, defined in

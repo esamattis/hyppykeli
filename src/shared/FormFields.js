@@ -21,14 +21,14 @@ export function FormField({
     const scope = useScope(css`
         :scope.compact-field {
             display: grid;
-            gap: 4px;
+            gap: var(--spacing-1);
             align-self: end;
             min-width: 0;
             font-size: 0.7rem;
         }
         :scope.stacked-field {
             display: grid;
-            gap: var(--form-field-gap, 6px);
+            gap: var(--form-field-gap, var(--spacing-1-5));
         }
         :scope.compact-field > .form-field-label {
             display: flex;
@@ -48,7 +48,7 @@ export function FormField({
         }
         :scope.compact-field > input[type="number"] {
             min-height: 36px;
-            padding: 6px 8px;
+            padding: var(--spacing-1-5) var(--spacing-2);
         }
     `);
     const fieldLabel =
@@ -136,7 +136,8 @@ export function ClearableInput({
         input {
             box-sizing: border-box;
             width: 22ch;
-            padding: 8px 38px 8px 10px;
+            padding: var(--spacing-2) var(--spacing-9-5) var(--spacing-2)
+                var(--spacing-2-5);
         }
         .clear-input {
             position: absolute;
@@ -145,7 +146,6 @@ export function ClearableInput({
             display: grid;
             width: 30px;
             height: 30px;
-            padding: 0;
             border: 0;
             place-items: center;
             transform: translateY(-50%);
@@ -182,7 +182,7 @@ export function ClearableInput({
                 value
                     ? html`
                           <button
-                              class="clear-input"
+                              class="clear-input p-0"
                               type="button"
                               aria-label=${t("landing.clear", label)}
                               title=${t("landing.clear", label)}
@@ -208,7 +208,7 @@ export function CheckboxField({
         :scope {
             display: inline-flex;
             align-items: center;
-            gap: var(--checkbox-gap, 6px);
+            gap: var(--checkbox-gap, var(--spacing-1-5));
             font-size: 0.8rem;
             cursor: pointer;
         }

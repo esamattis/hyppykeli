@@ -212,7 +212,7 @@ function roundToNearestFive(num) {
 export function WindCell({ data, columnClass, height, hourly = false }) {
     const scope = useScope(css`
         :scope {
-            padding: 2px;
+            padding: var(--spacing-0-5);
         }
 
         .wind-speed {

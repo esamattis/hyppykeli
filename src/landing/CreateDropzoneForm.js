@@ -8,11 +8,6 @@ import { h, html } from "htm/preact";
 import { useState } from "preact/hooks";
 
 export function CreateDropzoneForm() {
-    const headingScope = useScope(css`
-        :scope {
-            margin-top: 32px;
-        }
-    `);
     const scope = useScope(css`
         .field {
             display: flex;
@@ -26,39 +21,35 @@ export function CreateDropzoneForm() {
         .desc {
             margin-left: 200px;
             font-style: italic;
-            margin-bottom: 5px;
+            margin-bottom: var(--spacing-1);
             color: var(--color-muted);
             font-size: 80%;
         }
         fieldset + fieldset {
-            margin-top: 16px;
+            margin-top: var(--spacing-4);
         }
 
         .map-help {
-            margin-top: 0;
             color: var(--color-muted);
         }
 
         .roadsid-button {
-            margin: 4px 0 8px 200px;
-            padding: 4px 8px;
+            margin: var(--spacing-1) 0 var(--spacing-2) 200px;
+            padding: var(--spacing-1) var(--spacing-2);
             font-size: 80%;
         }
 
-        .create-dz {
-            margin-top: 10px;
-        }
         @media (max-width: 600px) {
             .field {
                 flex-direction: column;
-                gap: 4px;
+                gap: var(--spacing-1);
             }
             .field > label {
                 width: auto;
             }
             .desc {
                 margin-left: 0;
-                margin-bottom: 12px;
+                margin-bottom: var(--spacing-3);
             }
             .roadsid-button {
                 margin-left: 0;
@@ -157,13 +148,13 @@ export function CreateDropzoneForm() {
     }
 
     return html`
-        <h2>${headingScope.style}${t("landing.create")}</h2>
+        <h2 class="mt-8">${t("landing.create")}</h2>
         <form action="/dz/" onSubmit=${validateCoordinates}>
             ${scope.style}
 
             <fieldset>
                 <legend>${t("landing.coordinates")}</legend>
-                <p class="map-help">${t("landing.mapHelp")}</p>
+                <p class="map-help mt-0">${t("landing.mapHelp")}</p>
                 ${h(DropzoneCoordinateMap, {
                     lat: fields.lat,
                     lon: fields.lon,
@@ -385,7 +376,9 @@ export function CreateDropzoneForm() {
 
             <input type="hidden" name="save" value="1" />
 
-            <button class="create-dz">${t("landing.createButton")}</button>
+            <button class="create-dz mt-2.5">
+                ${t("landing.createButton")}
+            </button>
         </form>
         <p>${t("landing.savedLocally")}</p>
     `;

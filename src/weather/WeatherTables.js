@@ -111,7 +111,7 @@ export function WindDirection(props) {
         :scope {
             display: inline-flex;
             align-items: center;
-            gap: 3px;
+            gap: var(--spacing-1);
             vertical-align: middle;
         }
 
@@ -183,7 +183,7 @@ export function DataTable(props) {
         :scope td,
         :scope th {
             white-space: nowrap;
-            padding: 4px 5px;
+            padding: var(--spacing-1) var(--spacing-1);
             border-bottom: 1px solid var(--color-border);
             background-color: var(--color-surface);
         }
@@ -241,7 +241,7 @@ export function TableDialog(props) {
             flex-shrink: 0;
             width: 40px;
             height: 40px;
-            padding: 8px;
+            padding: var(--spacing-2);
             background: transparent;
             border: 0;
         }
@@ -251,7 +251,7 @@ export function TableDialog(props) {
             box-sizing: border-box;
         }
         .dialog-heading {
-            margin-bottom: 16px;
+            margin-bottom: var(--spacing-4);
         }
         .dialog-heading h2 {
             margin: 0;
@@ -264,7 +264,7 @@ export function TableDialog(props) {
         @media (max-width: 600px) {
             :scope:is(dialog) {
                 max-width: calc(100vw - 12px);
-                padding: 12px;
+                padding: var(--spacing-3);
             }
             :scope:is(dialog) > .dialog-controls {
                 top: 0;
@@ -275,7 +275,7 @@ export function TableDialog(props) {
                 right: 0;
             }
             .dialog-heading {
-                padding-right: 44px;
+                padding-right: var(--spacing-11);
                 min-height: 40px;
             }
         }

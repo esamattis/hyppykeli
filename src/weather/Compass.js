@@ -192,7 +192,7 @@ export function Compass({ floating = false } = {}) {
             max-width: 100%;
             margin: 0;
             position: relative;
-            padding: 2px;
+            padding: var(--spacing-0-5);
             /* Keep animated SVG bounds from widening the page. */
             overflow: clip;
 
@@ -228,8 +228,7 @@ export function Compass({ floating = false } = {}) {
             display: grid;
             grid-template-columns: auto minmax(0, 1fr) auto;
             align-items: center;
-            gap: 4px;
-            margin-top: 12px;
+            gap: var(--spacing-1);
         }
 
         .compass-controls > .help {
@@ -244,8 +243,8 @@ export function Compass({ floating = false } = {}) {
 
         .compass-animation-toggle {
             align-self: flex-start;
-            --checkbox-gap: 4px;
-            padding: 4px;
+            --checkbox-gap: var(--spacing-1);
+            padding: var(--spacing-1);
         }
     `);
 
@@ -322,7 +321,7 @@ export function Compass({ floating = false } = {}) {
             </svg>
 
             ${!floating && html`
-                <div class="compass-controls">
+                <div class="compass-controls mt-3">
                 ${h(CheckboxField, {
                     className: "compass-animation-toggle",
                     label: t("compass.animation"),

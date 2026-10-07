@@ -44,16 +44,12 @@ export function ManualWindTable({
     const scope = useScope(css`
         :scope {
             min-width: 0;
-            margin-top: 16px;
         }
         h3 {
-            margin: 0;
             font-size: 0.8rem;
         }
         ${manualObservationTableStyles}
-        .wind-table-actions {
-            margin-top: 12px;
-        }
+
         .developer-error {
             color: var(--color-danger);
         }
@@ -143,9 +139,9 @@ export function ManualWindTable({
     }
 
     return html`
-        <section class="manual-wind-editor" ref=${sectionRef}>
+        <section class="manual-wind-editor mt-4" ref=${sectionRef}>
             ${scope.style}
-            <h3>${t("manual.upperTitle")}</h3>
+            <h3 class="m-0">${t("manual.upperTitle")}</h3>
             <table
                 class=${`manual-observation-table manual-wind-table ${tableClassName}`}
             >
@@ -236,7 +232,7 @@ export function ManualWindTable({
                     })}
                 </tbody>
             </table>
-            <div class="wind-table-actions">
+            <div class="wind-table-actions mt-3">
                 <button type="button" onClick=${resetUpperWinds}>
                     ${t("manual.resetUpperWinds")}
                 </button>

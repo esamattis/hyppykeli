@@ -63,6 +63,7 @@ export function LazyDropzoneMap() {
     return html`
         <section
             id="dropzone-map"
+            class="p-panel"
             aria-label=${t("map.region")}
             aria-busy=${!failed}
         >

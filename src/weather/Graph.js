@@ -172,8 +172,7 @@ export function Graph(props) {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 14px;
+            gap: var(--spacing-3);
         }
         .chart-heading h2 {
             margin: 0;
@@ -237,9 +236,9 @@ export function Graph(props) {
         ${
             HAS_WIND_OBSERVATIONS.value
                 ? html`
-                      <div id="observations-graph">
+                      <div id="observations-graph" class="p-panel">
                           ${scope.style}
-                          <div class="chart-heading">
+                          <div class="chart-heading mb-3.5">
                               <h2>
                                   ${t("weather.observations")}
                                   <span class="date">
@@ -259,10 +258,11 @@ export function Graph(props) {
 
         <div
             id="forecasts-graph"
+            class="p-panel"
             style=${HAS_WIND_OBSERVATIONS.value ? "" : "grid-column-start: 1"}
         >
             ${scope.style}
-            <div class="chart-heading">
+            <div class="chart-heading mb-3.5">
                 <h2>
                     ${t("weather.forecasts")}
                     <span class="date">

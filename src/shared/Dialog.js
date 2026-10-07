@@ -18,14 +18,14 @@ import { useEffect } from "preact/hooks";
 export function Dialog(props) {
     const scope = useScope(css`
         :scope {
-            padding-inline-end: 56px;
+            padding-inline-end: var(--spacing-14);
         }
         :scope > .dialog-controls {
             position: sticky;
             top: -16px;
             height: 0;
-            margin-top: -16px;
-            margin-bottom: 16px;
+            margin-top: calc(-1 * var(--spacing-4));
+            margin-bottom: var(--spacing-4);
             z-index: 1;
         }
         :scope > .dialog-controls > .dialog-close {
@@ -37,7 +37,7 @@ export function Dialog(props) {
             justify-content: center;
             width: 40px;
             height: 40px;
-            padding: 8px;
+            padding: var(--spacing-2);
             background: var(--color-surface);
             border: none;
             border-radius: 50%;

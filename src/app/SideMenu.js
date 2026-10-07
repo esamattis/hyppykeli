@@ -73,8 +73,7 @@ export function SideMenu({ manualEditorRef }) {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 16px;
-            padding: 24px;
+            gap: var(--spacing-4);
             background: var(--color-surface);
             border-bottom: 1px solid var(--color-border);
         }
@@ -88,7 +87,7 @@ export function SideMenu({ manualEditorRef }) {
         }
 
         h1 {
-            margin: 4px 0 0;
+            margin: var(--spacing-1) 0 0;
             font-size: 1.4rem;
             overflow-wrap: anywhere;
         }
@@ -98,14 +97,14 @@ export function SideMenu({ manualEditorRef }) {
             place-items: center;
             width: 40px;
             height: 40px;
-            padding: 0;
             flex-shrink: 0;
             background: var(--color-surface-soft);
             border-radius: 50%;
         }
 
         .menu-content {
-            padding: 16px 24px calc(96px + env(safe-area-inset-bottom));
+            padding: var(--spacing-4) var(--spacing-6)
+                calc(var(--spacing-24) + env(safe-area-inset-bottom));
         }
 
         a {
@@ -117,8 +116,8 @@ export function SideMenu({ manualEditorRef }) {
         }
 
         .menu-section {
-            margin-top: 20px;
-            padding-top: 20px;
+            margin-top: var(--spacing-5);
+            padding-top: var(--spacing-5);
             border-top: 1px solid var(--color-border);
         }
 
@@ -129,14 +128,14 @@ export function SideMenu({ manualEditorRef }) {
         }
 
         h2 {
-            margin-bottom: 12px;
+            margin-bottom: var(--spacing-3);
             font-size: 1rem;
         }
 
         label,
         .saved-label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: var(--spacing-1-5);
             color: var(--color-muted);
             font-size: 0.8rem;
         }
@@ -144,13 +143,12 @@ export function SideMenu({ manualEditorRef }) {
         .dz-grid {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 6px;
-            margin-top: 16px;
+            gap: var(--spacing-1-5);
         }
 
         .dzs a {
             display: block;
-            padding: 10px 12px;
+            padding: var(--spacing-2-5) var(--spacing-3);
             border-radius: var(--radius-sm);
             background: var(--color-surface-soft);
             font-size: 0.85rem;
@@ -161,8 +159,7 @@ export function SideMenu({ manualEditorRef }) {
         .saved-dz {
             display: flex;
             align-items: center;
-            gap: 6px;
-            margin-bottom: 6px;
+            gap: var(--spacing-1-5);
         }
 
         .saved-dz a {
@@ -172,21 +169,20 @@ export function SideMenu({ manualEditorRef }) {
         .saved-dz button {
             display: grid;
             place-items: center;
-            padding: 8px;
+            padding: var(--spacing-2);
             background: transparent;
             border-color: transparent;
         }
 
         .save-dz {
             width: 100%;
-            margin-top: 6px;
             background: transparent;
             font-size: 0.85rem;
         }
 
         .language-buttons {
             display: flex;
-            gap: 8px;
+            gap: var(--spacing-2);
         }
 
         .language-buttons button {
@@ -202,15 +198,15 @@ export function SideMenu({ manualEditorRef }) {
         .menu-footer {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
+            gap: var(--spacing-2-5);
             font-size: 0.8rem;
         }
 
         .menu-footer > a {
             grid-column: 1 / -1;
             justify-self: start;
-            padding: 4px 0;
-            margin-bottom: 4px;
+            padding: var(--spacing-1) 0;
+            margin-bottom: var(--spacing-1);
         }
 
         .menu-footer > button,
@@ -218,7 +214,7 @@ export function SideMenu({ manualEditorRef }) {
             width: 100%;
             height: 100%;
             min-height: 44px;
-            padding: 10px;
+            padding: var(--spacing-2-5);
             background: var(--color-surface-soft);
         }
 
@@ -250,13 +246,13 @@ export function SideMenu({ manualEditorRef }) {
             onClick=${closeMenuOnLinkClick}
         >
             ${scope.style}
-            <header class="menu-header">
+            <header class="menu-header p-6">
                 <div>
                     <span class="menu-brand">Hyppykeli</span>
                     <h1>${NAME.value}</h1>
                 </div>
                 <button
-                    class="menu-close"
+                    class="menu-close p-0"
                     type="button"
                     aria-label=${t("menu.close")}
                     onClick=${() => {
@@ -289,7 +285,7 @@ export function SideMenu({ manualEditorRef }) {
                                     removeNullish(dz),
                                 ).toString();
                             return html`
-                                <div class="saved-dz">
+                                <div class="saved-dz mb-1.5">
                                     <a href=${qs}>${name}</a>
                                     <button
                                         type="button"
@@ -312,13 +308,13 @@ export function SideMenu({ manualEditorRef }) {
                         })}
                     </div>
                     <button
-                        class="save-dz"
+                        class="save-dz mt-1.5"
                         type="button"
                         onClick=${() => saveCurrentDz(prompt(t("menu.namePrompt"), NAME.value))}
                     >
                         ${t("menu.saveCurrent")}
                     </button>
-                    <div class="dzs dz-grid" onClick=${savePreviousDz}>
+                    <div class="dzs dz-grid mt-4" onClick=${savePreviousDz}>
                         ${OTHER_DZs.map(
                             (dz) => html`
                                 <a href=${dropzoneHref(dz)}>${dz.name}</a>

@@ -38,8 +38,7 @@ export function FreefallToolbar({
         .toolbar-window-actions {
             display: flex;
             flex-shrink: 0;
-            margin-left: auto;
-            gap: 6px;
+            gap: var(--spacing-1-5);
         }
         .toolbar-controls {
             display: flex;
@@ -51,12 +50,12 @@ export function FreefallToolbar({
             align-items: center;
             justify-content: flex-start;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: var(--spacing-1-5);
             pointer-events: none;
         }
         .toolbar-controls .jump-run-controls {
             flex-wrap: wrap;
-            gap: 6px;
+            gap: var(--spacing-1-5);
         }
         .toolbar-controls .arrow-action,
         .toolbar-controls .jumper-actions {
@@ -93,23 +92,22 @@ export function FreefallToolbar({
             .toolbar-controls {
                 left: 8px;
                 right: 8px;
-                gap: 4px;
+                gap: var(--spacing-1);
             }
             .toolbar-controls .jump-run-controls {
-                gap: 4px;
+                gap: var(--spacing-1);
             }
         }
         .toolbar-map-actions {
             display: flex;
             align-items: center;
             flex: 0 0 auto;
-            gap: 4px;
+            gap: var(--spacing-1);
         }
         .toolbar-summary {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 4px 12px;
+            gap: var(--spacing-2);
             border-top: 1px solid var(--color-border);
         }
         .toolbar-summary > .arrow-action {
@@ -119,7 +117,7 @@ export function FreefallToolbar({
             display: flex;
             align-items: baseline;
             flex-wrap: wrap;
-            gap: 4px 14px;
+            gap: var(--spacing-1) var(--spacing-3-5);
             min-width: 0;
             color: var(--color-muted);
             font-size: 0.65rem;
@@ -129,7 +127,6 @@ export function FreefallToolbar({
             white-space: normal;
         }
         .value-number {
-            margin-left: 4px;
             color: var(--color-text);
             font-weight: 600;
             font-variant-numeric: tabular-nums;
@@ -143,11 +140,10 @@ export function FreefallToolbar({
             right: 12px;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: var(--spacing-0-5);
             pointer-events: auto;
             box-sizing: border-box;
             width: 36px;
-            padding: 0;
         }
         .wind-level-bar {
             display: flex;
@@ -158,19 +154,19 @@ export function FreefallToolbar({
         .wind-barb-legend {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: var(--spacing-2);
         }
         .wind-profile ul {
             display: grid;
-            gap: 8px;
+            gap: var(--spacing-2);
             list-style: none;
             padding: 0;
-            margin: 16px 0 0;
+            margin: var(--spacing-4) 0 0;
         }
         .wind-level {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: var(--spacing-3);
         }
         .wind-level-reading {
             flex: 1;
@@ -182,7 +178,7 @@ export function FreefallToolbar({
         .wind-level-knots {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: var(--spacing-1-5);
             font-size: 1.5rem;
             white-space: nowrap;
         }
@@ -198,7 +194,6 @@ export function FreefallToolbar({
             flex-shrink: 0;
             width: 100%;
             height: 36px;
-            padding: 0;
             border: 0;
             border-radius: 0;
             background: transparent;
@@ -263,14 +258,14 @@ export function FreefallToolbar({
                     })}
                 </div>
             </div>
-            <div class="toolbar-summary">
+            <div class="toolbar-summary py-1 px-3">
                 ${h(JumpRunSettingsButton, jumpRun)}
                 <div class="toolbar-summary-values">
                     <span class="jump-summary">
                         <span class="value-label">
                             ${t("toolbar.freefall")}
                         </span>
-                        <strong class="value-number">
+                        <strong class="value-number ml-1">
                             <span
                                 tabindex="0"
                                 data-tooltip=${t("toolbar.exitTooltip")}
@@ -295,7 +290,7 @@ export function FreefallToolbar({
                     </span>
                     <span class="jump-run-summary">
                         <span class="value-label">${t("toolbar.jumpRun")}</span>
-                        <strong class="value-number">
+                        <strong class="value-number ml-1">
                             <span
                                 tabindex="0"
                                 data-tooltip=${t("toolbar.jumpRunDirectionTooltip")}
@@ -337,7 +332,7 @@ export function FreefallToolbar({
                                     ${t("toolbar.wind")}
                                 </span>
                                 <strong
-                                    class="value-number"
+                                    class="value-number ml-1"
                                     tabindex=${selectedWind.altitudeTooltip ? 0 : undefined}
                                     data-tooltip=${selectedWind.altitudeTooltip}
                                 >
@@ -347,7 +342,7 @@ export function FreefallToolbar({
                         `
                     }
                 </div>
-                <div class="toolbar-window-actions">
+                <div class="toolbar-window-actions ml-auto">
                     ${h(ToolbarButton, {
                         label: t("toolbar.shareMap"),
                         icon: "share",
@@ -368,7 +363,7 @@ export function FreefallToolbar({
             </div>
             <div class="toolbar-actions">
                 <div
-                    class="wind-level-icons"
+                    class="wind-level-icons p-0"
                     role="group"
                     aria-label=${t("toolbar.windLevels")}
                 >
@@ -377,7 +372,7 @@ export function FreefallToolbar({
                             (level) => html`
                                 <button
                                     type="button"
-                                    class="wind-level-choice"
+                                    class="wind-level-choice p-0"
                                     aria-label=${`${level.label}: ${level.text}`}
                                     data-tooltip=${`${level.altitudeTooltip ?? level.label}: ${level.text}`}
                                     aria-pressed=${level.selected}

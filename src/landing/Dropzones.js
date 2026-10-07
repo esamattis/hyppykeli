@@ -12,8 +12,6 @@ import { h, html } from "htm/preact";
 function DropzoneList({ dropzones }) {
     const scope = useScope(css`
         :scope p {
-            padding: 12px 16px;
-            margin: 8px 0;
             background: var(--color-surface-soft);
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
@@ -29,7 +27,7 @@ function DropzoneList({ dropzones }) {
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map(
                     (dz) => html`
-                        <p key=${dz.name}>
+                        <p class="py-3 px-4 my-2 mx-0" key=${dz.name}>
                             <a href=${dropzoneHref(dz)}>${dz.name}</a>
                             ${" "}${typeof dz.description === "function" ? dz.description() : dz.description}
                         </p>

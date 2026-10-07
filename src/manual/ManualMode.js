@@ -121,8 +121,7 @@ function formatQueryParams(params) {
 export function ManualBanner({ onEdit }) {
     const scope = useScope(css`
         :scope {
-            margin: 20px 20px 0;
-            padding: 12px 16px;
+            margin: var(--spacing-4) var(--spacing-4) 0;
             border: 2px solid var(--color-warning);
             border-radius: var(--radius-panel);
             background: var(--color-surface);
@@ -130,22 +129,22 @@ export function ManualBanner({ onEdit }) {
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: var(--spacing-3);
         }
         .developer-banner-actions {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: var(--spacing-2);
         }
         @media (max-width: 550px) {
             :scope {
-                margin: 12px 12px 0;
+                margin: var(--spacing-3) var(--spacing-3) 0;
             }
         }
     `);
     if (!MANUAL_ACTIVE.value) return null;
     return html`
-        <aside class="developer-banner" role="status">
+        <aside class="developer-banner py-3 px-4" role="status">
             ${scope.style}
             <span>
                 <strong>${t("manual.active")}</strong>
@@ -177,7 +176,7 @@ export function ManualMode(props) {
         }
         :scope:is(dialog) {
             width: 520px;
-            padding-inline-end: 64px;
+            padding-inline-end: var(--spacing-16);
             max-height: calc(100dvh - 24px);
             box-sizing: border-box;
         }
@@ -186,7 +185,7 @@ export function ManualMode(props) {
         }
         .developer-fields {
             display: grid;
-            gap: 14px;
+            gap: var(--spacing-3-5);
         }
         input,
         textarea {
@@ -203,31 +202,25 @@ export function ManualMode(props) {
             width: 3.25rem;
         }
         .developer-observations input {
-            padding-inline-start: 4px;
+            padding-inline-start: var(--spacing-1);
         }
         .ground-observations-title {
-            margin: 20px 0 0;
             font-size: 0.8rem;
         }
-        .ground-table-actions {
-            margin-top: 12px;
-        }
+
         .developer-actions {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
+            gap: var(--spacing-2-5);
         }
         .developer-error {
             color: var(--color-danger);
         }
-        .developer-query {
-            margin-top: 24px;
-        }
+
         .developer-query pre {
             max-height: 320px;
             margin-bottom: 0;
-            padding: 12px;
+            padding: var(--spacing-3);
             overflow: auto;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
@@ -488,7 +481,7 @@ export function ManualMode(props) {
                 ${scope.style}
                 <h2 id="developer-mode-title">${t("manual.title")}</h2>
                 <p>${t("manual.description")}</p>
-                <div class="developer-actions">
+                <div class="developer-actions mt-5">
                     <button type="button" onClick=${captureCurrentValues}>
                         ${t("manual.capture")}
                     </button>
@@ -580,7 +573,7 @@ export function ManualMode(props) {
                             setError("");
                         },
                     })}
-                    <h3 class="ground-observations-title">
+                    <h3 class="ground-observations-title m-0 mt-5">
                         ${t("manual.groundTitle")}
                     </h3>
                     <table
@@ -665,7 +658,7 @@ export function ManualMode(props) {
                             )}
                         </tbody>
                     </table>
-                    <div class="ground-table-actions">
+                    <div class="ground-table-actions mt-3">
                         <button
                             type="button"
                             onClick=${resetGroundObservations}
@@ -685,7 +678,7 @@ export function ManualMode(props) {
                     }
                 </form>
                 <section
-                    class="developer-query"
+                    class="developer-query mt-6"
                     aria-labelledby="developer-query-title"
                 >
                     <h3 id="developer-query-title">

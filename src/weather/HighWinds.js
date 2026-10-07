@@ -11,7 +11,7 @@ export function HighWinds() {
     const [showDetails, setShowDetails] = useState(false);
 
     return html`
-        <div id="high-winds-today">
+        <div id="high-winds-today" class="p-panel">
             <div class="card-heading">
             <h2 class="h2-with-icon">
                 ${t("highWinds.title")}

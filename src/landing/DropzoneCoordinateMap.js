@@ -16,7 +16,6 @@ export function DropzoneCoordinateMap({ lat, lon, onSelect }) {
             position: relative;
             height: min(48vh, 420px);
             min-height: 280px;
-            margin-bottom: 16px;
             overflow: hidden;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
@@ -33,7 +32,6 @@ export function DropzoneCoordinateMap({ lat, lon, onSelect }) {
             display: grid;
             width: 44px;
             height: 44px;
-            padding: 0;
             place-items: center;
             box-shadow: var(--shadow-panel);
         }
@@ -123,11 +121,11 @@ export function DropzoneCoordinateMap({ lat, lon, onSelect }) {
     }
 
     return html`
-        <div role="region" aria-label=${t("landing.mapRegion")}>
+        <div class="mb-4" role="region" aria-label=${t("landing.mapRegion")}>
             ${scope.style}
             <div class="map-canvas" ref=${containerRef}></div>
             <button
-                class="location-button"
+                class="location-button p-0"
                 id="get-location"
                 type="button"
                 aria-label=${t("landing.useLocation")}

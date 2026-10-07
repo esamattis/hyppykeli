@@ -38,12 +38,12 @@ export const upperWindTableStyles = css`
     :scope.wind-table-scroll {
         overflow: auto;
         max-height: 70vh;
-        margin-bottom: 20px;
+        margin-bottom: var(--spacing-5);
         isolation: isolate;
     }
 
     .wind-table .wind-table-title {
-        padding: 6px 8px;
+        padding: var(--spacing-1-5) var(--spacing-2);
         border: 1px solid var(--color-border);
         background-color: var(--color-surface-hover);
         text-align: center;
@@ -80,7 +80,7 @@ export const upperWindTableStyles = css`
     .wind-table th,
     .wind-table td {
         border: 1px solid var(--color-border);
-        padding: 6px 8px;
+        padding: var(--spacing-1-5) var(--spacing-2);
         text-align: center;
     }
 
@@ -141,14 +141,14 @@ export function getTheme() {
 export const summaryStyles = css`
     .summary-metrics {
         display: grid;
-        gap: 12px;
+        gap: var(--spacing-3);
         margin: 0;
     }
 
     .summary-metrics dt {
         color: var(--color-muted);
         font-size: 0.85rem;
-        margin-bottom: 4px;
+        margin-bottom: var(--spacing-1);
     }
 
     .summary-metrics dd {
@@ -159,7 +159,7 @@ export const summaryStyles = css`
     }
 
     .summary-time {
-        margin-top: 12px;
+        margin-top: var(--spacing-3);
         color: var(--color-muted);
         font-size: 0.85rem;
     }
@@ -171,7 +171,7 @@ export const settingsDialogStyles = css`
         box-sizing: border-box;
     }
     h2 {
-        margin: 0 0 14px;
+        margin: 0 0 var(--spacing-3-5);
         font-size: 1.15rem;
     }
 `;
@@ -181,8 +181,8 @@ export const cardHeadingStyles = css`
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 1rem;
+        gap: var(--spacing-3);
+        margin-bottom: var(--spacing-4);
     }
     .card-heading h2 {
         margin: 0;
@@ -198,8 +198,7 @@ export const cloudLayerStyles = css`
         display: grid;
         grid-template-columns: 44px minmax(0, 1fr) auto auto;
         align-items: center;
-        gap: 12px;
-        padding: 14px 0;
+        gap: var(--spacing-3);
     }
     .cloud-layer-icon {
         position: relative;
@@ -230,7 +229,7 @@ export const cloudLayerStyles = css`
         display: block;
         color: var(--color-muted);
         font-size: 0.75rem;
-        margin-top: 3px;
+        margin-top: var(--spacing-1);
     }
     .cloud-layer-base {
         text-align: right;
@@ -244,7 +243,7 @@ export const cloudLayerStyles = css`
     }
     @media (max-width: 380px) {
         :scope {
-            gap: 8px;
+            gap: var(--spacing-2);
             grid-template-columns: 36px minmax(0, 1fr) auto auto;
         }
         .cloud-layer-icon {
@@ -260,14 +259,14 @@ export const cloudLayerStyles = css`
 export const manualObservationTableStyles = css`
     .manual-observation-table {
         width: 100%;
-        margin-top: 6px;
+        margin-top: var(--spacing-1-5);
         border-collapse: collapse;
         table-layout: fixed;
         font-size: 0.8rem;
     }
     .manual-observation-table th,
     .manual-observation-table td {
-        padding: 4px;
+        padding: var(--spacing-1);
         border-bottom: 1px solid var(--color-border);
         text-align: start;
     }
@@ -286,12 +285,12 @@ export const manualObservationTableStyles = css`
         width: 100%;
         min-width: 0;
         min-height: 36px;
-        padding: 6px;
+        padding: var(--spacing-1-5);
         font-size: 0.8rem;
         box-sizing: border-box;
     }
     .manual-observation-table td > div:has(.clear-input) input {
-        padding-inline-end: 22px;
+        padding-inline-end: var(--spacing-5-5);
     }
     .manual-observation-table .clear-input {
         width: 20px;

@@ -46,12 +46,12 @@ export function App() {
     );
     const scope = useScope(css`
         :scope {
-            --panel-padding: 16px;
+            --panel-padding: var(--spacing-4);
             display: grid;
-            margin: 16px;
-            margin-bottom: 100px;
+            margin: var(--spacing-4);
+            margin-bottom: var(--spacing-25);
             grid-template-columns: 1fr;
-            gap: 16px;
+            gap: var(--spacing-4);
 
             /** MOBILE **/
             grid-template-areas:
@@ -91,7 +91,6 @@ export function App() {
                 #high-winds-details
             ) {
             min-width: 0;
-            padding: var(--panel-padding);
             background: var(--color-surface);
             border: 1px solid var(--color-border);
             border-radius: var(--radius-panel);
@@ -100,10 +99,10 @@ export function App() {
 
         @media (max-width: 550px) {
             :scope {
-                --panel-padding: 12px;
-                margin: 12px;
-                margin-bottom: 100px;
-                gap: 12px;
+                --panel-padding: var(--spacing-3);
+                margin: var(--spacing-3);
+                margin-bottom: var(--spacing-25);
+                gap: var(--spacing-3);
             }
         }
 
@@ -205,11 +204,11 @@ export function App() {
 
             <${Title} />
 
-            <div class="clouds" id="clouds">
+            <div class="clouds p-panel" id="clouds">
                 <${CloudSummary} />
             </div>
 
-            <div id="winds">
+            <div id="winds" class="p-panel">
                 <div class="card-heading">
                     <h2 class="h2-with-icon">${t("weather.winds")}</h2>
                     ${h(DataSource, { sources: [WIND_SOURCE.value] })}

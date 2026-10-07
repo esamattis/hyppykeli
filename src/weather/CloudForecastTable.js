@@ -33,7 +33,7 @@ export function CloudForecastTable(props) {
         }
         .cloud-forecast-detail-table th,
         .cloud-forecast-detail-table td {
-            padding: 4px 6px;
+            padding: var(--spacing-1) var(--spacing-1-5);
         }
         .cloud-forecast-detail-table thead th,
         .cloud-forecast-detail-table tbody th {
@@ -67,8 +67,6 @@ export function CloudForecastTable(props) {
         }
         .forecast-source-label {
             display: block;
-            margin-top: 4px;
-            margin-bottom: 3px;
             color: var(--color-primary);
             font-size: 0.65rem;
             font-weight: 700;
@@ -82,7 +80,6 @@ export function CloudForecastTable(props) {
             padding: 0;
         }
         .cloud-forecast-note {
-            margin: 8px 0 0;
             color: var(--color-muted);
             font-size: 0.75rem;
         }
@@ -124,7 +121,9 @@ export function CloudForecastTable(props) {
                     <tbody>
                         <tr class="forecast-group-start">
                             <th scope="row">
-                                <span class="forecast-source-label">FMI</span>
+                                <span class="forecast-source-label mt-1 mb-1">
+                                    FMI
+                                </span>
                                 ${t("weather.condensationLevelShort")}
                                 ${h(
                                     Help,
@@ -258,7 +257,7 @@ export function CloudForecastTable(props) {
                                             level === CLOUD_FORECAST_LEVELS[0]
                                                 ? html`
                                                       <span
-                                                          class="forecast-source-label"
+                                                          class="forecast-source-label mt-1 mb-1"
                                                       >
                                                           Open-Meteo
                                                       </span>
@@ -294,7 +293,9 @@ export function CloudForecastTable(props) {
                     </tbody>
                 </table>
             </div>
-            <p class="cloud-forecast-note">${t("cloud.forecastTableHelp")}</p>
+            <p class="cloud-forecast-note m-0 mt-2">
+                ${t("cloud.forecastTableHelp")}
+            </p>
         </div>
     `;
 }

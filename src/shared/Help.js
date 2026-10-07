@@ -22,8 +22,7 @@ export function Help(props) {
             width: 28px;
             height: 28px;
             vertical-align: middle;
-            margin: 0 4px;
-            padding: 4px;
+            margin: 0 var(--spacing-1);
             background-color: transparent;
             color: var(--color-primary);
             border: none;
@@ -36,7 +35,7 @@ export function Help(props) {
         }
         :scope:is(dialog) {
             margin: 0 auto;
-            margin-top: 20px;
+            margin-top: var(--spacing-5);
             font-weight: normal;
             width: clamp(300px, 400px, 95vw);
             white-space: wrap;
@@ -66,7 +65,7 @@ export function Help(props) {
 
     return html`
         <button
-            class="help"
+            class="help p-1"
             type="button"
             onClick=${open}
             id=${props.id}

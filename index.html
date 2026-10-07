@@ -46,8 +46,8 @@
                         :scope {
                             display: grid;
                             max-width: 960px;
-                            margin: 32px auto 100px;
-                            padding: 32px;
+                            margin: var(--spacing-8) auto var(--spacing-25);
+                            padding: var(--spacing-8);
                             background: var(--color-surface);
                             border: 1px solid var(--color-border);
                             border-radius: var(--radius-panel);
@@ -64,8 +64,9 @@
                         }
                         @media (max-width: 600px) {
                             :scope {
-                                margin: 12px 12px 80px;
-                                padding: 20px;
+                                margin: var(--spacing-3) var(--spacing-3)
+                                    var(--spacing-20);
+                                padding: var(--spacing-5);
                             }
                         }
                     }
