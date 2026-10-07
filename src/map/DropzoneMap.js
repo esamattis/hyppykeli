@@ -441,6 +441,11 @@ export function DropzoneMap() {
     const [leafletInstance, setLeafletInstance] = useState(
         /** @type {import('leaflet').Map | null} */ (null),
     );
+    const [satellite, setSatellite] = useMapState(
+        "map_satellite",
+        false,
+        (value) => typeof value === "boolean",
+    );
     const [driftMissing, setDriftMissing] = useState(false);
     const [placementUnavailable, setPlacementUnavailable] = useState(
         /** @type {JumpRunPlacement | null} */ (null),
@@ -572,11 +577,6 @@ export function DropzoneMap() {
             passive: true,
         });
 
-        tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            attribution:
-                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            maxZoom: 19,
-        }).addTo(leafletMap);
         const theme = getTheme();
         circleMarker([lat, lon], {
             radius: 8,
@@ -630,6 +630,25 @@ export function DropzoneMap() {
             leafletMap.remove();
         };
     }, [coordinates]);
+
+    useEffect(() => {
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
+            return;
+        const layer = tileLayer(
+            satellite
+                ? "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                : "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+            {
+                maxZoom: 19,
+                attribution: satellite
+                    ? "Tiles © Esri"
+                    : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            },
+        ).addTo(leafletInstance);
+        return () => {
+            layer.remove();
+        };
+    }, [leafletInstance, satellite]);
 
     useLayoutEffect(() => {
         if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
@@ -1984,6 +2003,9 @@ export function DropzoneMap() {
                         ${h(MapNavigationControls, {
                             map: leafletInstance,
                             zoom,
+                            satellite,
+                            onToggleSatellite: () =>
+                                setSatellite((value) => !value),
                             disabled: placingJumpRunDirection,
                             canFit: canPositionView,
                             onFit: () => positionView(true),

@@ -12,6 +12,11 @@ const artwork = {
     plus: html`
         <path d="M12 4v16M4 12h16" />
     `,
+    globe: html`
+        <circle cx="12" cy="12" r="9" />
+        <ellipse cx="12" cy="12" rx="4" ry="9" />
+        <path d="M3 12h18" />
+    `,
     minus: html`
         <path d="M4 12h16" />
     `,

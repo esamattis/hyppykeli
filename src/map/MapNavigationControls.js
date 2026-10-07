@@ -5,7 +5,15 @@ import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
 
 /** @param {MapNavigationControlsProps} props */
-export function MapNavigationControls({ map, zoom, disabled, canFit, onFit }) {
+export function MapNavigationControls({
+    map,
+    zoom,
+    satellite,
+    onToggleSatellite,
+    disabled,
+    canFit,
+    onFit,
+}) {
     const scope = useScope(css`
         :scope {
             position: absolute;
@@ -58,6 +66,13 @@ export function MapNavigationControls({ map, zoom, disabled, canFit, onFit }) {
                     onClick: () => map?.zoomOut(),
                 })}
             </div>
+            ${h(ToolbarButton, {
+                icon: "globe",
+                label: t("toolbar.satellite"),
+                pressed: satellite,
+                disabled: disabled || !map,
+                onClick: onToggleSatellite,
+            })}
             ${h(ToolbarButton, {
                 icon: "fitView",
                 label: t("toolbar.positionView"),

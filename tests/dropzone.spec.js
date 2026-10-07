@@ -299,6 +299,67 @@ test.beforeEach(async ({ page, baseURL }) => {
     );
 });
 
+test("satellite toggle switches tiles and attribution without changing the view", async ({
+    page,
+}) => {
+    await setUniformFreefallWind(page);
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    const toggle = page.getByRole("button", { name: "Satelliittikuvat" });
+    const map = page.locator(".dz-map");
+    const streetTiles = map.locator(
+        'img.leaflet-tile[src*="tile.openstreetmap.org"]',
+    );
+    const satelliteTiles = map.locator(
+        'img.leaflet-tile[src*="World_Imagery/MapServer/tile/"]',
+    );
+    const attribution = map.locator(".leaflet-control-attribution");
+    await expect(toggle).toBeEnabled();
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect(streetTiles.first()).toBeAttached();
+    await expect(satelliteTiles).toHaveCount(0);
+    await expect(attribution).toContainText("OpenStreetMap");
+    const initialUrl = page.url();
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(satelliteTiles.first()).toBeAttached();
+    await expect(streetTiles).toHaveCount(0);
+    await expect(attribution).toContainText("Tiles © Esri");
+    await expect(attribution).not.toContainText("OpenStreetMap");
+    const satelliteUrl = new URL(page.url());
+    expect(satelliteUrl.searchParams.get("map_satellite")).toBe("true");
+    satelliteUrl.searchParams.delete("map_satellite");
+    expect(satelliteUrl.href).toBe(initialUrl);
+
+    await page.reload();
+    await setUniformFreefallWind(page);
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(satelliteTiles.first()).toBeAttached();
+    await expect(attribution).toContainText("Tiles © Esri");
+
+    // Recreating the map keeps the selected imagery and cleans up safely.
+    await page.evaluate(async () => {
+        const { STATION_COORDINATES } = await import("#app/weather/state.js");
+        STATION_COORDINATES.value = "62.5,25.7";
+    });
+    await expect(satelliteTiles.first()).toBeAttached();
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect(streetTiles.first()).toBeAttached();
+    await expect(satelliteTiles).toHaveCount(0);
+    await expect(attribution).toContainText("OpenStreetMap");
+    await expect(attribution).not.toContainText("Esri");
+    expect(new URL(page.url()).searchParams.get("map_satellite")).toBe("false");
+    await page.reload();
+    await setUniformFreefallWind(page);
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect(streetTiles.first()).toBeAttached();
+    expect(errors).toEqual([]);
+});
+
 test("menu opens and closes with its toggle", async ({ page }) => {
     const toggle = page.getByRole("button", { name: "Valikko", exact: true });
     const menu = page.locator(".side-menu");

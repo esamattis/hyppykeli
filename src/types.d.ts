@@ -214,6 +214,8 @@ interface FreefallToolbarProps {
 interface MapNavigationControlsProps {
     map: import("leaflet").Map | null;
     zoom: number;
+    satellite: boolean;
+    onToggleSatellite: () => void;
     disabled: boolean;
     canFit: boolean;
     onFit: () => void;
@@ -372,6 +374,7 @@ interface MetarData {
 type MapQueryKey = Extract<keyof QueryParams, `map_${string}`>;
 
 interface QueryParams {
+    map_satellite?: string;
     map_zoom?: string;
     map_center_lat?: string;
     map_center_lon?: string;
@@ -652,6 +655,7 @@ interface IconProps {
         | "share"
         | "expand"
         | "fitView"
+        | "globe"
         | "collapse"
         | "close"
         | "help"
