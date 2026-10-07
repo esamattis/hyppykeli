@@ -120,6 +120,13 @@ export const upperWindTableStyles = css`
 export function getTheme() {
     const styles = getComputedStyle(document.documentElement);
     return {
+        success: styles.getPropertyValue("--color-success").trim(),
+        text: styles.getPropertyValue("--color-text").trim(),
+        border: styles.getPropertyValue("--color-border").trim(),
+        mapDirection: styles.getPropertyValue("--color-map-direction").trim(),
+        mapDrift: styles.getPropertyValue("--color-map-drift").trim(),
+        mapWind: styles.getPropertyValue("--color-map-wind").trim(),
+        mapWindHalo: styles.getPropertyValue("--color-map-wind-halo").trim(),
         primary: styles.getPropertyValue("--color-primary").trim(),
         sky: styles.getPropertyValue("--color-sky").trim(),
         warning: styles.getPropertyValue("--color-warning").trim(),

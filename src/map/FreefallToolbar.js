@@ -63,12 +63,12 @@ export function FreefallToolbar({
             flex-shrink: 0;
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
-            background: rgb(255 255 255 / 70%);
+            background: var(--color-map-control);
             box-shadow: var(--shadow-floating);
             pointer-events: auto;
         }
         .toolbar-controls .arrow-action:hover {
-            background: rgb(255 255 255 / 85%);
+            background: var(--color-map-control-hover);
         }
         .toolbar-controls .jumper-actions .arrow-action {
             border: 0;
@@ -83,7 +83,7 @@ export function FreefallToolbar({
             border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
         }
         .toolbar-controls .jumper-actions .arrow-action:hover {
-            background: rgb(255 255 255 / 85%);
+            background: var(--color-map-control-hover);
         }
         .toolbar-controls .dropdown-menu,
         .toolbar-controls dialog {
@@ -153,7 +153,7 @@ export function FreefallToolbar({
             display: flex;
             flex-direction: column;
             border-radius: var(--radius-sm);
-            background: rgb(255 255 255 / 70%);
+            background: var(--color-map-control);
         }
         .wind-barb-legend {
             display: flex;
@@ -189,7 +189,7 @@ export function FreefallToolbar({
         .wind-level-knots svg {
             width: 2em;
             height: 2em;
-            color: #000;
+            color: var(--color-text);
         }
         .wind-level-choice {
             display: flex;
@@ -212,15 +212,15 @@ export function FreefallToolbar({
             border-radius: 0 0 var(--radius-sm) var(--radius-sm);
         }
         .wind-level-choice[aria-pressed="true"] {
-            background: #000;
-            color: #fff;
+            background: var(--color-primary);
+            color: var(--color-on-primary);
         }
         #wind-barb-help {
-            background: rgb(255 255 255 / 70%);
+            background: var(--color-map-control);
         }
         .wind-level-choice[aria-pressed="false"]:hover,
         #wind-barb-help:hover {
-            background: rgb(255 255 255 / 85%);
+            background: var(--color-map-control-hover);
         }
         @media (min-width: 700px) {
             .toolbar-actions .wind-level-icons dialog.help-dialog-wide {

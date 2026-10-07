@@ -1,2 +1,86 @@
 /* Keep vendor defaults below scoped component styles and custom CSS. */
 @import url("/vendor/build/leaflet.css") layer(base);
+
+/* Theme vendor chrome on both maps without changing the committed bundle. */
+@layer components {
+    .leaflet-container {
+        background: var(--color-surface-hover);
+        color: var(--color-text);
+    }
+    .leaflet-container a {
+        color: var(--color-primary);
+    }
+    .leaflet-container a:hover {
+        color: var(--color-primary-hover);
+    }
+    .leaflet-interactive {
+        -webkit-tap-highlight-color: var(--color-map-control-hover);
+    }
+    .leaflet-bar,
+    .leaflet-control-layers,
+    .leaflet-touch .leaflet-bar,
+    .leaflet-touch .leaflet-control-layers {
+        border-color: var(--color-border);
+        box-shadow: var(--shadow-panel);
+    }
+    .leaflet-bar a {
+        color: var(--color-text);
+        background: var(--color-map-control);
+        border-color: var(--color-border);
+    }
+    .leaflet-bar a:hover,
+    .leaflet-bar a:focus {
+        background: var(--color-map-control-hover);
+    }
+    .leaflet-bar a.leaflet-disabled {
+        background: var(--color-surface-soft);
+        color: var(--color-muted);
+    }
+    .leaflet-control-layers,
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip,
+    .leaflet-tooltip {
+        background: var(--color-surface);
+        color: var(--color-text);
+        border-color: var(--color-border);
+        box-shadow: var(--shadow-floating);
+    }
+    .leaflet-container .leaflet-control-attribution,
+    .leaflet-control-scale-line {
+        background: var(--color-map-control-hover);
+        color: var(--color-muted);
+        border-color: var(--color-border);
+        text-shadow: none;
+    }
+    .leaflet-container a.leaflet-popup-close-button {
+        color: var(--color-muted);
+    }
+    .leaflet-container a.leaflet-popup-close-button:hover,
+    .leaflet-container a.leaflet-popup-close-button:focus {
+        color: var(--color-primary-hover);
+    }
+    .leaflet-div-icon {
+        background: var(--color-surface);
+        border-color: var(--color-border);
+    }
+    .leaflet-image-layer,
+    .leaflet-marker-icon {
+        outline-color: var(--color-primary);
+    }
+    .leaflet-zoom-box {
+        border-color: var(--color-primary);
+        background: var(--color-map-control);
+    }
+    .leaflet-tooltip-top::before {
+        border-top-color: var(--color-surface);
+    }
+    .leaflet-tooltip-bottom::before {
+        border-bottom-color: var(--color-surface);
+    }
+    .leaflet-tooltip-left::before {
+        border-left-color: var(--color-surface);
+    }
+    .leaflet-tooltip-right::before {
+        border-right-color: var(--color-surface);
+    }
+}

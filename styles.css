@@ -9,28 +9,83 @@
             sans-serif;
         --font-mono:
             ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        /* Sky accent: button hover, selection, and sustained-wind graph lines. */
         --color-sky: skyblue;
+        /* Page canvas behind cards. Keep manifest.json background_color in sync. */
         --color-page: #eef7fc;
+        /* Opaque surfaces; keep manifest.json theme_color in sync. */
         --color-surface: #ffffff;
+        /* Quiet panel sections and toolbar backgrounds. */
         --color-surface-soft: #f5fbff;
+        /* Table headers, icon tiles, and hovered controls. */
         --color-surface-hover: #e1f2fc;
+        /* Main copy, compass labels, and wind-barb symbols. */
         --color-text: #19394d;
+        /* Secondary copy, timestamps, and disabled map controls. */
         --color-muted: #526e80;
+        /* Links, focus rings, selected controls, and gust graph lines. */
         --color-primary: #126b98;
+        /* Hovered links and map popup close buttons. */
         --color-primary-hover: #084d73;
+        /* Text and icons on solid primary backgrounds. */
+        --color-on-primary: #ffffff;
+        /* Dividers, field borders, map chrome, and chart grids. */
         --color-border: #c8e2ef;
-        --color-success: #237345;
-        --color-warning: #946000;
-        --color-danger: #bf3545;
+        /* Bright green for safe wind readings, compass needles, and the first jumper. */
+        --color-success: #22c55e;
+        /* Bright orange for the student wind limit: readings, compass, and charts. */
+        --color-warning: #f28c00;
+        /* Bright red for the licensed wind limit and danger readings/markers. */
+        --color-danger: #ef3340;
+        /* Subtle severe-cloud warning background. */
+        --color-danger-soft: color-mix(
+            in srgb,
+            var(--color-danger) 8%,
+            var(--color-surface)
+        );
+        /* Wind-speed table fills, ordered from calm to strongest winds. */
         --color-wind-low: #dcf2e3;
         --color-wind-medium: #fff2b8;
         --color-wind-high: #ffdbad;
         --color-wind-very-high: #ffcbd0;
+        /* Translucent map controls; hover increases opacity over map tiles. */
+        --color-map-control: color-mix(
+            in srgb,
+            var(--color-surface) 70%,
+            transparent
+        );
+        --color-map-control-hover: color-mix(
+            in srgb,
+            var(--color-surface) 85%,
+            transparent
+        );
+        /* Jump-run line, direction placement, and intermediate jumpers. */
+        --color-map-direction: var(--color-primary);
+        /* Freefall and canopy drift paths share a color, with different widths. */
+        --color-map-drift: #c2410c;
+        /* Animated wind particles and their contrasting halo over map tiles. */
+        --color-map-wind: var(--color-primary);
+        --color-map-wind-halo: var(--color-surface);
+        /* Previous compass needles remain faint behind the current reading. */
+        --color-compass-history: color-mix(
+            in srgb,
+            var(--color-text) 10%,
+            transparent
+        );
+        /* Cloud forecast grayscale endpoints, interpolated by cover percentage. */
+        --color-cloud-clear: hsl(0 0% 96%);
+        --color-cloud-overcast: hsl(0 0% 20%);
+        /* Contrasting labels on light and dark cloud forecast squares. */
+        --color-cloud-text-dark: #111111;
+        --color-cloud-text-light: #ffffff;
+        /* Modal scrim and shared elevation shadows. */
+        --color-backdrop: rgb(18 49 69 / 35%);
+        --color-shadow-panel: rgb(25 79 108 / 7%);
+        --color-shadow-floating: rgb(25 79 108 / 16%);
         --radius-sm: 8px;
         --radius-panel: 16px;
-        --shadow-panel: 0 4px 20px rgb(25 79 108 / 7%);
-        --shadow-floating: 0 8px 32px rgb(25 79 108 / 16%);
-        --color-backdrop: rgb(18 49 69 / 35%);
+        --shadow-panel: 0 4px 20px var(--color-shadow-panel);
+        --shadow-floating: 0 8px 32px var(--color-shadow-floating);
         --compass-width: 100px;
     }
 

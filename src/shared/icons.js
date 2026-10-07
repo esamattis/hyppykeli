@@ -253,13 +253,13 @@ export function PieChart({ percentage }) {
                 cx="50"
                 cy="50"
                 r="50"
-                fill=${percentage >= 100 ? "black" : "white"}
-                stroke="black"
+                fill=${percentage >= 100 ? "currentColor" : "var(--color-surface)"}
+                stroke="currentColor"
                 stroke-width="1"
             />
             <path
                 d=${`M 50 50 L 50 0 A 50 50 0 ${largeArcFlag} 1 ${endX} ${endY} Z`}
-                fill="black"
+                fill="currentColor"
             />
         </svg>
     `;

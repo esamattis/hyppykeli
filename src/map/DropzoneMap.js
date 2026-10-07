@@ -112,11 +112,11 @@ function windReading(wind) {
 export function DropzoneMap() {
     const mapLayerScope = useScope(css`
         .leaflet-bar a {
-            background: rgb(255 255 255 / 70%);
+            background: var(--color-map-control);
         }
         .leaflet-bar a:hover,
         .leaflet-bar a:focus-visible {
-            background: rgb(255 255 255 / 85%);
+            background: var(--color-map-control-hover);
         }
         .weather-station-callout {
             background: var(--color-surface);
@@ -136,10 +136,10 @@ export function DropzoneMap() {
         .jump-run-placement button {
             font: inherit;
             cursor: pointer;
-            background: rgb(255 255 255 / 70%);
+            background: var(--color-map-control);
         }
         .jump-run-placement button:hover {
-            background: rgb(255 255 255 / 85%);
+            background: var(--color-map-control-hover);
         }
         .jump-run-placement .leaflet-popup-tip-container {
             translate: calc(-1 * var(--placement-offset-x, 0px)) 0;
@@ -150,7 +150,7 @@ export function DropzoneMap() {
             transform: scaleY(-1);
         }
         .jump-run-line {
-            stroke: var(--map-direction-color, #2563eb);
+            stroke: var(--map-direction-color, var(--color-map-direction));
             animation: dropzone-map-direction-dashes 700ms linear infinite;
             animation-play-state: var(--animation-play-state, running);
         }
@@ -247,7 +247,7 @@ export function DropzoneMap() {
             --animation-play-state: paused;
         }
         .direction-setting {
-            --map-direction-color: #00aaff;
+            --map-direction-color: var(--color-map-direction);
             --map-direction-animation: dropzone-map-direction-dashes 700ms
                 linear infinite;
         }
@@ -1415,7 +1415,7 @@ export function DropzoneMap() {
         () => ({
             group: layerGroup(),
             line: polyline([], {
-                color: "#2563eb",
+                color: getTheme().mapDirection,
                 weight: 3,
                 dashArray: "8 6",
                 interactive: false,
@@ -1471,18 +1471,19 @@ export function DropzoneMap() {
         };
         updateLine();
         leafletInstance.on("moveend zoomend resize", updateLine);
+        const theme = getTheme();
         jumperStarts.forEach((start, index) => {
             const isEndpoint = index === 0 || index === jumperCount - 1;
             const color =
                 index === 0
-                    ? "#22c55e"
+                    ? theme.success
                     : index === jumperCount - 1
-                      ? "#ef4444"
-                      : "#2563eb";
+                      ? theme.danger
+                      : theme.mapDirection;
             const options = {
                 radius: isEndpoint ? 7 : 5,
-                color: isEndpoint ? "white" : color,
-                fillColor: isEndpoint ? color : "white",
+                color: isEndpoint ? theme.surface : color,
+                fillColor: isEndpoint ? color : theme.surface,
                 fillOpacity: 1,
                 weight: 2,
                 interactive: false,
@@ -1514,6 +1515,7 @@ export function DropzoneMap() {
             return;
         const { group, freefall, canopy } = driftLayers;
         let missing = false;
+        const theme = getTheme();
         jumperStarts.forEach((start, index) => {
             const jumper = jumpers[index] ?? DEFAULT_JUMPER;
             const path = calculation.drift(jumper);
@@ -1532,7 +1534,7 @@ export function DropzoneMap() {
             const freefallLine =
                 freefall[index] ??
                 polyline([], {
-                    color: "#c2410c",
+                    color: theme.mapDrift,
                     weight: 3,
                     lineCap: "round",
                     interactive: false,
@@ -1541,7 +1543,7 @@ export function DropzoneMap() {
             const canopyLine =
                 canopy[index] ??
                 polyline([], {
-                    color: "#c2410c",
+                    color: theme.mapDrift,
                     weight: 1,
                     lineCap: "round",
                     interactive: false,

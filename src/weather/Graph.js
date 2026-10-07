@@ -28,6 +28,13 @@ function getDefaultGraphOptions(signal, reverse) {
     const theme = getTheme();
     Chart.defaults.font.family = theme.font;
     Chart.defaults.color = theme.muted;
+    Chart.defaults.borderColor = theme.border;
+    Chart.defaults.backgroundColor = theme.surface;
+    Chart.defaults.plugins.tooltip.backgroundColor = theme.text;
+    Chart.defaults.plugins.tooltip.titleColor = theme.surface;
+    Chart.defaults.plugins.tooltip.bodyColor = theme.surface;
+    Chart.defaults.plugins.tooltip.footerColor = theme.surface;
+    Chart.defaults.plugins.tooltip.multiKeyBackground = theme.surface;
     return {
         type: "line",
         plugins: [createHoverPlugin(signal, reverse)],

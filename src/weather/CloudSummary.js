@@ -365,11 +365,7 @@ export function CloudSummary() {
         .cloud-warning {
             margin-top: 8px;
             color: var(--color-danger);
-            background: color-mix(
-                in srgb,
-                var(--color-danger) 8%,
-                var(--color-surface)
-            );
+            background: var(--color-danger-soft);
             font-weight: 600;
         }
         .cloud-warning > span {

@@ -40,7 +40,7 @@ const INSTRUCTOR_WIND_SPEED = 11;
 const MAX_WIND_SPEED = 11.9;
 const COMPASS_BOUNCE_GUST = 11;
 const COMPASS_SPIN_GUST = 14;
-const LIMIT_COLOR = "rgb(255, 0, 0)";
+const LIMIT_COLOR = "var(--color-danger)";
 
 /**
  * Linearly converts a value from one range to another range.
@@ -137,7 +137,7 @@ export function Compass({ floating = false } = {}) {
             font-size: 12px;
             text-anchor: middle;
             dominant-baseline: middle;
-            fill: black;
+            fill: var(--color-text);
         }
         svg.bouncing {
             animation: compass-bounce 1.2s ease-in-out infinite;
@@ -278,13 +278,13 @@ export function Compass({ floating = false } = {}) {
 
               <!-- Circle for compass outline -->
               <circle class="compass-outer-ring" cx="200" cy="200" r=${circle} stroke=${LIMIT_COLOR} stroke-width="2" fill="none" />
-              <circle cx="200" cy="200" r=${studentCircle} stroke="orange" stroke-width="2" fill="none" />
+              <circle cx="200" cy="200" r=${studentCircle} stroke="var(--color-warning)" stroke-width="2" fill="none" />
 
               <!-- Directions Text -->
-              <text x="200" y="40" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">N</text>
-              <text x="20" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">W</text>
-              <text x="200" y="390" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">S</text>
-              <text x="380" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="black">E</text>
+              <text x="200" y="40" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="var(--color-text)">N</text>
+              <text x="20" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="var(--color-text)">W</text>
+              <text x="200" y="390" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="var(--color-text)">S</text>
+              <text x="380" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="var(--color-text)">E</text>
               ${LANGUAGE.value === "fi" && html`
                   <g class="compass-intercardinal">
                       <text x="327" y="73">koillinen</text>
@@ -300,7 +300,7 @@ export function Compass({ floating = false } = {}) {
                     y="170"
                     font-size="24"
                     text-anchor="middle"
-                    fill="black"
+                    fill="var(--color-text)"
                     font-weight="bold"
                     class="compass-observations-gust"
                     style="transform: rotate(-${rotation}deg); "
@@ -312,7 +312,7 @@ export function Compass({ floating = false } = {}) {
                     y="240"
                     font-size="20"
                     text-anchor="middle"
-                    fill="black"
+                    fill="var(--color-text)"
                     class="compass-observations-speed"
                     style="transform: rotate(-${rotation}deg); "
                 >
@@ -465,8 +465,8 @@ function bounceKeyframes(values, times) {
 /** @param {number} length */
 function needleColor(length) {
     if (length >= INSTRUCTOR_LIMIT_LENGTH) return LIMIT_COLOR;
-    if (length >= STUDENT_LIMIT_LENGTH) return "rgb(255, 165, 0)";
-    return "rgb(0, 255, 0)";
+    if (length >= STUDENT_LIMIT_LENGTH) return "var(--color-warning)";
+    return "var(--color-success)";
 }
 
 /**
@@ -565,7 +565,7 @@ function GustNeedle({ observation: obs, history, animation, paused }) {
                 paused,
             })}
             <!-- Center Point -->
-            <circle cx="200" cy="200" r="10" fill="black" />
+            <circle cx="200" cy="200" r="10" fill="var(--color-text)" />
         </g>
     `;
 }
@@ -604,7 +604,7 @@ function HistoryNeedles({ observations }) {
                 h(NeedlePolygon, {
                     direction: obs.direction,
                     gust: obs.gust,
-                    color: "rgba(0, 0, 0, 0.1)",
+                    color: "var(--color-compass-history)",
                 }),
             )}
         </g>

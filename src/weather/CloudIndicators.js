@@ -76,7 +76,12 @@ export function CloudCoverSquare(props) {
             font-size: 0.7rem;
             line-height: 1;
             font-variant-numeric: tabular-nums;
-            background: var(--cloud-cover-background);
+            /* Mix grayscale endpoints in sRGB to preserve the cover shading scale. */
+            background: color-mix(
+                in srgb,
+                var(--color-cloud-overcast) var(--cloud-cover-percentage),
+                var(--color-cloud-clear)
+            );
             color: var(--cloud-cover-text);
         }
     `);
@@ -87,8 +92,11 @@ export function CloudCoverSquare(props) {
         <span
             class="cloud-cover cloud-cover-square"
             style=${{
-                "--cloud-cover-background": `hsl(0 0% ${lightness}%)`,
-                "--cloud-cover-text": lightness < 50 ? "#fff" : "#111",
+                "--cloud-cover-percentage": `${percentage}%`,
+                "--cloud-cover-text":
+                    lightness < 50
+                        ? "var(--color-cloud-text-light)"
+                        : "var(--color-cloud-text-dark)",
             }}
         >
             ${scope.style}

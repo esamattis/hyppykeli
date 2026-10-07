@@ -1,4 +1,5 @@
 // @ts-check
+import { getTheme } from "#app/styles.js";
 import { css, useScope } from "#app/useScope.js";
 import { ANIMATIONS_RUNNING } from "#app/app/animationState.js";
 import { html } from "htm/preact";
@@ -57,7 +58,8 @@ export function MapWindOverlay({ wind }) {
         const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
         let width = 0;
         let height = 0;
-        const color = "#164e83";
+        const theme = getTheme();
+        const color = theme.mapWind;
         let frame = 0;
         let lastTime = 0;
         let visible = false;
@@ -155,7 +157,7 @@ export function MapWindOverlay({ wind }) {
             spriteContext.strokeStyle = gradient;
             spriteContext.lineWidth = 3;
             spriteContext.lineCap = "round";
-            spriteContext.shadowColor = "white";
+            spriteContext.shadowColor = theme.mapWindHalo;
             spriteContext.shadowBlur = 2;
             spriteContext.beginPath();
             spriteContext.moveTo(tailX, tailY);

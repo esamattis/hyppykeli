@@ -62,7 +62,7 @@ export const english = {
     "weather.rainHelp": "Probability of precipitation as a percentage.",
     "compass.animation": "Animation",
     "compass.help":
-        "The ranges below the wind readings show the minimum and maximum gust, mean wind, and direction observed during the last hour. Values are rounded to whole numbers. The arrow shows wind direction and its length shows the gust. The orange circle is the student limit (8 m/s), and the black circle is the licence limit (11 m/s). The animation replays the last hour chronologically. When it is off, the arrow shows the latest observation.",
+        "The ranges below the wind readings show the minimum and maximum gust, mean wind, and direction observed during the last hour. Values are rounded to whole numbers. The arrow shows wind direction and its length shows the gust. The inner circle is the student limit (8 m/s), and the outer circle is the licence limit (11 m/s). The animation replays the last hour chronologically. When it is off, the arrow shows the latest observation.",
     "source.openMeteoModeled": "Open-Meteo (modeled)",
     "source.manualMode": "Manual mode",
     "error.noMetar": (/** @type {string} */ code) =>
@@ -516,7 +516,7 @@ const finnish = {
     "weather.rainHelp": "Sateen todennäköisyys prosentteina.",
     "compass.animation": "Animaatio",
     "compass.help":
-        "Tuulilukemien alla näkyvät vaihteluvälit kertovat puuskan, keskituulen ja suunnan pienimmän ja suurimman havaitun arvon viimeisen tunnin ajalta. Arvot on pyöristetty kokonaisluvuiksi. Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Oranssi ympyrä on oppilasraja (8 m/s) ja musta ympyrä on kelppariraja (11 m/s). Animaatio toistaa viimeisen tunnin havainnot aikajärjestyksessä. Kun animaatio on pois päältä, nuoli näyttää uusimman havainnon.",
+        "Tuulilukemien alla näkyvät vaihteluvälit kertovat puuskan, keskituulen ja suunnan pienimmän ja suurimman havaitun arvon viimeisen tunnin ajalta. Arvot on pyöristetty kokonaisluvuiksi. Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Sisempi ympyrä on oppilasraja (8 m/s) ja ulompi ympyrä on kelppariraja (11 m/s). Animaatio toistaa viimeisen tunnin havainnot aikajärjestyksessä. Kun animaatio on pois päältä, nuoli näyttää uusimman havainnon.",
     "source.openMeteoModeled": "Open-Meteo (mallinnettu)",
     "source.manualMode": "Manuaalitila",
     "error.noMetar": (code) => `Ei METAR-sanomaa kentälle ${code}.`,
