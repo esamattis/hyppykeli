@@ -135,6 +135,7 @@ export function MapWindOverlay({ wind }) {
         };
         const resize = new ResizeObserver(() => {
             const rect = canvas.getBoundingClientRect();
+            const initialized = width > 0 && height > 0;
             width = rect.width;
             height = rect.height;
             ratio = Math.min(window.devicePixelRatio || 1, 2);
@@ -167,15 +168,30 @@ export function MapWindOverlay({ wind }) {
             const count = Math.floor(
                 Math.min(160, Math.ceil((width * height) / 5000)) * 0.75,
             );
-            particles = Array.from({ length: count }, () => {
+            // Keep visible particles in place with their current fade progress.
+            // Discard clipped particles before changing density so shrinking
+            // does not wrap them back into the visible area.
+            particles = particles
+                .filter(
+                    ({ x, y }) =>
+                        x >= -padding &&
+                        x <= width + padding &&
+                        y >= -padding &&
+                        y <= height + padding,
+                )
+                .slice(0, count);
+            while (particles.length < count) {
                 const lifetime = 1 + Math.random() * 1.5;
-                return {
+                particles.push({
                     x: Math.random() * (width + 2 * padding) - padding,
                     y: Math.random() * (height + 2 * padding) - padding,
-                    age: Math.random() * lifetime,
+                    age:
+                        initialized && !reducedMotion.matches
+                            ? 0
+                            : Math.random() * lifetime,
                     lifetime,
-                };
-            });
+                });
+            }
             updateAnimation();
         });
         const visibility = new IntersectionObserver(([entry]) => {
