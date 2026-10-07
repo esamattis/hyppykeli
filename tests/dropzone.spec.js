@@ -1812,7 +1812,10 @@ for (const settingDirection of [false, true]) {
                 "true",
             );
             await expect(
-                page.getByRole("button", { name: "Lähennä karttaa" }),
+                page.getByRole("button", {
+                    name: "Lähennä karttaa",
+                    includeHidden: true,
+                }),
             ).toBeDisabled();
         }
 
@@ -4545,6 +4548,7 @@ test("automatic positioning reverses the current axis into wind and reset restor
     const opening = await middleOpening(page);
     const directionMode = directionControl(page, directionControls.drag);
     await clickDirection(page, directionControls.drag);
+    await page.keyboard.press("Escape");
     await clickDirection(page, directionControls.reset);
     await expect(directionMode).toHaveAttribute("aria-checked", "false");
     const resetParams = new URL(page.url()).searchParams;

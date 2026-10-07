@@ -118,6 +118,16 @@ function windReading(wind) {
 
 export function DropzoneMap() {
     const mapLayerScope = useScope(css`
+        :scope.direction-setting
+            .leaflet-overlay-pane
+            path:not(.jump-run-line):not(.jump-run-jumper):not(
+                .freefall-drift-line
+            ):not(.parachute-drift-line),
+        :scope.direction-setting .leaflet-marker-pane,
+        :scope.direction-setting .leaflet-tooltip-pane,
+        :scope.direction-setting .leaflet-popup-pane {
+            visibility: hidden;
+        }
         .leaflet-bar a {
             background: var(--color-map-control);
         }
@@ -216,6 +226,8 @@ export function DropzoneMap() {
         }
         .map-viewport {
             position: relative;
+            isolation: isolate;
+            overflow: hidden;
         }
         @container dropzone-map (min-width: 900px) {
             .freefall-toolbar,
@@ -258,6 +270,17 @@ export function DropzoneMap() {
         }
         .direction-setting .dz-map {
             cursor: crosshair;
+        }
+        .direction-setting .map-wind-overlay,
+        .direction-setting .map-cloud-summary,
+        .direction-setting .map-compass,
+        .direction-setting .map-navigation-controls,
+        .direction-setting .map-errors {
+            visibility: hidden;
+        }
+        .map-frame.direction-setting .toolbar-controls,
+        .map-frame.direction-setting .wind-level-icons {
+            visibility: hidden;
         }
         .map-viewport:not(.map-visible) {
             --animation-play-state: paused;
@@ -1195,6 +1218,7 @@ export function DropzoneMap() {
             dragStart = point(event.clientX, event.clientY);
             directionGesture =
                 beginDirectionDragRef.current?.(dragStart) ?? null;
+            setDraggingJumpRunDirection(true);
             try {
                 container.setPointerCapture(event.pointerId);
             } catch {
@@ -1233,6 +1257,7 @@ export function DropzoneMap() {
                 dragStart = point(touch.clientX, touch.clientY);
                 directionGesture =
                     beginDirectionDragRef.current?.(dragStart) ?? null;
+                setDraggingJumpRunDirection(true);
             }
         };
         /** @param {TouchEvent} event */
@@ -1760,7 +1785,9 @@ export function DropzoneMap() {
                 })}
             </div>
             <div class="map-layout">
-                <div class=${`map-frame${fullWindow ? " full-window" : ""}`}>
+                <div
+                    class=${`map-frame${fullWindow ? " full-window" : ""}${placingJumpRunDirection ? " direction-setting" : ""}`}
+                >
                     ${h(FreefallToolbar, {
                         fullWindow,
                         automaticJumpRun,
@@ -1942,7 +1969,7 @@ export function DropzoneMap() {
                                 : null
                         }
                         <div
-                            class=${`dz-map ${scope.end}`}
+                            class=${`dz-map ${scope.end}${placingJumpRunDirection ? " direction-setting" : ""}`}
                             ref=${mapRef}
                             style=${{ touchAction: fullWindow || placingJumpRunDirection ? "none" : "pan-y" }}
                             role="region"
