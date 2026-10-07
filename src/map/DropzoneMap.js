@@ -844,8 +844,8 @@ export function DropzoneMap() {
         [automaticPlacementKey],
     );
     const canPositionAutomatic = !!automaticStart;
-    /** @param {boolean} [preserveVisibleView] */
-    const positionAutomaticJumpRun = (preserveVisibleView = false) => {
+    /** @param {boolean} [preserveExistingView] */
+    const positionAutomaticJumpRun = (preserveExistingView = false) => {
         const leafletMap = activeLeafletRef.current;
         if (!automaticStart || !leafletMap) return;
         setPlacingJumpRunDirection(false);
@@ -866,12 +866,15 @@ export function DropzoneMap() {
             automaticSettings,
             automaticGroup,
         );
+        // Updating an existing run with the placement button keeps the user's
+        // viewport, even when the updated paths extend outside it.
+        if (preserveExistingView && jumpRunStart) return;
         fitJumpRunView(
             automaticStart,
             automaticSettings,
             automaticGroup,
             calculation,
-            preserveVisibleView,
+            true,
         );
     };
     /**
@@ -880,14 +883,14 @@ export function DropzoneMap() {
      * @param {JumpRunSettings} settings
      * @param {JumpRunJumper[]} group
      * @param {JumpRunCalculation} calculation
-     * @param {boolean} [preserveVisibleView]
+     * @param {boolean} [animate]
      */
     const fitJumpRunView = (
         start,
         settings,
         group,
         calculation,
-        preserveVisibleView = false,
+        animate = false,
     ) => {
         const leafletMap = activeLeafletRef.current;
         if (!leafletMap || !calculation.velocity) return;
@@ -913,16 +916,27 @@ export function DropzoneMap() {
             for (const offset of canopy ?? [])
                 bounds.extend(driftCoordinates(latLng(opening), offset));
         }
-        if (preserveVisibleView && leafletMap.getBounds().contains(bounds))
-            return;
-        leafletMap.fitBounds(bounds, { padding: [24, 24], animate: false });
-        leafletMap.zoomOut(1, { animate: false });
+        const padding = matchMedia("(min-width: 900px)").matches ? 200 : 75;
+        leafletMap.flyToBounds(bounds, {
+            padding: [padding, padding],
+            animate:
+                animate &&
+                !matchMedia("(prefers-reduced-motion: reduce)").matches,
+            duration: 0.5,
+        });
     };
     const canPositionView =
         !!leafletInstance && !!jumpRunStart && !!jumpRunVelocity;
-    const positionView = () => {
+    /** @param {boolean} [animate] */
+    const positionView = (animate = false) => {
         if (!jumpRunStart) return;
-        fitJumpRunView(jumpRunStart, jumpRunSettings, jumpers, calculation);
+        fitJumpRunView(
+            jumpRunStart,
+            jumpRunSettings,
+            jumpers,
+            calculation,
+            animate,
+        );
     };
     const previousFullWindow = useRef(fullWindow);
     useLayoutEffect(() => {
@@ -1920,7 +1934,7 @@ export function DropzoneMap() {
                             zoom,
                             disabled: placingJumpRunDirection,
                             canFit: canPositionView,
-                            onFit: positionView,
+                            onFit: () => positionView(true),
                         })}
                     </div>
                 </div>

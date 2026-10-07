@@ -4309,6 +4309,9 @@ test("viewport positioning fits a saved run without landing coordinates and disa
     await expect(fit).toBeEnabled();
     const original = new URL(page.url()).searchParams;
     await fit.click();
+    await expect
+        .poll(() => Number(new URL(page.url()).searchParams.get("map_zoom")))
+        .not.toBe(Number(original.get("map_zoom")));
     const fitted = new URL(page.url()).searchParams;
     expect(fitted.get("map_run_start")).toBe(original.get("map_run_start"));
     expect(fitted.get("map_run_settings")).toBe(
