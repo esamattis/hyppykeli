@@ -1,6 +1,7 @@
 // @ts-check
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
+import { formatClock } from "#app/shared/dates.js";
 import { CloudCoverIcon, Icon } from "#app/shared/icons.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
@@ -103,7 +104,7 @@ export function MapCloudSummary() {
             type="button"
             class=${`map-cloud-summary ${minimized ? "minimized p-0" : "px-2 py-1.5"}`}
             aria-label=${label}
-            title=${label}
+            data-tooltip=${label}
             aria-expanded=${!minimized}
             onClick=${() => setMinimized((value) => !value)}
         >
@@ -113,10 +114,14 @@ export function MapCloudSummary() {
                     ? h(Icon, { name: "cloudOvercast", size: 18 })
                     : html`
                           <div class="map-cloud-source mb-1">
-                              <span>
+                              <span
+                                  data-tooltip=${hasMetarClouds ? metar?.metar : undefined}
+                              >
                                   ${hasMetarClouds ? "METAR" : "Open-Meteo"}
                               </span>
-                              <span>
+                              <span
+                                  data-tooltip=${time ? formatClock(time) : undefined}
+                              >
                                   ${h(FromNow, { date: time, showClock: false })}
                               </span>
                           </div>
@@ -131,12 +136,9 @@ export function MapCloudSummary() {
                                                 (cloud) => html`
                                                     <div
                                                         class="map-cloud-layer"
-                                                        title=${types[cloud.amount]?.label ?? cloud.amount}
+                                                        data-tooltip=${`${types[cloud.amount]?.label ?? cloud.amount}${Number.isFinite(cloud.base) && !["NCD", "NSC"].includes(cloud.amount) ? ` · ${t(cloud.amount === "VV" ? "cloud.verticalVisibility" : "cloud.base")}: ${cloud.base} ${cloud.unit}` : ""}`}
                                                     >
-                                                        ${h(Icon, { name: types[cloud.amount]?.icon ?? "cloudOvercast", size: 20 })}
-                                                        <span>
-                                                            ${cloud.amount}
-                                                        </span>
+                                                        ${h(Icon, { name: types[cloud.amount]?.icon ?? "cloudOvercast", size: 20, label: types[cloud.amount]?.label ?? cloud.amount })}
                                                         ${cloud.cumulonimbus ? h(Icon, { name: "lightning", size: 14, label: t("cloud.cumulonimbus") }) : null}
                                                         ${
                                                             Number.isFinite(
@@ -151,7 +153,6 @@ export function MapCloudSummary() {
                                                                 ? html`
                                                                       <span
                                                                           class="map-cloud-height"
-                                                                          title=${cloud.amount === "VV" ? t("cloud.verticalVisibility") : t("cloud.base")}
                                                                       >
                                                                           ${formatCloudBase(cloud.base, cloud.unit, { approximate: true })}
                                                                       </span>
@@ -166,7 +167,7 @@ export function MapCloudSummary() {
                                                     ? html`
                                                           <div
                                                               class="map-cloud-layer"
-                                                              title=${t("cloud.cavokMessage")}
+                                                              data-tooltip=${t("cloud.cavokMessage")}
                                                           >
                                                               ${h(Icon, { name: "cloudNsc", size: 20 })}
                                                               <span>CAVOK</span>
@@ -193,7 +194,7 @@ export function MapCloudSummary() {
                                             (layer) => html`
                                                 <div
                                                     class="map-cloud-layer"
-                                                    title=${t("cloud.altitudeAboveDropzone")}
+                                                    data-tooltip=${t("cloud.altitudeAboveDropzone")}
                                                 >
                                                     ${h(CloudCoverIcon, { percentage: layer.cover, size: 20 })}
                                                     <span>

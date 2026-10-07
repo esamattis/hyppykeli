@@ -50,6 +50,9 @@ throughout the project.
 
 ## Dependencies and UI
 
+Tooltips always use the `data-tooltip` attribute, not the native `title` attribute.
+When referring to tooltips, this means the shared `data-tooltip` implementation.
+
 This is a bundlerless project. Third-party dependencies live in `vendor` and are
 referenced through the import map in `dz/index.html`.
 
