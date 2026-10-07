@@ -3754,6 +3754,8 @@ test("full-window map compass collapses and restores on desktop", async ({
     page,
     isMobile,
 }) => {
+    // The compass needs a wide map with enough height for the wind selector.
+    if (!isMobile) await page.setViewportSize({ width: 1280, height: 900 });
     const card = page.locator("#dropzone-map");
     await expect(card.locator(".map-compass")).toHaveCount(0);
     await card
