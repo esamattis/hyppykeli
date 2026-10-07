@@ -98,6 +98,16 @@ Component styles use the `components` layer so unlayered custom CSS from the CSS
 editor can override them. Keep existing IDs and classes used by custom CSS.
 `@scope` does not isolate keyframe names, so prefix animation names by component.
 
+Always use the shared CSS color variables from `styles.css` when referencing
+colors in CSS, inline styles, SVG, or animations. For canvas, charts, and map
+APIs that require color values, read the variables through `getTheme()` in
+`src/styles.js`. Do not hardcode color values outside the shared variable
+definitions. Reuse variables consistently by semantic role; add a documented
+variable in `styles.css` when a new color role is needed. Structural keywords
+such as `transparent`, `currentColor`, and `none` are allowed. Static metadata
+that cannot read CSS variables, such as `manifest.json`, must match the shared
+palette.
+
 ## Local runtime
 
 The app is served by the user systemd unit `hyppykeli.service`, defined in
