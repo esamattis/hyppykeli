@@ -3582,8 +3582,24 @@ for (const [description, ground] of [
         await page
             .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
             .click();
-        await expect(error).toBeVisible();
+        await expect(error).toHaveCount(0);
+        await page
+            .getByRole("button", { name: "Virheet", exact: true })
+            .click();
+        const errorDialog = page.getByRole("dialog", {
+            name: "Virheet",
+            exact: true,
+        });
+        await expect(errorDialog).toBeVisible();
+        await expect(
+            errorDialog.getByRole("listitem").filter({ hasText: message }),
+        ).toHaveText(message);
+        await errorDialog
+            .getByRole("button", { name: "Sulje", exact: true })
+            .click();
+        await expect(errorDialog).not.toBeVisible();
         await page.getByRole("button", { name: "Palauta Hyppylinja" }).click();
+        await expect(error).toBeVisible();
         expect(errors).toEqual([message]);
         await map.scrollIntoViewIfNeeded();
         await map.click({ position: { x: 180, y: 200 } });
