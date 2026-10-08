@@ -24,9 +24,18 @@ export function Title() {
             max-width: 100%;
             width: 100%;
             word-break: break-word;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: var(--spacing-3);
         }
         .nowrap {
             white-space: nowrap;
+        }
+
+        .title-details {
+            min-width: 0;
+            max-width: 100%;
         }
 
         .title-name-row {
@@ -63,7 +72,7 @@ export function Title() {
         }
 
         .title-temp {
-            min-height: 1.5em;
+            min-width: 0;
             color: var(--color-muted);
         }
 
@@ -131,21 +140,23 @@ export function Title() {
     return html`
         <h1 id="title" class="m-0 pl-2">
             ${scope.style}
-            <span class="title-name-row">
-                <span class="title-name">${NAME}</span>
-                <button
-                    class="edit-name p-1"
-                    type="button"
-                    aria-label=${t("title.edit")}
-                    title=${t("title.edit")}
-                    aria-haspopup="dialog"
-                    onClick=${openNameEditor}
-                >
-                    ${h(Icon, { name: "pen", size: 20 })}
-                </button>
-            </span>
-            <span class="title-elevation text-rem-0-75 font-normal">
-                ${t("title.elevation", String(Math.round(DROPZONE_ELEVATION.value)))}
+            <span class="title-details">
+                <span class="title-name-row">
+                    <span class="title-name">${NAME}</span>
+                    <button
+                        class="edit-name p-1"
+                        type="button"
+                        aria-label=${t("title.edit")}
+                        data-tooltip=${t("title.edit")}
+                        aria-haspopup="dialog"
+                        onClick=${openNameEditor}
+                    >
+                        ${h(Icon, { name: "pen", size: 20 })}
+                    </button>
+                </span>
+                <span class="title-elevation text-rem-0-75 font-normal">
+                    ${t("title.elevation", String(Math.round(DROPZONE_ELEVATION.value)))}
+                </span>
             </span>
             <span class="title-temp text-em-0-65 font-mono">
                 ${
