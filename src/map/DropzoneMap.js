@@ -1,5 +1,4 @@
 // @ts-check
-import { RESOLVED_THEME } from "#app/app/theme.js";
 import { isMapRunCleared, writeMapQuery } from "#app/map/mapQuery.js";
 import { CheckboxField } from "#app/shared/FormFields.js";
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
@@ -121,7 +120,6 @@ function windReading(wind) {
 }
 
 export function DropzoneMap() {
-    const resolvedTheme = RESOLVED_THEME.value;
     const mapLayerScope = useScope(css`
         :scope.direction-setting
             .leaflet-overlay-pane
@@ -178,7 +176,12 @@ export function DropzoneMap() {
         }
         .freefall-drift-line,
         .parachute-drift-line {
-            opacity: 0.65;
+            opacity: 1;
+        }
+        .jump-run-line,
+        .freefall-drift-line,
+        .parachute-drift-line {
+            filter: drop-shadow(0 0 1px var(--color-map-outline));
         }
         @media (prefers-reduced-motion: reduce) {
             .jump-run-line {
@@ -585,20 +588,13 @@ export function DropzoneMap() {
         });
 
         const theme = getTheme();
-        const dropzoneMarker = circleMarker([lat, lon], {
+        circleMarker([lat, lon], {
             radius: 8,
-            color: theme.primary,
-            fillColor: theme.surface,
+            color: theme.mapDirection,
+            fillColor: theme.mapOutline,
             fillOpacity: 1,
             weight: 3,
         }).addTo(leafletMap);
-        const unsubscribeTheme = RESOLVED_THEME.subscribe(() => {
-            const theme = getTheme();
-            dropzoneMarker.setStyle({
-                color: theme.primary,
-                fillColor: theme.surface,
-            });
-        });
         const saveView = () => {
             const current = leafletMap.getCenter();
             savedMapViewRef.current = JSON.stringify([
@@ -634,7 +630,6 @@ export function DropzoneMap() {
         });
         observer.observe(mapRef.current);
         return () => {
-            unsubscribeTheme();
             leafletMap.off("zoomstart", pauseMapAnimations);
             leafletMap.off("zoomend", releaseMapAnimations);
             releaseMapAnimations();
@@ -745,8 +740,8 @@ export function DropzoneMap() {
         label.textContent = stationLabel;
         const station = circleMarker([lat, lng], {
             radius: 4,
-            color: theme.primary,
-            fillColor: theme.surface,
+            color: theme.mapDirection,
+            fillColor: theme.mapOutline,
             fillOpacity: 1,
             weight: 2,
         })
@@ -766,7 +761,6 @@ export function DropzoneMap() {
         stationCoordinates,
         stationName,
         stationLabel,
-        resolvedTheme,
     ]);
 
     useEffect(() => {
@@ -1586,16 +1580,16 @@ export function DropzoneMap() {
             const isEndpoint = index === 0 || index === jumperCount - 1;
             const color =
                 index === 0
-                    ? theme.success
+                    ? theme.mapFirstJumper
                     : index === jumperCount - 1
-                      ? theme.danger
+                      ? theme.mapLastJumper
                       : theme.mapDirection;
             const options = {
                 radius: isEndpoint ? 7 : 5,
-                color: isEndpoint ? theme.surface : color,
-                fillColor: isEndpoint ? color : theme.surface,
+                color: isEndpoint ? theme.mapOutline : color,
+                fillColor: isEndpoint ? color : theme.mapOutline,
                 fillOpacity: 1,
-                weight: 2,
+                weight: 3,
                 interactive: false,
                 className: "jump-run-jumper",
             };
@@ -1611,7 +1605,6 @@ export function DropzoneMap() {
     }, [
         leafletInstance,
         runLayers,
-        resolvedTheme,
         jumpRunStart,
         jumpRunSettings,
         jumperCount,
@@ -1681,7 +1674,6 @@ export function DropzoneMap() {
     }, [
         leafletInstance,
         driftLayers,
-        resolvedTheme,
         jumpers,
         data,
         upperWindOverride,

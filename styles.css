@@ -120,13 +120,18 @@
             var(--color-surface) 85%,
             transparent
         );
-        /* Jump-run line, direction placement, and intermediate jumpers. */
-        --color-map-direction: var(--color-primary);
+        /* Fixed, bright map artwork palette, independent of page appearance.
+           Cyan flight paths, orange drift, and green/pink endpoint markers. */
+        --color-map-direction: #00bfff;
+        --color-map-first-jumper: #00e69d;
+        --color-map-last-jumper: #ff3d71;
+        /* Dark outlines and marker centers contrast with bright artwork. */
+        --color-map-outline: #10212d;
         /* Freefall and canopy drift paths share a color, with different widths. */
-        --color-map-drift: #c2410c;
+        --color-map-drift: #ff7800;
         /* Animated wind particles and their contrasting halo over map tiles. */
-        --color-map-wind: var(--color-primary);
-        --color-map-wind-halo: var(--color-surface);
+        --color-map-wind: var(--color-map-direction);
+        --color-map-wind-halo: var(--color-map-outline);
         /* Previous compass needles remain faint behind the current reading. */
         --color-compass-history: color-mix(
             in srgb,
@@ -192,7 +197,6 @@
         --color-danger: #e6818d;
         --color-on-danger: #101820;
         --color-wind-high: #614631;
-        --color-map-drift: #f29668;
         --color-cloud-overcast: #627c8e;
         --color-backdrop: rgb(0 0 0 / 65%);
         --color-shadow-panel: rgb(0 0 0 / 18%);

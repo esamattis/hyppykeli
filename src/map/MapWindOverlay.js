@@ -1,5 +1,4 @@
 // @ts-check
-import { RESOLVED_THEME } from "#app/app/theme.js";
 import { getTheme } from "#app/styles.js";
 import { css, useScope } from "#app/useScope.js";
 import { ANIMATIONS_RUNNING } from "#app/app/animationState.js";
@@ -47,7 +46,6 @@ export function MapWindOverlay({ wind }) {
     /** @type {import('preact').RefObject<HTMLCanvasElement>} */
     const canvasRef = useRef(null);
 
-    const resolvedTheme = RESOLVED_THEME.value;
     const targetMotion = useRef(getMapWindMotion(wind));
     /** @type {import('preact').RefObject<(() => void) | null>} */
     const updateWind = useRef(null);
@@ -104,7 +102,7 @@ export function MapWindOverlay({ wind }) {
             spriteContext.lineWidth = 3;
             spriteContext.lineCap = "round";
             spriteContext.shadowColor = theme.mapWindHalo;
-            spriteContext.shadowBlur = 2;
+            spriteContext.shadowBlur = 3;
             spriteContext.beginPath();
             spriteContext.moveTo(tailX, tailY);
             spriteContext.lineTo(headX, headY);
@@ -269,7 +267,7 @@ export function MapWindOverlay({ wind }) {
             reducedMotion.removeEventListener("change", updateAnimation);
             document.removeEventListener("visibilitychange", updateAnimation);
         };
-    }, [resolvedTheme]);
+    }, []);
 
     useEffect(() => {
         targetMotion.current = getMapWindMotion(wind);

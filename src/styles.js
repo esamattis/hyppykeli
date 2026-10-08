@@ -120,6 +120,13 @@ export function getTheme() {
         text: styles.getPropertyValue("--color-text").trim(),
         border: styles.getPropertyValue("--color-border").trim(),
         mapDirection: styles.getPropertyValue("--color-map-direction").trim(),
+        mapFirstJumper: styles
+            .getPropertyValue("--color-map-first-jumper")
+            .trim(),
+        mapLastJumper: styles
+            .getPropertyValue("--color-map-last-jumper")
+            .trim(),
+        mapOutline: styles.getPropertyValue("--color-map-outline").trim(),
         mapDrift: styles.getPropertyValue("--color-map-drift").trim(),
         mapWind: styles.getPropertyValue("--color-map-wind").trim(),
         mapWindHalo: styles.getPropertyValue("--color-map-wind-halo").trim(),

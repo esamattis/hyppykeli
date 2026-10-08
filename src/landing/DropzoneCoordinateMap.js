@@ -81,7 +81,7 @@ export function DropzoneCoordinateMap({ onSelect }) {
             link.setAttribute("aria-label", dz.name);
             link.setAttribute("data-tooltip", dz.name);
             link.className = "dropzone-pin";
-            link.innerHTML = `<svg viewBox="0 0 32 40" width="32" height="40" aria-hidden="true"><path d="M16 1C8 1 1 7 1 15c0 11 15 24 15 24s15-13 15-24C31 7 24 1 16 1Z" fill="var(--color-primary)" stroke="var(--color-surface)" stroke-width="2"/><circle cx="16" cy="15" r="5" fill="var(--color-surface)"/></svg>`;
+            link.innerHTML = `<svg viewBox="0 0 32 40" width="32" height="40" aria-hidden="true"><path d="M16 1C8 1 1 7 1 15c0 11 15 24 15 24s15-13 15-24C31 7 24 1 16 1Z" fill="var(--color-map-direction)" stroke="var(--color-map-outline)" stroke-width="2"/><circle cx="16" cy="15" r="5" fill="var(--color-map-outline)"/></svg>`;
             marker(coordinates, {
                 icon: divIcon({
                     html: link,
