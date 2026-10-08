@@ -261,6 +261,7 @@ export const english = {
     "cloud.hourlyForecast": "Hourly cloud forecast, scroll horizontally",
     "cloud.cover": "Cloud cover",
     "cloud.totalCover": "Total cloud cover",
+    "cloud.coverScale": "Cloud cover color scale",
     "cloud.rangeCover": (/** @type {string} */ range) =>
         `Cloud cover at ${range}`,
     "cloud.rangeCoverHelp":
@@ -847,6 +848,7 @@ const finnish = {
     "cloud.hourlyForecast": "Pilvien tuntiennuste, vieritä sivulle",
     "cloud.cover": "Pilvipeitto",
     "cloud.totalCover": "Kokonaispilvipeite",
+    "cloud.coverScale": "Pilvipeitteen väriasteikko",
     "cloud.rangeCover": (range) => `Pilvipeitto ${range}:n korkeudella`,
     "cloud.rangeCoverHelp":
         "Suurin Open-Meteon pilvipeittoprosentti saatavilla olevilta mallitasoilta hyppypaikan maanpinnasta valittua hyppylinjan uloshyppykorkeutta lähimpään mallitasoon asti, laskettuna erikseen jokaiselle tunnille. Lähin mallitaso voi olla hieman uloshyppykorkeuden yläpuolella; yhtä lähellä olevista tasoista käytetään alempaa.",

@@ -75,27 +75,22 @@ export function CloudCoverSquare(props) {
             justify-content: center;
             line-height: 1;
             font-variant-numeric: tabular-nums;
-            /* Mix grayscale endpoints in sRGB to preserve the cover shading scale. */
+            /* Darker blue-grey shading indicates greater cloud cover. */
             background: color-mix(
                 in srgb,
                 var(--color-cloud-overcast) var(--cloud-cover-percentage),
                 var(--color-cloud-clear)
             );
-            color: var(--cloud-cover-text);
+            color: var(--color-text);
         }
     `);
     const percentage = Math.max(0, Math.min(100, props.percentage));
-    const lightness = 96 - percentage * 0.76;
 
     return html`
         <span
             class="cloud-cover cloud-cover-square text-rem-0-7"
             style=${{
                 "--cloud-cover-percentage": `${percentage}%`,
-                "--cloud-cover-text":
-                    lightness < 50
-                        ? "var(--color-cloud-text-light)"
-                        : "var(--color-cloud-text-dark)",
             }}
         >
             ${scope.style}

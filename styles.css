@@ -117,12 +117,9 @@
             var(--color-text) 10%,
             transparent
         );
-        /* Cloud forecast grayscale endpoints, interpolated by cover percentage. */
-        --color-cloud-clear: hsl(0 0% 96%);
-        --color-cloud-overcast: hsl(0 0% 20%);
-        /* Contrasting labels on light and dark cloud forecast squares. */
-        --color-cloud-text-dark: #111111;
-        --color-cloud-text-light: #ffffff;
+        /* Cloud forecast blue-grey endpoints, interpolated by cover percentage. */
+        --color-cloud-clear: var(--color-surface-soft);
+        --color-cloud-overcast: #bfd0dc;
         /* Modal scrim and shared elevation shadows. */
         --color-backdrop: rgb(18 49 69 / 35%);
         --color-shadow-panel: rgb(25 79 108 / 7%);

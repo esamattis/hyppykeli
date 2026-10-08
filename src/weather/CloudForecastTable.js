@@ -113,10 +113,12 @@ export function CloudForecastTable(props) {
         }
         .forecast-source-label {
             display: block;
-            color: var(--color-primary);
-            letter-spacing: 0.06em;
+            color: var(--color-muted);
+            letter-spacing: 0.03em;
             line-height: 1;
-            text-transform: uppercase;
+        }
+        .forecast-altitude-label {
+            color: var(--color-text);
         }
         .cloud-forecast-detail-table .forecast-reading {
             position: relative;
@@ -125,6 +127,23 @@ export function CloudForecastTable(props) {
         }
         .cloud-forecast-note {
             color: var(--color-muted);
+        }
+        .cloud-forecast-scale {
+            max-width: 20rem;
+        }
+        .cloud-forecast-scale figcaption {
+            color: var(--color-muted);
+        }
+        .cloud-forecast-scale-samples {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            overflow: hidden;
+            border: 1px solid var(--color-border);
+            border-radius: var(--spacing-1);
+        }
+        .cloud-forecast-scale-sample {
+            position: relative;
+            height: 1.75rem;
         }
     `);
     const openMeteo = OM_DATA.value;
@@ -208,7 +227,7 @@ export function CloudForecastTable(props) {
                                       <tr class="forecast-group-start">
                                           <th class="font-normal" scope="row">
                                               <span
-                                                  class="forecast-source-label text-rem-0-65 font-bold mt-1 mb-1"
+                                                  class="forecast-source-label text-rem-0-6 font-medium mt-1 mb-1"
                                               >
                                                   FMI
                                               </span>
@@ -301,14 +320,18 @@ export function CloudForecastTable(props) {
                                                 summary
                                                     ? html`
                                                           <span
-                                                              class="forecast-source-label text-rem-0-65 font-bold mt-1 mb-1"
+                                                              class="forecast-source-label text-rem-0-6 font-medium mt-1 mb-1"
                                                           >
                                                               FMI
                                                           </span>
                                                       `
                                                     : null
                                             }
-                                            ${row.altitude}
+                                            <span
+                                                class="forecast-altitude-label font-semibold"
+                                            >
+                                                ${row.altitude}
+                                            </span>
                                             ${h(
                                                 Help,
                                                 {
@@ -347,11 +370,15 @@ export function CloudForecastTable(props) {
                         <tr class="forecast-group-start">
                             <th class="font-normal" scope="row">
                                 <span
-                                    class="forecast-source-label text-rem-0-65 font-bold mt-1 mb-1"
+                                    class="forecast-source-label text-rem-0-6 font-medium mt-1 mb-1"
                                 >
                                     Open-Meteo
                                 </span>
-                                ${cloudRange}
+                                <span
+                                    class="forecast-altitude-label font-semibold"
+                                >
+                                    ${cloudRange}
+                                </span>
                                 ${h(
                                     Help,
                                     {
@@ -430,6 +457,28 @@ export function CloudForecastTable(props) {
                     </tbody>
                 </table>
             </div>
+            ${
+                summary
+                    ? null
+                    : html`
+                          <figure class="cloud-forecast-scale m-0 mt-3">
+                              <figcaption class="text-rem-0-7 mb-1">
+                                  ${t("cloud.coverScale")}
+                              </figcaption>
+                              <div class="cloud-forecast-scale-samples">
+                                  ${[0, 20, 40, 60, 80, 100].map(
+                                      (percentage) => html`
+                                          <div
+                                              class="cloud-forecast-scale-sample"
+                                          >
+                                              ${h(CloudCoverSquare, { percentage })}
+                                          </div>
+                                      `,
+                                  )}
+                              </div>
+                          </figure>
+                      `
+            }
             <p class="cloud-forecast-note text-rem-0-75 m-0 mt-2">
                 ${t("cloud.forecastTableHelp")}
             </p>
