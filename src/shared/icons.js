@@ -138,11 +138,23 @@ const artwork = {
         <circle cx="12" cy="12" r="2" />
     `,
     lightning: html`
-        <path d="m13 2-9 12h7l-1 8 10-13h-7z" fill="currentColor" />
+        <path
+            d="m13 2-9 12h7l-1 8 10-13h-7z"
+            fill="var(--color-cloud-lightning)"
+            stroke="var(--color-text)"
+            stroke-width="1.2"
+        />
     `,
     storm: html`
         <path
-            d="M6 16a4 4 0 0 1-1-7 6 6 0 0 1 11-3 5 5 0 0 1 3 10h-2M12 12l-4 6h4l-1 5 6-8h-4l1-3z"
+            d="M6 16a4 4 0 0 1-1-7 6 6 0 0 1 11-3 5 5 0 0 1 3 10h-2"
+            fill="var(--color-cloud-fill)"
+        />
+        <path
+            d="M12 12l-4 6h4l-1 5 6-8h-4l1-3z"
+            fill="var(--color-cloud-lightning)"
+            stroke="var(--color-text)"
+            stroke-width="1.2"
         />
     `,
     cloudClear: html`
@@ -160,6 +172,7 @@ const artwork = {
         </g>
         <path
             d="M13 19h6a3 3 0 0 0 0-6 4 4 0 0 0-7.5 1A2.5 2.5 0 0 0 13 19Z"
+            fill="var(--color-cloud-fill)"
         />
     `,
     cloudFew: html`
@@ -169,38 +182,44 @@ const artwork = {
         </g>
         <path
             d="M6 19h12a4 4 0 0 0 0-8 5 5 0 0 0-9.5 1A3.5 3.5 0 0 0 6 19Z"
+            fill="var(--color-cloud-fill)"
         />
     `,
     cloudScattered: html`
-        <path d="M4 10h8a3 3 0 0 0 0-6 4 4 0 0 0-7.5 1A2.5 2.5 0 0 0 4 10Z" />
+        <path
+            d="M4 10h8a3 3 0 0 0 0-6 4 4 0 0 0-7.5 1A2.5 2.5 0 0 0 4 10Z"
+            fill="var(--color-cloud-fill)"
+        />
         <path
             d="M11 21h9a3 3 0 0 0 0-6 4 4 0 0 0-7.5 1A2.5 2.5 0 0 0 11 21Z"
-            fill="currentColor"
-            fill-opacity="0.12"
+            fill="var(--color-cloud-fill)"
         />
     `,
     cloudBroken: html`
-        <path d="M4 12a3 3 0 0 1 0-6 5 5 0 0 1 9-2 4 4 0 0 1 6 5" />
+        <path
+            d="M4 12a3 3 0 0 1 0-6 5 5 0 0 1 9-2 4 4 0 0 1 6 5"
+            fill="var(--color-cloud-fill)"
+        />
         <path
             d="M7 20h12a4 4 0 0 0 0-8 5 5 0 0 0-9.5 1A3.5 3.5 0 0 0 7 20Z"
-            fill="currentColor"
-            fill-opacity="0.18"
+            fill="var(--color-cloud-fill)"
         />
     `,
     cloudOvercast: html`
-        <path d="M4 11a3 3 0 0 1 0-6 5 5 0 0 1 9-2 4 4 0 0 1 6 5" />
+        <path
+            d="M4 11a3 3 0 0 1 0-6 5 5 0 0 1 9-2 4 4 0 0 1 6 5"
+            fill="var(--color-cloud-fill)"
+        />
         <path
             d="M6 19h12a4 4 0 0 0 0-8 5 5 0 0 0-9.5 1A3.5 3.5 0 0 0 6 19Z"
-            fill="currentColor"
-            fill-opacity="0.3"
+            fill="var(--color-cloud-fill)"
         />
         <path d="M4 23h16" />
     `,
     cloudFog: html`
         <path
             d="M6 15a4 4 0 0 1-1-8 5 5 0 0 1 9-3 4 4 0 0 1 5 3 4 4 0 0 1-1 8Z"
-            fill="currentColor"
-            fill-opacity="0.12"
+            fill="var(--color-cloud-fill)"
         />
         <path
             d="m7 8 3 1M17 8l-3 1M10 13q2-2 4 0M2 19h13M18 19h4M5 23h3M11 23h8"

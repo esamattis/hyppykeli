@@ -18,6 +18,26 @@ const compactLayerStyles = css`
     .map-cloud-height {
         font-variant-numeric: tabular-nums;
     }
+    .cloud-storm-icon {
+        position: relative;
+        isolation: isolate;
+        display: inline-block;
+        flex-shrink: 0;
+        width: 30px;
+        height: 24px;
+    }
+    .cloud-storm-icon > svg:first-of-type {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+    .cloud-storm-icon > .cloud-lightning {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        z-index: 0;
+    }
 `;
 
 /** @param {{ clouds: CloudLayer[], focusable?: boolean }} props */
@@ -73,8 +93,20 @@ export function CompactCloudLayer({ cloud, focusable = true }) {
             data-tooltip=${tooltip}
         >
             ${scope.style}
-            ${h(Icon, { name: type?.icon ?? "cloudOvercast", size: 20, label })}
-            ${cloud.cumulonimbus ? h(Icon, { name: "lightning", size: 14, label: t("cloud.cumulonimbus") }) : null}
+            ${
+                cloud.cumulonimbus
+                    ? html`
+                          <span class="cloud-storm-icon">
+                              ${h(Icon, { name: type?.icon ?? "cloudOvercast", size: 20, label })}
+                              ${h(Icon, { name: "lightning", size: 18, className: "cloud-lightning", label: t("cloud.cumulonimbus") })}
+                          </span>
+                      `
+                    : h(Icon, {
+                          name: type?.icon ?? "cloudOvercast",
+                          size: 20,
+                          label,
+                      })
+            }
             ${
                 hasBase
                     ? html`
