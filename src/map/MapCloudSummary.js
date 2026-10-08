@@ -67,9 +67,8 @@ export function MapCloudSummary() {
         }
         .map-cloud-layers {
             display: flex;
+            flex-wrap: wrap;
             gap: var(--spacing-3);
-            overflow-x: auto;
-            scrollbar-width: thin;
         }
         .map-cloud-height {
             margin-inline-start: auto;
