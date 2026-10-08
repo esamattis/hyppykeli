@@ -94,7 +94,7 @@ export const english = {
         new Intl.RelativeTimeFormat(getIntlLocale()).format(value, "hours"),
     "fromNow.minutes": (/** @type {number} */ value) =>
         new Intl.RelativeTimeFormat(getIntlLocale()).format(value, "minutes"),
-    "metar.help": "How to read this METAR",
+    "metar.help": "METAR report",
     "metar.intro":
         "Read the groups from left to right. Times are UTC; wind directions refer to true north. Cloud heights are above the reporting aerodrome, not the dropzone.",
     "metar.report": "METAR: routine aerodrome weather report.",
@@ -245,6 +245,8 @@ export const english = {
         "Modelled means a computer weather model estimates the clouds using weather observations and calculations of how the atmosphere changes. This is the model's estimate for the current hour near the selected coordinates, rather than a direct cloud observation. Actual cloud cover and heights may differ.",
     "cloud.modelledCoverage":
         "The percentage estimates the part of the model's area covered by clouds at this altitude. It is not the probability of clouds. The sampled altitude is not a cloud base or top, and clouds between the sampled levels may be missed.",
+    "cloud.modelledSummaryHelp":
+        "The card shows sampled levels with cloud cover greater than 0%. Icons indicate cloud cover at each level. Heights are above the dropzone ground, rounded to the nearest 100 metres. Focus or hover over a level to see its cloud cover percentage, pressure and height to the nearest metre. No clouds means the available sampled levels have 0% cover; it does not guarantee a clear sky.",
     "cloud.forecast": "Cloud forecast",
     "cloud.forecast12h": "Forecast · 12 hours",
     "cloud.forecastTable": "Detailed cloud forecast",
@@ -653,7 +655,7 @@ const finnish = {
         new Intl.RelativeTimeFormat(getIntlLocale()).format(value, "hours"),
     "fromNow.minutes": (value) =>
         new Intl.RelativeTimeFormat(getIntlLocale()).format(value, "minutes"),
-    "metar.help": "Näin luet tämän METARin",
+    "metar.help": "METAR-sanoma",
     "metar.intro":
         "Lue ryhmät vasemmalta oikealle. Ajat ovat UTC-aikaa ja tuulen suunnat viittaavat tosipohjoiseen. Pilvikorkeudet mitataan havaintolentopaikan maanpinnasta, eivät hyppypaikasta.",
     "metar.report": "METAR: lentopaikan määräaikainen säähavainto.",
@@ -804,6 +806,8 @@ const finnish = {
         "Mallinnettu tarkoittaa, että tietokoneen säämalli arvioi pilviä säähavaintojen ja ilmakehän muutoksia kuvaavien laskelmien avulla. Tämä on mallin arvio nykyiselle tunnille valittujen koordinaattien lähellä, ei suora pilvihavainto. Todellinen pilvipeitto ja pilvien korkeudet voivat poiketa arviosta.",
     "cloud.modelledCoverage":
         "Prosenttiluku arvioi, kuinka suuri osa mallin alueesta on pilvien peitossa tällä korkeudella. Se ei tarkoita pilvien todennäköisyyttä. Näytetty korkeus ei ole pilven ala- tai yläraja, ja tasojen välissä olevat pilvet voivat jäädä näkymättä.",
+    "cloud.modelledSummaryHelp":
+        "Kortti näyttää tarkastellut tasot, joiden pilvipeitto on yli 0 %. Kuvakkeet kuvaavat kunkin tason pilvipeittoa. Korkeudet ovat hyppypaikan maanpinnasta, pyöristettyinä lähimpään 100 metriin. Kohdista tasoon tai vie osoitin sen päälle nähdäksesi pilvipeittoprosentin, ilmanpaineen ja korkeuden metrin tarkkuudella. Ei pilviä tarkoittaa, että saatavilla olevien tasojen pilvipeitto on 0 %; se ei takaa pilvetöntä taivasta.",
     "cloud.forecast": "Pilvien ennuste",
     "cloud.forecast12h": "Ennuste · 12 tuntia",
     "cloud.forecastTable": "Yksityiskohtainen pilviennuste",

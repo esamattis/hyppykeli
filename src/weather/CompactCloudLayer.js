@@ -79,7 +79,7 @@ export function CompactCloudLayer({ cloud, focusable = true }) {
                 hasBase
                     ? html`
                           <span class="map-cloud-height">
-                              ${formatCloudBase(cloud.base, cloud.unit, { approximate: true })}
+                              ${formatCloudBase(cloud.base, cloud.unit, { approximate: true }).replace(/^≈ /, "")}
                           </span>
                       `
                     : null

@@ -57,7 +57,25 @@ function OpenMeteoClouds({ profile }) {
                 <h3 class="cloud-observation-heading m-0">
                     ${t("cloud.modelledLayers")}
                 </h3>
-                ${h(DataSource, { sources: ["Open-Meteo"] })}
+                <div class="cloud-source-help">
+                    ${h(DataSource, { sources: ["Open-Meteo"] })}
+                    ${h(
+                        Help,
+                        {
+                            id: "open-meteo-cloud-help",
+                            label: `Open-Meteo · ${t("cloud.modelledLayers")}`,
+                        },
+                        html`
+                            <h3 class="mt-0">
+                                Open-Meteo · ${t("cloud.modelledLayers")}
+                            </h3>
+                            <p>${t("cloud.modelledMeaning")}</p>
+                            <p>${t("cloud.modelledCoverage")}</p>
+                            <p>${t("cloud.modelledSummaryHelp")}</p>
+                            ${h(DataSource, { sources: ["Open-Meteo"] })}
+                        `,
+                    )}
+                </div>
             </div>
             <div class="cloud-profile-content">
                 ${
@@ -109,6 +127,11 @@ export function CloudSummary() {
         .source-note {
             margin: 0;
             text-align: right;
+        }
+        .cloud-source-help {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-1);
         }
         .cloud-observation-header {
             display: flex;
@@ -181,9 +204,6 @@ export function CloudSummary() {
         }
         .forecast-heading h3 {
             margin: 0 auto 0 0;
-        }
-        .forecast-heading .source-note {
-            margin: 0;
         }
         .metar {
             display: block;
@@ -263,7 +283,10 @@ export function CloudSummary() {
                                   <h3 class="cloud-observation-heading m-0">
                                       ${t("cloud.observedLayers")}
                                   </h3>
-                                  ${h(DataSource, { sources: ["METAR"] })}
+                                  <div class="cloud-source-help">
+                                      ${h(DataSource, { sources: ["METAR"] })}
+                                      ${h(MetarHelp, { report: metar.metar })}
+                                  </div>
                               </div>
                               <div
                                   class="cloud-list cloud-layers compact-cloud-layers p-0 my-3"
@@ -329,7 +352,6 @@ export function CloudSummary() {
                                   <div class="summary-time">
                                       ${h(FromNow, { date: time })}
                                   </div>
-                                  ${h(MetarHelp, { report: metar.metar })}
                               </div>
                           `
                         : null
@@ -352,10 +374,6 @@ export function CloudSummary() {
                                   <h3 class="cloud-observation-heading">
                                       ${t("cloud.forecast12h")}
                                   </h3>
-                                  ${h(DataSource, {
-                                      sources: ["FMI", "Open-Meteo"],
-                                      plural: true,
-                                  })}
                                   ${h(TableDialog, {
                                       id: "cloud-forecast-table",
                                       title: t("cloud.forecastTable"),

@@ -299,6 +299,36 @@ test.beforeEach(async ({ page, baseURL }) => {
     );
 });
 
+test("cloud source help opens METAR and Open-Meteo explanations", async ({
+    page,
+}) => {
+    const card = page.locator("#clouds");
+    await card.getByRole("button", { name: "METAR-sanoma" }).click();
+    const metarDialog = card.getByRole("dialog");
+    await expect(metarDialog).toBeVisible();
+    await expect(metarDialog.locator(".metar-report")).toContainText(
+        "METAR EFJY",
+    );
+    await metarDialog
+        .getByRole("button", { name: "Sulje", exact: true })
+        .click();
+    await expect(metarDialog).not.toBeVisible();
+
+    const modelHelp = card.getByRole("button", {
+        name: "Open-Meteo · Mallinnetut pilvet",
+    });
+    await modelHelp.click();
+    const modelDialog = card.getByRole("dialog");
+    await expect(modelDialog).toBeVisible();
+    await expect(modelDialog).toContainText("Mallinnettu tarkoittaa");
+    await expect(modelDialog).toContainText("ei ole pilven ala- tai yläraja");
+    await expect(modelDialog).toContainText("hyppypaikan maanpinnasta");
+    await expect(modelDialog).toContainText("lähimpään 100 metriin");
+    await page.keyboard.press("Escape");
+    await expect(modelDialog).not.toBeVisible();
+    await expect(modelHelp).toBeFocused();
+});
+
 test("zero-height wind selection prefers observations and falls back to the forecast", async ({
     page,
 }) => {
@@ -912,7 +942,7 @@ test("METAR cloud layers expose descriptions and original feet in tooltips", asy
     await expect(
         layers.nth(2).getByRole("img", { name: "Ukkospilviä", exact: true }),
     ).toBeVisible();
-    await card.getByRole("button", { name: "Näin luet tämän METARin" }).click();
+    await card.getByRole("button", { name: "METAR-sanoma" }).click();
     await expect(card.getByLabel("METAR", { exact: true })).toHaveText(metar);
 });
 
@@ -921,7 +951,7 @@ test("METAR help explains the current report and closes with Escape", async ({
 }) => {
     const card = page.locator("#clouds");
     const trigger = card.getByRole("button", {
-        name: "Näin luet tämän METARin",
+        name: "METAR-sanoma",
     });
     await trigger.click();
     const dialog = card.locator("dialog[open]");
@@ -950,7 +980,7 @@ test("METAR help explains the current report and closes with Escape", async ({
         const { setLanguage } = await import("#app/translations.js");
         setLanguage("en");
     });
-    await card.getByRole("button", { name: "How to read this METAR" }).click();
+    await card.getByRole("button", { name: "METAR report" }).click();
     await expect(card.locator("dialog[open]")).toContainText("SH: showers");
     await expect(card.locator("dialog[open]")).toContainText(
         "above the reporting aerodrome",
@@ -1076,10 +1106,10 @@ test("manual banner opens the editor, applies METAR changes and restores live da
         (url) => url.searchParams.get("MANUAL_metar") === metar,
     );
     await expect(page.locator("#clouds .map-cloud-height")).toHaveText([
-        "≈ 200 m",
-        "≈ 500 m",
-        "≈ 900 m",
-        "≈ 1800 m",
+        "200 m",
+        "500 m",
+        "900 m",
+        "1800 m",
     ]);
     await editor.getByRole("button", { name: "Sulje", exact: true }).click();
     await expect(editor).not.toBeVisible();
@@ -3782,7 +3812,7 @@ test("full-window cloud summary prefers METAR and falls back to current Open-Met
         "sitten",
     );
     await expect(summary.locator(".map-cloud-layer").first()).toHaveText(
-        /≈ 200 m/,
+        /200 m/,
     );
     await expect(summary.locator(".map-cloud-warning")).toHaveText(
         "Ukkospilviä",
@@ -3796,7 +3826,7 @@ test("full-window cloud summary prefers METAR and falls back to current Open-Met
     await summary.click();
     await expect(summary).toHaveAttribute("aria-expanded", "true");
     await expect(summary.locator(".map-cloud-layer").first()).toContainText(
-        "≈ 200 m",
+        "200 m",
     );
     await summary.press("Enter");
     await expect(summary).toHaveAttribute("aria-expanded", "false");
