@@ -35,6 +35,7 @@ import {
 import { Info } from "#app/app/Info.js";
 import { FloatingMenuButton, SideMenu } from "#app/app/SideMenu.js";
 import { ThemeToggle } from "#app/app/ThemeToggle.js";
+import { FullscreenToggle } from "#app/app/FullscreenToggle.js";
 import { Title } from "#app/app/Title.js";
 import { h, html } from "htm/preact";
 import { useRef, useState } from "preact/hooks";
@@ -263,6 +264,7 @@ export function App() {
             <header class="page-header">
                 <${Title} />
                 <${ThemeToggle} />
+                <${FullscreenToggle} />
             </header>
 
             <div class="clouds p-panel" id="clouds">

@@ -2,6 +2,9 @@
 import { effect, signal } from "@preact/signals";
 
 export const english = {
+    "fullscreen.enter": "Enter fullscreen",
+    "fullscreen.exit": "Exit fullscreen",
+    "fullscreen.error": "Unable to change fullscreen. Try again.",
     "theme.system": "System",
     "theme.light": "Light",
     "theme.dark": "Dark",
@@ -610,6 +613,10 @@ export const english = {
 
 /** @satisfies {TranslationCatalog<typeof english>} */
 const finnish = {
+    "fullscreen.enter": "Siirry koko näytön tilaan",
+    "fullscreen.exit": "Poistu koko näytön tilasta",
+    "fullscreen.error":
+        "Koko näytön tilan vaihtaminen epäonnistui. Yritä uudelleen.",
     "theme.system": "Järjestelmä",
     "theme.light": "Vaalea",
     "theme.dark": "Tumma",
