@@ -284,14 +284,20 @@ export function DropzoneMap() {
         .direction-setting .dz-map {
             cursor: crosshair;
         }
-        :is(.direction-setting, .map-dragging) .map-cloud-summary,
-        :is(.direction-setting, .map-dragging) .map-compass,
-        :is(.direction-setting, .map-dragging) .map-navigation-controls,
-        :is(.direction-setting, .map-dragging) .map-errors {
+        :is(.direction-setting, .map-dragging, .map-zooming) .map-cloud-summary,
+        :is(.direction-setting, .map-dragging, .map-zooming) .map-compass,
+        :is(.direction-setting, .map-dragging, .map-zooming)
+            .map-navigation-controls,
+        :is(.direction-setting, .map-dragging, .map-zooming) .map-errors {
             visibility: hidden;
         }
-        .map-frame:is(.direction-setting, .map-dragging) .toolbar-controls,
-        .map-frame:is(.direction-setting, .map-dragging) .wind-level-icons {
+        .map-frame:is(.direction-setting, .map-dragging, .map-zooming)
+            .toolbar-controls,
+        .map-frame:is(.direction-setting, .map-dragging, .map-zooming)
+            .wind-level-icons {
+            visibility: hidden;
+        }
+        .map-frame:is(.map-dragging, .map-zooming) .map-wind-overlay {
             visibility: hidden;
         }
         .map-viewport:not(.map-visible) {
@@ -414,6 +420,7 @@ export function DropzoneMap() {
     const [draggingJumpRunDirection, setDraggingJumpRunDirection] =
         useState(false);
     const [draggingMap, setDraggingMap] = useState(false);
+    const [touchZoomingMap, setTouchZoomingMap] = useState(false);
     const [jumpers, setJumpers] = useMapState(
         "map_jumpers",
         /** @type {JumpRunJumper[]} */ ([{ ...DEFAULT_JUMPER }]),
@@ -577,6 +584,7 @@ export function DropzoneMap() {
         setLeafletInstance(leafletMap);
         setPlacingJumpRunDirection(false);
         setDraggingMap(false);
+        setTouchZoomingMap(false);
         /** @type {ReturnType<typeof setTimeout> | undefined} */
         let restoreControls;
         let mapDragActive = false;
@@ -616,11 +624,18 @@ export function DropzoneMap() {
         // Leaflet drops wheel zoom requests during its zoom animation. Tiny
         // fractional steps therefore feel slow; use its default wheel steps,
         // while keeping fractional zoom for smooth two-finger pan and pinch.
+        let touchZoomActive = false;
         const useWheelZoomSteps = () => {
             leafletMap.options.zoomSnap = 1;
         };
-        const useTouchZoomSteps = () => {
+        /** @param {TouchEvent} event */
+        const useTouchZoomSteps = (event) => {
+            touchZoomActive = event.touches.length === 2;
             leafletMap.options.zoomSnap = 0;
+        };
+        /** @param {TouchEvent} event */
+        const finishTouchZoom = (event) => {
+            touchZoomActive = event.touches.length === 2;
         };
         container.addEventListener("wheel", useWheelZoomSteps, {
             capture: true,
@@ -630,6 +645,9 @@ export function DropzoneMap() {
             capture: true,
             passive: true,
         });
+
+        container.addEventListener("touchend", finishTouchZoom, true);
+        container.addEventListener("touchcancel", finishTouchZoom, true);
 
         const theme = getTheme(mapRef.current ?? undefined);
         circleMarker([lat, lon], {
@@ -654,9 +672,12 @@ export function DropzoneMap() {
         /** @type {(() => void) | undefined} */
         let releaseZoom;
         const pauseMapAnimations = () => {
+            // Keep pinch controls hidden through Leaflet's settling animation.
+            setTouchZoomingMap(touchZoomActive);
             releaseZoom ??= holdAnimations();
         };
         const releaseMapAnimations = () => {
+            setTouchZoomingMap(false);
             releaseZoom?.();
             releaseZoom = undefined;
         };
@@ -692,6 +713,8 @@ export function DropzoneMap() {
                 useTouchZoomSteps,
                 true,
             );
+            container.removeEventListener("touchend", finishTouchZoom, true);
+            container.removeEventListener("touchcancel", finishTouchZoom, true);
             leafletMap.remove();
         };
     }, [coordinates]);
@@ -1944,7 +1967,7 @@ export function DropzoneMap() {
             </div>
             <div class="map-layout">
                 <div
-                    class=${`map-frame${fullWindow ? " full-window" : ""}${placingJumpRunDirection ? " direction-setting" : ""}${draggingMap ? " map-dragging" : ""}`}
+                    class=${`map-frame${fullWindow ? " full-window" : ""}${placingJumpRunDirection ? " direction-setting" : ""}${draggingMap ? " map-dragging" : ""}${touchZoomingMap ? " map-zooming" : ""}`}
                     data-map-layer=${satellite ? "satellite" : "street"}
                 >
                     ${h(FreefallToolbar, {
