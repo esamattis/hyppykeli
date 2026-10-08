@@ -41,8 +41,8 @@ function DropzoneList({ dropzones }) {
 export function Dropzones({ onSelect }) {
     return html`
         <h2>${t("landing.dropzones")}</h2>
+        <p class="mt-0 text-em-0-8">${t("landing.mapHelp")}</p>
         ${h(DropzoneCoordinateMap, { onSelect })}
-        <p class="mt-0">${t("landing.mapHelp")}</p>
         <p>${t("landing.complete")}</p>
         ${h(DropzoneList, { dropzones: completeDropzones })}
         <p>${t("landing.partial")}</p>

@@ -567,7 +567,7 @@ export const english = {
     "landing.mapHelp":
         "Open a dropzone by clicking its pin, or click elsewhere to create a new dropzone.",
     "landing.mapCreate": "Create Dropzone",
-    "landing.placeSearch": "Search for a place",
+    "landing.placeSearch": "Search to create a dropzone",
     "landing.search": "Search",
     "landing.searching": "Searching…",
     "landing.searchResults": "Place search results",
@@ -1158,7 +1158,7 @@ const finnish = {
     "landing.mapHelp":
         "Avaa hyppypaikka napsauttamalla sen merkkiä tai luo uusi hyppypaikka napsauttamalla muualle kartalla.",
     "landing.mapCreate": "Luo hyppypaikka",
-    "landing.placeSearch": "Hae paikkaa",
+    "landing.placeSearch": "Hae luodaksesi hyppypaikan",
     "landing.search": "Hae",
     "landing.searching": "Haetaan…",
     "landing.searchResults": "Paikkahaun tulokset",
