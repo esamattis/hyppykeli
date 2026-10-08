@@ -46,15 +46,18 @@ export function MapWindOverlay({ wind }) {
     /** @type {import('preact').RefObject<HTMLCanvasElement>} */
     const canvasRef = useRef(null);
 
+    const targetMotion = useRef(getMapWindMotion(wind));
+    /** @type {import('preact').RefObject<(() => void) | null>} */
+    const updateWind = useRef(null);
+
     useEffect(() => {
         const canvas = canvasRef.current;
         const context = canvas?.getContext("2d");
         if (!canvas || !context) return;
-        const motion = getMapWindMotion(wind);
-        if (!motion) {
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            return;
-        }
+        let motion = targetMotion.current;
+        let target = motion;
+        let start = motion;
+        let transitionTime = 0.3;
         const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
         let width = 0;
         let height = 0;
@@ -64,22 +67,94 @@ export function MapWindOverlay({ wind }) {
         let lastTime = 0;
         let visible = false;
         let ratio = 1;
-        // Rasterize the gradient and shadow once at the canvas resolution.
-        // Each frame then only moves and fades copies of this small sprite.
+        // Share one rasterized sprite across particles, rebuilding it only
+        // when the wind changes or the canvas resolution changes.
         const sprite = document.createElement("canvas");
         const spriteContext = sprite.getContext("2d");
         if (!spriteContext) return;
         const margin = 6;
-        const spriteWidth = Math.abs(motion.x * motion.length) + margin * 2;
-        const spriteHeight = Math.abs(motion.y * motion.length) + margin * 2;
-        const headX = margin + Math.max(0, motion.x * motion.length);
-        const headY = margin + Math.max(0, motion.y * motion.length);
+        /** @type {MapWindMotion | null} */
+        let spriteMotion = null;
+        let headX = 0;
+        let headY = 0;
+        const renderSprite = () => {
+            if (!motion) return;
+            spriteMotion = motion;
+            const spriteWidth = Math.abs(motion.x * motion.length) + margin * 2;
+            const spriteHeight =
+                Math.abs(motion.y * motion.length) + margin * 2;
+            headX = margin + Math.max(0, motion.x * motion.length);
+            headY = margin + Math.max(0, motion.y * motion.length);
+            sprite.width = Math.ceil(spriteWidth * ratio);
+            sprite.height = Math.ceil(spriteHeight * ratio);
+            spriteContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+            const tailX = headX - motion.x * motion.length;
+            const tailY = headY - motion.y * motion.length;
+            const gradient = spriteContext.createLinearGradient(
+                tailX,
+                tailY,
+                headX,
+                headY,
+            );
+            gradient.addColorStop(0, "transparent");
+            gradient.addColorStop(1, color);
+            spriteContext.strokeStyle = gradient;
+            spriteContext.lineWidth = 3;
+            spriteContext.lineCap = "round";
+            spriteContext.shadowColor = theme.mapWindHalo;
+            spriteContext.shadowBlur = 2;
+            spriteContext.beginPath();
+            spriteContext.moveTo(tailX, tailY);
+            spriteContext.lineTo(headX, headY);
+            spriteContext.stroke();
+        };
         /** @type {MapWindParticle[]} */
         let particles = [];
 
         /** @param {number} elapsed */
         const draw = (elapsed) => {
             context.clearRect(0, 0, width, height);
+            if (target !== targetMotion.current) {
+                target = targetMotion.current;
+                start = motion;
+                transitionTime = 0;
+            }
+            if (!start || !target || reducedMotion.matches) {
+                motion = target;
+                start = target;
+                transitionTime = 0.3;
+            } else if (transitionTime >= 0.3) {
+                motion = target;
+            } else {
+                transitionTime = Math.min(0.3, transitionTime + elapsed);
+                const progress = transitionTime / 0.3;
+                const eased = progress * progress * (3 - 2 * progress);
+                const startAngle = Math.atan2(start.y, start.x);
+                const targetAngle = Math.atan2(target.y, target.x);
+                // Signed shortest turn also handles bearings across north.
+                const turn = Math.atan2(
+                    Math.sin(targetAngle - startAngle),
+                    Math.cos(targetAngle - startAngle),
+                );
+                const angle = startAngle + turn * eased;
+                motion =
+                    progress === 1
+                        ? target
+                        : {
+                              x: Math.cos(angle),
+                              y: Math.sin(angle),
+                              pixelsPerSecond:
+                                  start.pixelsPerSecond +
+                                  (target.pixelsPerSecond -
+                                      start.pixelsPerSecond) *
+                                      eased,
+                              length:
+                                  start.length +
+                                  (target.length - start.length) * eased,
+                          };
+            }
+            if (!motion) return;
+            if (spriteMotion !== motion) renderSprite();
             const padding = motion.length;
             const spanX = width + 2 * padding;
             const spanY = height + 2 * padding;
@@ -142,29 +217,8 @@ export function MapWindOverlay({ wind }) {
             canvas.width = Math.round(width * ratio);
             canvas.height = Math.round(height * ratio);
             context.setTransform(ratio, 0, 0, ratio, 0, 0);
-            sprite.width = Math.ceil(spriteWidth * ratio);
-            sprite.height = Math.ceil(spriteHeight * ratio);
-            spriteContext.setTransform(ratio, 0, 0, ratio, 0, 0);
-            const tailX = headX - motion.x * motion.length;
-            const tailY = headY - motion.y * motion.length;
-            const gradient = spriteContext.createLinearGradient(
-                tailX,
-                tailY,
-                headX,
-                headY,
-            );
-            gradient.addColorStop(0, "transparent");
-            gradient.addColorStop(1, color);
-            spriteContext.strokeStyle = gradient;
-            spriteContext.lineWidth = 3;
-            spriteContext.lineCap = "round";
-            spriteContext.shadowColor = theme.mapWindHalo;
-            spriteContext.shadowBlur = 2;
-            spriteContext.beginPath();
-            spriteContext.moveTo(tailX, tailY);
-            spriteContext.lineTo(headX, headY);
-            spriteContext.stroke();
-            const padding = motion.length;
+            renderSprite();
+            const padding = motion?.length ?? 0;
             const count = Math.floor(
                 Math.min(160, Math.ceil((width * height) / 5000)) * 0.75,
             );
@@ -198,12 +252,14 @@ export function MapWindOverlay({ wind }) {
             visible = entry?.isIntersecting ?? false;
             updateAnimation();
         });
+        updateWind.current = updateAnimation;
         resize.observe(canvas);
         visibility.observe(canvas);
         reducedMotion.addEventListener("change", updateAnimation);
         document.addEventListener("visibilitychange", updateAnimation);
         const unsubscribe = ANIMATIONS_RUNNING.subscribe(updateAnimation);
         return () => {
+            updateWind.current = null;
             unsubscribe();
             cancelAnimationFrame(frame);
             resize.disconnect();
@@ -211,6 +267,11 @@ export function MapWindOverlay({ wind }) {
             reducedMotion.removeEventListener("change", updateAnimation);
             document.removeEventListener("visibilitychange", updateAnimation);
         };
+    }, []);
+
+    useEffect(() => {
+        targetMotion.current = getMapWindMotion(wind);
+        updateWind.current?.();
     }, [wind.speed, wind.direction]);
 
     return html`
