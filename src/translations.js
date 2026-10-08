@@ -1180,3 +1180,5 @@ effect(() => {
         }
     }
 });
+    "toolbar.errors": "Errors",
+    "toolbar.errors": "Virheet",

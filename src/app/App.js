@@ -47,15 +47,18 @@ export function App() {
     const scope = useScope(css`
         :scope {
             --panel-padding: var(--spacing-4);
+            --page-margin: var(--spacing-4);
+            --error-ribbon-height: var(--spacing-5);
             display: grid;
-            margin: var(--spacing-4);
+            position: relative;
+            padding-top: var(--error-ribbon-height);
+            margin: var(--page-margin);
             margin-bottom: var(--spacing-25);
             grid-template-columns: 1fr;
             gap: var(--spacing-4);
 
             /** MOBILE **/
             grid-template-areas:
-                ${ERRORS.value.length > 0 ? '"errors errors"' : ""}
                 "title title"
                 "clouds clouds"
                 "winds winds"
@@ -70,7 +73,6 @@ export function App() {
             :scope {
                 grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr);
                 grid-template-areas:
-                    ${ERRORS.value.length > 0 ? '"errors errors"' : ""}
                     "title title"
                     "clouds winds"
                     "dropzone-map dropzone-map"
@@ -100,7 +102,8 @@ export function App() {
         @media (max-width: 550px) {
             :scope {
                 --panel-padding: var(--spacing-3);
-                margin: var(--spacing-3);
+                --page-margin: var(--spacing-3);
+                margin: var(--page-margin);
                 margin-bottom: var(--spacing-25);
                 gap: var(--spacing-3);
             }
@@ -145,7 +148,21 @@ export function App() {
         }
 
         #errors {
-            grid-area: errors;
+            position: absolute;
+            top: calc(-1 * var(--page-margin));
+            right: 0;
+            left: 0;
+            z-index: 1;
+            overflow-x: auto;
+            overflow-y: hidden;
+            box-sizing: border-box;
+            padding: var(--spacing-0-5) var(--spacing-2);
+            border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+            background: var(--color-danger);
+            color: var(--color-on-primary);
+            font-size: 0.7rem;
+            line-height: 1.3;
+            white-space: nowrap;
         }
 
         .side-scroll {
@@ -157,7 +174,11 @@ export function App() {
         }
 
         .errors p {
-            color: var(--color-danger);
+            display: inline;
+            margin: 0;
+        }
+        .errors p + p::before {
+            content: " · ";
         }
 
         .h2-with-icon {
@@ -194,7 +215,7 @@ export function App() {
                           <div id="errors" class="errors">
                               ${ERRORS.value.map((error) => {
                                   return html`
-                                      <p>${error}</p>
+                                      <p role="alert">${error}</p>
                                   `;
                               })}
                           </div>

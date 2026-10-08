@@ -193,6 +193,7 @@ interface ToolbarWindLevel {
 }
 
 interface FreefallToolbarProps {
+    errors: string[];
     automaticJumpRun: boolean;
     onAutomaticJumpRunChange: (checked: boolean) => void;
     canPosition: boolean;

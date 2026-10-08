@@ -20,6 +20,7 @@ import { DataSource } from "#app/weather/DataSource.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
 import {
     FORECAST_COORDINATES,
+    ERRORS,
     LANDING_COORDINATES,
     NAME,
     STATION_COORDINATES,
@@ -1718,6 +1719,12 @@ export function DropzoneMap() {
                       : "map.jumpRunUnavailable",
               )
             : "";
+    const fullWindowErrors = [
+        ...ERRORS.value,
+        driftError,
+        jumpRunError,
+        shareError,
+    ].filter((error) => error !== "");
     const previousErrorsRef = useRef(/** @type {string[]} */ ([]));
     useEffect(() => {
         const errors = [driftError, jumpRunError, shareError].filter(
@@ -1819,6 +1826,7 @@ export function DropzoneMap() {
                 >
                     ${h(FreefallToolbar, {
                         fullWindow,
+                        errors: fullWindowErrors,
                         automaticJumpRun,
                         onAutomaticJumpRunChange: changeAutomaticJumpRun,
                         canPosition: canPositionAutomatic,
@@ -1937,7 +1945,8 @@ export function DropzoneMap() {
                         class=${`map-viewport${mapVisible ? " map-visible" : ""}${placingJumpRunDirection ? " direction-setting" : ""}`}
                     >
                         ${
-                            driftError || jumpRunError || shareError
+                            !fullWindow &&
+                            (driftError || jumpRunError || shareError)
                                 ? html`
                                       <div class="map-errors" role="status">
                                           ${

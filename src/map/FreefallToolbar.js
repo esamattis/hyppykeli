@@ -1,5 +1,6 @@
 // @ts-check
 import { Help } from "#app/shared/Help.js";
+import { Dialog } from "#app/shared/Dialog.js";
 import { CheckboxField } from "#app/shared/FormFields.js";
 import { WindBarb } from "#app/map/WindBarb.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
@@ -8,10 +9,12 @@ import { css, useScope } from "#app/useScope.js";
 import { JumpRunControls } from "#app/map/JumpRunControls.js";
 import { JumpRunSettingsButton } from "#app/map/JumpRunSettingsButton.js";
 import { h, html } from "htm/preact";
+import { useId, useRef } from "preact/hooks";
 
 /** @param {FreefallToolbarProps} props */
 export function FreefallToolbar({
     fullWindow,
+    errors,
     automaticJumpRun,
     onAutomaticJumpRunChange,
     onToggleFullWindow,
@@ -25,6 +28,9 @@ export function FreefallToolbar({
     jumpRunLengthMeters,
     windLevels,
 }) {
+    /** @type {import("preact").RefObject<HTMLDialogElement>} */
+    const errorDialogRef = useRef(null);
+    const errorDialogTitleId = useId();
     const scope = useScope(css`
         :scope {
             padding: 0;
@@ -148,6 +154,19 @@ export function FreefallToolbar({
         }
         .window-toggle {
             flex-shrink: 0;
+        }
+        .toolbar-window-actions .toolbar-error {
+            color: var(--color-danger);
+        }
+        :scope:is(dialog) {
+            width: min(32rem, calc(100vw - var(--spacing-8)));
+        }
+        .error-dialog-list {
+            display: grid;
+            gap: var(--spacing-2);
+            margin: 0;
+            padding: 0;
+            list-style: none;
         }
         .wind-level-icons {
             position: absolute;
@@ -387,6 +406,19 @@ export function FreefallToolbar({
                         disabled: typeof navigator.share !== "function",
                         onClick: onShare,
                     })}
+                    ${
+                        fullWindow && errors.length > 0
+                            ? h(ToolbarButton, {
+                                  label: t("toolbar.errors"),
+                                  icon: "warning",
+                                  className: "toolbar-error",
+                                  hasPopup: "dialog",
+                                  controls: "map-errors-dialog",
+                                  onClick: () =>
+                                      errorDialogRef.current?.showModal(),
+                              })
+                            : null
+                    }
                     ${h(ToolbarButton, {
                         label: fullWindow
                             ? t("toolbar.restoreMap")
@@ -400,6 +432,30 @@ export function FreefallToolbar({
                     })}
                 </div>
             </div>
+            ${
+                fullWindow && errors.length > 0
+                    ? h(
+                          Dialog,
+                          {
+                              id: "map-errors-dialog",
+                              dialogRef: errorDialogRef,
+                              labelledBy: errorDialogTitleId,
+                          },
+                          html`
+                              <h2 id=${errorDialogTitleId}>
+                                  ${t("toolbar.errors")}
+                              </h2>
+                              <ul class="error-dialog-list" role="alert">
+                                  ${errors.map(
+                                      (error) => html`
+                                          <li>${error}</li>
+                                      `,
+                                  )}
+                              </ul>
+                          `,
+                      )
+                    : null
+            }
             <div class="toolbar-actions">
                 <div
                     class="wind-level-icons p-0"
