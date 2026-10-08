@@ -4656,7 +4656,7 @@ test("cloud card hides empty model levels, preserves CAVOK, and shows one sun wi
     );
 });
 
-test("cloud summary stays at 12 hours while the detailed table shows 48 hourly entries", async ({
+test("cloud summary stays at 24 hours while the detailed table shows 48 hourly entries", async ({
     page,
 }) => {
     const labels = await page.evaluate(async () => {
@@ -4681,12 +4681,12 @@ test("cloud summary stays at 12 hours while the detailed table shows 48 hourly e
     });
     const forecast = page.locator("#clouds .cloud-forecast");
     await expect(forecast.getByRole("heading")).toHaveText(
-        "Ennuste · 12 tuntia",
+        "Ennuste · 24 tuntia",
     );
     const headers = forecast
         .locator(":scope > .cloud-forecast-details .cloud-forecast-table")
         .getByRole("columnheader", { includeHidden: true });
-    await expect(headers).toHaveCount(13);
+    await expect(headers).toHaveCount(25);
     await expect(headers.nth(1)).toHaveText(labels[0]);
     await forecast
         .getByRole("button", {
@@ -4700,7 +4700,7 @@ test("cloud summary stays at 12 hours while the detailed table shows 48 hourly e
     await expect(detailHeaders).toHaveCount(49);
     await expect(detailHeaders.nth(1)).toHaveText(labels[0]);
     await expect(detailHeaders.last()).toHaveText(labels[1]);
-    await expect(headers).toHaveCount(13);
+    await expect(headers).toHaveCount(25);
 });
 
 test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({

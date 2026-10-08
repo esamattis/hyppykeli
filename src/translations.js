@@ -269,7 +269,7 @@ export const english = {
     "cloud.modelledSummaryHelp":
         "The card shows sampled levels with cloud cover greater than 0%. Icons indicate cloud cover at each level. Heights are above the dropzone ground, rounded to the nearest 100 metres. Focus or hover over a level to see its cloud cover percentage, pressure and height to the nearest metre. No clouds means the available sampled levels have 0% cover; it does not guarantee a clear sky.",
     "cloud.forecast": "Cloud forecast",
-    "cloud.forecast12h": "Forecast · 12 hours",
+    "cloud.forecast24h": "Forecast · 24 hours",
     "cloud.forecastTable": "Detailed cloud forecast",
     "cloud.hourlyForecast": "Hourly cloud forecast, scroll horizontally",
     "cloud.cover": "Cloud cover",
@@ -874,7 +874,7 @@ const finnish = {
     "cloud.modelledSummaryHelp":
         "Kortti näyttää tarkastellut tasot, joiden pilvipeitto on yli 0 %. Kuvakkeet kuvaavat kunkin tason pilvipeittoa. Korkeudet ovat hyppypaikan maanpinnasta, pyöristettyinä lähimpään 100 metriin. Kohdista tasoon tai vie osoitin sen päälle nähdäksesi pilvipeittoprosentin, ilmanpaineen ja korkeuden metrin tarkkuudella. Ei pilviä tarkoittaa, että saatavilla olevien tasojen pilvipeitto on 0 %; se ei takaa pilvetöntä taivasta.",
     "cloud.forecast": "Pilvien ennuste",
-    "cloud.forecast12h": "Ennuste · 12 tuntia",
+    "cloud.forecast24h": "Ennuste · 24 tuntia",
     "cloud.forecastTable": "Yksityiskohtainen pilviennuste",
     "cloud.hourlyForecast": "Pilvien tuntiennuste, vieritä sivulle",
     "cloud.cover": "Pilvipeitto",

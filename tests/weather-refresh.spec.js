@@ -253,5 +253,5 @@ test("48-hour FMI forecasts load on demand and reset when the location changes",
         QUERY_PARAMS.value = { lat: "61", lon: "25" };
         await updateWeatherData();
     });
-    expect(ranges).toEqual([12, 48, 12]);
+    expect(ranges).toEqual([24, 48, 24]);
 });

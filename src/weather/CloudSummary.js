@@ -371,7 +371,7 @@ export function CloudSummary() {
                                   <h3
                                       class="cloud-observation-heading text-rem-0-75 font-medium"
                                   >
-                                      ${t("cloud.forecast12h")}
+                                      ${t("cloud.forecast24h")}
                                   </h3>
                                   ${h(TableDialog, {
                                       id: "cloud-forecast-table",
@@ -385,7 +385,7 @@ export function CloudSummary() {
                                   })}
                               </div>
                               ${h(CloudForecastTable, {
-                                  forecasts: forecasts.slice(0, 12),
+                                  forecasts: forecasts.slice(0, 24),
                                   summary: true,
                               })}
                           </section>

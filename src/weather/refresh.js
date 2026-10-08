@@ -165,7 +165,7 @@ async function fetchMetar(cacheOnly, signal, forceFetch) {
 let detailedForecastSettingsKey = "";
 
 function getForecastRange() {
-    return detailedForecastSettingsKey === weatherSettingsKey() ? 48 : 12;
+    return detailedForecastSettingsKey === weatherSettingsKey() ? 48 : 24;
 }
 
 /** @param {string} coordinates @param {boolean} cacheOnly @param {AbortSignal} signal @param {boolean} forceFetch */
@@ -202,7 +202,7 @@ function useOpenMeteoSurfaceWeather(data) {
         current ? { ...current, source: "openmeteo" } : undefined,
     );
 
-    const forecastRange = 12;
+    const forecastRange = 24;
     const start = new Date(now);
     start.setMinutes(0, 0, 0);
     const end = new Date(now);
