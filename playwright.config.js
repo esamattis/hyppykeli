@@ -6,7 +6,7 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     use: {
         headless: true,
-        baseURL: "http://127.0.0.1:8489",
+        baseURL: "http://127.0.0.1:8491",
         locale: "fi-FI",
         trace: "off",
     },
@@ -25,8 +25,8 @@ export default defineConfig({
         },
     ],
     webServer: {
-        command: "caddy file-server --listen 127.0.0.1:8489 --root .",
-        url: "http://127.0.0.1:8489",
+        command: "caddy file-server --listen 127.0.0.1:8491 --root .",
+        url: "http://127.0.0.1:8491",
         stderr: "ignore",
         reuseExistingServer: !process.env.CI,
     },

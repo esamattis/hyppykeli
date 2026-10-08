@@ -13,7 +13,7 @@ Playwright-testit: asenna riippuvuudet komennolla `mise exec -- pnpm install` ja
 Chromium komennolla `mise exec -- pnpm exec playwright install chromium`.
 Testit tarvitsevat myös Caddyn (`caddy`) PATHista.
 Aja testit headless-tilassa komennolla `pn test` (tai `mise exec -- pnpm test`). Testit käynnistävät oman
-Caddy-palvelimen porttiin 8489 ja testaavat työpöytä- ja mobiilinäkymät suoraan
+Caddy-palvelimen porttiin 8491 ja testaavat työpöytä- ja mobiilinäkymät suoraan
 kehittäjätilan URL-parametreilla. Ulkoiset pyynnöt estetään; tuuliarvoista
 tarkistetaan vain kehittäjätilassa asetetut havainnot ja kartan keskiarvo.
 Jäljitys on oletuksena pois päältä. Sen voi ottaa käyttöön komennolla
