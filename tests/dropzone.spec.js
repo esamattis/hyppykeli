@@ -1253,13 +1253,7 @@ test("jump-run settings share the editable wind table with manual mode", async (
     const table = section.locator(".jump-run-wind-table");
     await expect(table.locator("tbody tr")).toHaveCount(7);
     await expect(section).toContainText(
-        "Tuulitaso vaihtuu korkeuksien puolivälissä.",
-    );
-    await expect(section).toContainText(
-        "Varjon varassa ajautuminen käyttää samaa tuuliprofiilia",
-    );
-    await expect(section).toContainText(
-        "Saatavilla olevan korkeusvälin ulkopuolella käytetään lähintä tuulitasoa.",
+        "Tuulet vaikuttavat lentokoneen maanopeuteen sekä arvioituun ajautumiseen vapaapudotuksessa ja varjon varassa.",
     );
     const speed = table.locator('[name="MANUAL_upper_winds_2_speed"]');
     await expect(speed).toHaveAttribute("placeholder", "10.0");
@@ -1550,7 +1544,7 @@ test("below-ground wind defaults remain visible and are excluded from drift", as
     await expect(height).toHaveAttribute("placeholder", "-90");
     await expect(speed).toHaveAttribute("placeholder", "10.0");
     await expect(editor).toContainText(
-        "Negatiivinen korkeus on hyppypaikan maanpinnan alapuolella.",
+        "Maanpinnan tasolla tai sen alapuolella olevia rivejä ei käytetä ajautumislaskennassa.",
     );
     const read = () =>
         page.evaluate(async () => {

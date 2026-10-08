@@ -259,9 +259,7 @@ export function ManualWindTable({
             ${
                 explainDrift &&
                 html`
-                    <p>${t("manual.freefallWindHelp")}</p>
-                    <p>${t("manual.canopyWindHelp")}</p>
-                    <p>${t("manual.windRangeHelp")}</p>
+                    <p>${t("manual.driftHelp")}</p>
                 `
             }
             ${

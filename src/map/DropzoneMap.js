@@ -14,14 +14,12 @@ import {
     navigateQs,
 } from "#app/app/settings.js";
 import { Help } from "#app/shared/Help.js";
-import { formatClock } from "#app/shared/dates.js";
 import { isValidPosition, parseCoordinates } from "#app/shared/coordinates.js";
 import { Icon, WindArrow } from "#app/shared/icons.js";
 import { cardHeadingStyles, getTheme } from "#app/styles.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { DataSource } from "#app/weather/DataSource.js";
-import { forecastTime } from "#app/weather/providers/openMeteo.js";
 import {
     FORECAST_COORDINATES,
     ERRORS,
@@ -1893,50 +1891,18 @@ export function DropzoneMap() {
                     ${t("map.title")}
                     ${h(
                         Help,
-                        { id: "map-wind-help", wide: true },
+                        { id: "map-wind-help" },
                         html`
-                            <h3>${t("map.dataHelpTitle")}</h3>
-                            <p>${t("map.forecastNatureHelp")}</p>
-                            <p>${t("map.forecastLevelsHelp")}</p>
-                            <p>${t("map.forecastImplicationHelp")}</p>
-                            <p>
-                                ${t("map.title")}:
-                                Open-Meteo${time && data ? `, ${t("time.clock", formatClock(forecastTime(time, data.utc_offset_seconds)))}` : ` — ${t("map.sourceNoCurrent")}`}.
-                            </p>
-                            <p>
-                                <span
-                                    tabindex=${averageWind.altitudeTooltip ? 0 : undefined}
-                                    data-tooltip=${averageWind.altitudeTooltip}
-                                >
-                                    ${averageWind.label}
-                                </span>
-                                : ${t("map.averageHelp")}
-                            </p>
-                            <p>
-                                ${t("map.groundObservationHelp")}
-                                <br />
-                                ${t("map.ground")}:
-                                ${weatherSourceLabel(ground?.source) ?? "—"}${ground ? `, ${t("time.clock", formatClock(ground.time))}` : ` — ${t("map.sourceNoObservation")}`}${ground && (ground.source === "fmi" || ground.source === "roads") && STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
-                            </p>
-
-                            <h3>${t("map.usingHelpTitle")}</h3>
-                            <p>${t("map.navigationHelp")}</p>
-                            <p>${t("map.selectWind")} ${t("map.flowHelp")}</p>
-                            <p>
-                                N ${h(Icon, { name: "up" })} ·
-                                ${t("map.legendHelp")}
-                            </p>
-
-                            <h3>${t("map.jumpRunHelpTitle")}</h3>
-                            <p>${t("map.jumpRunHelp")}</p>
-                            <h3>${t("map.automaticHelpTitle")}</h3>
-                            <p>${t("map.automaticHelp")}</p>
-                            <p>${t("map.automaticLimitsHelp")}</p>
-                            <p>${t("settings.altitudeReferenceHelp")}</p>
-                            <h3>${t("map.positioningHelpTitle")}</h3>
-                            <p>${t("map.positioningHelp")}</p>
-                            <h3>${t("map.directionHelpTitle")}</h3>
-                            <p>${t("map.directionControlsHelp")}</p>
+                            <h3>${t("map.symbolsHelpTitle")}</h3>
+                            <ul class="ps-5">
+                                <li>${t("map.symbolsRunHelp")}</li>
+                                <li>${t("map.symbolsDriftHelp")}</li>
+                                <li>${t("map.symbolsWindHelp")}</li>
+                            </ul>
+                            <h3>${t("map.featuresHelpTitle")}</h3>
+                            <p>${t("map.featuresHelp")}</p>
+                            <h3>${t("map.accuracyHelpTitle")}</h3>
+                            <p>${t("map.accuracyHelp")}</p>
                         `,
                     )}
                 </h2>

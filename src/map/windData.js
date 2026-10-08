@@ -1,5 +1,5 @@
 // @ts-check
-import { getFreefallDrift } from "#app/map/freefall.js";
+import { getFreefallDrift, getWindLevelsInRange } from "#app/map/freefall.js";
 import { getJumpRunExitHeight } from "#app/map/mapState.js";
 import { parseUpperWinds } from "#app/manual/overrides.js";
 import { DROPZONE_ELEVATION, QUERY_PARAMS } from "#app/app/settings.js";
@@ -117,7 +117,7 @@ export function getMapWindData(now = Date.now(), useManual = true) {
                         : `≈ ${formatForecastAltitude(height)}`
                     : `${level} hPa`,
                 altitudeTooltip: Number.isFinite(height)
-                    ? formatForecastAltitude(height)
+                    ? `${level} hPa · ${formatExactAltitude(height)} ${t("map.aboveGround")}`
                     : undefined,
                 speed,
                 direction,
@@ -170,13 +170,24 @@ export function getMapWindData(now = Date.now(), useManual = true) {
     };
 }
 
-/** @param {FreefallWindLevel[]} winds @param {number} exitHeight @returns {SelectableMapWindLevel} */
+/** @param {MapAltitudeWindLevel[]} winds @param {number} exitHeight @returns {SelectableMapWindLevel} */
 function averageFreeFallWind(winds, exitHeight) {
     const bottom = 1000;
+    const usedHeights = new Set(
+        getWindLevelsInRange(winds, bottom, exitHeight).map(
+            (wind) => wind.height,
+        ),
+    );
+    const pressureLevels = winds
+        .filter((wind) => usedHeights.has(wind.height))
+        .map((wind) => `${wind.id} hPa · ${formatExactAltitude(wind.height)}`);
     const average = {
         id: "average",
         label: `≈ ${exitHeight}-${bottom} m`,
-        altitudeTooltip: `${formatExactAltitude(exitHeight)}–${formatExactAltitude(bottom)}`,
+        altitudeTooltip: [
+            `${formatExactAltitude(exitHeight)}–${formatExactAltitude(bottom)} ${t("map.aboveGround")}`,
+            ...pressureLevels,
+        ].join("\n"),
         speed: /** @type {number | null} */ (null),
         direction: /** @type {number | null} */ (null),
     };

@@ -349,46 +349,26 @@ export const english = {
         /** @type {string} */ speed,
         /** @type {number} */ direction,
     ) => `${label}: ${speed}, wind from ${direction}°`,
-    "map.sourceNoCurrent": "no data for the current hour",
-    "map.sourceNoObservation": "no observation",
-    "map.dataHelpTitle": "Wind data and limitations",
-    "map.forecastNatureHelp":
-        "The upper-level winds are not measurements taken at the dropzone. They are hourly weather-model forecasts retrieved from Open-Meteo for the selected forecast coordinates.",
-    "map.forecastLevelsHelp":
-        "Open-Meteo provides wind speed, direction, and geopotential height at pressure levels. The map subtracts the dropzone elevation and uses the nearest wind level for freefall and aircraft wind correction. Canopy drift linearly interpolates wind vectors between reported heights, including the ground wind, and holds the nearest endpoint wind outside the available range. This assumes a gradual transition through unmeasured heights. Levels below model terrain or at/below the dropzone are excluded. Manual winds retain their fixed sea-level heights of 110, 800, 1,500, 3,000, and 4,200 m before this adjustment.",
-    "map.forecastImplicationHelp":
-        "Actual winds at the dropzone can differ from the forecast, especially between the modelled levels or when conditions change. Treat the drift arrow and jump-run layout as planning estimates, verify the current conditions with observations and information from the pilot or dropzone, and do not use the map as the sole basis for operational decisions.",
-    "map.groundObservationHelp":
-        "Ground wind uses a valid station observation from the last hour, then a recent METAR, and finally the current Open-Meteo surface forecast. The selected source is shown below the map.",
-    "map.usingHelpTitle": "Using the map",
-    "map.jumpRunHelpTitle": "Jump run",
-    "map.selectWind": "Select an altitude to show its wind on the map.",
-    "map.navigationHelp": "Pan and zoom the map with two fingers.",
-    "map.jumpRunHelp":
-        "Each jumper or jump group gets a predicted freefall-drift arrow. Settings control ground track, aircraft true airspeed, exit interval, and shared exit altitude. Each jumper has its own opening altitude and freefall speed.",
+    "map.symbolsHelpTitle": "Symbols",
+    "map.symbolsRunHelp":
+        "The straight line shows the jump run. Circles mark exits for each jumper or group; green is first and red is last.",
+    "map.symbolsDriftHelp":
+        "Thick paths show estimated freefall drift to opening. Thin paths show wind drift under canopy.",
+    "map.symbolsWindHelp":
+        "Wind arrows and moving lines show where the wind flows. Longer lines mean stronger wind.",
+    "map.featuresHelpTitle": "Features",
+    "map.featuresHelp":
+        "Explore winds at different heights, add jumpers, and adjust flight and freefall settings. Position and rotate the run manually, or place it automatically relative to a landing target and keep it updated as winds change.",
+    "map.accuracyHelpTitle": "Accuracy",
+    "map.accuracyHelp":
+        "These are rough planning estimates based on forecasts or entered winds. Actual winds and drift may differ. Canopy glide is not modelled, and automatic placement does not guarantee reaching the landing area. Check current conditions with the pilot and dropzone; do not base jump decisions on this map alone.",
     "map.automaticUpdate": "Update automatically",
-    "map.automaticHelpTitle": "Automatic placement",
-    "map.automaticHelp":
-        "On initial placement, the configured default axis is reversed when necessary to face into the average upper wind. Every predicted opening is placed at least 50 m upwind of the landing target relative to the accumulated canopy wind drift below that opening. The preferred offset estimates canopy wind drift at a constant descent speed of 5 m/s, interpolating wind vectors between the ground observation and upper wind levels. This does not model canopy glide or guarantee landing-area reachability.",
-    "map.automaticLimitsHelp":
-        "Automatic placement requires a ground observation no older than one hour and current forecast winds. Missing data, an unachievable ground track, or conflicting wind directions can prevent placement. The positioning button reverses the current direction by 180° when needed to face into the average upper wind, then repeats the calculation for the configured landing coordinates. With Update automatically checked, new wind data repeats placement. Manual edits uncheck it and can leave openings outside these limits.",
-    "map.positioningHelpTitle": "Manual positioning",
-    "map.positioningHelp":
-        "Click or tap the map, then choose Opening to place the central predicted opening point there, Jump run to place the middle of the exit sequence there, or Landing to use that point as the landing target for automatic placement with the current direction. For an even number of jumpers, the central opening point is the midpoint of the two middle openings. Clicking elsewhere cancels the callout. Press Enter on the focused map to place the central opening point at the map centre. Add jumpers with the plus button.",
-    "map.directionHelpTitle": "Direction controls",
-    "map.directionControlsHelp":
-        "The direction menu contains drag mode, 90° rotations, and reset. In drag mode, drag with the mouse or a finger to rotate the run around the middle of its exit sequence. For an even number of groups, this is halfway between the two middle exits. Click the map or press the direction button again to finish. The 90° rotations and reset keep the central predicted opening point fixed. Reset restores the configured default axis, reversed when necessary to face into the average wind.",
-    "map.legendHelp":
-        "Arrows show flow direction. Line length represents speed.",
-    "map.flowHelp":
-        "Moving lines show the selected wind's flow direction. Stronger wind appears as longer, faster-moving lines.",
     "map.confirmJumpRunPosition": "Opening",
     "map.centerJumpRunPosition": "Jump run",
     "map.parachuteLandingPosition": "Landing",
     "map.directionPrompt": "Drag to set the jump-run direction.",
     "map.averageWind": "Average wind",
-    "map.averageHelp":
-        "Height-weighted average wind over the displayed freefall range above the dropzone. Uses forecast heights or manually entered measurements to provide a rough freefall-drift estimate.",
+    "map.aboveGround": "above ground",
     "map.shareFailed": "Sharing the map failed.",
     "map.driftUnavailable":
         "Drift estimate unavailable: upper-wind data is missing.",
@@ -434,7 +414,7 @@ export const english = {
     "toolbar.speed": "Speed",
     "toolbar.windLevels": "Wind levels",
     "toolbar.wind": "Wind",
-    "map.currentWinds": "Current winds",
+    "map.currentWinds": "Winds",
     "map.windBarbHelpTitle": "Reading wind barbs",
     "map.windBarbDirectionHelp":
         "The shaft points from the circle toward the direction the wind comes from. Hover or focus a level to see its altitude; select it to show that wind on the map. The lowest wind is at the bottom, with the average freefall wind above the altitude levels.",
@@ -473,7 +453,7 @@ export const english = {
     "settings.jumperIntervalHelp":
         "Time in seconds between consecutive jump group exits. The same interval applies to every group on the jump run. The aircraft’s ground speed, including wind at exit altitude, determines the distance between exit points. Different freefall speeds and opening altitudes can produce different spacing between opening points.",
     "settings.nextJumper": "Add jumper",
-    "settings.currentJumpers": "Current jumpers",
+    "settings.currentJumpers": "Jumpers",
     "settings.jumpers": "Jumpers / jump groups",
     "settings.setJumpRunDirection": "Rotate by dragging",
     "settings.turnJumpRunIntoWind": "Turn into selected wind",
@@ -514,15 +494,11 @@ export const english = {
     "manual.upperTitle": "Open-Meteo winds for the current hour",
     "manual.altitude": "Height above ground (m)",
     "manual.belowGroundHelp":
-        "A negative height is below the dropzone ground level. Rows at or below ground level are excluded from drift calculations.",
-    "manual.freefallWindHelp":
-        "Freefall drift uses the nearest wind level at each height from exit to opening, switching halfway between level heights. Wind at exit also affects aircraft ground speed and the spacing between jumpers.",
-    "manual.canopyWindHelp":
-        "Canopy drift uses the same wind profile from opening to ground, including recent ground observations at zero height. Drift depends on the time spent descending through each wind layer.",
-    "manual.windRangeHelp":
-        "Outside the available height range, the nearest wind level is reused. Rows at or below ground are excluded. If a required wind value is missing, that drift estimate is unavailable.",
+        "Rows at or below ground level are excluded from drift calculations.",
+    "manual.driftHelp":
+        "These winds affect aircraft ground speed and estimated freefall and canopy drift.",
     "manual.upperHelp":
-        "Editing this table replaces the altitude winds used by the map, freefall and canopy drift calculations. Heights are measured above the dropzone ground level and default to the current forecast heights. You can replace them with aircraft measurements. Placeholders show rounded defaults. Clearing an entered value restores the forecast default. Ground wind comes from the observations below.",
+        "Enter measured winds to replace the forecast. Heights are above the dropzone ground level. Empty fields use forecast defaults. Ground wind comes from the observations below.",
     "manual.description":
         "Manual values are stored in MANUAL_ URL parameters. An empty METAR field uses real data.",
     "manual.capture": "Save current values as manual values",
@@ -950,46 +926,26 @@ const finnish = {
     "map.windLabelMissing": (label) => `${label}: ei tietoa`,
     "map.windLabel": (label, speed, direction) =>
         `${label}: ${speed}, tuuli suunnasta ${direction}°`,
-    "map.sourceNoCurrent": "ei nykyisen tunnin tietoja",
-    "map.sourceNoObservation": "ei havaintoa",
-    "map.dataHelpTitle": "Tuulitiedot ja niiden rajoitukset",
-    "map.forecastNatureHelp":
-        "Korkeuksien tuulet eivät ole hyppypaikalla mitattuja arvoja. Ne ovat Open-Meteosta valitun ennustesijainnin koordinaateille haettuja säämallin tuntiennusteita.",
-    "map.forecastLevelsHelp":
-        "Open-Meteo antaa tuulen nopeuden, suunnan ja geopotentiaalikorkeuden painepinnoilla. Kartta vähentää hyppypaikan korkeuden merenpinnasta ja käyttää korkeudeltaan lähintä tuulitasoa vapaapudotuksessa ja lentokoneen tuulikorjauksessa. Varjon varassa tapahtuva ajautuminen interpoloidaan lineaarisesti tuulivektoreista ilmoitettujen korkeuksien välillä, mukaan lukien maatuuli. Korkeusvälin ulkopuolella käytetään lähintä päätepisteen tuulta. Tämä olettaa asteittaisen muutoksen mittaamattomilla korkeuksilla. Mallin maaston alapuoliset sekä hyppypaikan tasolla tai sen alapuolella olevat tasot jätetään pois. Käsin syötettyjen tuulten kiinteät korkeudet ennen korjausta ovat 110, 800, 1 500, 3 000 ja 4 200 m merenpinnasta.",
-    "map.forecastImplicationHelp":
-        "Hyppypaikan todellinen tuuli voi poiketa ennusteesta etenkin mallinnettujen korkeuksien välillä tai sään muuttuessa. Käytä ajautumisnuolta ja hyppylinjaa suunnittelun arvioina, varmista vallitsevat olosuhteet havainnoista sekä lentäjältä tai hyppypaikalta äläkä tee operatiivisia päätöksiä pelkän kartan perusteella.",
-    "map.groundObservationHelp":
-        "Maatuuli käyttää kelvollista havaintoaseman havaintoa viimeisen tunnin ajalta, sitten tuoretta METAR-sanomaa ja lopuksi Open-Meteon nykyhetken pintatuuliennustetta. Valittu lähde näkyy kartan alla.",
-    "map.usingHelpTitle": "Kartan käyttäminen",
-    "map.jumpRunHelpTitle": "Hyppylinja",
-    "map.selectWind": "Valitse korkeus nähdäksesi sen tuulen kartalla.",
-    "map.navigationHelp": "Karttaa voi liikuttaa ja zoomata kahdella sormella.",
-    "map.jumpRunHelp":
-        "Jokaiselle hyppääjälle tai hyppyryhmälle piirretään ennustettu vapaapudotusajautumisen nuoli. Asetukset määrittävät lentoradan suunnan maan suhteen, lentokoneen todellisen ilmanopeuden, uloshyppyjen aikavälin ja yhteisen uloshyppykorkeuden. Jokaisella hyppääjällä on oma avauskorkeus ja vapaapudotusnopeus.",
+    "map.symbolsHelpTitle": "Symbolit",
+    "map.symbolsRunHelp":
+        "Suora viiva näyttää hyppylinjan. Ympyrät merkitsevät hyppääjien tai ryhmien uloshyppypaikat; vihreä on ensimmäinen ja punainen viimeinen.",
+    "map.symbolsDriftHelp":
+        "Paksut viivat näyttävät arvioidun vapaapudotusajautumisen avaukseen asti. Ohuet viivat näyttävät tuuliajautumisen varjon varassa.",
+    "map.symbolsWindHelp":
+        "Tuulinuolet ja liikkuvat viivat näyttävät, mihin tuuli puhaltaa. Pidemmät viivat tarkoittavat voimakkaampaa tuulta.",
+    "map.featuresHelpTitle": "Toiminnot",
+    "map.featuresHelp":
+        "Tarkastele tuulia eri korkeuksilla, lisää hyppääjiä ja säädä lennon sekä vapaapudotuksen asetuksia. Siirrä ja kierrä hyppylinjaa käsin tai sijoita se automaattisesti laskeutumiskohteen suhteen ja pidä se ajan tasalla tuulten muuttuessa.",
+    "map.accuracyHelpTitle": "Tarkkuus",
+    "map.accuracyHelp":
+        "Arviot ovat suuntaa antavia ja perustuvat ennusteisiin tai syötettyihin tuuliin. Todellinen tuuli ja ajautuminen voivat poiketa niistä. Varjon liitoa ei mallinneta, eikä automaattinen sijoitus takaa laskeutumisalueelle pääsyä. Varmista vallitsevat olosuhteet lentäjältä ja hyppypaikalta; älä tee hyppypäätöksiä pelkän kartan perusteella.",
     "map.automaticUpdate": "Päivitä automaattisesti",
-    "map.automaticHelpTitle": "Automaattinen sijoitus",
-    "map.automaticHelp":
-        "Ensimmäisessä sijoituksessa määritetty oletusakseli käännetään tarvittaessa vasten yläkorkeuksien keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskohteen tuulenpuolelle suhteessa avautumiskorkeuden alapuolella kertyvään tuuliajautumiseen. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin interpoloimalla tuulivektoreita maatuulihavainnon ja ylätuulitasojen välillä. Arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä.",
-    "map.automaticLimitsHelp":
-        "Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ennustetuulet. Puuttuvat tiedot, lentorata jota ei voi lentää tai ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike kääntää nykyistä suuntaa tarvittaessa 180° vasten yläkorkeuksien keskituulta ja toistaa laskennan määritetyille laskeutumiskoordinaateille. Kun Päivitä automaattisesti on valittuna, uudet tuulitiedot toistavat sijoituksen. Käsin tehdyt muutokset poistavat valinnan ja voivat jättää avautumiskohtia näiden rajojen ulkopuolelle.",
-    "map.positioningHelpTitle": "Sijoittaminen käsin",
-    "map.positioningHelp":
-        "Klikkaa tai napauta karttaa ja valitse Avaus sijoittaaksesi keskimmäisen ennustetun avautumiskohdan siihen, Hyppylinja sijoittaaksesi uloshyppyjonon keskikohdan siihen tai Laskeutuminen käyttääksesi kohtaa automaattisen sijoituksen laskeutumiskohteena nykyisellä suunnalla. Kun hyppääjien määrä on parillinen, keskimmäinen avautumiskohta on kahden keskimmäisen avautumiskohdan puolivälissä. Klikkaus muualle sulkee puhekuplan. Enter kohdistetulla kartalla sijoittaa keskimmäisen avautumiskohdan kartan keskikohtaan. Lisää hyppääjiä pluspainikkeesta.",
-    "map.directionHelpTitle": "Suunnan säätäminen",
-    "map.directionControlsHelp":
-        "Suuntavalikko sisältää vetotilan, 90° kierrot ja palautuksen. Vedä vetotilassa hiirellä tai sormella kiertääksesi hyppylinjaa uloshyppyjonon keskikohdan ympäri. Parillisella ryhmämäärällä tämä on kahden keskimmäisen uloshypyn puoliväli. Klikkaa karttaa tai paina suuntapainiketta uudelleen lopettaaksesi. 90° kierrot ja palautus pitävät keskimmäisen ennustetun avautumiskohdan paikallaan. Palautus palauttaa määritetyn oletusakselin, tarvittaessa käännettynä vasten keskituulta.",
-    "map.legendHelp":
-        "Nuolet näyttävät virtaussuunnan. Kartan viivojen pituus kuvaa nopeutta.",
-    "map.flowHelp":
-        "Kartan liikkuvat viivat näyttävät valitun tuulen virtaussuunnan. Voimakkaampi tuuli näkyy pidempinä ja nopeammin liikkuvina viivoina.",
     "map.confirmJumpRunPosition": "Avaus",
     "map.centerJumpRunPosition": "Hyppylinja",
     "map.parachuteLandingPosition": "Laskeutuminen",
     "map.directionPrompt": "Vedä asettaaksesi hyppylinjan suunnan.",
     "map.averageWind": "Keskituuli",
-    "map.averageHelp":
-        "Korkeudella painotettu keskituuli näytetyllä vapaapudotuksen korkeusvälillä hyppypaikan maanpinnasta. Käyttää ennusteen korkeuksia tai käsin syötettyjä mittauksia ja antaa karkean arvion vapaapudotusajautumisesta.",
+    "map.aboveGround": "maanpinnasta",
     "map.shareFailed": "Kartan jakaminen epäonnistui.",
     "map.driftUnavailable":
         "Ajautumisarvio ei saatavilla: ylätuulitietoja puuttuu.",
@@ -1035,7 +991,7 @@ const finnish = {
     "toolbar.speed": "Nopeus",
     "toolbar.windLevels": "Tuulikorkeudet",
     "toolbar.wind": "Tuuli",
-    "map.currentWinds": "Nykyiset tuulet",
+    "map.currentWinds": "Tuulet",
     "map.windBarbHelpTitle": "Tuuliväkästen lukeminen",
     "map.windBarbDirectionHelp":
         "Varsi osoittaa ympyrästä suuntaan, josta tuuli tulee. Vie osoitin korkeuden päälle tai siirrä siihen kohdistus nähdäksesi korkeuden. Valitse korkeus näyttääksesi sen tuulen kartalla. Alin tuuli on alimpana ja vapaapudotuksen keskituuli korkeuksien yläpuolella.",
@@ -1073,7 +1029,7 @@ const finnish = {
     "settings.jumperIntervalHelp":
         "Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina. Sama aikaväli koskee jokaista hyppylinjan ryhmää. Lentokoneen maanopeus, jossa huomioidaan tuuli uloshyppykorkeudella, määrää uloshyppykohtien välimatkan. Erilaiset vapaapudotusnopeudet ja avauskorkeudet voivat tuottaa erilaiset avautumiskohtien välit.",
     "settings.nextJumper": "Lisää hyppääjä",
-    "settings.currentJumpers": "Nykyiset hyppääjät",
+    "settings.currentJumpers": "Hyppääjät",
     "settings.jumpers": "Hyppääjät / hyppyryhmät",
     "settings.setJumpRunDirection": "Kierrä vetämällä",
     "settings.turnJumpRunIntoWind": "Käännä valittuun tuuleen",
@@ -1113,15 +1069,11 @@ const finnish = {
     "manual.upperTitle": "Open-Meteon tuulet nykyiselle tunnille",
     "manual.altitude": "Korkeus maasta (m)",
     "manual.belowGroundHelp":
-        "Negatiivinen korkeus on hyppypaikan maanpinnan alapuolella. Maanpinnan tasolla tai sen alapuolella olevia rivejä ei käytetä ajautumislaskennassa.",
-    "manual.freefallWindHelp":
-        "Vapaapudotusajautuminen käyttää kullakin korkeudella lähintä tuulitasoa uloshypystä avaukseen. Tuulitaso vaihtuu korkeuksien puolivälissä. Uloshyppykorkeuden tuuli vaikuttaa myös lentokoneen maanopeuteen ja hyppääjien välisiin etäisyyksiin.",
-    "manual.canopyWindHelp":
-        "Varjon varassa ajautuminen käyttää samaa tuuliprofiilia avauksesta maanpintaan sekä tuoreita maanpinnan havaintoja nollakorkeudella. Ajautuminen riippuu kussakin tuulikerroksessa laskeutumiseen kuluvasta ajasta.",
-    "manual.windRangeHelp":
-        "Saatavilla olevan korkeusvälin ulkopuolella käytetään lähintä tuulitasoa. Maanpinnan tasolla tai sen alapuolella olevat rivit jätetään pois. Jos tarvittava tuuliarvo puuttuu, kyseinen ajautumisarvio ei ole saatavilla.",
+        "Maanpinnan tasolla tai sen alapuolella olevia rivejä ei käytetä ajautumislaskennassa.",
+    "manual.driftHelp":
+        "Tuulet vaikuttavat lentokoneen maanopeuteen sekä arvioituun ajautumiseen vapaapudotuksessa ja varjon varassa.",
     "manual.upperHelp":
-        "Taulukon muokkaus korvaa kartan, vapaapudotuksen ja varjon varassa ajautumisen laskennassa käytettävät korkeustuulet. Korkeudet ovat hyppypaikan maanpinnasta, ja oletuksena käytetään nykyisen ennusteen korkeuksia. Voit korvata ne lentokoneesta mitatuilla korkeuksilla. Paikkamerkit näyttävät pyöristetyt oletusarvot. Syötetyn arvon tyhjentäminen palauttaa ennusteen oletusarvon. Maanpinnan tuuli tulee alla olevista havainnoista.",
+        "Korvaa ennuste syöttämällä mitatut tuulet. Korkeudet ovat hyppypaikan maanpinnasta. Tyhjät kentät käyttävät ennusteen oletusarvoja. Maatuuli tulee alla olevista havainnoista.",
     "manual.description":
         "Käsin syötetyt arvot tallennetaan osoitteen MANUAL_-parametreihin. Tyhjä METAR-kenttä käyttää oikeita tietoja.",
     "manual.capture": "Tallenna nykyiset arvot manuaaliarvoiksi",

@@ -18,6 +18,9 @@ export function Tooltips() {
             overflow: visible;
             pointer-events: none;
         }
+        [data-tooltip-text] {
+            white-space: pre-line;
+        }
         .tooltip-arrow {
             position: absolute;
             top: 100%;
