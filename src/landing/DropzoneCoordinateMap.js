@@ -1,6 +1,7 @@
 // @ts-check
 import { Button } from "#app/shared/Button.js";
 import { PlaceSearch } from "#app/landing/PlaceSearch.js";
+import { enableRightClickZoomOut } from "#app/map/rightClickZoom.js";
 import { Icon } from "#app/shared/icons.js";
 import {
     completeDropzones,
@@ -64,6 +65,7 @@ export function DropzoneCoordinateMap({ onSelect }) {
         const leafletMap = map(container, {
             scrollWheelZoom: true,
         }).setView([64.5, 26], 5);
+        const disableRightClickZoomOut = enableRightClickZoomOut(leafletMap);
         mapRef.current = leafletMap;
         popupRef.current = popup({ closeButton: false });
         popupContentRef.current = document.createElement("div");
@@ -112,6 +114,7 @@ export function DropzoneCoordinateMap({ onSelect }) {
         observer.observe(container);
         return () => {
             observer.disconnect();
+            disableRightClickZoomOut();
             mapRef.current = null;
             popupRef.current = null;
             if (popupContentRef.current) render(null, popupContentRef.current);

@@ -1,5 +1,6 @@
 // @ts-check
 import { isMapRunCleared, writeMapQuery } from "#app/map/mapQuery.js";
+import { enableRightClickZoomOut } from "#app/map/rightClickZoom.js";
 import { CheckboxField } from "#app/shared/FormFields.js";
 import { Button } from "#app/shared/Button.js";
 import { render } from "preact";
@@ -272,14 +273,14 @@ export function DropzoneMap() {
         .direction-setting .dz-map {
             cursor: crosshair;
         }
-        .direction-setting .map-cloud-summary,
-        .direction-setting .map-compass,
-        .direction-setting .map-navigation-controls,
-        .direction-setting .map-errors {
+        :is(.direction-setting, .map-dragging) .map-cloud-summary,
+        :is(.direction-setting, .map-dragging) .map-compass,
+        :is(.direction-setting, .map-dragging) .map-navigation-controls,
+        :is(.direction-setting, .map-dragging) .map-errors {
             visibility: hidden;
         }
-        .map-frame.direction-setting .toolbar-controls,
-        .map-frame.direction-setting .wind-level-icons {
+        .map-frame:is(.direction-setting, .map-dragging) .toolbar-controls,
+        .map-frame:is(.direction-setting, .map-dragging) .wind-level-icons {
             visibility: hidden;
         }
         .map-viewport:not(.map-visible) {
@@ -401,6 +402,7 @@ export function DropzoneMap() {
         useState(false);
     const [draggingJumpRunDirection, setDraggingJumpRunDirection] =
         useState(false);
+    const [draggingMap, setDraggingMap] = useState(false);
     const [jumpers, setJumpers] = useMapState(
         "map_jumpers",
         /** @type {JumpRunJumper[]} */ ([{ ...DEFAULT_JUMPER }]),
@@ -559,9 +561,46 @@ export function DropzoneMap() {
             zoomSnap: 0,
             tapHold: false,
         }).setView(center ?? [lat, lon], zoom);
+        const disableRightClickZoomOut = enableRightClickZoomOut(leafletMap);
         activeLeafletRef.current = leafletMap;
         setLeafletInstance(leafletMap);
         setPlacingJumpRunDirection(false);
+        setDraggingMap(false);
+        /** @type {ReturnType<typeof setTimeout> | undefined} */
+        let restoreControls;
+        let mapDragActive = false;
+        let mapDragMoved = false;
+        /** @type {import('leaflet').Point | null} */
+        let dragOrigin = null;
+        const startMapDrag = () => {
+            clearTimeout(restoreControls);
+            mapDragActive = true;
+            mapDragMoved = false;
+            dragOrigin = leafletMap.project(leafletMap.getCenter());
+        };
+        const followMapDrag = () => {
+            if (!dragOrigin || mapDragMoved) return;
+            // Measure map movement in screen pixels so the threshold stays
+            // consistent at every zoom level and on mouse and touch devices.
+            if (
+                leafletMap
+                    .project(leafletMap.getCenter())
+                    .distanceTo(dragOrigin) >= 20
+            ) {
+                mapDragMoved = true;
+                setDraggingMap(true);
+            }
+        };
+        const finishMapPan = () => {
+            if (!mapDragActive) return;
+            mapDragActive = false;
+            dragOrigin = null;
+            restoreControls = setTimeout(() => setDraggingMap(false), 300);
+        };
+        leafletMap.on("dragstart", startMapDrag);
+        leafletMap.on("drag", followMapDrag);
+        // moveend includes inertial panning after the pointer is released.
+        leafletMap.on("moveend", finishMapPan);
 
         // Leaflet drops wheel zoom requests during its zoom animation. Tiny
         // fractional steps therefore feel slow; use its default wheel steps,
@@ -624,6 +663,10 @@ export function DropzoneMap() {
         });
         observer.observe(mapRef.current);
         return () => {
+            clearTimeout(restoreControls);
+            leafletMap.off("dragstart", startMapDrag);
+            leafletMap.off("drag", followMapDrag);
+            leafletMap.off("moveend", finishMapPan);
             leafletMap.off("zoomstart", pauseMapAnimations);
             leafletMap.off("zoomend", releaseMapAnimations);
             releaseMapAnimations();
@@ -631,6 +674,7 @@ export function DropzoneMap() {
                 activeLeafletRef.current = null;
             observer.disconnect();
             container.removeEventListener("wheel", useWheelZoomSteps, true);
+            disableRightClickZoomOut();
             container.removeEventListener(
                 "touchstart",
                 useTouchZoomSteps,
@@ -1885,7 +1929,7 @@ export function DropzoneMap() {
             </div>
             <div class="map-layout">
                 <div
-                    class=${`map-frame${fullWindow ? " full-window" : ""}${placingJumpRunDirection ? " direction-setting" : ""}`}
+                    class=${`map-frame${fullWindow ? " full-window" : ""}${placingJumpRunDirection ? " direction-setting" : ""}${draggingMap ? " map-dragging" : ""}`}
                 >
                     ${h(FreefallToolbar, {
                         fullWindow,
