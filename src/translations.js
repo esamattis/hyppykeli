@@ -106,6 +106,8 @@ export const english = {
     "error.coordinatesMissing":
         "Coordinates are missing. Enter latitude and longitude or select an FMI or Fintraffic observation station.",
     "error.noForecasts": "No forecasts found.",
+    "error.saveDropzone": (/** @type {string} */ error) =>
+        `Could not save the dropzone in this browser: ${error}`,
     "error.cachedFetch": (
         /** @type {string} */ provider,
         /** @type {string} */ error,
@@ -702,6 +704,8 @@ const finnish = {
     "error.coordinatesMissing":
         "Koordinaatit puuttuvat. Anna leveys- ja pituusaste tai määritä FMI:n tai Fintrafficin havaintoasema.",
     "error.noForecasts": "Ennusteita ei löytynyt.",
+    "error.saveDropzone": (error) =>
+        `Hyppypaikan tallentaminen tähän selaimeen epäonnistui: ${error}`,
     "error.cachedFetch": (provider, error) =>
         `${provider}: päivitys epäonnistui (${error}). Näytetään vanhentuneita välimuistin tietoja, kunnes päivitys onnistuu.`,
     "error.apiFetch": (provider, error) =>

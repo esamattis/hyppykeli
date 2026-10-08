@@ -1,5 +1,72 @@
 import { test, expect } from "@playwright/test";
 
+const savePath =
+    "/dz/?name=Vesis&lat=61.14567&lon=25.69214&elevation=150&roadsid=6001&save=1";
+
+test("automatic saving creates and updates a single saved dropzone", async ({
+    page,
+    baseURL,
+}) => {
+    await page.route("**/*", (route) =>
+        new URL(route.request().url()).origin === new URL(baseURL).origin
+            ? route.continue()
+            : route.abort(),
+    );
+    await page.goto(savePath);
+    await expect(page.locator("#winds .latest-wind-cell")).toHaveCount(3);
+    expect(new URL(page.url()).searchParams.has("save")).toBe(false);
+    await page.goto(savePath.replace("elevation=150", "elevation=160"));
+    await expect(page.locator("#winds .latest-wind-cell")).toHaveCount(3);
+    expect(new URL(page.url()).searchParams.has("save")).toBe(false);
+    expect(
+        await page.evaluate(() =>
+            JSON.parse(localStorage.getItem("saved_dzs")),
+        ),
+    ).toEqual([
+        {
+            name: "Vesis",
+            lat: "61.14567",
+            lon: "25.69214",
+            elevation: "160",
+            roadsid: "6001",
+        },
+    ]);
+});
+
+test("automatic save failures leave weather usable and report the storage error", async ({
+    page,
+    baseURL,
+}) => {
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.route("**/*", (route) =>
+        new URL(route.request().url()).origin === new URL(baseURL).origin
+            ? route.continue()
+            : route.abort(),
+    );
+    await page.addInitScript(() => {
+        const setItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+            if (key === "saved_dzs") {
+                throw new DOMException("Storage is full", "QuotaExceededError");
+            }
+            setItem.call(this, key, value);
+        };
+    });
+    await page.goto(savePath);
+    await expect(page.locator("#winds .latest-wind-cell")).toHaveCount(3);
+    await expect(
+        page.getByText(/Hyppypaikan tallentaminen.*QuotaExceededError/),
+    ).toBeVisible();
+    expect(new URL(page.url()).searchParams.has("save")).toBe(false);
+    expect(
+        await page.evaluate(
+            async () => (await import("#app/app/settings.js")).SAVED_DZs.value,
+        ),
+    ).toEqual([]);
+    expect(errors).toEqual([]);
+});
+
 test("weather modules stay idle until startup and repeated startup polls only once", async ({
     page,
     baseURL,

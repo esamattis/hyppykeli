@@ -19,17 +19,18 @@ export const SAVED_DZs = signal(
 export function saveCurrentDz(name) {
     name = name ?? undefined;
     let qp = QUERY_PARAMS.value;
-    const index = SAVED_DZs.value.findIndex((dz) => dz.name == name);
+    const saved = SAVED_DZs.peek();
+    const index = saved.findIndex((dz) => dz.name == name);
 
     qp = { ...qp, name, save: undefined };
 
-    if (index === -1) {
-        SAVED_DZs.value = [...SAVED_DZs.value, qp];
-    } else {
-        SAVED_DZs.value = SAVED_DZs.value.with(index, qp);
-    }
+    const updated =
+        index === -1
+            ? [...saved, qp]
+            : saved.map((dz, i) => (i === index ? qp : dz));
 
-    window.localStorage.setItem("saved_dzs", JSON.stringify(SAVED_DZs));
+    window.localStorage.setItem("saved_dzs", JSON.stringify(updated));
+    SAVED_DZs.value = updated;
 }
 
 /**

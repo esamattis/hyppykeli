@@ -106,7 +106,11 @@ export function startApp() {
             return;
         }
 
-        saveCurrentDz(name);
+        try {
+            saveCurrentDz(name);
+        } catch (error) {
+            addError(t("error.saveDropzone", String(error)));
+        }
         navigateQs({ save: undefined }, { replace: true });
     });
 
