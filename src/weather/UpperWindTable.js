@@ -1,5 +1,7 @@
 // @ts-check
-import { WindArrow } from "#app/shared/icons.js";
+import { WindBarb } from "#app/map/WindBarb.js";
+import { getJumpRunExitHeight } from "#app/map/mapState.js";
+import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { isNullish } from "#app/shared/values.js";
 import { upperWindTableStyles } from "#app/styles.js";
 import { t } from "#app/translations.js";
@@ -9,7 +11,6 @@ import {
     forecastTime,
 } from "#app/weather/providers/openMeteo.js";
 import { ForecastAltitude } from "#app/weather/ForecastAltitude.js";
-import { formatExactAltitude } from "#app/weather/altitudes.js";
 import { WIND_LEVELS } from "#app/weather/windLevels.js";
 import { OM_DATA } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
@@ -219,8 +220,11 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 0.2em;
-            color: var(--color-muted);
+        }
+
+        .wind-direction svg {
+            width: 40px;
+            height: 45px;
         }
 
         :scope.wind-low {
@@ -254,8 +258,6 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
 
     return html`
         <td
-            tabindex=${Number.isFinite(data.altitude) ? 0 : undefined}
-            data-tooltip=${Number.isFinite(data.altitude) ? `${t("cloud.altitudeSeaLevel")}: ${formatExactAltitude(data.altitude ?? 0)}` : undefined}
             class=${`wind-cell ${columnClass} ${getWindSpeedClass(
                 speedInMS,
                 height,
@@ -263,23 +265,25 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
         >
             ${scope.style}
             ${
-                isNullish(speed)
+                isNullish(speed) && isNullish(direction)
                     ? null
                     : html`
-                          <div class="wind-speed font-bold">
-                              ${speedInMS} m/s
+                          <div
+                              class="wind-direction"
+                              tabindex=${isNullish(direction) ? undefined : 0}
+                              data-tooltip=${isNullish(direction) ? undefined : `${t("weather.direction")}: ${roundedDirection}°`}
+                              aria-label=${isNullish(direction) ? undefined : `${t("weather.direction")}: ${roundedDirection}°`}
+                          >
+                              ${h(WindBarb, { speed, direction })}
                           </div>
                       `
             }
             ${
-                isNullish(direction)
+                isNullish(speed)
                     ? null
                     : html`
-                          <div class="wind-direction text-em-0-8">
-                              <span class="direction-degrees">
-                                  ${roundedDirection}°
-                              </span>
-                              ${h(WindArrow, { direction: roundedDirection })}
+                          <div class="wind-speed text-rem-0-5">
+                              ${speedInMS} m/s
                           </div>
                       `
             }
@@ -297,6 +301,8 @@ export function WindTable({ days, hourly = false }) {
         ${upperWindTableStyles}
     `);
     const currentHour = new Date().getHours();
+    const exitHeight = getJumpRunExitHeight();
+    const elevation = DROPZONE_ELEVATION.value;
     const blockStartHour = Math.floor(currentHour / 3) * 3;
     const visibleDays = days.flatMap(
         ({ title, tableData, isToday, isPast, id }, dayIndex) => {
@@ -331,6 +337,24 @@ export function WindTable({ days, hourly = false }) {
         },
     );
     const columns = visibleDays.flatMap(({ columns }) => columns);
+    const rows = PRESSURE_LEVELS.map(({ pressure, height }) => {
+        const level = pressure.split(" ")[0] ?? "";
+        const currentAltitude = columns.find((column) => column.isCurrentBlock)
+            ?.data[level]?.altitude;
+        const altitude = Number.isFinite(currentAltitude)
+            ? currentAltitude
+            : columns
+                  .map((column) => column.data[level]?.altitude)
+                  .find((value) => Number.isFinite(value));
+        return { pressure, height, altitude };
+    });
+    const levelAboveExit = Math.min(
+        ...rows.flatMap(({ altitude }) =>
+            !isNullish(altitude) && altitude - elevation > exitHeight
+                ? [altitude]
+                : [],
+        ),
+    );
 
     return html`
         <div
@@ -379,16 +403,14 @@ export function WindTable({ days, hourly = false }) {
                     </tr>
                 </thead>
                 <tbody>
-                    ${PRESSURE_LEVELS.map(({ pressure, height }) => {
-                        const level = pressure.split(" ")[0] ?? "";
-                        const currentAltitude = columns.find(
-                            (column) => column.isCurrentBlock,
-                        )?.data[level]?.altitude;
-                        const altitude = Number.isFinite(currentAltitude)
-                            ? currentAltitude
-                            : columns
-                                  .map((column) => column.data[level]?.altitude)
-                                  .find((value) => Number.isFinite(value));
+                    ${rows.map(({ pressure, height, altitude }) => {
+                        if (
+                            !hourly &&
+                            !isNullish(altitude) &&
+                            altitude - elevation > exitHeight &&
+                            altitude !== levelAboveExit
+                        )
+                            return null;
                         return html`
                             <tr key=${pressure}>
                                 <th scope="row" class="pressure-cell font-bold">
@@ -453,6 +475,9 @@ export function OpenMeteoRaw() {
     tomorrow.setDate(today.getDate() + 1);
     const currentHourStart = new Date(today);
     currentHourStart.setMinutes(0, 0, 0);
+    const forecastEnd = new Date(
+        currentHourStart.getTime() + 48 * 60 * 60 * 1000,
+    );
     const todayStart = new Date(today);
     todayStart.setHours(0, 0, 0, 0);
     const pastIndices = new Set(
@@ -471,6 +496,7 @@ export function OpenMeteoRaw() {
 
     data.hourly.time.forEach((time, index) => {
         const date = forecastTime(time, data.utc_offset_seconds);
+        if (date >= forecastEnd) return;
         if (date < currentHourStart && !pastIndices.has(index)) return;
         const dateKey = date.toDateString();
         const isToday = dateKey === today.toDateString();

@@ -140,7 +140,7 @@ async function fetchDataWithCoordinates(
         longitude: longitude.toString(),
         hourly,
         past_hours: "1",
-        forecast_days: "3",
+        forecast_hours: "48",
         timezone: "auto",
         wind_speed_unit: "ms",
     });

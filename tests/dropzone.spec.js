@@ -715,6 +715,49 @@ test("coordinate-only dropzone uses Open-Meteo without an observations card or M
     await expect(page.locator("#errors")).not.toContainText("Ei METAR-sanomaa");
 });
 
+test("upper wind summary follows exit height while details show every altitude", async ({
+    page,
+}) => {
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: openMeteoResponse() }),
+    );
+    await page.goto(
+        "/dz/?name=Wind+DZ&lat=40.7&lon=-74&elevation=49.0728&map_run_exit_height=4000",
+    );
+    const rows = page.locator(".upperwinds-compact tbody tr");
+    // Keep the nearest pressure surface above exit, even at an exact height above 4000 m.
+    await expect(rows).toHaveCount(5);
+    await expect(
+        rows.first().locator(".pressure-cell [data-tooltip]"),
+    ).toHaveAttribute("data-tooltip", /600 hPa/);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ map_run_exit_height: "1000", elevation: "500" });
+    });
+    await expect(rows).toHaveCount(4);
+    await expect(
+        rows.first().locator(".pressure-cell [data-tooltip]"),
+    ).toHaveAttribute("data-tooltip", /700 hPa/);
+    await page
+        .getByRole("button", { name: "Näytä tarkat tiedot", exact: true })
+        .click();
+    await expect(page.locator(".upperwinds-raw tbody tr")).toHaveCount(7);
+    await expect(page.locator(".upperwinds-raw .time-header")).toHaveCount(49);
+    await page
+        .getByRole("button", { name: "Näytä kooste", exact: true })
+        .click();
+    await expect(rows).toHaveCount(4);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ map_run_exit_height: "3700" });
+    });
+    // A surface exactly at exit is retained along with the next one above it.
+    await expect(rows).toHaveCount(6);
+    await expect(
+        rows.first().locator(".pressure-cell [data-tooltip]"),
+    ).toHaveAttribute("data-tooltip", /500 hPa/);
+});
+
 test("Open-Meteo m/s winds keep their strength in the table and jump-run calculations", async ({
     page,
 }) => {
@@ -734,10 +777,18 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
         route.fulfill({ json: response }),
     );
     const requestPromise = page.waitForRequest("https://api.open-meteo.com/**");
-    await page.goto("/dz/?name=Wind+DZ&lat=40.7&lon=-74");
+    await page.goto(
+        "/dz/?name=Wind+DZ&lat=40.7&lon=-74&map_run_exit_height=8000",
+    );
     const request = await requestPromise;
     expect(new URL(request.url()).searchParams.get("wind_speed_unit")).toBe(
         "ms",
+    );
+    expect(new URL(request.url()).searchParams.get("forecast_hours")).toBe(
+        "48",
+    );
+    expect(new URL(request.url()).searchParams.has("forecast_days")).toBe(
+        false,
     );
     const fields = new URL(request.url()).searchParams.get("hourly").split(",");
     for (const pressure of [400, 500]) {
@@ -2742,8 +2793,9 @@ test.describe("upper wind forecast timezones", () => {
                 .first()
                 .locator(".current-column");
             await expect(current.locator(".wind-speed")).toHaveText("19 m/s");
-            await expect(current.locator(".direction-degrees")).toHaveText(
-                "242°",
+            await expect(current.locator(".wind-direction")).toHaveAttribute(
+                "data-tooltip",
+                "Suunta: 242°",
             );
             await expect(raw.locator("th.time-header").first()).toHaveText(
                 "8:00",
@@ -4523,7 +4575,8 @@ test("cloud card shows METAR before the current Open-Meteo profile", async ({
     await expect(card.locator(".cloud-layer a")).toHaveCount(0);
     const rows = card.locator(".cloud-profile-layer");
     await expect(rows).toHaveCount(3);
-    await expect(rows.first()).toContainText("0 m");
+    // The 20 m surface is below the model terrain at 68 m.
+    await expect(rows.first()).toContainText("800 m");
     await expect(rows.nth(2)).toContainText("4300 m");
     const altitude = rows.nth(2);
     await altitude.focus();
