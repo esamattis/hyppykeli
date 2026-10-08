@@ -4267,13 +4267,12 @@ test("cloud card hides empty model levels, preserves CAVOK, and shows one sun wi
 test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
     page,
 }) => {
-    await page.evaluate(async () => {
+    const currentHourLabel = await page.evaluate(async () => {
         const { FORECASTS, FORECAST_SOURCE } =
             await import("#app/weather/state.js");
         const { OM_DATA } = await import("#app/weather/state.js");
         const firstHour = new Date();
         firstHour.setMinutes(0, 0, 0);
-        firstHour.setHours(firstHour.getHours() + 1);
         const times = Array.from(
             { length: 3 },
             (_, index) =>
@@ -4293,6 +4292,19 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
             temperature: 10,
             dewPoint: 5,
         }));
+        FORECASTS.value = [
+            {
+                source: "forecast",
+                time: new Date(firstHour.getTime() - 60 * 60 * 1000),
+                lowCloudCover: 99,
+            },
+            ...FORECASTS.value,
+            {
+                source: "forecast",
+                time: new Date(firstHour.getTime() + 30 * 60 * 1000),
+                lowCloudCover: 99,
+            },
+        ];
         FORECAST_SOURCE.value = "FMI";
 
         const hourlyTimes = times.map((time) =>
@@ -4315,6 +4327,8 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
             850: 1500,
             700: 3074,
             600: 4200,
+            500: 5500,
+            400: 7000,
         })) {
             hourly[`windspeed_${level}hPa`] = hourlyTimes.map(() => 12);
             hourly[`winddirection_${level}hPa`] = hourlyTimes.map(() => 200);
@@ -4323,16 +4337,45 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
                 () => height,
             );
         }
+        hourly.cloud_cover_700hPa = [70, 10, 0];
+        hourly.cloud_cover_600hPa = [100, 100, 100];
+        hourly.cloud_cover_1000hPa[2] = 0;
+        hourly.cloud_cover_925hPa[2] = 0;
         hourly.geopotential_height_925hPa[1] = 20;
         hourly.geopotential_height_850hPa[2] = null;
         OM_DATA.value = { utc_offset_seconds: 0, elevation: 68, hourly };
+        const { formatClock } = await import("#app/shared/dates.js");
+        return formatClock(firstHour);
     });
 
     const forecast = page.locator("#clouds .cloud-forecast");
     const compactTable = forecast.locator(
-        ":scope > .forecast-scroll .cloud-forecast-table",
+        ":scope > .cloud-forecast-details .cloud-forecast-table",
     );
-    await expect(compactTable.locator("tbody tr")).toHaveCount(1);
+    await expect(compactTable.getByRole("columnheader").nth(1)).toHaveText(
+        currentHourLabel,
+    );
+    await expect(compactTable.getByRole("columnheader")).toHaveCount(4);
+    await expect(compactTable.locator("tbody tr")).toHaveCount(2);
+    await expect(compactTable.getByRole("rowheader")).toContainText([
+        "0–2 km",
+        "0–4 km",
+    ]);
+    await expect(compactTable.locator(".forecast-source-label")).toHaveText([
+        "FMI",
+        "Open-Meteo",
+    ]);
+    const compactRows = compactTable.locator("tbody tr");
+    await expect(compactRows.nth(0).locator("td")).toHaveText([
+        "10 %",
+        "20 %",
+        "30 %",
+    ]);
+    await expect(compactRows.nth(1).locator("td")).toHaveText([
+        "70 %",
+        "40 %",
+        "0 %",
+    ]);
     await expect(compactTable).not.toContainText("Tiivistymiskorkeus");
     await forecast
         .getByRole("button", {
@@ -4344,7 +4387,11 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         name: "Yksityiskohtainen pilviennuste",
     });
     await expect(dialog).toBeVisible();
-    await expect(dialog.locator("tbody tr")).toHaveCount(11);
+    await expect(dialog.getByRole("columnheader").nth(1)).toHaveText(
+        currentHourLabel,
+    );
+    await expect(dialog.getByRole("columnheader")).toHaveCount(4);
+    await expect(dialog.locator("tbody tr")).toHaveCount(12);
     await expect(dialog).toContainText("Kokonaispilvipeite");
     await expect(dialog).toContainText("Matalat pilvet");
     await expect(dialog).toContainText("Keskipilvet");
@@ -4362,6 +4409,7 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         "Keskipilvet",
         "Keski- ja alapilvet",
         "Matalat pilvet",
+        "0–4 km",
         "4000 m",
         "3000 m",
         "1500 m",
@@ -4380,6 +4428,7 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
             "ei ole keski- ja alapilvien erillisten prosenttien summa",
         ],
         ["Matalat pilvet", "ei pilven alarajan korkeutta"],
+        ["Pilvipeitto 0–4 km:n korkeudella", "Suurin Open-Meteon"],
     ]) {
         const button = dialog.getByRole("button", {
             name: `${label}: Ohje`,
@@ -4395,12 +4444,52 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         await expect(dialog).toBeVisible();
         await expect(button).toBeFocused();
     }
+    const summaryRow = dialog.getByRole("row").filter({
+        has: page.getByRole("button", { name: /^Pilvipeitto 0–/ }),
+    });
+    await expect(summaryRow.locator("td")).toHaveText(["70 %", "40 %", "0 %"]);
+    const setExitHeight = async (exitHeight) => {
+        await page.evaluate(async (exitHeight) => {
+            const { navigateQs } = await import("#app/app/settings.js");
+            navigateQs({
+                map_run_settings: JSON.stringify({
+                    direction: 0,
+                    speedKmh: 157,
+                    separationSeconds: 5,
+                    exitHeight,
+                }),
+            });
+        }, exitHeight);
+    };
+    await setExitHeight(1000);
+    await expect(summaryRow.getByRole("rowheader")).toContainText("0–1 km");
+    await expect(compactRows.nth(1).getByRole("rowheader")).toContainText(
+        "0–1 km",
+    );
+    await expect(compactRows.nth(1).locator("td")).toHaveText([
+        "40 %",
+        "40 %",
+        "0 %",
+    ]);
+    await expect(summaryRow.locator("td")).toHaveText(["40 %", "40 %", "0 %"]);
+    await setExitHeight(4200);
+    await expect(summaryRow.getByRole("rowheader")).toContainText("0–4.2 km");
+    await expect(summaryRow.locator("td")).toHaveText([
+        "100 %",
+        "100 %",
+        "100 %",
+    ]);
+    await setExitHeight(-1);
+    await expect(summaryRow.getByRole("rowheader")).toContainText("0–4 km");
+    await expect(summaryRow.locator("td")).toHaveText(["70 %", "40 %", "0 %"]);
+    await setExitHeight(4000);
+
     const pressureRow = (level) =>
         dialog.locator(`tr:has(th[title="${level} hPa"])`);
     await expect(pressureRow(925).locator("td")).toHaveText([
         "40 %",
         "—",
-        "40 %",
+        "0 %",
     ]);
     await expect(pressureRow(850).locator("td")).toHaveText([
         "40 %",
@@ -4425,7 +4514,7 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
     await expect(pressureRow(925).locator("td")).toHaveText([
         "40 %",
         "—",
-        "40 %",
+        "0 %",
     ]);
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
@@ -4435,9 +4524,14 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
     await expect(pressureRow(1000).locator("td")).toHaveText([
         "40 %",
         "40 %",
-        "40 %",
+        "0 %",
     ]);
     await expect(page.locator("#title")).toContainText("0 m merenpinnasta");
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        OM_DATA.value = null;
+    });
+    await expect(summaryRow.locator("td")).toHaveText(["—", "—", "—"]);
 });
 
 for (const [axis, wind, speed, expected] of [

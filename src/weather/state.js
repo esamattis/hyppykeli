@@ -163,11 +163,12 @@ export const WIND_SOURCE = computed(() =>
  * @type {Signal<WeatherData[]>}
  */
 export const HOURLY_CLOUD_FORECASTS = computed(() => {
-    const now = Date.now();
+    const currentHour = new Date();
+    currentHour.setMinutes(0, 0, 0);
     return FORECASTS.value
         .filter(
             (forecast) =>
-                forecast.time.getTime() > now &&
+                forecast.time.getTime() >= currentHour.getTime() &&
                 forecast.time.getMinutes() === 0,
         )
         .slice(0, 12);

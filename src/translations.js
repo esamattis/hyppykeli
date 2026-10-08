@@ -149,6 +149,10 @@ export const english = {
     "cloud.hourlyForecast": "Hourly cloud forecast, scroll horizontally",
     "cloud.cover": "Cloud cover",
     "cloud.totalCover": "Total cloud cover",
+    "cloud.rangeCover": (/** @type {string} */ range) =>
+        `Cloud cover at ${range}`,
+    "cloud.rangeCoverHelp":
+        "The highest Open-Meteo cloud cover percentage among the available sampled levels from the dropzone ground to the selected jump-run exit altitude, calculated separately for each hour.",
     "cloud.lowCover": "Low cloud cover",
     "cloud.middleCover": "Middle cloud cover",
     "cloud.highCover": "High cloud cover",
@@ -169,7 +173,7 @@ export const english = {
         "An estimate of the height above ground where rising air would begin to condense, calculated from FMI's forecast temperature and dew point and rounded to the nearest 100 metres. It is not a forecast or observation of every cloud layer's base. Clouds formed elsewhere can have a different base.",
     "cloud.altitudeMeters": (/** @type {string} */ altitude) => `${altitude} m`,
     "cloud.forecastTableHelp":
-        "Percentages estimate cloud cover at each altitude or altitude range: 0% means no cover and 100% means complete cover. They do not indicate the probability of clouds.",
+        "Percentages estimate cloud cover at each altitude or altitude range: 0% means no cover and 100% means complete cover.",
     "cloud.coverage": (/** @type {string} */ value) => `${value} of sky`,
     "cloud.condensationEstimate": "Condensation level estimate",
     "cloud.baseHelp":
@@ -602,6 +606,9 @@ const finnish = {
     "cloud.hourlyForecast": "Pilvien tuntiennuste, vieritä sivulle",
     "cloud.cover": "Pilvipeitto",
     "cloud.totalCover": "Kokonaispilvipeite",
+    "cloud.rangeCover": (range) => `Pilvipeitto ${range}:n korkeudella`,
+    "cloud.rangeCoverHelp":
+        "Suurin Open-Meteon pilvipeittoprosentti saatavilla olevilta mallitasoilta hyppypaikan maanpinnasta valittuun hyppylinjan uloshyppykorkeuteen, laskettuna erikseen jokaiselle tunnille.",
     "cloud.lowCover": "Matalat pilvet",
     "cloud.middleCover": "Keskipilvet",
     "cloud.highCover": "Korkeat pilvet",
@@ -622,7 +629,7 @@ const finnish = {
         "Arvio korkeudesta maanpinnasta, jolla nousevan ilman vesihöyry alkaa tiivistyä. Lasketaan Ilmatieteen laitoksen ennustamasta lämpötilasta ja kastepisteestä ja pyöristetään lähimpään 100 metriin. Se ei ole kaikkien pilvikerrosten alarajan ennuste tai havainto. Muualla syntyneiden pilvien alaraja voi olla eri korkeudella.",
     "cloud.altitudeMeters": (altitude) => `${altitude} m`,
     "cloud.forecastTableHelp":
-        "Prosentit arvioivat pilvipeittoa kullakin korkeudella tai korkeusvälillä: 0 % tarkoittaa, ettei pilvipeittoa ole, ja 100 % tarkoittaa täyttä pilvipeittoa. Ne eivät kuvaa pilvien todennäköisyyttä.",
+        "Prosentit arvioivat pilvipeittoa kullakin korkeudella tai korkeusvälillä: 0 % tarkoittaa, ettei pilvipeittoa ole, ja 100 % tarkoittaa täyttä pilvipeittoa.",
     "cloud.coverage": (value) => `${value} taivaasta`,
     "cloud.condensationEstimate": "Tiivistymiskorkeuden arvio",
     "cloud.baseHelp":

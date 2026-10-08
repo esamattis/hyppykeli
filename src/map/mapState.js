@@ -1,5 +1,6 @@
 // @ts-check
 import { QUERY_PARAMS, navigateQs } from "#app/app/settings.js";
+import { FREEFALL_EXIT } from "#app/map/freefall.js";
 import { computed } from "@preact/signals";
 import { useMemo } from "preact/hooks";
 
@@ -67,3 +68,14 @@ export const isValidJumpRunSettings = (value) =>
     value.separationSeconds >= 0 &&
     isFiniteNumber(value.exitHeight) &&
     value.exitHeight > 0;
+
+/** Read the selected jump-run exit height above the dropzone, in metres. */
+export function getJumpRunExitHeight() {
+    try {
+        const settings = JSON.parse(
+            QUERY_PARAMS.value.map_run_settings ?? "null",
+        );
+        if (isValidJumpRunSettings(settings)) return settings.exitHeight;
+    } catch {}
+    return FREEFALL_EXIT;
+}

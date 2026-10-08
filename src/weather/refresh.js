@@ -176,6 +176,7 @@ function useOpenMeteoSurfaceWeather(data) {
         Number(QUERY_PARAMS.value.forecast_range) || 12,
     );
     const start = new Date(now);
+    start.setMinutes(0, 0, 0);
     const end = new Date(now);
     end.setHours(end.getHours() + forecastRange, 0, 0, 0);
     const day = FORECAST_DAY.value;

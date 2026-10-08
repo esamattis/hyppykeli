@@ -1,6 +1,6 @@
 // @ts-check
-import { FREEFALL_EXIT, getFreefallDrift } from "#app/map/freefall.js";
-import { isValidJumpRunSettings } from "#app/map/mapState.js";
+import { getFreefallDrift } from "#app/map/freefall.js";
+import { getJumpRunExitHeight } from "#app/map/mapState.js";
 import { parseUpperWinds } from "#app/manual/overrides.js";
 import { DROPZONE_ELEVATION, QUERY_PARAMS } from "#app/app/settings.js";
 import {
@@ -111,13 +111,7 @@ export function getMapWindData(now = Date.now(), useManual = true) {
     );
     const profile = hasHeights ? altitudeWinds : [];
     const freefallWinds = profile;
-    let exitHeight = FREEFALL_EXIT;
-    try {
-        const settings = JSON.parse(
-            QUERY_PARAMS.value.map_run_settings ?? "null",
-        );
-        if (isValidJumpRunSettings(settings)) exitHeight = settings.exitHeight;
-    } catch {}
+    const exitHeight = getJumpRunExitHeight();
     const averageWind = averageFreeFallWind(freefallWinds, exitHeight);
     /** @type {SelectableMapWindLevel[]} */
     const winds = [

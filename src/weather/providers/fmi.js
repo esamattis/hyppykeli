@@ -125,6 +125,7 @@ export async function fetchFmiForecasts(coordinates, options) {
     const forecastRange = Math.max(12, options.range);
 
     const forecastStartTime = new Date();
+    forecastStartTime.setMinutes(0, 0, 0);
     const forecastEndTime = new Date();
     forecastEndTime.setHours(
         forecastEndTime.getHours() + forecastRange,

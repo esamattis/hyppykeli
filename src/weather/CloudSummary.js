@@ -7,14 +7,12 @@ import {
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { Help } from "#app/shared/Help.js";
-import { formatClock, formatDate } from "#app/shared/dates.js";
 import { Icon } from "#app/shared/icons.js";
-import { isNullish, whenAll } from "#app/shared/values.js";
+import { whenAll } from "#app/shared/values.js";
 import { summaryStyles } from "#app/styles.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { CloudForecastTable } from "#app/weather/CloudForecastTable.js";
-import { PercentageCloudCover } from "#app/weather/CloudIndicators.js";
 import { DataSource } from "#app/weather/DataSource.js";
 import { TableDialog } from "#app/weather/WeatherTables.js";
 import {
@@ -196,52 +194,6 @@ export function CloudSummary() {
         .forecast-heading .source-note {
             margin: 0;
         }
-        .forecast-scroll {
-            overflow-x: auto;
-            overscroll-behavior-x: contain;
-            scrollbar-width: thin;
-        }
-        .forecast-scroll:focus-visible {
-            outline: 2px solid var(--color-primary);
-            outline-offset: 2px;
-        }
-        .cloud-forecast-table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: max-content;
-            font-variant-numeric: tabular-nums;
-            font-size: 0.8rem;
-            white-space: nowrap;
-        }
-        .cloud-forecast-table th,
-        .cloud-forecast-table td {
-            padding: var(--spacing-2-5) var(--spacing-3);
-            text-align: center;
-            white-space: nowrap;
-        }
-        .cloud-forecast-table thead th {
-            font-size: 0.85rem;
-        }
-        .cloud-forecast-table tbody th {
-            color: var(--color-muted);
-            font-size: 0.85rem;
-            font-weight: normal;
-            white-space: normal;
-            min-width: 10ch;
-        }
-        .cloud-forecast-table td {
-            min-width: 7ch;
-            font-weight: 650;
-        }
-        .cloud-forecast-table tbody tr + tr > * {
-            border-top: 1px solid var(--color-border);
-        }
-        .forecast-reading {
-            vertical-align: middle;
-        }
-        .forecast-reading .cloud-cover {
-            align-items: center;
-        }
         .metar {
             display: block;
             width: 100%;
@@ -419,7 +371,8 @@ export function CloudSummary() {
                                       ${t("cloud.forecast12h")}
                                   </h3>
                                   ${h(DataSource, {
-                                      sources: ["FMI"],
+                                      sources: ["FMI", "Open-Meteo"],
+                                      plural: true,
                                   })}
                                   ${h(TableDialog, {
                                       id: "cloud-forecast-table",
@@ -429,42 +382,10 @@ export function CloudSummary() {
                                       }),
                                   })}
                               </div>
-                              <div
-                                  class="forecast-scroll pb-1.5"
-                                  tabindex="0"
-                                  role="region"
-                                  aria-label=${t("cloud.hourlyForecast")}
-                              >
-                                  <table class="cloud-forecast-table">
-                                      <thead>
-                                          <tr>
-                                              ${forecasts.map(
-                                                  (forecast) => html`
-                                                      <th
-                                                          scope="col"
-                                                          title=${formatDate(forecast.time)}
-                                                      >
-                                                          ${formatClock(forecast.time)}
-                                                      </th>
-                                                  `,
-                                              )}
-                                          </tr>
-                                      </thead>
-                                      <tbody>
-                                          <tr>
-                                              ${forecasts.map(
-                                                  (forecast) => html`
-                                                      <td
-                                                          class="forecast-reading"
-                                                      >
-                                                          ${isNullish(forecast.lowCloudCover) ? "—" : h(PercentageCloudCover, { percentage: forecast.lowCloudCover })}
-                                                      </td>
-                                                  `,
-                                              )}
-                                          </tr>
-                                      </tbody>
-                                  </table>
-                              </div>
+                              ${h(CloudForecastTable, {
+                                  forecasts,
+                                  summary: true,
+                              })}
                           </section>
                       `
                     : null

@@ -1,5 +1,6 @@
 // @ts-check
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
+import { getJumpRunExitHeight } from "#app/map/mapState.js";
 import { Help } from "#app/shared/Help.js";
 import { formatClock, formatDate } from "#app/shared/dates.js";
 import { isNullish, whenAll } from "#app/shared/values.js";
@@ -21,19 +22,35 @@ const CLOUD_FORECAST_LEVELS = ["600", "700", "850", "925", "1000"];
 /**
  * @param {Object} props
  * @param {WeatherData[]} props.forecasts
+ * @param {boolean} [props.summary]
  */
 export function CloudForecastTable(props) {
+    const summary = props.summary ?? false;
     const scope = useScope(css`
         .forecast-scroll {
             isolation: isolate;
+            overflow-x: auto;
+            overscroll-behavior-x: contain;
+            scrollbar-width: thin;
+        }
+        .forecast-scroll:focus-visible {
+            outline: 2px solid var(--color-primary);
+            outline-offset: 2px;
         }
         .cloud-forecast-detail-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: max-content;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
             font-size: 0.75rem;
             line-height: 1.3;
         }
         .cloud-forecast-detail-table th,
         .cloud-forecast-detail-table td {
             padding: var(--spacing-1) var(--spacing-1-5);
+            text-align: center;
+            white-space: nowrap;
         }
         .cloud-forecast-detail-table thead th,
         .cloud-forecast-detail-table tbody th {
@@ -47,6 +64,9 @@ export function CloudForecastTable(props) {
             text-align: left;
         }
         .cloud-forecast-detail-table tbody th {
+            color: var(--color-muted);
+            font-weight: normal;
+            white-space: normal;
             min-width: 9ch;
         }
         .cloud-forecast-detail-table tr > :not(:first-child) {
@@ -86,12 +106,33 @@ export function CloudForecastTable(props) {
     `);
     const openMeteo = OM_DATA.value;
     const elevation = DROPZONE_ELEVATION.value;
+    const exitHeight = getJumpRunExitHeight();
+    const cloudRange = `0–${exitHeight / 1000} km`;
     const openMeteoIndexes = new Map(
         openMeteo?.hourly.time.map((time, index) => [
             forecastTime(time, openMeteo.utc_offset_seconds).getTime(),
             index,
         ]) ?? [],
     );
+
+    const openMeteoRows = CLOUD_FORECAST_LEVELS.map((level) => ({
+        level,
+        layers: props.forecasts.map((forecast) =>
+            getOpenMeteoCloudLayer(
+                openMeteo,
+                openMeteoIndexes.get(forecast.time.getTime()),
+                level,
+                elevation,
+            ),
+        ),
+    }));
+    const openMeteoCover = props.forecasts.map((_, index) => {
+        const covers = openMeteoRows.flatMap(({ layers }) => {
+            const layer = layers[index];
+            return layer && layer.height <= exitHeight ? [layer.cover] : [];
+        });
+        return covers.length ? Math.max(...covers) : null;
+    });
 
     return html`
         <div class="cloud-forecast-details">
@@ -119,44 +160,52 @@ export function CloudForecastTable(props) {
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="forecast-group-start">
-                            <th scope="row">
-                                <span class="forecast-source-label mt-1 mb-1">
-                                    FMI
-                                </span>
-                                ${t("weather.condensationLevelShort")}
-                                ${h(
-                                    Help,
-                                    {
-                                        label: `${t("weather.condensationLevel")}: ${t("common.help")}`,
-                                    },
-                                    html`
-                                        <h3>
-                                            ${t("weather.condensationLevel")}
-                                        </h3>
-                                        <p>
-                                            ${t("cloud.condensationForecastHelp")}
-                                        </p>
-                                    `,
-                                )}
-                            </th>
-                            ${props.forecasts.map(
-                                (forecast) => html`
-                                    <td class="forecast-label">
-                                        ${
-                                            whenAll(
-                                                [
-                                                    forecast.temperature,
-                                                    forecast.dewPoint,
-                                                ],
-                                                (temp, dew) =>
-                                                    `${getLiftedCondensationLevel(temp, dew)}M`,
-                                            ) ?? "—"
-                                        }
-                                    </td>
-                                `,
-                            )}
-                        </tr>
+                        ${
+                            summary
+                                ? null
+                                : html`
+                                      <tr class="forecast-group-start">
+                                          <th scope="row">
+                                              <span
+                                                  class="forecast-source-label mt-1 mb-1"
+                                              >
+                                                  FMI
+                                              </span>
+                                              ${t("weather.condensationLevelShort")}
+                                              ${h(
+                                                  Help,
+                                                  {
+                                                      label: `${t("weather.condensationLevel")}: ${t("common.help")}`,
+                                                  },
+                                                  html`
+                                                      <h3>
+                                                          ${t("weather.condensationLevel")}
+                                                      </h3>
+                                                      <p>
+                                                          ${t("cloud.condensationForecastHelp")}
+                                                      </p>
+                                                  `,
+                                              )}
+                                          </th>
+                                          ${props.forecasts.map(
+                                              (forecast) => html`
+                                                  <td class="forecast-label">
+                                                      ${
+                                                          whenAll(
+                                                              [
+                                                                  forecast.temperature,
+                                                                  forecast.dewPoint,
+                                                              ],
+                                                              (temp, dew) =>
+                                                                  `${getLiftedCondensationLevel(temp, dew)}M`,
+                                                          ) ?? "—"
+                                                      }
+                                                  </td>
+                                              `,
+                                          )}
+                                      </tr>
+                                  `
+                        }
                         ${[
                             {
                                 label: t("cloud.totalCover"),
@@ -192,104 +241,137 @@ export function CloudForecastTable(props) {
                             },
                             {
                                 label: t("cloud.lowCover"),
+                                summary: true,
                                 altitude: "0–2 km",
                                 help: t("cloud.lowCoverHelp"),
                                 values: props.forecasts.map(
                                     (forecast) => forecast.lowCloudCover,
                                 ),
                             },
-                        ].map(
-                            (row) => html`
-                                <tr>
-                                    <th scope="row">
-                                        ${row.altitude}
-                                        ${h(
-                                            Help,
-                                            {
-                                                label: `${row.label}: ${t("common.help")}`,
-                                            },
-                                            html`
-                                                <h3>${row.label}</h3>
-                                                <p>${row.help}</p>
-                                                <p>
-                                                    ${t("cloud.fmiCoverHelp")}
-                                                </p>
+                        ]
+                            .filter((row) => !summary || row.summary)
+                            .map(
+                                (row) => html`
+                                    <tr>
+                                        <th scope="row">
+                                            ${
+                                                summary
+                                                    ? html`
+                                                          <span
+                                                              class="forecast-source-label mt-1 mb-1"
+                                                          >
+                                                              FMI
+                                                          </span>
+                                                      `
+                                                    : null
+                                            }
+                                            ${row.altitude}
+                                            ${h(
+                                                Help,
+                                                {
+                                                    label: `${row.label}: ${t("common.help")}`,
+                                                },
+                                                html`
+                                                    <h3>${row.label}</h3>
+                                                    <p>${row.help}</p>
+                                                    <p>
+                                                        ${t("cloud.fmiCoverHelp")}
+                                                    </p>
+                                                `,
+                                            )}
+                                        </th>
+                                        ${row.values.map(
+                                            (percentage) => html`
+                                                <td class="forecast-reading">
+                                                    ${
+                                                        isNullish(percentage)
+                                                            ? "—"
+                                                            : h(
+                                                                  CloudCoverSquare,
+                                                                  {
+                                                                      percentage,
+                                                                  },
+                                                              )
+                                                    }
+                                                </td>
                                             `,
                                         )}
-                                    </th>
-                                    ${row.values.map(
-                                        (percentage) => html`
-                                            <td class="forecast-reading">
-                                                ${
-                                                    isNullish(percentage)
-                                                        ? "—"
-                                                        : h(CloudCoverSquare, {
-                                                              percentage,
-                                                          })
-                                                }
-                                            </td>
-                                        `,
-                                    )}
-                                </tr>
-                            `,
-                        )}
-                        ${CLOUD_FORECAST_LEVELS.map((level) => {
-                            const layers = props.forecasts.map((forecast) =>
-                                getOpenMeteoCloudLayer(
-                                    openMeteo,
-                                    openMeteoIndexes.get(
-                                        forecast.time.getTime(),
-                                    ),
-                                    level,
-                                    elevation,
-                                ),
-                            );
-                            const rowAltitude = layers.find(
-                                (layer) => layer,
-                            )?.height;
-
-                            return html`
-                                <tr
-                                    class=${level === CLOUD_FORECAST_LEVELS[0] ? "forecast-group-start" : undefined}
-                                >
-                                    <th scope="row" title=${`${level} hPa`}>
+                                    </tr>
+                                `,
+                            )}
+                        <tr class="forecast-group-start">
+                            <th scope="row">
+                                <span class="forecast-source-label mt-1 mb-1">
+                                    Open-Meteo
+                                </span>
+                                ${cloudRange}
+                                ${h(
+                                    Help,
+                                    {
+                                        label: `${t("cloud.rangeCover", cloudRange)}: ${t("common.help")}`,
+                                    },
+                                    html`
+                                        <h3>
+                                            ${t("cloud.rangeCover", cloudRange)}
+                                        </h3>
+                                        <p>${t("cloud.rangeCoverHelp")}</p>
+                                    `,
+                                )}
+                            </th>
+                            ${openMeteoCover.map(
+                                (percentage) => html`
+                                    <td class="forecast-reading">
                                         ${
-                                            level === CLOUD_FORECAST_LEVELS[0]
-                                                ? html`
-                                                      <span
-                                                          class="forecast-source-label mt-1 mb-1"
-                                                      >
-                                                          Open-Meteo
-                                                      </span>
-                                                  `
-                                                : null
-                                        }
-                                        ${
-                                            isNullish(rowAltitude)
-                                                ? t("common.noData")
-                                                : h(ForecastAltitude, {
-                                                      height: rowAltitude,
-                                                      reference: `${level} hPa · ${t("cloud.altitudeAboveDropzone")}`,
+                                            isNullish(percentage)
+                                                ? "—"
+                                                : h(CloudCoverSquare, {
+                                                      percentage,
                                                   })
                                         }
-                                    </th>
-                                    ${layers.map((layer) => {
-                                        const cover = layer?.cover;
-                                        return html`
-                                            <td class="forecast-reading">
-                                                ${
-                                                    isNullish(cover)
-                                                        ? "—"
-                                                        : h(CloudCoverSquare, {
-                                                              percentage: cover,
-                                                          })
-                                                }
-                                            </td>
-                                        `;
-                                    })}
-                                </tr>
-                            `;
-                        })}
+                                    </td>
+                                `,
+                            )}
+                        </tr>
+                        ${(summary ? [] : openMeteoRows).map(
+                            ({ level, layers }) => {
+                                const rowAltitude = layers.find(
+                                    (layer) => layer,
+                                )?.height;
+
+                                return html`
+                                    <tr>
+                                        <th scope="row" title=${`${level} hPa`}>
+                                            ${
+                                                isNullish(rowAltitude)
+                                                    ? t("common.noData")
+                                                    : h(ForecastAltitude, {
+                                                          height: rowAltitude,
+                                                          reference: `${level} hPa · ${t("cloud.altitudeAboveDropzone")}`,
+                                                      })
+                                            }
+                                        </th>
+                                        ${layers.map((layer) => {
+                                            const cover = layer?.cover;
+                                            return html`
+                                                <td class="forecast-reading">
+                                                    ${
+                                                        isNullish(cover)
+                                                            ? "—"
+                                                            : h(
+                                                                  CloudCoverSquare,
+                                                                  {
+                                                                      percentage:
+                                                                          cover,
+                                                                  },
+                                                              )
+                                                    }
+                                                </td>
+                                            `;
+                                        })}
+                                    </tr>
+                                `;
+                            },
+                        )}
                     </tbody>
                 </table>
             </div>
