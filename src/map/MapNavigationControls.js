@@ -15,6 +15,8 @@ export function MapNavigationControls({
     disabled,
     canFit,
     onFit,
+    canFocusStation,
+    onFocusStation,
 }) {
     const scope = useScope(css`
         :scope {
@@ -83,6 +85,15 @@ export function MapNavigationControls({
                 disabled: disabled || !canFit,
                 onClick: onFit,
             })}
+            ${
+                canFocusStation &&
+                h(ToolbarButton, {
+                    icon: "weatherStation",
+                    label: t("toolbar.station"),
+                    disabled: disabled || !map || !canFocusStation,
+                    onClick: onFocusStation,
+                })
+            }
             ${fullWindow && h(WakeLockToggle, { compact: true })}
         </div>
     `;

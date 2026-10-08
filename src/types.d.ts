@@ -229,6 +229,8 @@ interface MapNavigationControlsProps {
     disabled: boolean;
     canFit: boolean;
     onFit: () => void;
+    canFocusStation: boolean;
+    onFocusStation: () => void;
 }
 
 interface MapWindMotion {
@@ -678,6 +680,7 @@ type ThemePreference = "system" | "light" | "dark";
 
 interface IconProps {
     name:
+        | "weatherStation"
         | "screenAwake"
         | "monitor"
         | "sun"

@@ -103,6 +103,11 @@ const artwork = {
             d="M3 8h13a3 3 0 1 0-3-3M3 12h16a3 3 0 1 1-3 3M3 16h6a2 2 0 1 1-2 2"
         />
     `,
+    weatherStation: html`
+        <path d="M12 7v14M8 21h8M5 7h14" />
+        <circle cx="5" cy="7" r="2" />
+        <circle cx="19" cy="7" r="2" />
+    `,
     compass: html`
         <circle cx="12" cy="12" r="9" />
         <path d="m16 8-2.5 5.5L8 16l2.5-5.5L16 8Z" />

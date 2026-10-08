@@ -1,5 +1,6 @@
 // @ts-check
 import { isMapRunCleared, writeMapQuery } from "#app/map/mapQuery.js";
+import { focusMapAt, MAP_FOCUS_REQUEST } from "#app/map/navigation.js";
 import { enableRightClickZoomOut } from "#app/map/rightClickZoom.js";
 import { CheckboxField } from "#app/shared/FormFields.js";
 import { Button } from "#app/shared/Button.js";
@@ -14,7 +15,11 @@ import {
     navigateQs,
 } from "#app/app/settings.js";
 import { Help } from "#app/shared/Help.js";
-import { isValidPosition, parseCoordinates } from "#app/shared/coordinates.js";
+import {
+    coordinateDistance,
+    isValidPosition,
+    parseCoordinates,
+} from "#app/shared/coordinates.js";
 import { Icon, WindArrow } from "#app/shared/icons.js";
 import { cardHeadingStyles, getTheme } from "#app/styles.js";
 import { t } from "#app/translations.js";
@@ -57,11 +62,13 @@ import { getMapWindData } from "#app/map/windData.js";
 import { h, html } from "htm/preact";
 import {
     circleMarker,
+    divIcon,
     DomEvent,
     latLng,
     latLngBounds,
     layerGroup,
     map,
+    marker,
     point,
     polyline,
     popup,
@@ -139,7 +146,16 @@ export function DropzoneMap() {
         .leaflet-bar a:focus-visible {
             background: var(--color-map-control-hover);
         }
-        .weather-station-callout {
+        .weather-station-marker {
+            display: grid;
+            place-items: center;
+            background: var(--color-surface);
+            color: var(--color-map-direction);
+            border: 2px solid var(--color-map-direction);
+            border-radius: 50%;
+        }
+        .weather-station-callout .leaflet-popup-content-wrapper,
+        .weather-station-callout .leaflet-popup-tip {
             background: var(--color-surface);
             color: var(--color-text);
             border-color: var(--color-border);
@@ -372,6 +388,8 @@ export function DropzoneMap() {
     const [mapVisible, setMapVisible] = useState(false);
     /** @type {import('preact').RefObject<import('leaflet').Map | null>} */
     const activeLeafletRef = useRef(null);
+    /** @type {import('preact').RefObject<import('leaflet').Marker | null>} */
+    const stationMarkerRef = useRef(null);
     const savedMapViewRef = useRef("");
     /** @type {import('preact').RefObject<(target: import('leaflet').LatLngLiteral, placement?: JumpRunPlacement) => void>} */
     const positionJumpRunAtRef = useRef(() => {});
@@ -512,17 +530,24 @@ export function DropzoneMap() {
         return () => observer.disconnect();
     }, [coordinates]);
     const stationCoordinates = STATION_COORDINATES.value;
+    const focusRequest = MAP_FOCUS_REQUEST.value;
     const stationName = STATION_NAME.value;
-    const stationLabel = t(
+    const stationSourceLabel = t(
         stationName?.endsWith("(Digitraffic)")
             ? "map.fintrafficStation"
             : "map.fmiStation",
     );
+    const stationLabel = `${stationSourceLabel} - ${stationName?.replace(/\s*\((?:FMI|Digitraffic)\)$/, "") ?? ""}`;
     const landingCoordinates = LANDING_COORDINATES.value;
-    const hasSeparateLandingCoordinates = !!parseCoordinates(
-        QUERY_PARAMS.value.lat,
-        QUERY_PARAMS.value.lon,
-    );
+    const stationDistance =
+        stationCoordinates && landingCoordinates
+            ? (
+                  coordinateDistance(stationCoordinates, [
+                      landingCoordinates.lat,
+                      landingCoordinates.lng,
+                  ]) / 1000
+              ).toFixed(1)
+            : null;
     const name = NAME.value ?? "DZ";
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), 60_000);
@@ -794,7 +819,6 @@ export function DropzoneMap() {
         if (
             !leafletInstance ||
             activeLeafletRef.current !== leafletInstance ||
-            !hasSeparateLandingCoordinates ||
             !stationCoordinates ||
             !stationName
         )
@@ -806,34 +830,73 @@ export function DropzoneMap() {
             !isValidPosition({ lat, lng })
         )
             return;
-        const theme = getTheme(mapRef.current ?? undefined);
-        const label = document.createElement("span");
-        label.textContent = stationLabel;
-        const station = circleMarker([lat, lng], {
-            radius: 4,
-            color: theme.mapDirection,
-            fillColor: theme.mapOutline,
-            fillOpacity: 1,
-            weight: 2,
+        const label = document.createElement("div");
+        const stationTitle = document.createElement("div");
+        stationTitle.textContent = stationLabel;
+        label.append(stationTitle);
+        if (stationDistance !== null) {
+            const distance = document.createElement("div");
+            distance.textContent = t("map.stationDistance", stationDistance);
+            label.append(distance);
+        }
+        const iconContent = document.createElement("span");
+        render(h(Icon, { name: "weatherStation", size: 18 }), iconContent);
+        const station = marker([lat, lng], {
+            icon: divIcon({
+                html: iconContent,
+                className: "weather-station-marker",
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+                popupAnchor: [0, -14],
+            }),
         })
-            .bindTooltip(label, {
-                permanent: true,
-                direction: "top",
-                offset: point(0, -6),
+            .bindPopup(label, {
                 className: "weather-station-callout",
             })
             .addTo(leafletInstance);
+        station.getElement()?.setAttribute("aria-label", stationLabel);
+        stationMarkerRef.current = station;
         return () => {
+            if (stationMarkerRef.current === station)
+                stationMarkerRef.current = null;
             station.remove();
+            render(null, iconContent);
         };
     }, [
         leafletInstance,
-        hasSeparateLandingCoordinates,
         stationCoordinates,
         stationName,
         stationLabel,
+        stationDistance,
         satellite,
     ]);
+
+    useEffect(() => {
+        if (
+            !focusRequest ||
+            !leafletInstance ||
+            activeLeafletRef.current !== leafletInstance
+        )
+            return;
+        leafletInstance.closePopup();
+        leafletInstance.once("moveend", () => {
+            if (
+                activeLeafletRef.current === leafletInstance &&
+                leafletInstance.getCenter().equals(focusRequest, 1e-8)
+            )
+                stationMarkerRef.current?.openPopup();
+        });
+        leafletInstance.flyTo(
+            focusRequest,
+            Math.max(15, leafletInstance.getZoom()),
+            {
+                animate: !matchMedia("(prefers-reduced-motion: reduce)")
+                    .matches,
+                duration: 0.8,
+            },
+        );
+        MAP_FOCUS_REQUEST.value = null;
+    }, [leafletInstance, focusRequest]);
 
     useEffect(() => {
         if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
@@ -2147,6 +2210,13 @@ export function DropzoneMap() {
                             disabled: placingJumpRunDirection,
                             canFit: canPositionView,
                             onFit: () => positionView(true),
+                            canFocusStation:
+                                !!stationCoordinates && !!stationName,
+                            onFocusStation: () => {
+                                void focusMapAt(stationCoordinates, {
+                                    scroll: false,
+                                });
+                            },
                         })}
                     </div>
                 </div>

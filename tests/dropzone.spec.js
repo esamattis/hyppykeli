@@ -713,6 +713,12 @@ test("coordinate-only dropzone uses Open-Meteo without an observations card or M
     ).toHaveText("9 m/s");
     await expect(page.locator("#errors")).toContainText("opendata.fmi.fi");
     await expect(page.locator("#errors")).not.toContainText("Ei METAR-sanomaa");
+    await expect(
+        page.locator(".map-navigation-controls").getByRole("button", {
+            name: "Näytä sääasema",
+            exact: true,
+        }),
+    ).toHaveCount(0);
 });
 
 test("upper wind summary follows exit height while details show every altitude", async ({
@@ -969,6 +975,19 @@ test("FMI takes priority over a configured Fintraffic station and supplies coord
         )
         .not.toBeNull();
     expect(roadRequests).toBe(0);
+
+    await page.goto("/dz/?fmisid=101191&lat=60.91&lon=26.95");
+    const stationMarker = page.getByRole("button", {
+        name: "FMI sääasema - Kouvola Utti lentoasema",
+        exact: true,
+    });
+    await expect(stationMarker).toBeVisible();
+    const callout = page.locator("#dropzone-map .weather-station-callout");
+    await expect(callout).toHaveCount(0);
+    await stationMarker.click();
+    await expect(callout).toContainText(
+        "FMI sääasema - Kouvola Utti lentoasema",
+    );
 });
 
 test("Fintraffic station supplies observations and fallback coordinates", async ({
@@ -1042,7 +1061,22 @@ test("Fintraffic station supplies observations and fallback coordinates", async 
     await expect(callout).toHaveCount(0);
 
     await page.goto("/dz/?roadsid=5004&lat=60.21&lon=24.91");
-    await expect(callout).toHaveText("Fintraffic sääasema");
+    const stationMarker = page.getByRole("button", {
+        name: "Fintraffic sääasema - Tieasema",
+        exact: true,
+    });
+    await expect(stationMarker).toBeVisible();
+    await expect(callout).toHaveCount(0);
+    await stationMarker.hover();
+    await expect(callout).toHaveCount(0);
+    await stationMarker.click();
+    await expect(callout).toContainText("Fintraffic sääasema - Tieasema");
+    await expect(callout).toContainText("Etäisyys laskeutumisalueelle: 1.2 km");
+    await callout.getByRole("button", { name: "Close popup" }).click();
+    await expect(callout).toHaveCount(0);
+    await stationMarker.focus();
+    await stationMarker.press("Enter");
+    await expect(callout).toContainText("Fintraffic sääasema - Tieasema");
     const locations = await page.evaluate(async () => {
         const { FORECAST_COORDINATES, STATION_COORDINATES } =
             await import("#app/weather/state.js");
@@ -1052,6 +1086,127 @@ test("Fintraffic station supplies observations and fallback coordinates", async 
         };
     });
     expect(locations).toEqual({ landing: "60.21,24.91", station: "60.2,24.9" });
+
+    await expect(page.locator("#info")).toContainText(
+        /Havaintotiedot haettu havaintoasemalta Tieasema \(Digitraffic\)\.\s+Etäisyys havaintoasemalle 1\.2 km\.\s+Ennuste on tehty alueelle/,
+    );
+    const stationLink = page.locator("#info").getByRole("link", {
+        name: "Tieasema (Digitraffic)",
+        exact: true,
+    });
+    await expect(stationLink).toHaveAttribute("href", "#dropzone-map");
+    await page.evaluate(async () => {
+        const { Map, Marker } = await import("leaflet");
+        window.stationNavigationEvents = [];
+        document
+            .querySelector("#info a[href='#dropzone-map']")
+            .addEventListener(
+                "click",
+                () => {
+                    window.stationNavigationEvents = [];
+                },
+                { capture: true },
+            );
+        document.addEventListener("scrollend", () => {
+            window.stationNavigationEvents.push("scrollend");
+        });
+        const flyTo = Map.prototype.flyTo;
+        const fire = Map.prototype.fire;
+        Map.prototype.fire = function (type, ...args) {
+            if (type === "moveend")
+                window.stationNavigationEvents.push("moveend");
+            return fire.call(this, type, ...args);
+        };
+        const openPopup = Marker.prototype.openPopup;
+        Marker.prototype.openPopup = function (...args) {
+            window.stationNavigationEvents.push("openPopup");
+            return openPopup.apply(this, args);
+        };
+        Map.prototype.flyTo = function (...args) {
+            window.stationNavigationEvents.push("flyTo");
+            return flyTo.apply(this, args);
+        };
+    });
+    await stationLink.click();
+    await expect
+        .poll(() => {
+            const params = new URL(page.url()).searchParams;
+            return {
+                lat: Number(params.get("map_center_lat")),
+                lng: Number(params.get("map_center_lon")),
+                zoom: Number(params.get("map_zoom")),
+            };
+        })
+        .toEqual({ lat: 60.2, lng: 24.9, zoom: 15 });
+    await expect(callout).toBeVisible();
+    const events = await page.evaluate(() => window.stationNavigationEvents);
+    expect(events.indexOf("scrollend")).toBeGreaterThanOrEqual(0);
+    expect(events.indexOf("flyTo")).toBeGreaterThan(
+        events.indexOf("scrollend"),
+    );
+    expect(events.indexOf("moveend")).toBeGreaterThan(events.indexOf("flyTo"));
+    expect(events.indexOf("openPopup")).toBeGreaterThan(
+        events.indexOf("moveend"),
+    );
+    await expect
+        .poll(() =>
+            page.locator("#dropzone-map .dz-map").evaluate((element) => {
+                const bounds = element.getBoundingClientRect();
+                return bounds.top < innerHeight && bounds.bottom > 0;
+            }),
+        )
+        .toBe(true);
+    await callout.getByRole("button", { name: "Close popup" }).click();
+    await centerMapOn(page, { lat: 60.21, lng: 24.91 });
+    const stationButton = page
+        .locator(".map-navigation-controls")
+        .getByRole("button", {
+            name: "Näytä sääasema",
+            exact: true,
+        });
+    await expect(stationButton).toBeEnabled();
+    await expect(stationButton).toHaveAttribute(
+        "data-tooltip",
+        "Näytä sääasema",
+    );
+    await page.evaluate(() => {
+        const scrollIntoView = Element.prototype.scrollIntoView;
+        Element.prototype.scrollIntoView = function (...args) {
+            window.stationNavigationEvents.push("scrollIntoView");
+            return scrollIntoView.apply(this, args);
+        };
+        document
+            .querySelector(
+                ".map-navigation-controls button[aria-label='Näytä sääasema']",
+            )
+            .addEventListener(
+                "click",
+                () => {
+                    window.stationNavigationEvents = [];
+                },
+                { capture: true },
+            );
+    });
+    await stationButton.click();
+    await expect(callout).toBeVisible();
+    await expect(callout).toContainText("Fintraffic sääasema - Tieasema");
+    await expect
+        .poll(() => {
+            const params = new URL(page.url()).searchParams;
+            return [
+                Number(params.get("map_center_lat")),
+                Number(params.get("map_center_lon")),
+            ];
+        })
+        .toEqual([60.2, 24.9]);
+    const buttonEvents = await page.evaluate(
+        () => window.stationNavigationEvents,
+    );
+    expect(buttonEvents).not.toContain("scrollIntoView");
+    expect(buttonEvents.indexOf("flyTo")).toBeGreaterThanOrEqual(0);
+    expect(buttonEvents.indexOf("openPopup")).toBeGreaterThan(
+        buttonEvents.indexOf("flyTo"),
+    );
 });
 
 test("METAR cloud layers expose descriptions and original feet in tooltips", async ({

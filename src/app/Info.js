@@ -1,5 +1,6 @@
 // @ts-check
 import { coordinateDistance } from "#app/shared/coordinates.js";
+import { focusMapAt } from "#app/map/navigation.js";
 import { whenAll } from "#app/shared/values.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
@@ -33,20 +34,17 @@ export function Info() {
                     ? html`
                           ${t("footer.observationStation")}${" "}
                           <a
-                              href="https://www.google.fi/maps/place/${STATION_COORDINATES.value}"
+                              href="#dropzone-map"
+                              onClick=${
+                                  /** @param {MouseEvent} event */ (event) => {
+                                      event.preventDefault();
+                                      focusMapAt(STATION_COORDINATES.value);
+                                  }
+                              }
                           >
                               ${STATION_NAME}
                           </a>
                           .${" "}
-                      `
-                    : null
-            }
-            <${ForecastLocationInfo} />
-            ${
-                metar?.elevation !== undefined
-                    ? html`
-                          ${" "}${t("footer.airfieldElevation")}${" "}
-                          ${metar.elevation.toFixed(0)}M. ${" "}
                       `
                     : null
             }
@@ -63,6 +61,16 @@ export function Info() {
                     return t("footer.stationDistance", km);
                 },
             )}
+            ${" "}
+            <${ForecastLocationInfo} />
+            ${
+                metar?.elevation !== undefined
+                    ? html`
+                          ${" "}${t("footer.airfieldElevation")}${" "}
+                          ${metar.elevation.toFixed(0)}M. ${" "}
+                      `
+                    : null
+            }
             ${h(
                 DataSource,
                 { plural: true },

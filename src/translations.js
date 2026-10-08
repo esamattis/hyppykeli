@@ -341,6 +341,8 @@ export const english = {
     "map.ground": "Ground",
     "map.fmiStation": "FMI weather station",
     "map.fintrafficStation": "Fintraffic weather station",
+    "map.stationDistance": (/** @type {string} */ km) =>
+        `Distance to landing area: ${km} km`,
     "map.windLabelCalm": (/** @type {string} */ label) => `${label}: calm`,
     "map.windLabelMissing": (/** @type {string} */ label) =>
         `${label}: no data`,
@@ -392,6 +394,7 @@ export const english = {
     "toolbar.removeJumpRun": "Remove jump run",
     "toolbar.positionJumpRun": "Automatic jump run position",
     "toolbar.positionView": "Fit map to jump run",
+    "toolbar.station": "Show weather station",
     "toolbar.zoomIn": "Zoom in",
     "toolbar.satellite": "Satellite imagery",
     "toolbar.zoomOut": "Zoom out",
@@ -922,6 +925,7 @@ const finnish = {
     "map.ground": "Maanpinta",
     "map.fmiStation": "FMI sääasema",
     "map.fintrafficStation": "Fintraffic sääasema",
+    "map.stationDistance": (km) => `Etäisyys laskeutumisalueelle: ${km} km`,
     "map.windLabelCalm": (label) => `${label}: tyyntä`,
     "map.windLabelMissing": (label) => `${label}: ei tietoa`,
     "map.windLabel": (label, speed, direction) =>
@@ -969,6 +973,7 @@ const finnish = {
     "toolbar.removeJumpRun": "Poista hyppylinja",
     "toolbar.positionJumpRun": "Hyppylinjan automaattinen sijoitus",
     "toolbar.positionView": "Sovita karttanäkymä hyppylinjaan",
+    "toolbar.station": "Näytä sääasema",
     "toolbar.zoomIn": "Lähennä karttaa",
     "toolbar.satellite": "Satelliittikuvat",
     "toolbar.zoomOut": "Loitonna karttaa",
