@@ -4869,6 +4869,35 @@ test("viewport positioning fits a saved run without landing coordinates and disa
     await expect(fit).toBeDisabled();
 });
 
+test("initial automatic positioning finishes fitting the flight paths", async ({
+    page,
+}) => {
+    await page.goto(
+        `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&map_center_lat=62.4&map_center_lon=25.6&map_zoom=14&MANUAL_upper_winds=10,0,7000;10,0,5500;10,0,4200;10,0,3000;10,0,1500;10,0,800;10,0,110`,
+    );
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+    const start = JSON.parse(
+        new URL(page.url()).searchParams.get("map_run_start"),
+    );
+    const landing = await middleOpening(page, true);
+    await expect
+        .poll(async () => {
+            const bounds = await page.locator(".dz-map").boundingBox();
+            for (const coordinates of [start, landing]) {
+                const point = await mapPoint(page, coordinates);
+                if (
+                    point.x <= 0 ||
+                    point.x >= bounds.width ||
+                    point.y <= 0 ||
+                    point.y >= bounds.height
+                )
+                    return false;
+            }
+            return true;
+        })
+        .toBe(true);
+});
+
 test("viewport positioning keeps the flight path visible in a wide, short map", async ({
     page,
 }) => {

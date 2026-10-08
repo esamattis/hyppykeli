@@ -252,7 +252,7 @@ export const english = {
     "cloud.modelledMeaning":
         "Modelled means a computer weather model estimates the clouds using weather observations and calculations of how the atmosphere changes. This is the model's estimate for the current hour near the selected coordinates, rather than a direct cloud observation. Actual cloud cover and heights may differ.",
     "cloud.modelledCoverage":
-        "The percentage estimates the part of the model's area covered by clouds at this altitude. It is not the probability of clouds. The sampled altitude is not a cloud base or top, and clouds between the sampled levels may be missed.",
+        "The percentage estimates the part of the model's area covered by clouds at this altitude. For example, 50% means clouds cover half of the model's area at this altitude. The sampled altitude is not a cloud base or top, and clouds between the sampled levels may be missed.",
     "cloud.modelledSummaryHelp":
         "The card shows sampled levels with cloud cover greater than 0%. Icons indicate cloud cover at each level. Heights are above the dropzone ground, rounded to the nearest 100 metres. Focus or hover over a level to see its cloud cover percentage, pressure and height to the nearest metre. No clouds means the available sampled levels have 0% cover; it does not guarantee a clear sky.",
     "cloud.forecast": "Cloud forecast",
@@ -392,6 +392,7 @@ export const english = {
     "toolbar.satellite": "Satellite imagery",
     "toolbar.zoomOut": "Zoom out",
     "toolbar.shareMap": "Share jump run",
+    "toolbar.errors": "Errors",
     "toolbar.restoreMap": "Restore jump run",
     "toolbar.expandMap": "Expand jump run to full window",
     "toolbar.exit": "Exit",
@@ -821,7 +822,7 @@ const finnish = {
     "cloud.modelledMeaning":
         "Mallinnettu tarkoittaa, että tietokoneen säämalli arvioi pilviä säähavaintojen ja ilmakehän muutoksia kuvaavien laskelmien avulla. Tämä on mallin arvio nykyiselle tunnille valittujen koordinaattien lähellä, ei suora pilvihavainto. Todellinen pilvipeitto ja pilvien korkeudet voivat poiketa arviosta.",
     "cloud.modelledCoverage":
-        "Prosenttiluku arvioi, kuinka suuri osa mallin alueesta on pilvien peitossa tällä korkeudella. Se ei tarkoita pilvien todennäköisyyttä. Näytetty korkeus ei ole pilven ala- tai yläraja, ja tasojen välissä olevat pilvet voivat jäädä näkymättä.",
+        "Prosenttiluku arvioi, kuinka suuri osa mallin alueesta on pilvien peitossa tällä korkeudella. Esimerkiksi 50 % tarkoittaa, että pilvet peittävät puolet mallin alueesta tällä korkeudella. Näytetty korkeus ei ole pilven ala- tai yläraja, ja tasojen välissä olevat pilvet voivat jäädä näkymättä.",
     "cloud.modelledSummaryHelp":
         "Kortti näyttää tarkastellut tasot, joiden pilvipeitto on yli 0 %. Kuvakkeet kuvaavat kunkin tason pilvipeittoa. Korkeudet ovat hyppypaikan maanpinnasta, pyöristettyinä lähimpään 100 metriin. Kohdista tasoon tai vie osoitin sen päälle nähdäksesi pilvipeittoprosentin, ilmanpaineen ja korkeuden metrin tarkkuudella. Ei pilviä tarkoittaa, että saatavilla olevien tasojen pilvipeitto on 0 %; se ei takaa pilvetöntä taivasta.",
     "cloud.forecast": "Pilvien ennuste",
@@ -950,6 +951,7 @@ const finnish = {
     "toolbar.satellite": "Satelliittikuvat",
     "toolbar.zoomOut": "Loitonna karttaa",
     "toolbar.shareMap": "Jaa hyppylinja",
+    "toolbar.errors": "Virheet",
     "toolbar.restoreMap": "Palauta Hyppylinja",
     "toolbar.expandMap": "Laajenna Hyppylinja koko ikkunaan",
     "toolbar.exit": "Uloshyppy",
@@ -1180,5 +1182,3 @@ effect(() => {
         }
     }
 });
-    "toolbar.errors": "Errors",
-    "toolbar.errors": "Virheet",

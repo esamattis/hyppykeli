@@ -351,6 +351,7 @@ export function DropzoneMap() {
     const [mapVisible, setMapVisible] = useState(false);
     /** @type {import('preact').RefObject<import('leaflet').Map | null>} */
     const activeLeafletRef = useRef(null);
+    const savedMapViewRef = useRef("");
     /** @type {import('preact').RefObject<(target: import('leaflet').LatLngLiteral, placement?: JumpRunPlacement) => void>} */
     const positionJumpRunAtRef = useRef(() => {});
     /** @type {import('preact').RefObject<(pointer: import('leaflet').Point) => JumpRunDirectionGesture | null>} */
@@ -585,6 +586,11 @@ export function DropzoneMap() {
         }).addTo(leafletMap);
         const saveView = () => {
             const current = leafletMap.getCenter();
+            savedMapViewRef.current = JSON.stringify([
+                current.lat,
+                current.lng,
+                leafletMap.getZoom(),
+            ]);
             setCenter({ lat: current.lat, lng: current.lng });
             setZoom(leafletMap.getZoom());
         };
@@ -748,6 +754,13 @@ export function DropzoneMap() {
 
     useEffect(() => {
         if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
+            return;
+        // Our moveend snapshots can render after a flight has already begun.
+        // Reapplying them would stop that flight at its previous viewport.
+        if (
+            JSON.stringify([centerLat, centerLon, zoom]) ===
+            savedMapViewRef.current
+        )
             return;
         const [lat, lng] = coordinates?.split(",").map(Number) ?? [];
         const target =
