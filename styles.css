@@ -155,6 +155,8 @@
         --color-backdrop: rgb(18 49 69 / 35%);
         --color-shadow-panel: rgb(25 79 108 / 7%);
         --color-shadow-floating: rgb(25 79 108 / 16%);
+        /* Stronger menu-button shadow stays visible over pale map tiles. */
+        --color-shadow-menu: rgb(25 79 108 / 36%);
         /* Spacing: one Tailwind-style step is 4px at the default font size. */
         --spacing: 0.25rem;
         --spacing-0: 0px;

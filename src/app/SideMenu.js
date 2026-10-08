@@ -457,7 +457,7 @@ export function FloatingMenuButton() {
             border-radius: 50%;
             background: var(--color-primary);
             color: var(--color-surface);
-            box-shadow: var(--shadow-floating);
+            box-shadow: 0 3px 8px 1px var(--color-shadow-menu);
         }
 
         :scope:hover {
