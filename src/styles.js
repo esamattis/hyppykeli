@@ -17,8 +17,6 @@ export const windStatusStyles = css`
 
 export const dateHeadingStyles = css`
     h2 .date {
-        font-size: 70%;
-        font-weight: normal;
         margin-left: 1ch;
     }
 `;
@@ -47,7 +45,6 @@ export const upperWindTableStyles = css`
         border: 1px solid var(--color-border);
         background-color: var(--color-surface-hover);
         text-align: center;
-        font-weight: bold;
     }
 
     .wind-table {
@@ -94,7 +91,6 @@ export const upperWindTableStyles = css`
 
     .pressure-cell {
         text-align: left;
-        font-weight: bold;
     }
 
     .past-column {
@@ -134,6 +130,7 @@ export function getTheme() {
         muted: styles.getPropertyValue("--color-muted").trim(),
         surface: styles.getPropertyValue("--color-surface").trim(),
         font: styles.getPropertyValue("--font-sans").trim(),
+        fontSize: parseFloat(styles.getPropertyValue("--text-px-12")),
     };
 }
 
@@ -147,21 +144,17 @@ export const summaryStyles = css`
 
     .summary-metrics dt {
         color: var(--color-muted);
-        font-size: 0.85rem;
         margin-bottom: var(--spacing-1);
     }
 
     .summary-metrics dd {
         margin: 0;
-        font-size: 1.25rem;
-        font-weight: 650;
         font-variant-numeric: tabular-nums;
     }
 
     .summary-time {
         margin-top: var(--spacing-3);
         color: var(--color-muted);
-        font-size: 0.85rem;
     }
 `;
 
@@ -172,7 +165,6 @@ export const settingsDialogStyles = css`
     }
     h2 {
         margin: 0 0 var(--spacing-3-5);
-        font-size: 1.15rem;
     }
 `;
 
@@ -221,14 +213,12 @@ export const cloudLayerStyles = css`
         color: var(--color-danger);
     }
     .cloud-layer-name {
-        font-weight: 600;
         line-height: 1.3;
     }
     .cloud-layer-coverage,
     .cloud-base-label {
         display: block;
         color: var(--color-muted);
-        font-size: 0.75rem;
         margin-top: var(--spacing-1);
     }
     .cloud-layer-base {
@@ -236,8 +226,6 @@ export const cloudLayerStyles = css`
         white-space: nowrap;
     }
     .cloud-layer-base b {
-        font-size: 1.35rem;
-        font-weight: 650;
         font-variant-numeric: tabular-nums;
         letter-spacing: -0.025em;
     }
@@ -250,9 +238,6 @@ export const cloudLayerStyles = css`
             width: 36px;
             height: 40px;
         }
-        .cloud-layer-base b {
-            font-size: 1.15rem;
-        }
     }
 `;
 
@@ -262,7 +247,6 @@ export const manualObservationTableStyles = css`
         margin-top: var(--spacing-1-5);
         border-collapse: collapse;
         table-layout: fixed;
-        font-size: 0.8rem;
     }
     .manual-observation-table th,
     .manual-observation-table td {
@@ -272,8 +256,6 @@ export const manualObservationTableStyles = css`
     }
     .manual-observation-table thead th {
         color: var(--color-muted);
-        font-size: 0.7rem;
-        font-weight: 600;
     }
     .manual-observation-table th:first-child {
         width: 2.3rem;
@@ -286,7 +268,6 @@ export const manualObservationTableStyles = css`
         min-width: 0;
         min-height: 36px;
         padding: var(--spacing-1-5);
-        font-size: 0.8rem;
         box-sizing: border-box;
     }
     .manual-observation-table td > div:has(.clear-input) input {

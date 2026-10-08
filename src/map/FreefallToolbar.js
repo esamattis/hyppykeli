@@ -127,7 +127,6 @@ export function FreefallToolbar({
             display: none;
             flex-shrink: 0;
             white-space: nowrap;
-            font-size: 0.7rem;
         }
         @container dropzone-map (min-width: 900px) {
             .toolbar-summary .toolbar-automatic-jump-run {
@@ -141,7 +140,6 @@ export function FreefallToolbar({
             gap: var(--spacing-1) var(--spacing-3-5);
             min-width: 0;
             color: var(--color-muted);
-            font-size: 0.65rem;
             line-height: 1.4;
         }
         .toolbar-summary-values > span {
@@ -149,7 +147,6 @@ export function FreefallToolbar({
         }
         .value-number {
             color: var(--color-text);
-            font-weight: 600;
             font-variant-numeric: tabular-nums;
         }
         .window-toggle {
@@ -220,7 +217,6 @@ export function FreefallToolbar({
             display: flex;
             align-items: center;
             gap: var(--spacing-1-5);
-            font-size: 1.5rem;
             white-space: nowrap;
         }
         .wind-level-knots svg {
@@ -244,7 +240,6 @@ export function FreefallToolbar({
         }
         .wind-level-height,
         .wind-level-speed {
-            font-size: 0.5rem;
             line-height: 1.1;
             font-variant-numeric: tabular-nums;
             white-space: pre-line;
@@ -284,10 +279,6 @@ export function FreefallToolbar({
                 width: 44px;
                 height: 48px;
             }
-            .wind-level-height,
-            .wind-level-speed {
-                font-size: 0.65rem;
-            }
         }
         .toolbar-actions .wind-level-icons dialog.help-dialog-wide {
             width: clamp(300px, 400px, 95cqw);
@@ -325,12 +316,12 @@ export function FreefallToolbar({
             </div>
             <div class="toolbar-summary py-1 px-3">
                 ${h(JumpRunSettingsButton, jumpRun)}
-                <div class="toolbar-summary-values">
+                <div class="toolbar-summary-values text-rem-0-65">
                     <span class="jump-summary">
                         <span class="value-label">
                             ${t("toolbar.freefall")}
                         </span>
-                        <strong class="value-number ml-1">
+                        <strong class="value-number font-semibold ml-1">
                             <span
                                 tabindex="0"
                                 data-tooltip=${t("toolbar.exitTooltip")}
@@ -355,7 +346,7 @@ export function FreefallToolbar({
                     </span>
                     <span class="jump-run-summary">
                         <span class="value-label">${t("toolbar.jumpRun")}</span>
-                        <strong class="value-number ml-1">
+                        <strong class="value-number font-semibold ml-1">
                             <span
                                 tabindex="0"
                                 data-tooltip=${t("toolbar.jumpRunDirectionTooltip")}
@@ -394,7 +385,8 @@ export function FreefallToolbar({
                     ${
                         fullWindow &&
                         h(CheckboxField, {
-                            className: "toolbar-automatic-jump-run",
+                            className:
+                                "toolbar-automatic-jump-run text-rem-0-7",
                             label: t("map.automaticUpdate"),
                             checked: automaticJumpRun,
                             onCheckedChange: onAutomaticJumpRunChange,
@@ -475,13 +467,13 @@ export function FreefallToolbar({
                                 >
                                     ${level.graphic}
                                     <span
-                                        class="wind-level-speed mb-0.5"
+                                        class="wind-level-speed text-rem-0-5 wind-barb-large:text-rem-0-65 mb-0.5"
                                         aria-hidden="true"
                                     >
                                         ${level.speedLabel}
                                     </span>
                                     <span
-                                        class="wind-level-height"
+                                        class="wind-level-height text-rem-0-5 wind-barb-large:text-rem-0-65"
                                         aria-hidden="true"
                                     >
                                         ${level.heightLabel}
@@ -517,7 +509,9 @@ export function FreefallToolbar({
                                                     </strong>
                                                     <div>${level.text}</div>
                                                 </div>
-                                                <div class="wind-level-knots">
+                                                <div
+                                                    class="wind-level-knots text-rem-1-5"
+                                                >
                                                     ${level.graphic}
                                                     ${
                                                         level.knots === null

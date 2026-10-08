@@ -48,10 +48,8 @@ export function JumpRunSettingsButton({
         }
         .next-jumper legend {
             padding: 0 var(--spacing-1);
-            font-size: 0.8rem;
         }
         .next-jumper-help {
-            font-size: 0.7rem;
             line-height: 1.4;
         }
         .next-jumper > .next-jumper-help,
@@ -59,9 +57,7 @@ export function JumpRunSettingsButton({
         .next-jumper > .add-jumper {
             grid-column: 1 / -1;
         }
-        .current-jumpers-title {
-            font-size: 0.8rem;
-        }
+
         .direction-field,
         .next-jumper,
         .current-jumpers-title,
@@ -85,7 +81,6 @@ export function JumpRunSettingsButton({
             align-items: center;
             gap: var(--spacing-1-5);
             min-width: 6ch;
-            font-size: 0.8rem;
             white-space: nowrap;
         }
         .direction-value {
@@ -97,7 +92,6 @@ export function JumpRunSettingsButton({
             gap: var(--spacing-1-5);
             justify-content: center;
             min-height: 36px;
-            font-size: 0.8rem;
         }
         .remove-jumper {
             display: inline-flex;
@@ -114,7 +108,6 @@ export function JumpRunSettingsButton({
             width: 100%;
             border-collapse: collapse;
             table-layout: fixed;
-            font-size: 0.8rem;
         }
         .jumper-table th,
         .jumper-table td {
@@ -124,8 +117,6 @@ export function JumpRunSettingsButton({
         }
         .jumper-table thead th {
             color: var(--color-muted);
-            font-size: 0.7rem;
-            font-weight: 600;
         }
         .jumper-table tr > :first-child {
             width: 3ch;
@@ -213,7 +204,9 @@ export function JumpRunSettingsButton({
             { dialogRef, labelledBy: titleId },
             html`
                 ${scope.style}
-                <h2 id=${titleId}>${t("settings.jumpRun")}</h2>
+                <h2 class="text-rem-1-15" id=${titleId}>
+                    ${t("settings.jumpRun")}
+                </h2>
                 <form
                     onSubmit=${/** @param {SubmitEvent} event */ (event) => event.preventDefault()}
                 >
@@ -257,7 +250,7 @@ export function JumpRunSettingsButton({
                                             })
                                     }
                                 />
-                                <span class="direction-reading">
+                                <span class="direction-reading text-rem-0-8">
                                     ${h(WindArrow, {
                                         // WindArrow takes the origin; jump run direction is the ground track.
                                         direction:
@@ -423,8 +416,10 @@ export function JumpRunSettingsButton({
                         }),
                     )}
                     <fieldset class="next-jumper px-2.5 pt-2 pb-2.5">
-                        <legend>${t("settings.nextJumper")}</legend>
-                        <p class="next-jumper-help m-0 mb-1">
+                        <legend class="text-rem-0-8">
+                            ${t("settings.nextJumper")}
+                        </legend>
+                        <p class="next-jumper-help text-rem-0-7 m-0 mb-1">
                             ${t("settings.nextJumperHelp")}
                         </p>
                         ${h(FreefallFields, {
@@ -456,7 +451,7 @@ export function JumpRunSettingsButton({
                         })}
                         <button
                             type="button"
-                            class="add-jumper py-1.5 px-2"
+                            class="add-jumper text-rem-0-8 py-1.5 px-2"
                             onClick=${addJumper}
                         >
                             ${h(Icon, { name: "plus", size: 16 })}
@@ -466,22 +461,26 @@ export function JumpRunSettingsButton({
                     ${
                         jumperDrafts.length > 0 &&
                         html`
-                            <h3 class="current-jumpers-title m-0 mt-2">
+                            <h3
+                                class="current-jumpers-title text-rem-0-8 m-0 mt-2"
+                            >
                                 ${t("settings.currentJumpers")}
                             </h3>
                             <table
-                                class="jumper-table"
+                                class="jumper-table text-rem-0-8"
                                 aria-label=${t("settings.jumpers")}
                             >
                                 <thead>
                                     <tr>
                                         <th
+                                            class="text-rem-0-7 font-semibold"
                                             scope="col"
                                             aria-label=${t("settings.jumpers")}
                                         >
                                             #
                                         </th>
                                         <th
+                                            class="text-rem-0-7 font-semibold"
                                             scope="col"
                                             tabindex="0"
                                             data-tooltip=${t("settings.freefallSpeed")}
@@ -492,6 +491,7 @@ export function JumpRunSettingsButton({
                                             </span>
                                         </th>
                                         <th
+                                            class="text-rem-0-7 font-semibold"
                                             scope="col"
                                             tabindex="0"
                                             data-tooltip=${t("settings.openingHeight")}
@@ -502,6 +502,7 @@ export function JumpRunSettingsButton({
                                             </span>
                                         </th>
                                         <th
+                                            class="text-rem-0-7 font-semibold"
                                             scope="col"
                                             aria-label=${t("common.remove")}
                                         ></th>

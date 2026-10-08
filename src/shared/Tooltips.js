@@ -14,8 +14,6 @@ export function Tooltips() {
             background: var(--color-text);
             color: var(--color-surface);
             box-shadow: var(--shadow-floating);
-            font-size: 0.75rem;
-            font-weight: 500;
             line-height: 1.4;
             overflow: visible;
             pointer-events: none;
@@ -37,7 +35,7 @@ export function Tooltips() {
     `);
     return html`
         <div
-            class="m-0 py-1 px-2"
+            class="m-0 py-1 px-2 text-rem-0-75 font-medium"
             id="tooltip"
             role="tooltip"
             popover="manual"

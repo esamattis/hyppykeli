@@ -21,7 +21,7 @@ export function WindBarb({ speed, direction }) {
                     y="40"
                     text-anchor="middle"
                     fill="currentColor"
-                    font-size="28"
+                    class="text-px-28"
                 >
                     ?
                 </text>

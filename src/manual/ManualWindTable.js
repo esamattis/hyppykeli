@@ -45,9 +45,7 @@ export function ManualWindTable({
         :scope {
             min-width: 0;
         }
-        h3 {
-            font-size: 0.8rem;
-        }
+
         ${manualObservationTableStyles}
 
         .developer-error {
@@ -141,16 +139,24 @@ export function ManualWindTable({
     return html`
         <section class="manual-wind-editor mt-4" ref=${sectionRef}>
             ${scope.style}
-            <h3 class="m-0">${t("manual.upperTitle")}</h3>
+            <h3 class="text-rem-0-8 m-0">${t("manual.upperTitle")}</h3>
             <table
-                class=${`manual-observation-table manual-wind-table ${tableClassName}`}
+                class=${`manual-observation-table text-rem-0-8 manual-wind-table ${tableClassName}`}
             >
                 <thead>
                     <tr>
-                        <th scope="col">hPa</th>
-                        <th scope="col">${t("manual.altitude")}</th>
-                        <th scope="col">${t("manual.meanWindUnit")}</th>
-                        <th scope="col">${t("manual.directionUnit")}</th>
+                        <th class="text-rem-0-7 font-semibold" scope="col">
+                            hPa
+                        </th>
+                        <th class="text-rem-0-7 font-semibold" scope="col">
+                            ${t("manual.altitude")}
+                        </th>
+                        <th class="text-rem-0-7 font-semibold" scope="col">
+                            ${t("manual.meanWindUnit")}
+                        </th>
+                        <th class="text-rem-0-7 font-semibold" scope="col">
+                            ${t("manual.directionUnit")}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>

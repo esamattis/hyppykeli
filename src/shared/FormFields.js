@@ -24,7 +24,6 @@ export function FormField({
             gap: var(--spacing-1);
             align-self: end;
             min-width: 0;
-            font-size: 0.7rem;
         }
         :scope.stacked-field {
             display: grid;
@@ -58,7 +57,9 @@ export function FormField({
                   <label for=${id}>${label}</label>
               `;
     return html`
-        <div class=${`form-field ${layout}-field ${className}`}>
+        <div
+            class=${`form-field ${layout}-field ${layout === "compact" ? "text-rem-0-7" : ""} ${className}`}
+        >
             ${scope.style}
             ${
                 layout === "compact" || help
@@ -200,7 +201,7 @@ export function ClearableInput({
 /** @param {CheckboxFieldProps} props */
 export function CheckboxField({
     label,
-    className = "",
+    className = "text-rem-0-8",
     onCheckedChange,
     ...inputProps
 }) {
@@ -209,7 +210,6 @@ export function CheckboxField({
             display: inline-flex;
             align-items: center;
             gap: var(--checkbox-gap, var(--spacing-1-5));
-            font-size: 0.8rem;
             cursor: pointer;
         }
     `);

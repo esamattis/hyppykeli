@@ -73,7 +73,6 @@ export function CloudCoverSquare(props) {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.7rem;
             line-height: 1;
             font-variant-numeric: tabular-nums;
             /* Mix grayscale endpoints in sRGB to preserve the cover shading scale. */
@@ -90,7 +89,7 @@ export function CloudCoverSquare(props) {
 
     return html`
         <span
-            class="cloud-cover cloud-cover-square"
+            class="cloud-cover cloud-cover-square text-rem-0-7"
             style=${{
                 "--cloud-cover-percentage": `${percentage}%`,
                 "--cloud-cover-text":

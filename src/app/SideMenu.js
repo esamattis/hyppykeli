@@ -80,15 +80,12 @@ export function SideMenu({ manualEditorRef }) {
 
         .menu-brand {
             color: var(--color-primary);
-            font-size: 0.75rem;
-            font-weight: 700;
             letter-spacing: 0.12em;
             text-transform: uppercase;
         }
 
         h1 {
             margin: var(--spacing-1) 0 0;
-            font-size: 1.4rem;
             overflow-wrap: anywhere;
         }
 
@@ -129,7 +126,6 @@ export function SideMenu({ manualEditorRef }) {
 
         h2 {
             margin-bottom: var(--spacing-3);
-            font-size: 1rem;
         }
 
         label,
@@ -137,7 +133,6 @@ export function SideMenu({ manualEditorRef }) {
             display: block;
             margin-bottom: var(--spacing-1-5);
             color: var(--color-muted);
-            font-size: 0.8rem;
         }
 
         .dz-grid {
@@ -151,8 +146,6 @@ export function SideMenu({ manualEditorRef }) {
             padding: var(--spacing-2-5) var(--spacing-3);
             border-radius: var(--radius-sm);
             background: var(--color-surface-soft);
-            font-size: 0.85rem;
-            font-weight: 600;
             overflow-wrap: anywhere;
         }
 
@@ -177,7 +170,6 @@ export function SideMenu({ manualEditorRef }) {
         .save-dz {
             width: 100%;
             background: transparent;
-            font-size: 0.85rem;
         }
 
         .language-buttons {
@@ -199,7 +191,6 @@ export function SideMenu({ manualEditorRef }) {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: var(--spacing-2-5);
-            font-size: 0.8rem;
         }
 
         .menu-footer > a {
@@ -248,8 +239,10 @@ export function SideMenu({ manualEditorRef }) {
             ${scope.style}
             <header class="menu-header p-6">
                 <div>
-                    <span class="menu-brand">Hyppykeli</span>
-                    <h1>${NAME.value}</h1>
+                    <span class="menu-brand text-rem-0-75 font-bold">
+                        Hyppykeli
+                    </span>
+                    <h1 class="text-rem-1-4">${NAME.value}</h1>
                 </div>
                 <button
                     class="menu-close p-0"
@@ -265,11 +258,13 @@ export function SideMenu({ manualEditorRef }) {
 
             <div class="menu-content">
                 <section class="menu-section" aria-labelledby="menu-dropzones">
-                    <h2 id="menu-dropzones">${t("menu.dropzones")}</h2>
+                    <h2 class="text-rem-1" id="menu-dropzones">
+                        ${t("menu.dropzones")}
+                    </h2>
                     ${
                         SAVED_DZs.value.length > 0
                             ? html`
-                                  <span class="saved-label">
+                                  <span class="saved-label text-rem-0-8">
                                       ${t("menu.saved")}
                                   </span>
                               `
@@ -286,7 +281,12 @@ export function SideMenu({ manualEditorRef }) {
                                 ).toString();
                             return html`
                                 <div class="saved-dz mb-1.5">
-                                    <a href=${qs}>${name}</a>
+                                    <a
+                                        class="text-rem-0-85 font-semibold"
+                                        href=${qs}
+                                    >
+                                        ${name}
+                                    </a>
                                     <button
                                         type="button"
                                         aria-label=${t("menu.removeSaved", name)}
@@ -308,7 +308,7 @@ export function SideMenu({ manualEditorRef }) {
                         })}
                     </div>
                     <button
-                        class="save-dz mt-1.5"
+                        class="save-dz text-rem-0-85 mt-1.5"
                         type="button"
                         onClick=${() => saveCurrentDz(prompt(t("menu.namePrompt"), NAME.value))}
                     >
@@ -317,14 +317,21 @@ export function SideMenu({ manualEditorRef }) {
                     <div class="dzs dz-grid mt-4" onClick=${savePreviousDz}>
                         ${OTHER_DZs.map(
                             (dz) => html`
-                                <a href=${dropzoneHref(dz)}>${dz.name}</a>
+                                <a
+                                    class="text-rem-0-85 font-semibold"
+                                    href=${dropzoneHref(dz)}
+                                >
+                                    ${dz.name}
+                                </a>
                             `,
                         )}
                     </div>
                 </section>
 
                 <section class="menu-section" aria-labelledby="menu-language">
-                    <h2 id="menu-language">${t("language.label")}</h2>
+                    <h2 class="text-rem-1" id="menu-language">
+                        ${t("language.label")}
+                    </h2>
                     <div
                         class="language-buttons"
                         role="group"
@@ -353,7 +360,7 @@ export function SideMenu({ manualEditorRef }) {
                     </div>
                 </section>
 
-                <footer class="menu-section menu-footer">
+                <footer class="menu-section menu-footer text-rem-0-8">
                     <a href="/?no_redirect=1">${t("menu.home")}</a>
                     <button type="button" onClick=${resetCurrentDz}>
                         ${t("menu.reset")}

@@ -133,8 +133,6 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
             margin-block: auto;
         }
         .compass-intercardinal text {
-            font-family: monospace;
-            font-size: 12px;
             text-anchor: middle;
             dominant-baseline: middle;
             fill: var(--color-text);
@@ -238,7 +236,6 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
         .compass-controls .summary-time {
             text-align: center;
             color: var(--color-muted);
-            font-size: 0.85rem;
         }
 
         .compass-animation-toggle {
@@ -280,16 +277,16 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
               <circle cx="200" cy="200" r=${studentCircle} stroke="var(--color-warning)" stroke-width="2" fill="none" />
 
               <!-- Directions Text -->
-              <text x="200" y="40" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="var(--color-text)">N</text>
-              <text x="20" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="var(--color-text)">W</text>
-              <text x="200" y="390" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="var(--color-text)">S</text>
-              <text x="380" y="210" font-weight="bold" font-family="monospace" font-size="40" text-anchor="middle" fill="var(--color-text)">E</text>
+              <text x="200" y="40" class="font-bold font-monospace text-px-40" text-anchor="middle" fill="var(--color-text)">N</text>
+              <text x="20" y="210" class="font-bold font-monospace text-px-40" text-anchor="middle" fill="var(--color-text)">W</text>
+              <text x="200" y="390" class="font-bold font-monospace text-px-40" text-anchor="middle" fill="var(--color-text)">S</text>
+              <text x="380" y="210" class="font-bold font-monospace text-px-40" text-anchor="middle" fill="var(--color-text)">E</text>
               ${LANGUAGE.value === "fi" && html`
                   <g class="compass-intercardinal">
-                      <text x="327" y="73">koillinen</text>
-                      <text x="327" y="327">kaakko</text>
-                      <text x="73" y="327">lounas</text>
-                      <text x="73" y="73">luode</text>
+                      <text class="font-monospace text-px-12" x="327" y="73">koillinen</text>
+                      <text class="font-monospace text-px-12" x="327" y="327">kaakko</text>
+                      <text class="font-monospace text-px-12" x="73" y="327">lounas</text>
+                      <text class="font-monospace text-px-12" x="73" y="73">luode</text>
                   </g>
               `}
               ${h(HistoryNeedles, { observations: history })}
@@ -297,11 +294,9 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
               <text
                     x="200"
                     y="170"
-                    font-size="24"
                     text-anchor="middle"
                     fill="var(--color-text)"
-                    font-weight="bold"
-                    class="compass-observations-gust"
+                    class="compass-observations-gust text-px-24 font-bold"
                     style="transform: rotate(-${rotation}deg); "
                 >
                     ${observation ? (observation.gust ?? "-") + " m/s" : ""}
@@ -309,10 +304,9 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
                 <text
                     x="200"
                     y="240"
-                    font-size="20"
                     text-anchor="middle"
                     fill="var(--color-text)"
-                    class="compass-observations-speed"
+                    class="compass-observations-speed text-px-20"
                     style="transform: rotate(-${rotation}deg); "
                 >
                     ${observation ? observation.speed + " m/s" : ""}
@@ -323,7 +317,7 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
             ${!floating && showControls && html`
                 <div class="compass-controls mt-3">
                 ${h(CheckboxField, {
-                    className: "compass-animation-toggle",
+                    className: "compass-animation-toggle text-rem-0-8",
                     label: t("compass.animation"),
                     checked: animated,
                     onCheckedChange: (enabled) => {
@@ -332,7 +326,7 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
                     },
                 })}
 
-                <div class="summary-time">
+                <div class="summary-time text-rem-0-85">
                     ${observation && h(FromNow, { date: observation.time })}
                 </div>
 

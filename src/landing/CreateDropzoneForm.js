@@ -11,7 +11,6 @@ export function CreateDropzoneForm() {
     const scope = useScope(css`
         .field {
             display: flex;
-            font-weight: bold;
         }
         .field > label {
             width: 200px;
@@ -20,10 +19,8 @@ export function CreateDropzoneForm() {
         }
         .desc {
             margin-left: 200px;
-            font-style: italic;
             margin-bottom: var(--spacing-1);
             color: var(--color-muted);
-            font-size: 80%;
         }
         fieldset + fieldset {
             margin-top: var(--spacing-4);
@@ -36,7 +33,6 @@ export function CreateDropzoneForm() {
         .roadsid-button {
             margin: var(--spacing-1) 0 var(--spacing-2) 200px;
             padding: var(--spacing-1) var(--spacing-2);
-            font-size: 80%;
         }
 
         @media (max-width: 600px) {
@@ -54,10 +50,6 @@ export function CreateDropzoneForm() {
             .roadsid-button {
                 margin-left: 0;
             }
-        }
-        label small {
-            font-weight: normal;
-            font-size: 75%;
         }
     `);
     const [fields, setFields] = useState({
@@ -166,7 +158,7 @@ export function CreateDropzoneForm() {
                         id: "lat",
                         label: t("landing.latitude"),
                         layout: "plain",
-                        className: "field",
+                        className: "field font-bold",
                     },
                     h(ClearableInput, {
                         name: "lat",
@@ -178,7 +170,7 @@ export function CreateDropzoneForm() {
                         onClear: () => clearField("lat"),
                     }),
                 )}
-                <div class="desc"></div>
+                <div class="desc italic text-em-0-8"></div>
 
                 ${h(
                     FormField,
@@ -186,7 +178,7 @@ export function CreateDropzoneForm() {
                         id: "lon",
                         label: t("landing.longitude"),
                         layout: "plain",
-                        className: "field",
+                        className: "field font-bold",
                     },
                     h(ClearableInput, {
                         name: "lon",
@@ -197,14 +189,16 @@ export function CreateDropzoneForm() {
                         onClear: () => clearField("lon"),
                     }),
                 )}
-                <div class="desc">${t("landing.decimal")}</div>
+                <div class="desc italic text-em-0-8">
+                    ${t("landing.decimal")}
+                </div>
                 ${h(
                     FormField,
                     {
                         id: "elevation",
                         label: t("settings.elevation"),
                         layout: "plain",
-                        className: "field",
+                        className: "field font-bold",
                     },
                     h(ClearableInput, {
                         name: "elevation",
@@ -219,7 +213,9 @@ export function CreateDropzoneForm() {
                         onClear: () => clearField("elevation"),
                     }),
                 )}
-                <div class="desc">${t("settings.elevationHelp")}</div>
+                <div class="desc italic text-em-0-8">
+                    ${t("settings.elevationHelp")}
+                </div>
             </fieldset>
 
             <fieldset>
@@ -230,7 +226,7 @@ export function CreateDropzoneForm() {
                         id: "name",
                         label: t("landing.name"),
                         layout: "plain",
-                        className: "field",
+                        className: "field font-bold",
                     },
                     h(ClearableInput, {
                         name: "name",
@@ -241,7 +237,7 @@ export function CreateDropzoneForm() {
                         onClear: () => clearField("name"),
                     }),
                 )}
-                <div class="desc"></div>
+                <div class="desc italic text-em-0-8"></div>
 
                 ${h(
                     FormField,
@@ -249,7 +245,7 @@ export function CreateDropzoneForm() {
                         id: "default_jump_run_direction",
                         label: t("landing.defaultJumpRunDirection"),
                         layout: "plain",
-                        className: "field",
+                        className: "field font-bold",
                     },
                     h(ClearableInput, {
                         name: "default_jump_run_direction",
@@ -263,7 +259,7 @@ export function CreateDropzoneForm() {
                         onClear: () => clearField("default_jump_run_direction"),
                     }),
                 )}
-                <div class="desc">
+                <div class="desc italic text-em-0-8">
                     ${t("landing.defaultJumpRunDirectionHelp")}
                 </div>
 
@@ -273,7 +269,7 @@ export function CreateDropzoneForm() {
                         id: "default_jump_group_count",
                         label: t("landing.defaultJumperCount"),
                         layout: "plain",
-                        className: "field",
+                        className: "field font-bold",
                     },
                     h(ClearableInput, {
                         name: "default_jump_group_count",
@@ -287,7 +283,9 @@ export function CreateDropzoneForm() {
                         onClear: () => clearField("default_jump_group_count"),
                     }),
                 )}
-                <div class="desc">${t("landing.defaultJumperCountHelp")}</div>
+                <div class="desc italic text-em-0-8">
+                    ${t("landing.defaultJumperCountHelp")}
+                </div>
 
                 ${h(
                     FormField,
@@ -295,7 +293,7 @@ export function CreateDropzoneForm() {
                         id: "fmisid",
                         label: "FMISID",
                         layout: "plain",
-                        className: "field",
+                        className: "field font-bold",
                     },
                     h(ClearableInput, {
                         name: "fmisid",
@@ -307,7 +305,7 @@ export function CreateDropzoneForm() {
                     }),
                 )}
 
-                <div class="desc">
+                <div class="desc italic text-em-0-8">
                     ${t("landing.fmiHelp")}${" "}
                     <a href="https://www.ilmatieteenlaitos.fi/havaintoasemat">
                         ${t("landing.here")}
@@ -320,7 +318,7 @@ export function CreateDropzoneForm() {
                         id: "roadsid",
                         label: t("landing.roadStation"),
                         layout: "plain",
-                        className: "field",
+                        className: "field font-bold",
                     },
                     h(ClearableInput, {
                         name: "roadsid",
@@ -332,14 +330,14 @@ export function CreateDropzoneForm() {
                     }),
                 )}
                 <button
-                    class="roadsid-button"
+                    class="roadsid-button text-em-0-8"
                     id="get-roadsid"
                     type="button"
                     onClick=${getRoadStation}
                 >
                     ${t("landing.nearestRoadStation")}
                 </button>
-                <div class="desc">
+                <div class="desc italic text-em-0-8">
                     ${t("landing.roadHelp")}${" "}
                     <a
                         href="https://www.digitraffic.fi/tieliikenne/#ties%C3%A4%C3%A4asemien-ajantasaiset-mittaustiedot"
@@ -360,7 +358,7 @@ export function CreateDropzoneForm() {
                         id: "icaocode",
                         label: "ICAO",
                         layout: "plain",
-                        className: "field",
+                        className: "field font-bold",
                     },
                     h(ClearableInput, {
                         name: "icaocode",
@@ -371,7 +369,9 @@ export function CreateDropzoneForm() {
                         onClear: () => clearField("icaocode"),
                     }),
                 )}
-                <div class="desc">${t("landing.icaoHelp")}</div>
+                <div class="desc italic text-em-0-8">
+                    ${t("landing.icaoHelp")}
+                </div>
             </fieldset>
 
             <input type="hidden" name="save" value="1" />

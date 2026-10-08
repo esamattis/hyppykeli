@@ -35,8 +35,6 @@ export function MapCloudSummary() {
             background: var(--color-map-control);
             color: var(--color-text);
             box-shadow: var(--shadow-floating);
-            font-size: 0.75rem;
-            font-family: inherit;
             line-height: 1.3;
             text-align: left;
             cursor: pointer;
@@ -58,7 +56,6 @@ export function MapCloudSummary() {
             justify-content: space-between;
             gap: var(--spacing-3);
             color: var(--color-muted);
-            font-size: 0.65rem;
         }
         .map-cloud-layer {
             display: flex;
@@ -104,7 +101,7 @@ export function MapCloudSummary() {
     return html`
         <button
             type="button"
-            class=${`map-cloud-summary ${minimized ? "minimized p-0" : "px-2 py-1.5"}`}
+            class=${`map-cloud-summary text-rem-0-75 font-inherit ${minimized ? "minimized p-0" : "px-2 py-1.5"}`}
             aria-label=${label}
             data-tooltip=${label}
             aria-expanded=${!minimized}
@@ -115,7 +112,7 @@ export function MapCloudSummary() {
                 minimized
                     ? h(Icon, { name: "cloudOvercast", size: 18 })
                     : html`
-                          <div class="map-cloud-source mb-1">
+                          <div class="map-cloud-source text-rem-0-65 mb-1">
                               <span
                                   data-tooltip=${hasMetarClouds ? metar?.metar : undefined}
                               >

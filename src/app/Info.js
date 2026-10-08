@@ -21,10 +21,6 @@ export function Info() {
             width: 100%;
             line-height: 1.8;
         }
-        .disclaimer {
-            font-style: italic;
-            font-weight: bold;
-        }
     `);
 
     const metar = METARS.value?.[0];
@@ -79,7 +75,9 @@ export function Info() {
                     .
                 `,
             )}
-            <div class="disclaimer">${t("footer.disclaimer")}</div>
+            <div class="disclaimer italic font-bold">
+                ${t("footer.disclaimer")}
+            </div>
             <small>
                 ${t("footer.logbook")}${" "}
                 <a href="https://loki.hyppykeli.fi/">Loki</a>

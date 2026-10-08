@@ -61,8 +61,6 @@ export function DropdownMenu({
             background: transparent;
             color: var(--color-text);
             box-shadow: none;
-            font-size: 0.8rem;
-            font-weight: 600;
             text-align: start;
         }
         :scope > .dropdown-trigger-labeled::after {
@@ -97,8 +95,6 @@ export function DropdownMenu({
             background: transparent;
             color: var(--color-text);
             box-shadow: none;
-            font-size: 0.85rem;
-            font-weight: 600;
             line-height: 1.3;
             text-align: start;
             white-space: normal;
@@ -269,7 +265,7 @@ export function DropdownMenu({
                     ? html`
                           <button
                               type="button"
-                              class="dropdown-trigger dropdown-trigger-labeled py-1 pl-2 pr-7"
+                              class="dropdown-trigger dropdown-trigger-labeled text-rem-0-8 font-semibold py-1 pl-2 pr-7"
                               aria-label=${label}
                               aria-haspopup="menu"
                               aria-expanded=${String(open)}
@@ -324,7 +320,7 @@ export function DropdownMenu({
                     return html`
                         <button
                             type="button"
-                            class="dropdown-item py-2 px-2.5"
+                            class="dropdown-item text-rem-0-85 font-semibold py-2 px-2.5"
                             role=${toggle ? "menuitemcheckbox" : "menuitem"}
                             aria-label=${item.label}
                             aria-checked=${toggle ? String(item.pressed) : undefined}

@@ -29,7 +29,6 @@ export function ToolbarButton({
             background: transparent;
             color: var(--color-text);
             box-shadow: none;
-            font-size: 0.75rem;
         }
         :scope[aria-pressed="true"] {
             color: var(--color-primary);
@@ -44,7 +43,7 @@ export function ToolbarButton({
     return html`
         <button
             type="button"
-            class=${`arrow-action p-0${className ? ` ${className}` : ""}`}
+            class=${`arrow-action p-0 text-rem-0-75${className ? ` ${className}` : ""}`}
             aria-label=${label}
             data-tooltip=${showTooltip ? label : undefined}
             aria-pressed=${pressed}

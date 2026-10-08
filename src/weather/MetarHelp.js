@@ -237,7 +237,6 @@ export function MetarHelp({ report }) {
             color: var(--color-text);
         }
         .metar {
-            font-family: var(--font-mono);
             overflow-wrap: anywhere;
             white-space: normal;
         }
@@ -248,15 +247,12 @@ export function MetarHelp({ report }) {
         }
         .metar-intro,
         .metar-explanations {
-            font-size: 0.8125rem;
             line-height: 1.4;
         }
         .metar-group {
             border-top: 1px solid var(--color-border);
         }
-        dt {
-            font-weight: 650;
-        }
+
         dd {
             margin-inline-start: 0;
         }
@@ -269,18 +265,22 @@ export function MetarHelp({ report }) {
                 ${scope.style}
                 <h3 class="mt-0">${t("metar.help")}</h3>
                 <code
-                    class="metar metar-report p-3"
+                    class="metar font-mono metar-report p-3"
                     tabindex="0"
                     aria-label="METAR"
                 >
                     ${report}
                 </code>
-                <p class="metar-intro my-2">${t("metar.intro")}</p>
-                <dl class="metar-explanations mb-0">
+                <p class="metar-intro text-rem-0-8125 my-2">
+                    ${t("metar.intro")}
+                </p>
+                <dl class="metar-explanations text-rem-0-8125 mb-0">
                     ${explainMetar(report).map(
                         ({ code, description }) => html`
                             <div class="metar-group py-1.5">
-                                <dt class="metar">${code}</dt>
+                                <dt class="font-heading metar font-mono">
+                                    ${code}
+                                </dt>
                                 <dd class="mt-0.5">${description}</dd>
                             </div>
                         `,

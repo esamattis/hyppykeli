@@ -9,9 +9,6 @@ export function DataSource({ sources = [], children, plural = false }) {
         :scope {
             display: block;
             color: var(--color-muted);
-            font-size: 0.7rem;
-            font-style: italic;
-            font-weight: normal;
         }
     `);
     const unique = sources.filter(
@@ -20,7 +17,7 @@ export function DataSource({ sources = [], children, plural = false }) {
     if (!unique.length && !children) return null;
 
     return html`
-        <small class="source-note">
+        <small class="source-note text-rem-0-7 font-normal italic">
             ${scope.style}
             ${t(plural ? "common.sources" : "common.source")}:${" "}
             ${children ?? unique.join(", ")}

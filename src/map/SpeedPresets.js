@@ -22,12 +22,9 @@ export function SpeedPresets({ onSelect }) {
             background: var(--color-surface-hover);
             color: var(--color-text);
             box-shadow: none;
-            font-size: 0.7rem;
         }
         .preset-speed {
             display: block;
-            font-size: 0.6rem;
-            font-weight: 400;
             white-space: nowrap;
         }
     `);
@@ -37,12 +34,14 @@ export function SpeedPresets({ onSelect }) {
             ${presets.map(
                 (preset) => html`
                     <button
-                        class="p-1"
+                        class="text-rem-0-7 p-1"
                         type="button"
                         onClick=${() => onSelect(preset.value)}
                     >
                         ${preset.label}
-                        <span class="preset-speed">${preset.value} km/h</span>
+                        <span class="preset-speed text-rem-0-6 font-normal">
+                            ${preset.value} km/h
+                        </span>
                     </button>
                 `,
             )}

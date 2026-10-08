@@ -27,6 +27,7 @@ import { useEffect, useRef } from "preact/hooks";
 function getDefaultGraphOptions(signal, reverse) {
     const theme = getTheme();
     Chart.defaults.font.family = theme.font;
+    Chart.defaults.font.size = theme.fontSize;
     Chart.defaults.color = theme.muted;
     Chart.defaults.borderColor = theme.border;
     Chart.defaults.backgroundColor = theme.surface;
@@ -241,7 +242,7 @@ export function Graph(props) {
                           <div class="chart-heading mb-3.5">
                               <h2>
                                   ${t("weather.observations")}
-                                  <span class="date">
+                                  <span class="date text-em-0-7 font-normal">
                                       ${formatDate(new Date())}
                                   </span>
                               </h2>
@@ -265,7 +266,7 @@ export function Graph(props) {
             <div class="chart-heading mb-3.5">
                 <h2>
                     ${t("weather.forecasts")}
-                    <span class="date">
+                    <span class="date text-em-0-7 font-normal">
                         ${formatDate(FORECAST_DATE.value)} ${" "}
                         ${humanDayText(FORECAST_DATE.value)}
                     </span>

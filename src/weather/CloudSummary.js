@@ -34,8 +34,6 @@ import { h, html } from "htm/preact";
 /** @param {{ profile: OpenMeteoCloudProfile | null }} props */
 function OpenMeteoClouds({ profile }) {
     const scope = useScope(css`
-        :scope {
-        }
         .cloud-profile-content {
             display: flow-root;
         }
@@ -54,7 +52,9 @@ function OpenMeteoClouds({ profile }) {
         <section class="open-meteo-clouds mt-3" aria-label="Open-Meteo">
             ${scope.style}
             <div class="cloud-profile-header">
-                <h3 class="cloud-observation-heading m-0">
+                <h3
+                    class="cloud-observation-heading text-rem-0-75 font-medium m-0"
+                >
                     ${t("cloud.modelledLayers")}
                 </h3>
                 <div class="cloud-source-help">
@@ -82,7 +82,7 @@ function OpenMeteoClouds({ profile }) {
                     profile
                         ? html`
                               <div
-                                  class="cloud-list cloud-layers compact-cloud-layers cloud-profile-layers p-0 my-3"
+                                  class="cloud-list cloud-layers compact-cloud-layers font-heading cloud-profile-layers p-0 my-3"
                               >
                                   ${
                                       profile.layers.length
@@ -99,7 +99,7 @@ function OpenMeteoClouds({ profile }) {
                                             `
                                   }
                               </div>
-                              <p class="summary-time">
+                              <p class="summary-time text-rem-0-85">
                                   ${h(FromNow, { date: profile.time })}
                               </p>
                           `
@@ -150,12 +150,9 @@ export function CloudSummary() {
             display: flex;
             flex-wrap: wrap;
             gap: var(--spacing-3);
-            font-weight: 650;
         }
         .cloud-observation-heading {
             color: var(--color-muted);
-            font-size: 0.75rem;
-            font-weight: 500;
             letter-spacing: 0.03em;
         }
         .cloud-warning {
@@ -163,12 +160,10 @@ export function CloudSummary() {
             align-items: center;
             gap: var(--spacing-3);
             border-radius: var(--radius-sm);
-            font-size: 0.9rem;
         }
         .cloud-warning {
             color: var(--color-danger);
             background: var(--color-danger-soft);
-            font-weight: 600;
         }
         .cloud-warning > span {
             flex: 1;
@@ -179,18 +174,15 @@ export function CloudSummary() {
             align-items: center;
             gap: var(--spacing-2);
             color: var(--color-muted);
-            font-size: 0.75rem;
         }
         .cloud-observation-footer .summary-time {
             margin: 0;
-            font-size: inherit;
         }
         .condensation-reading {
             display: flex;
             align-items: center;
             gap: var(--spacing-1-5);
             font-variant-numeric: tabular-nums;
-            font-size: 0.8rem;
             white-space: nowrap;
         }
         .cloud-forecast {
@@ -211,8 +203,6 @@ export function CloudSummary() {
             min-width: 0;
             overflow-wrap: anywhere;
             white-space: normal;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
             color: var(--color-muted);
         }
     `);
@@ -246,7 +236,9 @@ export function CloudSummary() {
                 ${whenAll(
                     [latest?.temperature, latest?.dewPoint],
                     (temp, dew) => html`
-                        <div class="condensation condensation-reading">
+                        <div
+                            class="condensation condensation-reading text-rem-0-8"
+                        >
                             <span>
                                 ${t("weather.condensationLevelShort")}${" "}
                                 ${formatCloudBase(getLiftedCondensationLevel(temp, dew), "m")}
@@ -280,7 +272,9 @@ export function CloudSummary() {
                     metar
                         ? html`
                               <div class="cloud-observation-header">
-                                  <h3 class="cloud-observation-heading m-0">
+                                  <h3
+                                      class="cloud-observation-heading text-rem-0-75 font-medium m-0"
+                                  >
                                       ${t("cloud.observedLayers")}
                                   </h3>
                                   <div class="cloud-source-help">
@@ -289,7 +283,7 @@ export function CloudSummary() {
                                   </div>
                               </div>
                               <div
-                                  class="cloud-list cloud-layers compact-cloud-layers p-0 my-3"
+                                  class="cloud-list cloud-layers compact-cloud-layers font-heading p-0 my-3"
                               >
                                   ${
                                       cavok
@@ -313,7 +307,7 @@ export function CloudSummary() {
                                   metar.cbWithoutLayer
                                       ? html`
                                             <div
-                                                class="cloud-warning mt-2 py-3 px-3.5"
+                                                class="cloud-warning text-rem-0-9 font-semibold mt-2 py-3 px-3.5"
                                             >
                                                 ${h(Icon, { name: "storm", size: 24 })}
                                                 <span>
@@ -338,7 +332,7 @@ export function CloudSummary() {
                                                         </p>
                                                         <h3>METAR</h3>
                                                         <p
-                                                            class="metar mt-2 pb-1"
+                                                            class="metar font-mono text-rem-0-8 mt-2 pb-1"
                                                         >
                                                             //////CB
                                                         </p>
@@ -348,8 +342,10 @@ export function CloudSummary() {
                                         `
                                       : null
                               }
-                              <div class="cloud-observation-footer mt-3">
-                                  <div class="summary-time">
+                              <div
+                                  class="cloud-observation-footer text-rem-0-75 mt-3"
+                              >
+                                  <div class="summary-time text-inherit">
                                       ${h(FromNow, { date: time })}
                                   </div>
                               </div>
@@ -371,7 +367,9 @@ export function CloudSummary() {
                               aria-label=${t("cloud.forecast")}
                           >
                               <div class="forecast-heading mb-3">
-                                  <h3 class="cloud-observation-heading">
+                                  <h3
+                                      class="cloud-observation-heading text-rem-0-75 font-medium"
+                                  >
                                       ${t("cloud.forecast12h")}
                                   </h3>
                                   ${h(TableDialog, {

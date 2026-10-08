@@ -15,11 +15,11 @@ import { useRef } from "preact/hooks";
 export function ObservationTHead() {
     return html`
         <tr>
-            <th>${t("weather.clock")}</th>
-            <th>${t("weather.gust")}</th>
-            <th>${t("weather.wind")}</th>
-            <th>${t("weather.direction")}</th>
-            <th>${t("weather.temperature")}</th>
+            <th class="text-rem-0-75">${t("weather.clock")}</th>
+            <th class="text-rem-0-75">${t("weather.gust")}</th>
+            <th class="text-rem-0-75">${t("weather.wind")}</th>
+            <th class="text-rem-0-75">${t("weather.direction")}</th>
+            <th class="text-rem-0-75">${t("weather.temperature")}</th>
         </tr>
     `;
 }
@@ -52,11 +52,11 @@ export function ObservationRows(props) {
 export function ForecastTHead() {
     return html`
         <tr>
-            <th>${t("weather.clock")}</th>
-            <th>${t("weather.gust")}</th>
-            <th>${t("weather.wind")}</th>
-            <th>${t("weather.direction")}</th>
-            <th>
+            <th class="text-rem-0-75">${t("weather.clock")}</th>
+            <th class="text-rem-0-75">${t("weather.gust")}</th>
+            <th class="text-rem-0-75">${t("weather.wind")}</th>
+            <th class="text-rem-0-75">${t("weather.direction")}</th>
+            <th class="text-rem-0-75">
                 ${t("weather.rain")}
                 ${h(
                     Help,
@@ -67,7 +67,7 @@ export function ForecastTHead() {
                 )}
             </th>
 
-            <th>${t("weather.temperature")}</th>
+            <th class="text-rem-0-75">${t("weather.temperature")}</th>
         </tr>
     `;
 }
@@ -124,7 +124,6 @@ export function WindDirection(props) {
             display: inline-flex;
             justify-content: center;
             align-items: center;
-            font-size: 80%;
             width: 20px;
             height: 20px;
             flex-shrink: 0;
@@ -148,7 +147,7 @@ export function WindDirection(props) {
                     : null
             }
             <span
-                class="direction"
+                class="direction text-em-0-8"
                 style=${{
                     visibility: props.direction !== -1 ? "visible" : "hidden",
                 }}
@@ -171,7 +170,6 @@ export function DataTable(props) {
             table-layout: fixed;
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.85rem;
             line-height: 1.3;
         }
 
@@ -191,7 +189,6 @@ export function DataTable(props) {
         :scope thead th {
             color: var(--color-muted);
             background: var(--color-surface-soft);
-            font-size: 0.75rem;
         }
 
         :scope td:first-of-type,
@@ -216,7 +213,7 @@ export function DataTable(props) {
     `);
 
     return html`
-        <table class="weather-table">
+        <table class="weather-table text-rem-0-85">
             ${scope.style}
             <thead>${props.thead}</thead>
             <tbody>

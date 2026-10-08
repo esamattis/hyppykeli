@@ -29,7 +29,6 @@ export function WindSummary() {
             display: flex;
             align-items: baseline;
             gap: var(--spacing-1);
-            font-size: clamp(1.25rem, 3vw, 1.75rem);
             white-space: nowrap;
         }
         .hourly-variation-row {
@@ -42,12 +41,8 @@ export function WindSummary() {
         .wind-metrics .hourly-range {
             width: fit-content;
             color: var(--color-muted);
-            font-size: 0.8rem;
-            font-weight: normal;
         }
-        .wind-metrics .hourly-range.has-warning {
-            font-weight: 700;
-        }
+
         .gust-value-row {
             display: flex;
             align-items: baseline;
@@ -58,15 +53,11 @@ export function WindSummary() {
             display: inline-flex;
             align-self: center;
             flex-shrink: 0;
-            font-size: 1.5rem;
         }
         .latest-value .direction-value {
             width: auto;
         }
-        .unit {
-            font-size: 0.65em;
-            font-weight: normal;
-        }
+
         ${windStatusStyles}
     `);
 
@@ -102,9 +93,9 @@ export function WindSummary() {
         const unit = key === "direction" ? "°" : " m/s";
         const warning = key === "speed" ? null : variationWarning(key);
         return html`
-            <dd class="hourly-variation-row">
+            <dd class="hourly-variation-row text-rem-1-25 font-heading">
                 <span
-                    class=${"hourly-range" + (warning ? " has-warning" : "")}
+                    class=${"hourly-range text-rem-0-8" + (warning ? " has-warning font-bold" : " font-normal")}
                     data-tooltip=${t(key === "direction" ? "weather.directionVariationHelp" : "weather.windVariationHelp")}
                     tabindex="0"
                 >
@@ -132,7 +123,7 @@ export function WindSummary() {
         );
         return html`
             <span
-                class="wind-variation-warning"
+                class="wind-variation-warning text-rem-1-5"
                 data-tooltip=${label}
                 tabindex="0"
             >
@@ -146,21 +137,27 @@ export function WindSummary() {
             ${scope.style}
             <dl class="summary-metrics wind-metrics">
                 <div class="latest-wind-cell">
-                    <dt>${t("weather.gust")}</dt>
-                    <dd class="gust-value-row">${h(GustReading, {})}</dd>
+                    <dt class="text-rem-0-85">${t("weather.gust")}</dt>
+                    <dd class="gust-value-row text-rem-1-25 font-heading">
+                        ${h(GustReading, {})}
+                    </dd>
                     ${hourlyRange("gust")}
                 </div>
                 <div class="latest-wind-cell">
-                    <dt>${t("weather.wind")}</dt>
-                    <dd class="latest-value latest-wind">
+                    <dt class="text-rem-0-85">${t("weather.wind")}</dt>
+                    <dd
+                        class="latest-value text-reading font-heading latest-wind"
+                    >
                         ${obs?.speed?.toFixed(0) ?? "?"}
-                        <span class="unit">m/s</span>
+                        <span class="unit text-em-0-65 font-normal">m/s</span>
                     </dd>
                     ${hourlyRange("speed")}
                 </div>
                 <div class="latest-wind-cell">
-                    <dt>${t("weather.direction")}</dt>
-                    <dd class="latest-value latest-wind">
+                    <dt class="text-rem-0-85">${t("weather.direction")}</dt>
+                    <dd
+                        class="latest-value text-reading font-heading latest-wind"
+                    >
                         ${h(WindDirection, { direction: obs?.direction, value: true })}
                     </dd>
                     ${hourlyRange("direction")}

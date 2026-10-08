@@ -43,7 +43,6 @@ export function CloudForecastTable(props) {
             width: max-content;
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
-            font-size: 0.75rem;
             line-height: 1.3;
         }
         .cloud-forecast-detail-table th,
@@ -51,10 +50,6 @@ export function CloudForecastTable(props) {
             padding: var(--spacing-1) var(--spacing-1-5);
             text-align: center;
             white-space: nowrap;
-        }
-        .cloud-forecast-detail-table thead th,
-        .cloud-forecast-detail-table tbody th {
-            font-size: 0.75rem;
         }
         .cloud-forecast-detail-table tr > :first-child {
             position: sticky;
@@ -65,7 +60,6 @@ export function CloudForecastTable(props) {
         }
         .cloud-forecast-detail-table tbody th {
             color: var(--color-muted);
-            font-weight: normal;
             white-space: normal;
             min-width: 9ch;
         }
@@ -88,8 +82,6 @@ export function CloudForecastTable(props) {
         .forecast-source-label {
             display: block;
             color: var(--color-primary);
-            font-size: 0.65rem;
-            font-weight: 700;
             letter-spacing: 0.06em;
             line-height: 1;
             text-transform: uppercase;
@@ -101,7 +93,6 @@ export function CloudForecastTable(props) {
         }
         .cloud-forecast-note {
             color: var(--color-muted);
-            font-size: 0.75rem;
         }
     `);
     const openMeteo = OM_DATA.value;
@@ -156,7 +147,9 @@ export function CloudForecastTable(props) {
                 role="region"
                 aria-label=${t("cloud.hourlyForecast")}
             >
-                <table class="cloud-forecast-table cloud-forecast-detail-table">
+                <table
+                    class="cloud-forecast-table cloud-forecast-detail-table text-rem-0-75"
+                >
                     <thead>
                         <tr>
                             <th scope="col">${t("weather.clock")}</th>
@@ -178,9 +171,9 @@ export function CloudForecastTable(props) {
                                 ? null
                                 : html`
                                       <tr class="forecast-group-start">
-                                          <th scope="row">
+                                          <th class="font-normal" scope="row">
                                               <span
-                                                  class="forecast-source-label mt-1 mb-1"
+                                                  class="forecast-source-label text-rem-0-65 font-bold mt-1 mb-1"
                                               >
                                                   FMI
                                               </span>
@@ -266,12 +259,12 @@ export function CloudForecastTable(props) {
                             .map(
                                 (row) => html`
                                     <tr>
-                                        <th scope="row">
+                                        <th class="font-normal" scope="row">
                                             ${
                                                 summary
                                                     ? html`
                                                           <span
-                                                              class="forecast-source-label mt-1 mb-1"
+                                                              class="forecast-source-label text-rem-0-65 font-bold mt-1 mb-1"
                                                           >
                                                               FMI
                                                           </span>
@@ -313,8 +306,10 @@ export function CloudForecastTable(props) {
                                 `,
                             )}
                         <tr class="forecast-group-start">
-                            <th scope="row">
-                                <span class="forecast-source-label mt-1 mb-1">
+                            <th class="font-normal" scope="row">
+                                <span
+                                    class="forecast-source-label text-rem-0-65 font-bold mt-1 mb-1"
+                                >
                                     Open-Meteo
                                 </span>
                                 ${cloudRange}
@@ -353,7 +348,11 @@ export function CloudForecastTable(props) {
 
                                 return html`
                                     <tr>
-                                        <th scope="row" title=${`${level} hPa`}>
+                                        <th
+                                            class="font-normal"
+                                            scope="row"
+                                            title=${`${level} hPa`}
+                                        >
                                             ${
                                                 isNullish(rowAltitude)
                                                     ? t("common.noData")
@@ -388,7 +387,7 @@ export function CloudForecastTable(props) {
                     </tbody>
                 </table>
             </div>
-            <p class="cloud-forecast-note m-0 mt-2">
+            <p class="cloud-forecast-note text-rem-0-75 m-0 mt-2">
                 ${t("cloud.forecastTableHelp")}
             </p>
         </div>

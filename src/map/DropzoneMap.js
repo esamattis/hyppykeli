@@ -249,7 +249,6 @@ export function DropzoneMap() {
             background: var(--color-surface);
             color: var(--color-text);
             box-shadow: var(--shadow-floating);
-            font-size: 0.75rem;
             line-height: 1.4;
             pointer-events: none;
         }
@@ -339,7 +338,6 @@ export function DropzoneMap() {
             background: var(--color-surface);
             color: var(--color-text);
             text-align: center;
-            font-size: 0.8rem;
             pointer-events: none;
         }
         ${cardHeadingStyles}
@@ -1808,7 +1806,7 @@ export function DropzoneMap() {
                     )}
                 </h2>
                 ${h(CheckboxField, {
-                    className: "automatic-jump-run",
+                    className: "automatic-jump-run text-rem-0-8",
                     label: t("map.automaticUpdate"),
                     checked: automaticJumpRun,
                     onCheckedChange: changeAutomaticJumpRun,
@@ -1948,7 +1946,10 @@ export function DropzoneMap() {
                             !fullWindow &&
                             (driftError || jumpRunError || shareError)
                                 ? html`
-                                      <div class="map-errors" role="status">
+                                      <div
+                                          class="map-errors text-rem-0-75"
+                                          role="status"
+                                      >
                                           ${
                                               driftError
                                                   ? html`
@@ -1989,7 +1990,7 @@ export function DropzoneMap() {
                                           !draggingJumpRunDirection
                                               ? html`
                                                     <div
-                                                        class="direction-hint py-2 px-3"
+                                                        class="direction-hint text-rem-0-8 py-2 px-3"
                                                         role="status"
                                                     >
                                                         ${t("map.directionPrompt")}

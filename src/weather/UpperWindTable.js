@@ -215,16 +215,11 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
             padding: var(--spacing-0-5);
         }
 
-        .wind-speed {
-            font-weight: bold;
-        }
-
         .wind-direction {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.2em;
-            font-size: 0.8em;
             color: var(--color-muted);
         }
 
@@ -271,14 +266,16 @@ export function WindCell({ data, columnClass, height, hourly = false }) {
                 isNullish(speed)
                     ? null
                     : html`
-                          <div class="wind-speed">${speedInMS} m/s</div>
+                          <div class="wind-speed font-bold">
+                              ${speedInMS} m/s
+                          </div>
                       `
             }
             ${
                 isNullish(direction)
                     ? null
                     : html`
-                          <div class="wind-direction">
+                          <div class="wind-direction text-em-0-8">
                               <span class="direction-degrees">
                                   ${roundedDirection}°
                               </span>
@@ -352,7 +349,7 @@ export function WindTable({ days, hourly = false }) {
                             ({ title, columns: dayColumns, id }) => html`
                                 <th
                                     id=${id}
-                                    class="wind-table-title"
+                                    class="wind-table-title font-bold"
                                     scope="colgroup"
                                     colspan=${dayColumns.length}
                                 >
@@ -394,7 +391,7 @@ export function WindTable({ days, hourly = false }) {
                                   .find((value) => Number.isFinite(value));
                         return html`
                             <tr key=${pressure}>
-                                <th scope="row" class="pressure-cell">
+                                <th scope="row" class="pressure-cell font-bold">
                                     ${isNullish(altitude) ? pressure : h(ForecastAltitude, { height: altitude, reference: `${pressure} · ${t("cloud.altitudeSeaLevel")}` })}
                                 </th>
                                 ${columns.map(({ key, data, columnClass }) =>

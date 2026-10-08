@@ -27,7 +27,6 @@ export function JumpRunControls({
             align-items: center;
             flex: 0 0 auto;
             gap: var(--spacing-1);
-            font-size: 0.8rem;
         }
         .jumper-actions {
             display: flex;
@@ -35,7 +34,7 @@ export function JumpRunControls({
         }
     `);
     return html`
-        <div class="jump-run-controls">
+        <div class="jump-run-controls text-rem-0-8">
             ${scope.style}
             ${h(ToolbarButton, {
                 label: t("toolbar.positionJumpRun"),

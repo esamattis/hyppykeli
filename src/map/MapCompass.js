@@ -33,7 +33,6 @@ export function MapCompass() {
             place-items: center;
             border-radius: var(--radius-sm);
             background: var(--color-map-control);
-            font-size: 0.75rem;
         }
         :scope.minimized:hover {
             background: var(--color-map-control-hover);
@@ -50,8 +49,6 @@ export function MapCompass() {
         }
         .map-compass-gust-label,
         .map-compass-gust-age {
-            font-size: 0.5rem;
-            font-weight: 650;
             line-height: 1.1;
             white-space: nowrap;
         }
@@ -82,7 +79,7 @@ export function MapCompass() {
     return html`
         <button
             type="button"
-            class=${`map-compass${minimized ? " minimized" : ""}`}
+            class=${`map-compass${minimized ? " minimized text-rem-0-75" : ""}`}
             aria-label=${label}
             title=${label}
             aria-expanded=${!minimized}
@@ -97,11 +94,15 @@ export function MapCompass() {
                               class="map-compass-gust px-3 py-2"
                               aria-label=${t("weather.groundGust")}
                           >
-                              <div class="map-compass-gust-label mb-1">
+                              <div
+                                  class="map-compass-gust-label text-rem-0-5 font-heading mb-1"
+                              >
                                   ${t("weather.groundGust")}
                               </div>
                               ${h(GustReading, {})}
-                              <div class="map-compass-gust-age mt-1">
+                              <div
+                                  class="map-compass-gust-age text-rem-0-5 font-heading mt-1"
+                              >
                                   ${h(FromNow, { date: LATEST_OBSERVATION.value?.time, showClock: false })}
                               </div>
                           </div>

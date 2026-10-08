@@ -195,7 +195,6 @@ export function ManualMode(props) {
         textarea {
             min-height: 100px;
             resize: vertical;
-            font-family: var(--font-mono);
         }
         ${manualObservationTableStyles}
         .developer-observations th:first-child {
@@ -203,9 +202,6 @@ export function ManualMode(props) {
         }
         .developer-observations input {
             padding-inline-start: var(--spacing-1);
-        }
-        .ground-observations-title {
-            font-size: 0.8rem;
         }
 
         .developer-actions {
@@ -227,8 +223,6 @@ export function ManualMode(props) {
             background: var(--color-surface-soft);
             white-space: pre-wrap;
             overflow-wrap: anywhere;
-            font-family: var(--font-mono);
-            font-size: 0.8rem;
         }
     `);
     /** @type {import("preact").RefObject<HTMLDialogElement>} */
@@ -541,6 +535,7 @@ export function ManualMode(props) {
                             },
                             html`
                                 <textarea
+                                    class="font-mono"
                                     id=${`${fieldId}-metar`}
                                     name="MANUAL_metar"
                                     value=${values.MANUAL_metar ?? ""}
@@ -573,18 +568,36 @@ export function ManualMode(props) {
                             setError("");
                         },
                     })}
-                    <h3 class="ground-observations-title m-0 mt-5">
+                    <h3 class="ground-observations-title text-rem-0-8 m-0 mt-5">
                         ${t("manual.groundTitle")}
                     </h3>
                     <table
-                        class="manual-observation-table developer-observations"
+                        class="manual-observation-table text-rem-0-8 developer-observations"
                     >
                         <thead>
                             <tr>
-                                <th scope="col">${t("manual.minutesAgo")}</th>
-                                <th scope="col">${t("weather.gustUnit")}</th>
-                                <th scope="col">${t("manual.meanWindUnit")}</th>
-                                <th scope="col">
+                                <th
+                                    class="text-rem-0-7 font-semibold"
+                                    scope="col"
+                                >
+                                    ${t("manual.minutesAgo")}
+                                </th>
+                                <th
+                                    class="text-rem-0-7 font-semibold"
+                                    scope="col"
+                                >
+                                    ${t("weather.gustUnit")}
+                                </th>
+                                <th
+                                    class="text-rem-0-7 font-semibold"
+                                    scope="col"
+                                >
+                                    ${t("manual.meanWindUnit")}
+                                </th>
+                                <th
+                                    class="text-rem-0-7 font-semibold"
+                                    scope="col"
+                                >
                                     ${t("manual.directionUnit")}
                                 </th>
                             </tr>
@@ -684,7 +697,8 @@ export function ManualMode(props) {
                     <h3 id="developer-query-title">
                         ${t("manual.queryString")}
                     </h3>
-                    <pre>${formatQueryParams(QUERY_PARAMS.value)}</pre>
+                    <pre class="font-mono text-rem-0-8">
+${formatQueryParams(QUERY_PARAMS.value)}</pre>
                 </section>
             `,
         )}

@@ -11,15 +11,10 @@ export function GustReading() {
             display: flex;
             align-items: baseline;
             gap: var(--spacing-1);
-            font-size: clamp(1.25rem, 3vw, 1.75rem);
-            font-weight: 650;
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
         }
-        .unit {
-            font-size: 0.65em;
-            font-weight: normal;
-        }
+
         ${windStatusStyles}
     `);
     const gust = LATEST_OBSERVATION.value?.gust;
@@ -27,10 +22,10 @@ export function GustReading() {
         <span>
             ${scope.style}
             <span
-                class=${"latest-value latest-gust " + getWarningLevel(gust ?? 0)}
+                class=${"latest-value text-reading font-heading latest-gust " + getWarningLevel(gust ?? 0)}
             >
                 ${gust?.toFixed(0) ?? "-"}
-                <span class="unit">m/s</span>
+                <span class="unit text-em-0-65 font-normal">m/s</span>
             </span>
         </span>
     `;

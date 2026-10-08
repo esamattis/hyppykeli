@@ -170,7 +170,6 @@ export function App() {
             border-radius: 0 0 var(--radius-sm) var(--radius-sm);
             background: var(--color-danger);
             color: var(--color-on-primary);
-            font-size: 0.7rem;
             line-height: 1.3;
             white-space: nowrap;
         }
@@ -184,7 +183,6 @@ export function App() {
         }
 
         .errors button {
-            font-size: inherit;
             line-height: inherit;
             color: inherit;
             background: transparent;
@@ -231,10 +229,10 @@ export function App() {
             ${
                 ERRORS.value.length > 0
                     ? html`
-                          <div id="errors" class="errors">
+                          <div id="errors" class="errors text-rem-0-7">
                               <button
                                   type="button"
-                                  class="px-1 py-0.5 me-2"
+                                  class="px-1 py-0.5 me-2 text-inherit"
                                   disabled=${retrying}
                                   onClick=${retryErrors}
                               >

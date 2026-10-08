@@ -1,5 +1,6 @@
 @layer base, components, utilities;
 @import url("/spacing.css");
+@import url("/typography.css");
 
 /* Shared sky-blue theme. Override these tokens to customize the whole app. */
 @layer base {
@@ -10,6 +11,49 @@
             sans-serif;
         --font-mono:
             ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        /* Typography tokens retain the original rem, em, px, and fluid sizes. */
+        --font-monospace: monospace;
+        --font-map: "Helvetica Neue", Arial, Helvetica, sans-serif;
+        --font-map-zoom: "Lucida Console", Monaco, monospace;
+        --font-map-close: Tahoma, Verdana, sans-serif;
+        --text-em-0-65: 0.65em;
+        --text-em-0-7: 0.7em;
+        --text-em-0-75: 0.75em;
+        --text-em-0-8: 0.8em;
+        --text-em-1-08333: 1.08333em;
+        --text-em-1-2: 1.2em;
+        --text-heading: clamp(2rem, 4vw, 3rem);
+        --text-px-12: 12px;
+        --text-px-16: 16px;
+        --text-px-18: 18px;
+        --text-px-20: 20px;
+        --text-px-22: 22px;
+        --text-px-24: 24px;
+        --text-px-28: 28px;
+        --text-px-40: 40px;
+        --text-reading: clamp(1.25rem, 3vw, 1.75rem);
+        --text-rem-0-5: 0.5rem;
+        --text-rem-0-6: 0.6rem;
+        --text-rem-0-65: 0.65rem;
+        --text-rem-0-7: 0.7rem;
+        --text-rem-0-75: 0.75rem;
+        --text-rem-0-8: 0.8rem;
+        --text-rem-0-8125: 0.8125rem;
+        --text-rem-0-85: 0.85rem;
+        --text-rem-0-9: 0.9rem;
+        --text-rem-1: 1rem;
+        --text-rem-1-05: 1.05rem;
+        --text-rem-1-15: 1.15rem;
+        --text-rem-1-25: 1.25rem;
+        --text-rem-1-3: 1.3rem;
+        --text-rem-1-35: 1.35rem;
+        --text-rem-1-4: 1.4rem;
+        --text-rem-1-5: 1.5rem;
+        --font-weight-normal: 400;
+        --font-weight-medium: 500;
+        --font-weight-semibold: 600;
+        --font-weight-heading: 650;
+        --font-weight-bold: 700;
         /* Sky accent: button hover, selection, and sustained-wind graph lines. */
         --color-sky: skyblue;
         /* Page canvas behind cards. Keep manifest.json background_color in sync. */
@@ -138,7 +182,7 @@
         background: var(--color-page);
         color: var(--color-text);
         font-family: var(--font-sans);
-        font-size: 16px;
+        font-size: var(--text-px-16);
         line-height: 1.5;
     }
 
@@ -147,18 +191,18 @@
     h3 {
         color: var(--color-text);
         line-height: 1.25;
-        font-weight: 650;
+        font-weight: var(--font-weight-heading);
         letter-spacing: -0.025em;
     }
     h1 {
-        font-size: clamp(2rem, 4vw, 3rem);
+        font-size: var(--text-heading);
     }
     h2 {
-        font-size: 1.3rem;
+        font-size: var(--text-rem-1-3);
         margin: 0 0 var(--spacing-4);
     }
     h3 {
-        font-size: 1.05rem;
+        font-size: var(--text-rem-1-05);
     }
 
     button,
@@ -174,7 +218,7 @@
         border-radius: var(--radius-sm);
         background: var(--color-surface-hover);
         color: var(--color-primary);
-        font-weight: 600;
+        font-weight: var(--font-weight-semibold);
         cursor: pointer;
         transition: background-color 0.15s ease;
     }
@@ -230,7 +274,7 @@
     }
     legend {
         color: var(--color-primary);
-        font-weight: 600;
+        font-weight: var(--font-weight-semibold);
         padding: 0 var(--spacing-2);
     }
     dialog {

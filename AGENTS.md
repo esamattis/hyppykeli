@@ -70,7 +70,7 @@ html`
         Help,
         { label: "?" },
         html`
-            <p class="metar" style="font-size: 120%">
+            <p class="metar text-em-1-2">
                 ${cloud.amount}${" "}${cloud.base}${cloud.unit}
             </p>
         `,
@@ -110,6 +110,15 @@ variable in `styles.css` when a new color role is needed. Structural keywords
 such as `transparent`, `currentColor`, and `none` are allowed. Static metadata
 that cannot read CSS variables, such as `manifest.json`, must match the shared
 palette.
+
+## Typography
+
+Define font families, sizes, and weights as shared variables in `styles.css`.
+Use the matching `font-*`, `text-*`, and italic utility classes from
+`typography.css` directly in component markup, including conditional classes.
+Preserve rem, em, and px scaling; put responsive typography variants in the
+utilities layer. Keep CSS font rules for page defaults and vendor-generated
+markup, and use `getTheme()` for canvas fonts.
 
 ## Spacing
 

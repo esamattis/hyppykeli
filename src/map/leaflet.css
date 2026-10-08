@@ -6,6 +6,22 @@
     .leaflet-container {
         background: var(--color-surface-hover);
         color: var(--color-text);
+        font-family: var(--font-map);
+        font-size: var(--text-rem-0-75);
+    }
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out {
+        font-family: var(--font-map-zoom);
+        font-size: var(--text-px-18);
+        font-weight: var(--font-weight-bold);
+    }
+    .leaflet-touch .leaflet-control-zoom-in,
+    .leaflet-touch .leaflet-control-zoom-out {
+        font-size: var(--text-px-22);
+    }
+    .leaflet-control-layers label,
+    .leaflet-popup-content {
+        font-size: var(--text-em-1-08333);
     }
     .leaflet-container a {
         color: var(--color-primary);
@@ -54,6 +70,8 @@
     }
     .leaflet-container a.leaflet-popup-close-button {
         color: var(--color-muted);
+        font-family: var(--font-map-close);
+        font-size: var(--text-px-16);
     }
     .leaflet-container a.leaflet-popup-close-button:hover,
     .leaflet-container a.leaflet-popup-close-button:focus {

@@ -16,9 +16,6 @@ function DropzoneList({ dropzones }) {
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
         }
-        :scope a {
-            font-size: 120%;
-        }
     `);
     return html`
         <div class="dz-list">
@@ -28,7 +25,9 @@ function DropzoneList({ dropzones }) {
                 .map(
                     (dz) => html`
                         <p class="py-3 px-4 my-2 mx-0" key=${dz.name}>
-                            <a href=${dropzoneHref(dz)}>${dz.name}</a>
+                            <a class="text-em-1-2" href=${dropzoneHref(dz)}>
+                                ${dz.name}
+                            </a>
                             ${" "}${typeof dz.description === "function" ? dz.description() : dz.description}
                         </p>
                     `,

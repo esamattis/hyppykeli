@@ -36,7 +36,6 @@ export function Help(props) {
         :scope:is(dialog) {
             margin: 0 auto;
             margin-top: var(--spacing-5);
-            font-weight: normal;
             width: clamp(300px, 400px, 95vw);
             white-space: wrap;
         }
@@ -46,10 +45,6 @@ export function Help(props) {
             }
         }
         .help-content {
-            font-size: initial;
-            font-family: var(--font-sans);
-            font-weight: initial;
-            font-style: normal;
             letter-spacing: normal;
             line-height: 1.5;
             width: 100%;
@@ -79,11 +74,15 @@ export function Help(props) {
             Dialog,
             {
                 dialogRef: ref,
-                className: props.wide ? "help-dialog-wide" : undefined,
+                className: props.wide
+                    ? "help-dialog-wide font-normal"
+                    : "font-normal",
             },
             html`
                 ${scope.style}
-                <div class=${`help-content ${scope.end}`}>
+                <div
+                    class=${`help-content text-initial font-sans font-initial not-italic ${scope.end}`}
+                >
                     ${props.children}
                 </div>
             `,

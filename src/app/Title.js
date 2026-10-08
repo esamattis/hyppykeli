@@ -41,8 +41,6 @@ export function Title() {
 
         .title-elevation {
             display: block;
-            font-size: 0.75rem;
-            font-weight: normal;
             color: var(--color-muted);
         }
 
@@ -66,9 +64,7 @@ export function Title() {
 
         .title-temp {
             min-height: 1.5em;
-            font-size: 65%;
             color: var(--color-muted);
-            font-family: var(--font-mono);
         }
 
         .title-name,
@@ -92,7 +88,6 @@ export function Title() {
 
         .name-hint {
             color: var(--color-muted);
-            font-size: 0.85rem;
         }
 
         .name-actions {
@@ -149,10 +144,10 @@ export function Title() {
                     ${h(Icon, { name: "pen", size: 20 })}
                 </button>
             </span>
-            <span class="title-elevation">
+            <span class="title-elevation text-rem-0-75 font-normal">
                 ${t("title.elevation", String(Math.round(DROPZONE_ELEVATION.value)))}
             </span>
-            <span class="title-temp">
+            <span class="title-temp text-em-0-65 font-mono">
                 ${
                     temps
                         ? html`
@@ -220,7 +215,9 @@ export function Title() {
                                     setNameDraft(event.currentTarget.value),
                             }),
                         )}
-                        <p class="name-hint">${t("title.emptyName")}</p>
+                        <p class="name-hint text-rem-0-85">
+                            ${t("title.emptyName")}
+                        </p>
                         <div class="name-actions mt-5">
                             <button type="submit">${t("common.save")}</button>
                         </div>
