@@ -39,6 +39,14 @@ export const english = {
     "weather.groundGust": "Ground gust",
     "weather.wind": "Wind",
     "weather.direction": "Direction",
+    "weather.windVariationHelp":
+        "Variation during the last hour: the highest reading minus the lowest reading, rounded to the nearest m/s.",
+    "weather.directionVariationHelp":
+        "Direction variation during the last hour: the width of the smallest arc containing all readings, accounting for crossing north, rounded to the nearest degree.",
+    "weather.gustVariationWarning": (/** @type {string} */ change) =>
+        `Gust variation during the last hour is ${change} m/s (highest minus lowest reading). Warning threshold: 8 m/s or more.`,
+    "weather.directionVariationWarning": (/** @type {string} */ change) =>
+        `Direction variation during the last hour is ${change}° (smallest arc containing all readings, accounting for crossing north). Warning threshold: 100° or more.`,
     "weather.temperature": "Temperature",
     "weather.condensationLevelShort": "LCL",
     "weather.condensationLevel": "Lifted condensation level",
@@ -607,6 +615,14 @@ const finnish = {
     "weather.groundGust": "Puuska maassa",
     "weather.wind": "Tuuli",
     "weather.direction": "Suunta",
+    "weather.windVariationHelp":
+        "Vaihtelu viimeisen tunnin aikana: suurin lukema miinus pienin lukema, pyöristettynä lähimpään m/s.",
+    "weather.directionVariationHelp":
+        "Suunnan vaihtelu viimeisen tunnin aikana: kaikki lukemat sisältävän pienimmän kaaren leveys, huomioiden pohjoisen ylitys, pyöristettynä lähimpään asteeseen.",
+    "weather.gustVariationWarning": (change) =>
+        `Puuskien vaihtelu viimeisen tunnin aikana on ${change} m/s (suurin lukema miinus pienin lukema). Varoitusraja: vähintään 8 m/s.`,
+    "weather.directionVariationWarning": (change) =>
+        `Suunnan vaihtelu viimeisen tunnin aikana on ${change}° (kaikki lukemat sisältävä pienin kaari, huomioiden pohjoisen ylitys). Varoitusraja: vähintään 100°.`,
     "weather.temperature": "Lämpötila",
     "weather.condensationLevelShort": "TK",
     "weather.condensationLevel": "Tiivistymiskorkeus",

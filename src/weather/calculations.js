@@ -54,7 +54,8 @@ export function hasValidAverageWindData(obs) {
 }
 
 /**
- * Minimum and maximum observed during the last hour.
+ * Unrounded minimum and maximum observed during the last hour.
+ * Directions use the smallest arc containing all readings; max may exceed 360°.
  * @param {WeatherData[]} observations
  * @param {"gust" | "speed" | "direction"} key
  * @param {number} [now]
@@ -69,7 +70,8 @@ export function getHourlyWindRange(observations, key, now = Date.now()) {
             age > 60 * 60 * 1000 ||
             value === undefined ||
             !Number.isFinite(value) ||
-            value < 0
+            value < 0 ||
+            (key === "direction" && value > 360)
         ) {
             return [];
         }
@@ -78,10 +80,25 @@ export function getHourlyWindRange(observations, key, now = Date.now()) {
 
     if (!values.length) return;
 
-    return {
-        min: Math.round(Math.min(...values)),
-        max: Math.round(Math.max(...values)),
-    };
+    if (key === "direction") {
+        const bearings = values
+            .map((value) => value % 360)
+            .sort((a, b) => a - b);
+        let largestGap = -1;
+        let start = 0;
+        for (const [index, bearing] of bearings.entries()) {
+            const next = bearings[(index + 1) % bearings.length] ?? 0;
+            const gap =
+                next + (index === bearings.length - 1 ? 360 : 0) - bearing;
+            if (gap > largestGap) {
+                largestGap = gap;
+                start = next;
+            }
+        }
+        return { min: start, max: start + 360 - largestGap };
+    }
+
+    return { min: Math.min(...values), max: Math.max(...values) };
 }
 
 /**

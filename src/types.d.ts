@@ -658,6 +658,7 @@ interface IconProps {
         | "globe"
         | "collapse"
         | "close"
+        | "warning"
         | "help"
         | "table"
         | "up"

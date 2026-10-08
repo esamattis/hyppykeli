@@ -565,25 +565,85 @@ test("name editor updates and removes the name query parameter", async ({
     expect(new URL(page.url()).searchParams.has("name")).toBe(false);
 });
 
-test("ground wind shows the manual readings and hourly ranges", async ({
+test("ground wind shows the manual readings and hourly differences", async ({
     page,
 }) => {
     const metrics = page.locator("#winds .latest-wind-cell");
     await expect(metrics.nth(0).locator(".latest-value")).toHaveText(
         /^6\s*m\/s$/,
     );
-    await expect(metrics.nth(0).locator(".hourly-range")).toHaveText("4–6 m/s");
+    await expect(metrics.nth(0).locator(".hourly-range")).toHaveText("Δ 2 m/s");
     await expect(metrics.nth(1).locator(".latest-value")).toHaveText(
         /^4\s*m\/s$/,
     );
-    await expect(metrics.nth(1).locator(".hourly-range")).toHaveText("3–4 m/s");
+    await expect(metrics.nth(1).locator(".hourly-range")).toHaveText("Δ 1 m/s");
     await expect(metrics.nth(2).locator(".direction-value")).toHaveText("194°");
-    await expect(metrics.nth(2).locator(".hourly-range")).toHaveText(
-        "193–201°",
-    );
+    await expect(metrics.nth(2).locator(".hourly-range")).toHaveText("Δ 8°");
     await expect(page.getByLabel("METAR", { exact: true })).toHaveText(
         "METAR EFJY 040720Z AUTO 19007KT 160V220 9999 -SHRA OVC005 //////CB 11/11 Q1014=",
     );
+});
+
+test("ground wind variation warnings use precise thresholds and explain the change", async ({
+    page,
+}) => {
+    const metrics = page.locator("#winds .latest-wind-cell");
+    for (const [gust, direction, warning] of [
+        [9.9, 99, false],
+        [10, 100, true],
+        [10.1, 101, true],
+    ]) {
+        const params = new URLSearchParams(manualPath.split("?")[1]);
+        params.set("MANUAL_ground_obs", `${gust},4,${direction},0;2,3,0,10`);
+        await page.goto(`/dz/?${params}`);
+        const gustWarning = metrics.nth(0).locator(".wind-variation-warning");
+        const directionWarning = metrics
+            .nth(2)
+            .locator(".wind-variation-warning");
+        await expect(gustWarning).toHaveCount(warning ? 1 : 0);
+        await expect(directionWarning).toHaveCount(warning ? 1 : 0);
+        if (warning) {
+            await expect(gustWarning).toHaveAttribute(
+                "data-tooltip",
+                new RegExp(`${(gust - 2).toFixed(1)} m/s.*vähintään 8 m/s`),
+            );
+            await expect(directionWarning).toHaveAttribute(
+                "data-tooltip",
+                new RegExp(`${direction.toFixed(1)}°.*vähintään 100°`),
+            );
+            await gustWarning.focus();
+            await expect(page.getByRole("tooltip")).toContainText(
+                "Varoitusraja: vähintään 8 m/s.",
+            );
+            await directionWarning.focus();
+            await expect(page.getByRole("tooltip")).toContainText(
+                "Varoitusraja: vähintään 100°.",
+            );
+        }
+        await expect(
+            metrics.nth(1).locator(".wind-variation-warning"),
+        ).toHaveCount(0);
+    }
+});
+
+test("ground direction variation crosses north without a false warning", async ({
+    page,
+}) => {
+    const params = new URLSearchParams(manualPath.split("?")[1]);
+    params.set("MANUAL_ground_obs", "4,3,350,0;4,3,10,10");
+    await page.goto(`/dz/?${params}`);
+    const metrics = page.locator("#winds .latest-wind-cell");
+    await expect(metrics.nth(0).locator(".hourly-range")).toHaveText("Δ 0 m/s");
+    await expect(metrics.nth(2).locator(".hourly-range")).toHaveText("Δ 20°");
+    await expect(metrics.nth(2).locator(".hourly-range")).toHaveAttribute(
+        "data-tooltip",
+        /viimeisen tunnin.*pienimmän kaaren.*pohjoisen ylitys/,
+    );
+    await expect(metrics.nth(0).locator(".hourly-range")).toHaveAttribute(
+        "data-tooltip",
+        /suurin lukema miinus pienin lukema/,
+    );
+    await expect(metrics.locator(".wind-variation-warning")).toHaveCount(0);
 });
 
 test("coordinate-only dropzone uses Open-Meteo without an observations card or METAR error", async ({
