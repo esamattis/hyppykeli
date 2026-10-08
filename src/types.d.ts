@@ -955,3 +955,7 @@ interface StoredResponseCacheEntry {
     accessedAt: number;
     bytes: number;
 }
+
+interface PlaceSearchResult extends LandingCoordinateSelection {
+    display_name: string;
+}

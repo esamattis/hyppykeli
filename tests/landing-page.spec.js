@@ -638,3 +638,141 @@ test("station lists are cached while distances update for new coordinates", asyn
     expect(fmiRequests).toBe(1);
     expect(roadRequests).toBe(1);
 });
+
+test("place search opens the first result and lets users select another result", async ({
+    page,
+}) => {
+    const searchUrl = "https://nominatim.openstreetmap.org/search**";
+    let searches = 0;
+    await page.route(searchUrl, (route) => {
+        searches++;
+        return route.fulfill({
+            json: [
+                {
+                    lat: "60.9",
+                    lon: "26.9",
+                    display_name: "Utti, Kouvola, Finland",
+                },
+                {
+                    lat: "61.5",
+                    lon: "24.25",
+                    display_name: "Another place, Finland",
+                },
+                {
+                    lat: "invalid",
+                    lon: "24",
+                    display_name: "Invalid coordinates",
+                },
+            ],
+        });
+    });
+    await page.goto("/?no_redirect");
+    await page.evaluate(async () => {
+        const { Map } = await import("leaflet");
+        const flyTo = Map.prototype.flyTo;
+        Map.prototype.flyTo = function (...args) {
+            this.on("moveend", () => {
+                const center = this.getCenter();
+                window.placeSearchView = {
+                    center: {
+                        lat: Number(center.lat.toFixed(3)),
+                        lng: Number(center.lng.toFixed(3)),
+                    },
+                    zoom: this.getZoom(),
+                };
+            });
+            return flyTo.apply(this, args);
+        };
+    });
+    const input = page.getByRole("searchbox", { name: "Hae paikkaa" });
+    await input.fill("Utti & Kouvola");
+    expect(searches).toBe(0);
+    const request = page.waitForRequest(searchUrl);
+    await input.press("Enter");
+    const params = new URL((await request).url()).searchParams;
+    expect(params.get("q")).toBe("Utti & Kouvola");
+    expect(params.get("format")).toBe("jsonv2");
+    expect(params.get("accept-language")).toBe("fi");
+    const results = page.getByRole("list", { name: "Paikkahaun tulokset" });
+    await expect(results.getByRole("button")).toHaveCount(2);
+    const map = page.getByRole("region", {
+        name: "Valitse DZ:n sijainti kartalta",
+    });
+    const create = map.getByRole("button", {
+        name: "Luo hyppypaikka",
+        exact: true,
+    });
+    await expect(create).toBeVisible();
+    await expect(page.getByLabel("Leveysaste", { exact: true })).toHaveValue(
+        "",
+    );
+    await expect
+        .poll(() => page.evaluate(() => window.placeSearchView))
+        .toEqual({
+            center: { lat: 60.9, lng: 26.9 },
+            zoom: 13,
+        });
+    await create.click();
+    await expect(page.getByLabel("Leveysaste", { exact: true })).toHaveValue(
+        "60.90000",
+    );
+    await expect(page.getByLabel("Pituusaste", { exact: true })).toHaveValue(
+        "26.90000",
+    );
+    await results
+        .getByRole("button", { name: "Another place, Finland" })
+        .click();
+    await create.click();
+    await expect(page.getByLabel("Leveysaste", { exact: true })).toHaveValue(
+        "61.50000",
+    );
+    await expect(page.getByLabel("Pituusaste", { exact: true })).toHaveValue(
+        "24.25000",
+    );
+    await input.press("Enter");
+    await expect(create).toBeVisible();
+    expect(searches).toBe(1);
+});
+
+test("place search handles empty results and errors and can retry", async ({
+    page,
+}) => {
+    let requests = 0;
+    await page.route(
+        "https://nominatim.openstreetmap.org/search**",
+        (route) => {
+            requests++;
+            return requests === 1
+                ? route.fulfill({ json: [] })
+                : requests === 2
+                  ? route.fulfill({ status: 503, body: "Unavailable" })
+                  : route.fulfill({
+                        json: [
+                            { lat: "60.9", lon: "26.9", display_name: "Utti" },
+                        ],
+                    });
+        },
+    );
+    await page.goto("/?no_redirect");
+    const input = page.getByRole("searchbox", { name: "Hae paikkaa" });
+    const search = page.getByRole("button", { name: "Hae", exact: true });
+    await expect(search).toBeDisabled();
+    await input.fill("Missing place");
+    await search.click();
+    await expect(page.getByRole("status")).toContainText(
+        "Paikkoja ei löytynyt",
+    );
+    await expect(input).toBeEnabled();
+    await input.fill("Utti");
+    await search.click();
+    await expect(page.getByRole("status")).toContainText(
+        "Paikkahaku epäonnistui",
+    );
+    await expect(input).toBeEnabled();
+    await search.click();
+    await expect(
+        page
+            .getByRole("list", { name: "Paikkahaun tulokset" })
+            .getByRole("button"),
+    ).toHaveText("Utti");
+});

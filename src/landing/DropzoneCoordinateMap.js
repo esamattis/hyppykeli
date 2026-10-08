@@ -1,4 +1,5 @@
 // @ts-check
+import { PlaceSearch } from "#app/landing/PlaceSearch.js";
 import { Icon } from "#app/shared/icons.js";
 import {
     completeDropzones,
@@ -45,6 +46,9 @@ export function DropzoneCoordinateMap({ onSelect }) {
     const containerRef = useRef(null);
     /** @type {import("preact").RefObject<import("leaflet").Map | null>} */
     const mapRef = useRef(null);
+    const popupRef = useRef(
+        /** @type {import("leaflet").Popup | null} */ (null),
+    );
     const onSelectRef = useRef(onSelect);
     onSelectRef.current = onSelect;
     const [locating, setLocating] = useState(false);
@@ -58,6 +62,7 @@ export function DropzoneCoordinateMap({ onSelect }) {
             scrollWheelZoom: true,
         }).setView([64.5, 26], 5);
         mapRef.current = leafletMap;
+        popupRef.current = popup({ closeButton: false });
         tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution:
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | <a href="https://nominatim.org/">Nominatim</a> | <a href="https://open-meteo.com/">Open-Meteo</a>',
@@ -95,22 +100,7 @@ export function DropzoneCoordinateMap({ onSelect }) {
             { padding: [24, 44], animate: false },
         );
         leafletMap.on("click", ({ latlng }) => {
-            const content = document.createElement("div");
-            const button = document.createElement("button");
-            button.type = "button";
-            button.textContent = t("landing.mapCreate");
-            button.addEventListener("click", () => {
-                onSelectRef.current(
-                    latlng.lat.toFixed(5),
-                    latlng.lng.toFixed(5),
-                );
-                leafletMap.closePopup();
-            });
-            content.append(button);
-            popup({ closeButton: false })
-                .setLatLng(latlng)
-                .setContent(content)
-                .openOn(leafletMap);
+            showCreatePopup(latlng.lat, latlng.lng);
         });
 
         setReady(true);
@@ -119,9 +109,35 @@ export function DropzoneCoordinateMap({ onSelect }) {
         return () => {
             observer.disconnect();
             mapRef.current = null;
+            popupRef.current = null;
             leafletMap.remove();
         };
     }, []);
+
+    /** @param {number} latitude @param {number} longitude @param {boolean} [autoPan] */
+    function showCreatePopup(latitude, longitude, autoPan = true) {
+        const leafletMap = mapRef.current;
+        const createPopup = popupRef.current;
+        if (!leafletMap || !createPopup) return;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = t("landing.mapCreate");
+        button.addEventListener("click", () => {
+            onSelectRef.current(latitude.toFixed(5), longitude.toFixed(5));
+            leafletMap.closePopup();
+        });
+        createPopup.options.autoPan = autoPan;
+        createPopup
+            .setLatLng([latitude, longitude])
+            .setContent(button)
+            .openOn(leafletMap);
+    }
+
+    /** @param {PlaceSearchResult} result */
+    function selectPlace(result) {
+        mapRef.current?.flyTo([Number(result.lat), Number(result.lon)], 13);
+        showCreatePopup(Number(result.lat), Number(result.lon), false);
+    }
 
     /** @param {import("preact").JSX.TargetedMouseEvent<HTMLButtonElement>} event */
     function getLocation(event) {
@@ -157,5 +173,6 @@ export function DropzoneCoordinateMap({ onSelect }) {
                 ${h(Icon, { name: "location", size: 24 })}
             </button>
         </div>
+        ${h(PlaceSearch, { onSelect: selectPlace, disabled: !ready })}
     `;
 }

@@ -1,7 +1,21 @@
 // @ts-check
+import { LANGUAGE } from "#app/translations.js";
 import { coordinateDistance } from "#app/shared/coordinates.js";
 import { fetchCached } from "#app/shared/fetchCached.js";
 import { CACHE_POLICIES } from "#app/weather/providers/cachePolicies.js";
+
+// Search and reverse lookups share Nominatim's one-request-per-second limit.
+let nextNominatimRequestAt = 0;
+
+/** @param {URL} url @param {AbortSignal} signal */
+async function fetchNominatim(url, signal) {
+    const now = Date.now();
+    const delay = Math.max(0, nextNominatimRequestAt - now);
+    nextNominatimRequestAt = now + delay + 1000;
+    if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
+    signal.throwIfAborted();
+    return fetch(url, { signal });
+}
 
 /**
  * @param {LandingCoordinateSelection} coordinates
@@ -40,7 +54,7 @@ export async function fetchLocationName({ lat, lon }, signal) {
         format: "jsonv2",
         "accept-language": "fi",
     }).toString();
-    const response = await fetch(url, { signal });
+    const response = await fetchNominatim(url, signal);
     if (!response.ok) return "";
     /** @type {NominatimReverseResult} */
     const location = await response.json();
@@ -184,4 +198,37 @@ export async function findNearbyStations(coordinates) {
                   }
                 : null,
     };
+}
+
+/**
+ * @param {string} query
+ * @param {AbortSignal} signal
+ * @returns {Promise<PlaceSearchResult[]>}
+ */
+export async function searchPlaces(query, signal) {
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    url.search = new URLSearchParams({
+        q: query,
+        format: "jsonv2",
+        limit: "5",
+        "accept-language": LANGUAGE.value,
+    }).toString();
+    const response = await fetchNominatim(url, signal);
+    if (!response.ok) throw new Error("Place search failed");
+    /** @type {PlaceSearchResult[]} */
+    const results = await response.json();
+    if (!Array.isArray(results))
+        throw new Error("Invalid place search response");
+    return results.filter(
+        (result) =>
+            typeof result?.display_name === "string" &&
+            typeof result.lat === "string" &&
+            result.lat.trim() !== "" &&
+            typeof result.lon === "string" &&
+            result.lon.trim() !== "" &&
+            Number.isFinite(Number(result.lat)) &&
+            Math.abs(Number(result.lat)) <= 90 &&
+            Number.isFinite(Number(result.lon)) &&
+            Math.abs(Number(result.lon)) <= 180,
+    );
 }
