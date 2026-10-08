@@ -269,8 +269,8 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
                 xmlns="http://www.w3.org/2000/svg">
 
               <!-- Circle for compass outline -->
-              <circle class="compass-outer-ring" cx="200" cy="200" r=${circle} stroke=${LIMIT_COLOR} stroke-width="4" fill="none" />
-              <circle cx="200" cy="200" r=${studentCircle} stroke="var(--color-warning)" stroke-width="4" fill="none" />
+              <circle class="compass-outer-ring" cx="200" cy="200" r=${circle} stroke=${LIMIT_COLOR} stroke-width="10" fill="none" />
+              <circle cx="200" cy="200" r=${studentCircle} stroke="var(--color-warning)" stroke-width="10" fill="none" />
 
               <!-- Directions Text -->
               <text x="200" y="40" class="font-bold font-monospace text-px-40" text-anchor="middle" fill="var(--color-text)">N</text>
@@ -324,9 +324,69 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
                     ${observation && h(FromNow, { date: observation.time })}
                 </div>
 
-                ${h(Help, {}, html`<p>${t("compass.help")}</p>`)}
+                ${h(Help, {}, h(CompassHelp, {}))}
                 </div>
             `}
+        </div>
+    `;
+}
+
+function CompassHelp() {
+    const scope = useScope(css`
+        .compass-legend {
+            display: grid;
+            gap: var(--spacing-2);
+            list-style: none;
+        }
+        .compass-legend li {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-2);
+        }
+        .compass-legend-swatch {
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .compass-legend-success {
+            background: var(--color-success);
+        }
+        .compass-legend-warning {
+            background: var(--color-warning);
+        }
+        .compass-legend-danger {
+            background: var(--color-danger);
+        }
+    `);
+    return html`
+        <div>
+            ${scope.style}
+            <p>${t("compass.help")}</p>
+            <ul class="compass-legend p-0 my-3">
+                <li>
+                    <span
+                        class="compass-legend-swatch compass-legend-success"
+                        aria-hidden="true"
+                    ></span>
+                    ${t("compass.legendSuccess")}
+                </li>
+                <li>
+                    <span
+                        class="compass-legend-swatch compass-legend-warning"
+                        aria-hidden="true"
+                    ></span>
+                    ${t("compass.legendWarning")}
+                </li>
+                <li>
+                    <span
+                        class="compass-legend-swatch compass-legend-danger"
+                        aria-hidden="true"
+                    ></span>
+                    ${t("compass.legendDanger")}
+                </li>
+            </ul>
+            <p>${t("compass.helpAnimation")}</p>
         </div>
     `;
 }

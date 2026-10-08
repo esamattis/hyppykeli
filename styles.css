@@ -79,11 +79,11 @@
         /* Dividers, field borders, map chrome, and chart grids. */
         --color-border: #c8e2ef;
         /* Deep teal for safe wind readings, compass needles, and the first jumper. */
-        --color-success: #247568;
+        --color-success: #74c8b4;
         /* Warm amber for the student wind limit: readings, compass, and charts. */
-        --color-warning: #a56812;
+        --color-warning: #e4b66a;
         /* Muted crimson for the licensed wind limit and danger readings/markers. */
-        --color-danger: #b54751;
+        --color-danger: #e6818d;
         /* Text and icon details on solid danger backgrounds. */
         --color-on-danger: #ffffff;
         /* Subtle severe-cloud warning background. */

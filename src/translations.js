@@ -88,7 +88,13 @@ export const english = {
     "cloud.minimize": "Minimize cloud summary",
     "cloud.restore": "Show cloud summary",
     "compass.help":
-        "The ranges below the wind readings show the minimum and maximum gust, mean wind, and direction observed during the last hour. Values are rounded to whole numbers. The arrow shows wind direction and its length shows the gust. The inner circle is the student limit (8 m/s), and the outer circle is the licence limit (11 m/s). The animation replays the last hour chronologically. When it is off, the arrow shows the latest observation.",
+        "The arrow shows wind direction. Its length and color show gust speed.",
+    "compass.legendSuccess": "Green: below 8 m/s",
+    "compass.legendWarning":
+        "Amber: 8 to below 11 m/s · inner ring: student limit",
+    "compass.legendDanger": "Red: 11 m/s or more · outer ring: licence limit",
+    "compass.helpAnimation":
+        "Animation replays the last hour. Turn it off to show the latest reading.",
     "source.openMeteoModeled": "Open-Meteo (modeled)",
     "source.manualMode": "Manual mode",
     "error.noMetar": (/** @type {string} */ code) =>
@@ -700,7 +706,14 @@ const finnish = {
     "cloud.minimize": "Pienennä pilviyhteenveto",
     "cloud.restore": "Näytä pilviyhteenveto",
     "compass.help":
-        "Tuulilukemien alla näkyvät vaihteluvälit kertovat puuskan, keskituulen ja suunnan pienimmän ja suurimman havaitun arvon viimeisen tunnin ajalta. Arvot on pyöristetty kokonaisluvuiksi. Kompassin nuoli kertoo tuulen suunnan ja pituus tuulen puuskan. Sisempi ympyrä on oppilasraja (8 m/s) ja ulompi ympyrä on kelppariraja (11 m/s). Animaatio toistaa viimeisen tunnin havainnot aikajärjestyksessä. Kun animaatio on pois päältä, nuoli näyttää uusimman havainnon.",
+        "Nuoli näyttää tuulen suunnan. Sen pituus ja väri kertovat puuskan nopeuden.",
+    "compass.legendSuccess": "Vihreä: alle 8 m/s",
+    "compass.legendWarning":
+        "Keltainen: 8–alle 11 m/s · sisempi rengas: oppilasraja",
+    "compass.legendDanger":
+        "Punainen: vähintään 11 m/s · ulompi rengas: kelppariraja",
+    "compass.helpAnimation":
+        "Animaatio toistaa viimeisen tunnin havainnot. Ilman animaatiota näet uusimman havainnon.",
     "source.openMeteoModeled": "Open-Meteo (mallinnettu)",
     "source.manualMode": "Manuaalitila",
     "error.noMetar": (code) => `Ei METAR-sanomaa kentälle ${code}.`,
