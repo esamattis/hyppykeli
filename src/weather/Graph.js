@@ -44,6 +44,9 @@ function getDefaultGraphOptions(signal, reverse) {
         },
         options: {
             maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+            },
             interaction: {
                 mode: "index",
                 axis: "x",
@@ -72,6 +75,13 @@ function updateCharts(obs, fore) {
     for (const chart of [obs, fore]) {
         if (chart) {
             chart.options.scales = {
+                x: {
+                    ticks: { minRotation: 0, maxRotation: 0 },
+                    // Reserve one row even when a provider has no time labels.
+                    afterFit: (scale) => {
+                        scale.height = theme.fontSize * 2.5;
+                    },
+                },
                 y: {
                     min: 0,
                     max: yMax,
@@ -163,6 +173,63 @@ function updateCharts(obs, fore) {
 
 /**
  * @param {Object} props
+ * @param {boolean} props.forecast
+ */
+function GraphLegend({ forecast }) {
+    const scope = useScope(css`
+        :scope {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: var(--spacing-1) var(--spacing-3);
+            color: var(--color-muted);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-1-5);
+            white-space: nowrap;
+        }
+        .legend-swatch {
+            flex: 0 0 var(--spacing-4);
+            border-top: 3px solid var(--legend-color);
+        }
+        .forecast .legend-swatch {
+            border-top-style: dashed;
+        }
+    `);
+    const labels = [
+        [
+            t(forecast ? "weather.gustForecastUnit" : "weather.gustUnit"),
+            "var(--color-primary)",
+        ],
+        [t("weather.windUnit"), "var(--color-sky)"],
+        [t("weather.licensed"), "var(--color-danger)"],
+        [t("weather.students"), "var(--color-warning)"],
+    ];
+    return html`
+        <div class="chart-legend mt-2">
+            ${scope.style}
+            ${labels.map(
+                ([label, color], index) => html`
+                    <span
+                        class=${`legend-item text-rem-0-75 font-normal ${forecast && index < 2 ? "forecast" : ""}`}
+                    >
+                        <span
+                            class="legend-swatch"
+                            style=${`--legend-color: ${color}`}
+                            aria-hidden="true"
+                        ></span>
+                        ${label}
+                    </span>
+                `,
+            )}
+        </div>
+    `;
+}
+
+/**
+ * @param {Object} props
  * @param {import("preact").ComponentChildren} props.observationsTable
  * @param {import("preact").ComponentChildren} props.forecastsTable
  */
@@ -186,7 +253,6 @@ export function Graph(props) {
         .chart {
             position: relative;
             height: clamp(350px, 70vh, 600px);
-            border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
             background: var(--color-surface);
         }
@@ -251,6 +317,7 @@ export function Graph(props) {
                           <div class="chart" onMouseLeave=${onMouseLeaveObs}>
                               <canvas ref=${obsChartRef}></canvas>
                           </div>
+                          ${h(GraphLegend, { forecast: false })}
                       </div>
                   `
                 : null
@@ -273,13 +340,13 @@ export function Graph(props) {
                 ${h(DataSource, { sources: [FORECAST_SOURCE.value] })}
                 ${props.forecastsTable}
             </div>
-
             <div
                 class=${STALE_FORECASTS.value ? "chart stale" : "chart fresh"}
                 onMouseLeave=${onMouseLeaveObs}
             >
                 <canvas ref=${foreChartRef}></canvas>
             </div>
+            ${h(GraphLegend, { forecast: true })}
         </div>
     `;
 }
