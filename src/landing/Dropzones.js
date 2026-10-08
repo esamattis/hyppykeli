@@ -4,6 +4,7 @@ import {
     dropzoneHref,
     partialDropzones,
 } from "#app/dropzones.js";
+import { DropzoneCoordinateMap } from "#app/landing/DropzoneCoordinateMap.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
@@ -36,9 +37,12 @@ function DropzoneList({ dropzones }) {
     `;
 }
 
-export function Dropzones() {
+/** @param {{ onSelect: (lat: string, lon: string) => void }} props */
+export function Dropzones({ onSelect }) {
     return html`
         <h2>${t("landing.dropzones")}</h2>
+        ${h(DropzoneCoordinateMap, { onSelect })}
+        <p class="mt-0">${t("landing.mapHelp")}</p>
         <p>${t("landing.complete")}</p>
         ${h(DropzoneList, { dropzones: completeDropzones })}
         <p>${t("landing.partial")}</p>

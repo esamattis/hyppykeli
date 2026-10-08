@@ -136,6 +136,7 @@ test("landing form includes elevation in the dropzone URL", async ({
     page,
 }) => {
     await page.goto("/?no_redirect");
+    await page.getByLabel("Nimi", { exact: true }).fill("Test DZ");
     await page.locator('[name="fmisid"]').fill("101191");
     await page
         .getByRole("spinbutton", { name: label, exact: true })

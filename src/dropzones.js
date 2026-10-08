@@ -35,6 +35,7 @@ export const completeDropzones = [
     },
     {
         name: "EFPO",
+        mapCoordinates: [61.4617, 21.8],
         qs: {
             fmisid: 101044,
             icaocode: "EFPO",
@@ -44,6 +45,7 @@ export const completeDropzones = [
     },
     {
         name: "EFLP",
+        mapCoordinates: [61.0446, 28.1444],
         qs: {
             fmisid: 101237,
             icaocode: "EFLP",
@@ -53,6 +55,7 @@ export const completeDropzones = [
     },
     {
         name: "EFKU",
+        mapCoordinates: [63.0071, 27.7978],
         qs: {
             fmisid: 101570,
             icaocode: "EFKU",
@@ -62,6 +65,7 @@ export const completeDropzones = [
     },
     {
         name: "EFOU",
+        mapCoordinates: [64.93, 25.3546],
         qs: {
             fmisid: 101786,
             icaocode: "EFOU",
@@ -71,6 +75,7 @@ export const completeDropzones = [
     },
     {
         name: "EFTP",
+        mapCoordinates: [61.4141, 23.6044],
         qs: {
             name: "EFTP",
             fmisid: 101118,
@@ -81,6 +86,7 @@ export const completeDropzones = [
     },
     {
         name: "EFTU",
+        mapCoordinates: [60.5141, 22.2628],
         qs: {
             fmisid: 101065,
             icaocode: "EFTU",
@@ -90,6 +96,7 @@ export const completeDropzones = [
     },
     {
         name: "EFKE",
+        mapCoordinates: [65.7787, 24.5821],
         qs: {
             fmisid: 101840,
             icaocode: "EFKE",
@@ -99,6 +106,7 @@ export const completeDropzones = [
     },
     {
         name: "EFVA",
+        mapCoordinates: [63.0507, 21.7622],
         qs: {
             fmisid: 101462,
             icaocode: "EFVA",
@@ -174,4 +182,11 @@ export function dropzoneHref(dropzone) {
         Object.entries(dropzone.qs).map(([key, value]) => [key, String(value)]),
     );
     return `/dz/?${params.toString()}`;
+}
+
+/** @param {LandingDropzone} dropzone @returns {[number, number] | undefined} */
+export function dropzoneCoordinates({ qs, mapCoordinates }) {
+    return qs.lat != null && qs.lon != null
+        ? [Number(qs.lat), Number(qs.lon)]
+        : mapCoordinates;
 }

@@ -8,6 +8,10 @@ import { computed, effect } from "@preact/signals";
 import { startTooltips } from "#app/shared/tooltipEvents.js";
 import { ANIMATIONS_RUNNING, holdAnimations } from "#app/app/animationState.js";
 
+export function startLandingPage() {
+    startTooltips();
+}
+
 let started = false;
 
 export function startApp() {

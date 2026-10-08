@@ -54,7 +54,12 @@ export function FormField({
         label == null
             ? null
             : html`
-                  <label for=${id}>${label}</label>
+                  <label
+                      class=${layout === "plain" ? labelClassName : ""}
+                      for=${id}
+                  >
+                      ${label}
+                  </label>
               `;
     return html`
         <div
@@ -127,16 +132,18 @@ export function ClearableInput({
     onInput,
     onClear,
     onPaste,
+    required,
 }) {
     const scope = useScope(css`
         :scope {
             position: relative;
             display: inline-flex;
             max-width: 100%;
+            width: var(--clearable-input-width, auto);
         }
         input {
             box-sizing: border-box;
-            width: 22ch;
+            width: var(--clearable-input-width, 22ch);
             padding: var(--spacing-2) var(--spacing-9-5) var(--spacing-2)
                 var(--spacing-2-5);
         }
@@ -176,6 +183,7 @@ export function ClearableInput({
                 min=${min}
                 max=${max}
                 value=${value}
+                required=${required}
                 onInput=${onInput}
                 onPaste=${onPaste}
             />
@@ -186,7 +194,7 @@ export function ClearableInput({
                               class="clear-input p-0"
                               type="button"
                               aria-label=${t("landing.clear", label)}
-                              title=${t("landing.clear", label)}
+                              data-tooltip=${t("landing.clear", label)}
                               onClick=${clear}
                           >
                               ${h(Icon, { name: "close", size: 18 })}

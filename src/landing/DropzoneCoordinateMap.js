@@ -1,16 +1,21 @@
 // @ts-check
 import { Icon } from "#app/shared/icons.js";
-import { getTheme } from "#app/styles.js";
+import {
+    completeDropzones,
+    partialDropzones,
+    dropzoneHref,
+    dropzoneCoordinates,
+} from "#app/dropzones.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
-import { circleMarker, map, tileLayer } from "leaflet";
+import { divIcon, marker, popup, map, tileLayer } from "leaflet";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 /**
- * @param {{ lat: string, lon: string, onSelect: (lat: string, lon: string) => void }} props
+ * @param {{ onSelect: (lat: string, lon: string) => void }} props
  */
-export function DropzoneCoordinateMap({ lat, lon, onSelect }) {
+export function DropzoneCoordinateMap({ onSelect }) {
     const scope = useScope(css`
         :scope {
             position: relative;
@@ -27,8 +32,8 @@ export function DropzoneCoordinateMap({ lat, lon, onSelect }) {
         .location-button {
             position: absolute;
             z-index: 1000;
-            top: 12px;
-            right: 12px;
+            top: var(--spacing-3);
+            right: var(--spacing-3);
             display: grid;
             width: 44px;
             height: 44px;
@@ -40,11 +45,10 @@ export function DropzoneCoordinateMap({ lat, lon, onSelect }) {
     const containerRef = useRef(null);
     /** @type {import("preact").RefObject<import("leaflet").Map | null>} */
     const mapRef = useRef(null);
-    /** @type {import("preact").RefObject<import("leaflet").CircleMarker | null>} */
-    const markerRef = useRef(null);
     const onSelectRef = useRef(onSelect);
     onSelectRef.current = onSelect;
     const [locating, setLocating] = useState(false);
+    const [ready, setReady] = useState(false);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -56,53 +60,68 @@ export function DropzoneCoordinateMap({ lat, lon, onSelect }) {
         mapRef.current = leafletMap;
         tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution:
-                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | <a href="https://nominatim.org/">Nominatim</a> | <a href="https://open-meteo.com/">Open-Meteo</a>',
             maxZoom: 19,
         }).addTo(leafletMap);
+        const dropzones = [...completeDropzones, ...partialDropzones].map(
+            (dz) => ({
+                dz,
+                coordinates: dropzoneCoordinates(dz),
+            }),
+        );
+        for (const { dz, coordinates } of dropzones) {
+            if (!coordinates) continue;
+            const link = document.createElement("a");
+            link.href = dropzoneHref(dz);
+            link.setAttribute("aria-label", dz.name);
+            link.setAttribute("data-tooltip", dz.name);
+            link.className = "dropzone-pin";
+            link.innerHTML = `<svg viewBox="0 0 32 40" width="32" height="40" aria-hidden="true"><path d="M16 1C8 1 1 7 1 15c0 11 15 24 15 24s15-13 15-24C31 7 24 1 16 1Z" fill="var(--color-primary)" stroke="var(--color-surface)" stroke-width="2"/><circle cx="16" cy="15" r="5" fill="var(--color-surface)"/></svg>`;
+            marker(coordinates, {
+                icon: divIcon({
+                    html: link,
+                    className: "dropzone-marker",
+                    iconSize: [32, 40],
+                    iconAnchor: [16, 40],
+                }),
+                keyboard: false,
+                bubblingMouseEvents: false,
+            }).addTo(leafletMap);
+        }
+        leafletMap.fitBounds(
+            dropzones.flatMap(({ coordinates }) =>
+                coordinates ? [coordinates] : [],
+            ),
+            { padding: [24, 44], animate: false },
+        );
         leafletMap.on("click", ({ latlng }) => {
-            onSelectRef.current(latlng.lat.toFixed(5), latlng.lng.toFixed(5));
+            const content = document.createElement("div");
+            const button = document.createElement("button");
+            button.type = "button";
+            button.textContent = t("landing.mapCreate");
+            button.addEventListener("click", () => {
+                onSelectRef.current(
+                    latlng.lat.toFixed(5),
+                    latlng.lng.toFixed(5),
+                );
+                leafletMap.closePopup();
+            });
+            content.append(button);
+            popup({ closeButton: false })
+                .setLatLng(latlng)
+                .setContent(content)
+                .openOn(leafletMap);
         });
 
+        setReady(true);
         const observer = new ResizeObserver(() => leafletMap.invalidateSize());
         observer.observe(container);
         return () => {
             observer.disconnect();
-            markerRef.current = null;
             mapRef.current = null;
             leafletMap.remove();
         };
     }, []);
-
-    useEffect(() => {
-        const leafletMap = mapRef.current;
-        const latitude = Number(lat);
-        const longitude = Number(lon);
-        const valid =
-            lat.trim() !== "" &&
-            lon.trim() !== "" &&
-            Number.isFinite(latitude) &&
-            Number.isFinite(longitude) &&
-            Math.abs(latitude) <= 90 &&
-            Math.abs(longitude) <= 180;
-        if (!leafletMap || !valid) {
-            markerRef.current?.remove();
-            markerRef.current = null;
-            return;
-        }
-
-        if (markerRef.current) {
-            markerRef.current.setLatLng([latitude, longitude]);
-            return;
-        }
-        const theme = getTheme();
-        markerRef.current = circleMarker([latitude, longitude], {
-            radius: 8,
-            color: theme.primary,
-            fillColor: theme.surface,
-            fillOpacity: 1,
-            weight: 3,
-        }).addTo(leafletMap);
-    }, [lat, lon]);
 
     /** @param {import("preact").JSX.TargetedMouseEvent<HTMLButtonElement>} event */
     function getLocation(event) {
@@ -113,7 +132,9 @@ export function DropzoneCoordinateMap({ lat, lon, onSelect }) {
                 setLocating(false);
                 const latitude = position.coords.latitude;
                 const longitude = position.coords.longitude;
-                mapRef.current?.setView([latitude, longitude], 13);
+                mapRef.current?.setView([latitude, longitude], 13, {
+                    animate: false,
+                });
                 onSelectRef.current(latitude.toString(), longitude.toString());
             },
             () => setLocating(false),
@@ -129,8 +150,8 @@ export function DropzoneCoordinateMap({ lat, lon, onSelect }) {
                 id="get-location"
                 type="button"
                 aria-label=${t("landing.useLocation")}
-                title=${t("landing.useLocation")}
-                disabled=${locating}
+                data-tooltip=${t("landing.useLocation")}
+                disabled=${locating || !ready}
                 onClick=${getLocation}
             >
                 ${h(Icon, { name: "location", size: 24 })}

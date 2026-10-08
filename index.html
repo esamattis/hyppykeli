@@ -31,11 +31,13 @@
             }
         </script>
         <script type="module">
+            import { startLandingPage } from "#app/app/start.js";
             import { LandingPage } from "#app/landing/LandingPage.js";
             import { redirectToDz } from "#app/landing/redirect.js";
             import { render, h } from "preact";
             redirectToDz();
             render(h(LandingPage), document.getElementById("landing-page"));
+            startLandingPage();
         </script>
     </head>
     <body>

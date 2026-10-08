@@ -640,6 +640,8 @@ interface CSSScope {
 }
 
 interface LandingDropzone {
+    /** Map location for dropzones whose URLs use station-derived coordinates. */
+    mapCoordinates?: [number, number];
     name: string;
     qs: { [Key in keyof QueryParams]?: string | number } & {
         direction?: number;
@@ -757,6 +759,7 @@ type CheckboxFieldProps = Omit<
 };
 
 interface ClearableInputProps {
+    required?: boolean;
     name: string;
     id?: string;
     label: string;
@@ -895,4 +898,38 @@ interface WeatherRefresh {
     key: string;
     controller: AbortController;
     promise: Promise<void>;
+}
+
+interface LandingCoordinateSelection {
+    lat: string;
+    lon: string;
+}
+
+interface NominatimReverseResult {
+    address?: {
+        hamlet?: string;
+        suburb?: string;
+        village?: string;
+        town?: string;
+        city?: string;
+        municipality?: string;
+        road?: string;
+    };
+    name?: string;
+    display_name?: string;
+}
+
+interface OpenMeteoElevationResult {
+    elevation?: number[];
+}
+
+interface NearbyStation {
+    id: string;
+    name: string;
+    /** Distance from the selected dropzone in metres. */
+    distance: number;
+}
+interface NearbyStations {
+    fmi: NearbyStation | null;
+    fintraffic: NearbyStation | null;
 }

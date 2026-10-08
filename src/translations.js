@@ -429,7 +429,7 @@ export const english = {
         "Direction of travel over the ground: 0°/360° north, 90° east, 180° south, and 270° west. Wind correction determines the aircraft heading needed to follow this track. Changing direction here keeps the central predicted opening point fixed (the midpoint of the two middle openings for an even number of groups). Free rotation by dragging keeps the middle of the exit sequence fixed. Missing wind data or a track that cannot be flown at the selected airspeed can prevent the calculation.",
     "settings.elevation": "Dropzone elevation (m)",
     "settings.elevationHelp":
-        "Dropzone height above sea level. Used to adjust wind calculations and Open-Meteo cloud heights. FMI station data does not provide elevation, so the default is 0 m. Clear the field to restore the default.",
+        "Dropzone height above sea level. Used to adjust wind calculations and Open-Meteo cloud heights.",
     "settings.altitudeReferenceHelp":
         "Exit and opening altitudes are heights above the dropzone. Freefall, aircraft wind correction, and canopy drift use forecast geopotential heights minus the configured dropzone elevation. Manual winds use their fixed sea-level heights minus the same elevation. Heights are rounded only for display; surrounding terrain is not modelled.",
     "settings.freefallSpeedHelp":
@@ -546,24 +546,36 @@ export const english = {
         "Enter coordinates or an FMI or Fintraffic observation station ID.",
     "landing.create": "Create a dropzone",
     "landing.coordinates": "DZ coordinates",
-    "landing.mapHelp": "Click the map to select the dropzone location.",
+    "landing.mapHelp":
+        "Open a dropzone by clicking its pin, or click elsewhere to create a new dropzone.",
+    "landing.mapCreate": "Create Dropzone",
+    "landing.optional": "optional",
+    "landing.stationSource": "Observation source",
+    "landing.onlyNameRequired":
+        "Only the name is required. All other fields are optional.",
     "landing.latitude": "Latitude",
     "landing.longitude": "Longitude",
     "landing.decimal": "In decimal format.",
     "landing.other": "Other information",
     "landing.name": "Name",
+    "landing.locationGroup": "Dropzone location",
+    "landing.weatherGroup": "Weather observations",
+    "landing.jumpRunGroup": "Jump run defaults",
     "landing.defaultJumpRunDirection": "Default jump run direction",
-    "landing.defaultJumpRunDirectionHelp": "In degrees (0–360).",
+    "landing.defaultJumpRunDirectionHelp":
+        "In degrees (0–360). Usually the runway direction.",
+    "landing.defaultExitAltitude": "Default exit altitude (m)",
+    "landing.defaultExitAltitudeHelp":
+        "Metres above the dropzone ground. Must be greater than 800 m.",
     "landing.defaultJumperCount": "Default jump group count",
     "landing.defaultJumperCountHelp":
         "Used when automatically creating a jump run.",
     "landing.fmiHelp": "Find the FMISID of an FMI observation station",
     "landing.here": "here",
     "landing.roadStation": "Fintraffic weather station",
-    "landing.nearestRoadStation": "Find the nearest road station",
-    "landing.roadHelp":
-        "If no suitable FMI observation station is available, you can use a Fintraffic road weather station instead. Find its station ID",
-    "landing.icaoHelp": "Four-letter airport identifier, e.g. EFUT",
+    "landing.roadHelp": "Find the station ID",
+    "landing.icaoHelp":
+        "Four-letter airport identifier, e.g. EFUT. Used for METAR reports and cloud observations.",
     "landing.createButton": "Create",
     "landing.savedLocally":
         "The dropzone is saved only in this browser. Share the dropzone by sharing its link.",
@@ -987,7 +999,7 @@ const finnish = {
         "Lentoradan suunta maan suhteen: 0°/360° pohjoinen, 90° itä, 180° etelä ja 270° länsi. Tuulikorjaus määrittää lentokoneen nokan suunnan, jolla tätä lentorataa seurataan. Suunnan muuttaminen tässä pitää keskimmäisen ennustetun avautumiskohdan paikallaan (parillisella ryhmämäärällä kahden keskimmäisen avautumiskohdan puoliväli). Vapaa kierto vetämällä pitää uloshyppyjonon keskikohdan paikallaan. Puuttuvat tuulitiedot tai lentorata, jota ei voi lentää valitulla ilmanopeudella, voivat estää laskennan.",
     "settings.elevation": "Hyppypaikan korkeus merenpinnasta (m)",
     "settings.elevationHelp":
-        "Hyppypaikan korkeus merenpinnasta. Käytetään tuulilaskelmien ja Open-Meteon pilvikorkeuksien korjaamiseen. FMI:n asematiedot eivät sisällä korkeutta, joten oletus on 0 m. Tyhjennä kenttä palauttaaksesi oletuksen.",
+        "Hyppypaikan korkeus merenpinnasta. Käytetään tuulilaskelmien ja Open-Meteon pilvikorkeuksien korjaamiseen.",
     "settings.altitudeReferenceHelp":
         "Uloshyppy- ja avauskorkeudet mitataan hyppypaikan maanpinnasta. Vapaapudotus, lentokoneen tuulikorjaus ja varjon varassa tapahtuva ajautuminen lasketaan ennusteen geopotentiaalikorkeuksista, joista vähennetään asetettu hyppypaikan korkeus merenpinnasta. Käsin syötetyillä tuulilla käytetään kiinteitä korkeuksia merenpinnasta samalla korjauksella. Korkeudet pyöristetään vain näytettäessä; ympäröivää maastoa ei mallinneta.",
     "settings.freefallSpeedHelp":
@@ -1102,24 +1114,36 @@ const finnish = {
         "Anna koordinaatit tai FMI:n tai Fintrafficin havaintoaseman tunnus.",
     "landing.create": "Luo hyppypaikka",
     "landing.coordinates": "DZ koordinaatit",
-    "landing.mapHelp": "Valitse hyppypaikan sijainti kartalta napsauttamalla.",
+    "landing.mapHelp":
+        "Avaa hyppypaikka napsauttamalla sen merkkiä tai luo uusi hyppypaikka napsauttamalla muualle kartalla.",
+    "landing.mapCreate": "Luo hyppypaikka",
+    "landing.optional": "valinnainen",
+    "landing.stationSource": "Havaintojen lähde",
+    "landing.onlyNameRequired":
+        "Vain nimi on pakollinen. Kaikki muut kentät ovat valinnaisia.",
     "landing.latitude": "Leveysaste",
     "landing.longitude": "Pituusaste",
     "landing.decimal": "Desimaalimuodossa.",
     "landing.other": "Muut tiedot",
     "landing.name": "Nimi",
+    "landing.locationGroup": "Hyppypaikan sijainti",
+    "landing.weatherGroup": "Säähavainnot",
+    "landing.jumpRunGroup": "Hyppylinjan oletukset",
     "landing.defaultJumpRunDirection": "Hyppylinjan oletussuunta",
-    "landing.defaultJumpRunDirectionHelp": "Asteina (0–360).",
+    "landing.defaultJumpRunDirectionHelp":
+        "Asteina (0–360). Yleensä kiitotien suunta.",
+    "landing.defaultExitAltitude": "Uloshyppykorkeuden oletus (m)",
+    "landing.defaultExitAltitudeHelp":
+        "Metreinä hyppypaikan maanpinnasta. Korkeuden on oltava yli 800 m.",
     "landing.defaultJumperCount": "Hyppyryhmien oletusmäärä",
     "landing.defaultJumperCountHelp":
         "Käytetään hyppylinjan automaattisessa luonnissa.",
     "landing.fmiHelp": "Hae Ilmatieteenlaitoksen havaintoaseman FMISID",
     "landing.here": "täältä",
     "landing.roadStation": "Fintraffic sääasema",
-    "landing.nearestRoadStation": "Hae lähin tieasema",
-    "landing.roadHelp":
-        "Jos sopivaa Ilmatieteenlaitoksen havaintoasemaa ei löydy, voit käyttää vaihtoehtoisesti Fintrafficin tiesääasemaa. Hae aseman ID",
-    "landing.icaoHelp": "Nelikirjaminen lentokentän tunnus, esim. EFUT",
+    "landing.roadHelp": "Hae aseman ID",
+    "landing.icaoHelp":
+        "Nelikirjaiminen lentokentän tunnus, esim. EFUT. Käytetään METAR-sanomiin ja pilvihavaintoihin.",
     "landing.createButton": "Luo",
     "landing.savedLocally":
         "Hyppypaikka tallennetaan vain tähän selaimeen. Hyppypaikan voi jakaa muille jakamalla sen linkin.",
