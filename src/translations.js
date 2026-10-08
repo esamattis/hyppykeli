@@ -2,6 +2,9 @@
 import { effect, signal } from "@preact/signals";
 
 export const english = {
+    "wakeLock.enable": "Keep screen on",
+    "wakeLock.disable": "Allow screen to sleep",
+    "wakeLock.error": "Unable to keep screen on. Try again.",
     "fullscreen.enter": "Enter fullscreen",
     "fullscreen.exit": "Exit fullscreen",
     "fullscreen.error": "Unable to change fullscreen. Try again.",
@@ -613,6 +616,9 @@ export const english = {
 
 /** @satisfies {TranslationCatalog<typeof english>} */
 const finnish = {
+    "wakeLock.enable": "Pidä näyttö päällä",
+    "wakeLock.disable": "Salli näytön sammuminen",
+    "wakeLock.error": "Näyttöä ei voitu pitää päällä. Yritä uudelleen.",
     "fullscreen.enter": "Siirry koko näytön tilaan",
     "fullscreen.exit": "Poistu koko näytön tilasta",
     "fullscreen.error":

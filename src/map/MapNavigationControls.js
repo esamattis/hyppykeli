@@ -1,4 +1,5 @@
 // @ts-check
+import { WakeLockToggle } from "#app/app/WakeLockToggle.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
@@ -6,6 +7,7 @@ import { h, html } from "htm/preact";
 
 /** @param {MapNavigationControlsProps} props */
 export function MapNavigationControls({
+    fullWindow,
     map,
     zoom,
     satellite,
@@ -26,7 +28,8 @@ export function MapNavigationControls({
             gap: var(--spacing-1-5);
         }
         .map-zoom-controls,
-        :scope > .arrow-action {
+        :scope > .arrow-action,
+        :scope > .wake-lock-toggle {
             border: 1px solid var(--color-border);
             border-radius: var(--radius-sm);
             background: var(--color-map-control);
@@ -45,7 +48,8 @@ export function MapNavigationControls({
         .map-zoom-controls > .arrow-action:last-child {
             border-radius: 0 0 var(--radius-sm) var(--radius-sm);
         }
-        :scope .arrow-action:hover {
+        :scope .arrow-action:hover,
+        :scope > .wake-lock-toggle:hover {
             background: var(--color-map-control-hover);
         }
     `);
@@ -79,6 +83,7 @@ export function MapNavigationControls({
                 disabled: disabled || !canFit,
                 onClick: onFit,
             })}
+            ${fullWindow && h(WakeLockToggle, { compact: true })}
         </div>
     `;
 }

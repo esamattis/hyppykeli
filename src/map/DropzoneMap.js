@@ -2149,6 +2149,7 @@ export function DropzoneMap() {
                         ${fullWindow ? h(MapCloudSummary, {}) : null}
                         ${fullWindow ? h(MapCompass, {}) : null}
                         ${h(MapNavigationControls, {
+                            fullWindow,
                             map: leafletInstance,
                             zoom,
                             satellite,

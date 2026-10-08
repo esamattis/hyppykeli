@@ -1,3 +1,7 @@
+interface WakeLockToggleProps {
+    compact?: boolean;
+}
+
 type Signal<T> = import("@preact/signals").Signal<T>;
 type ReadonlySignal<T> = import("@preact/signals").ReadonlySignal<T>;
 
@@ -217,6 +221,7 @@ interface FreefallToolbarProps {
 }
 
 interface MapNavigationControlsProps {
+    fullWindow: boolean;
     map: import("leaflet").Map | null;
     zoom: number;
     satellite: boolean;
@@ -673,6 +678,7 @@ type ThemePreference = "system" | "light" | "dark";
 
 interface IconProps {
     name:
+        | "screenAwake"
         | "monitor"
         | "sun"
         | "moon"

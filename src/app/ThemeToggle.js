@@ -44,7 +44,7 @@ export function ThemeToggle() {
                 onClick: () => setThemePreference(next),
             },
             html`
-                ${scope.style} ${h(Icon, { name: icons[mode], size: 24 })}
+                ${scope.style} ${h(Icon, { name: icons[mode], size: 20 })}
             `,
         )}
     `;

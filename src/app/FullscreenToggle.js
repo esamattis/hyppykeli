@@ -64,7 +64,7 @@ export function FullscreenToggle() {
         },
         html`
             ${scope.style}
-            ${h(Icon, { name: fullscreen ? "collapse" : "expand", size: 24 })}
+            ${h(Icon, { name: fullscreen ? "collapse" : "expand", size: 20 })}
         `,
     );
 }

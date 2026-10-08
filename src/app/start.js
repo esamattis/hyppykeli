@@ -1,4 +1,5 @@
 // @ts-check
+import { startWakeLock } from "#app/app/wakeLock.js";
 import { startTheme } from "#app/app/theme.js";
 import { t } from "#app/translations.js";
 import { updateWeatherData, weatherSettingsKey } from "#app/weather/refresh.js";
@@ -19,6 +20,7 @@ let started = false;
 export function startApp() {
     if (started) return;
     started = true;
+    startWakeLock();
     startTheme();
     effect(() => {
         document.documentElement.style.setProperty(

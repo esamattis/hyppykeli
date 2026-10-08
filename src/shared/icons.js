@@ -4,6 +4,10 @@ import { h, html } from "htm/preact";
 
 // All UI icon artwork lives here. Charts and the compass are data visualizations.
 const artwork = {
+    screenAwake: html`
+        <rect x="5" y="2" width="14" height="20" rx="2" />
+        <path d="m13 6-4 6h6l-4 6" />
+    `,
     monitor: html`
         <rect x="3" y="3" width="18" height="14" rx="2" />
         <path d="M12 17v4M8 21h8" />
