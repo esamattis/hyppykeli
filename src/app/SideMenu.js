@@ -12,6 +12,7 @@ import { css, useScope } from "#app/useScope.js";
 import { NAME } from "#app/weather/state.js";
 import { MENU_OPEN } from "#app/app/menuState.js";
 import { SAVED_DZs, removeSavedDz, saveCurrentDz } from "#app/app/settings.js";
+import { clearResponseCache } from "#app/shared/responseCache.js";
 import { h, html } from "htm/preact";
 
 const OTHER_DZs = [...completeDropzones, ...partialDropzones].sort((a, b) =>
@@ -27,13 +28,14 @@ function savePreviousDz(e) {
     }
 }
 
-function resetCurrentDz() {
+async function resetCurrentDz() {
     const dropzone = OTHER_DZs.find((dz) => dz.name === NAME.value);
     if (dropzone) {
         const url = new URL(location.href);
         url.search = new URL(dropzoneHref(dropzone), url).search;
         history.replaceState(null, "", url);
     }
+    await clearResponseCache();
     localStorage.clear();
     location.reload();
 }

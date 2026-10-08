@@ -20,6 +20,9 @@ const uniformUpperWinds = [7000, 5500, 4200, 3000, 1500, 800, 110]
 /** @param {import("@playwright/test").Page} page */
 async function setUniformFreefallWind(page) {
     await page.evaluate(async () => {
+        // IndexedDB hydration is asynchronous; finish startup before injecting winds.
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        await updateWeatherData();
         const { QUERY_PARAMS, navigateQs } =
             await import("#app/app/settings.js");
         const params = QUERY_PARAMS.value;
@@ -320,6 +323,10 @@ test.beforeEach(async ({ page, baseURL }) => {
     await expect(page.getByRole("status")).toContainText(
         "Manuaalitila käytössä.",
     );
+    await page.evaluate(async () => {
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        await updateWeatherData();
+    });
 });
 
 test("cloud source help opens METAR and Open-Meteo explanations", async ({
@@ -800,17 +807,17 @@ test("Open-Meteo refreshes cached winds with incompatible units", async ({
     const cached = openMeteoResponse();
     for (const level of ["400", "500", "600", "700", "850", "925", "1000"])
         cached.hourly_units[`windspeed_${level}hPa`] = "km/h";
-    await page.addInitScript((cached) => {
-        localStorage.setItem(
-            "hyppykeli:response:v1:open-meteo:40.7,-74",
-            JSON.stringify({
-                data: cached,
-                hasData: true,
-                fetchedAt: Date.now(),
-                lastAttemptAt: Date.now(),
-                measurementAt: null,
-            }),
-        );
+    await page.goto("/?no_redirect=1");
+    await page.evaluate(async (cached) => {
+        const { saveResponseCache } =
+            await import("#app/shared/responseCache.js");
+        await saveResponseCache("hyppykeli:response:v1:open-meteo:40.7,-74", {
+            data: cached,
+            hasData: true,
+            fetchedAt: Date.now(),
+            lastAttemptAt: Date.now(),
+            measurementAt: null,
+        });
     }, cached);
     await page.route("https://api.open-meteo.com/**", (route) =>
         route.fulfill({ json: openMeteoResponse() }),
@@ -822,14 +829,13 @@ test("Open-Meteo refreshes cached winds with incompatible units", async ({
         "aria-label",
         /12 m\/s 200°/,
     );
-    const units = await page.evaluate(
-        () =>
-            JSON.parse(
-                localStorage.getItem(
-                    "hyppykeli:response:v1:open-meteo:40.7,-74",
-                ),
-            ).data.hourly_units,
-    );
+    const units = await page.evaluate(async () => {
+        const { readResponseCache } =
+            await import("#app/shared/responseCache.js");
+        return (
+            await readResponseCache("hyppykeli:response:v1:open-meteo:40.7,-74")
+        ).data.hourly_units;
+    });
     expect(units.windspeed_600hPa).toBe("m/s");
 });
 
@@ -5499,14 +5505,28 @@ test("reload shows cached weather before refresh and retains it through failures
             }),
         )
         .toBe(true);
-    await page.evaluate(() => {
-        for (const key of Object.keys(localStorage)) {
-            if (!key.startsWith("hyppykeli:response:v1:")) continue;
-            const entry = JSON.parse(localStorage.getItem(key));
-            entry.fetchedAt -= 60 * 60_000;
-            entry.lastAttemptAt -= 60 * 60_000;
-            localStorage.setItem(key, JSON.stringify(entry));
-        }
+    await page.evaluate(async () => {
+        const db = await new Promise((resolve) => {
+            const request = indexedDB.open("hyppykeli-api-cache", 1);
+            request.onsuccess = () => resolve(request.result);
+        });
+        const transaction = db.transaction("responses", "readwrite");
+        const store = transaction.objectStore("responses");
+        const request = store.openCursor();
+        request.onsuccess = () => {
+            const cursor = request.result;
+            if (!cursor) return;
+            const record = cursor.value;
+            record.entry.fetchedAt -= 60 * 60_000;
+            record.entry.lastAttemptAt -= 60 * 60_000;
+            cursor.update(record);
+            cursor.continue();
+        };
+        await new Promise((resolve, reject) => {
+            transaction.oncomplete = resolve;
+            transaction.onabort = () => reject(transaction.error);
+        });
+        db.close();
     });
     mode = "blocked";
     await page.reload({ waitUntil: "domcontentloaded" });
@@ -5594,11 +5614,25 @@ test("FMI XML caches survive reload and moving request times without refetching"
         });
     await expect.poll(ready).toBe(true);
     expect(requests).toBe(2);
-    const timestamps = await page.evaluate(() =>
-        Object.keys(localStorage)
-            .filter((key) => key.startsWith("hyppykeli:response:v1:fmi:"))
-            .map((key) => JSON.parse(localStorage.getItem(key)).measurementAt),
-    );
+    const timestamps = await page.evaluate(async () => {
+        const db = await new Promise((resolve) => {
+            const request = indexedDB.open("hyppykeli-api-cache", 1);
+            request.onsuccess = () => resolve(request.result);
+        });
+        const records = await new Promise((resolve) => {
+            const request = db
+                .transaction("responses")
+                .objectStore("responses")
+                .getAll();
+            request.onsuccess = () => resolve(request.result);
+        });
+        db.close();
+        return records
+            .filter((record) =>
+                record.key.startsWith("hyppykeli:response:v1:fmi:"),
+            )
+            .map((record) => record.entry.measurementAt);
+    });
     expect(timestamps.filter((time) => Number.isFinite(time))).toHaveLength(1);
     await page.reload();
     await expect.poll(ready).toBe(true);

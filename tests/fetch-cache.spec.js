@@ -12,6 +12,7 @@ async function openCacheHarness(page) {
     await page.goto("/cache-test");
     await page.evaluate(async () => {
         const { fetchCached } = await import("#app/shared/fetchCached.js");
+        window.responseCache = await import("#app/shared/responseCache.js");
         window.cacheFetch = (policy, extra = {}) =>
             fetchCached("/cache-api", {
                 format: "json",
@@ -152,11 +153,11 @@ test("cache-only hydration survives reload, and invalid responses cannot replace
     });
     await openCacheHarness(page);
     await page.evaluate((policy) => window.cacheFetch(policy), forecasts);
-    await page.evaluate((key) => {
-        const entry = JSON.parse(localStorage.getItem(key));
+    await page.evaluate(async (key) => {
+        const entry = await window.responseCache.readResponseCache(key);
         entry.fetchedAt -= 20 * 60_000;
         entry.lastAttemptAt -= 20 * 60_000;
-        localStorage.setItem(key, JSON.stringify(entry));
+        await window.responseCache.saveResponseCache(key, entry);
     }, prefix + "test");
     await openCacheHarness(page);
     expect(
@@ -186,10 +187,7 @@ test("XML text is cached and storage failures still allow fetching and reuse", a
     });
     await openCacheHarness(page);
     await page.evaluate(() => {
-        Storage.prototype.setItem = () => {
-            throw new Error("Storage full");
-        };
-        Storage.prototype.getItem = () => {
+        IDBFactory.prototype.open = () => {
             throw new Error("Storage blocked");
         };
     });
@@ -221,7 +219,8 @@ for (const warm of [false, true]) {
                         ? { error: "Previous failure", failureCount: 15 }
                         : {}),
                 };
-                if (warm) localStorage.setItem(key, JSON.stringify(previous));
+                if (warm)
+                    await window.responseCache.saveResponseCache(key, previous);
                 let failures = 0;
                 document.addEventListener("apicacheerror", () => failures++);
                 // Ignore cancellation in the transport to also exercise late results.
@@ -232,11 +231,14 @@ for (const warm of [false, true]) {
                 const first = window
                     .cacheFetch(policy, { signal: controller.signal })
                     .catch((error) => error.name);
-                await Promise.resolve();
+                while (responses.length < 1)
+                    await new Promise((resolve) => setTimeout(resolve, 0));
                 controller.abort();
-                const restored = JSON.parse(localStorage.getItem(key));
+                const restored =
+                    (await window.responseCache.readResponseCache(key)) ?? null;
                 const second = window.cacheFetch(policy);
-                await Promise.resolve();
+                while (responses.length < 2)
+                    await new Promise((resolve) => setTimeout(resolve, 0));
                 responses[0](new Response('{"value":99}'));
                 const cancelled = await first;
                 // The old request's cleanup must not remove the new pending request.
@@ -249,7 +251,8 @@ for (const warm of [false, true]) {
                     replacement,
                     shared: await shared,
                     requests: responses.length,
-                    cached: JSON.parse(localStorage.getItem(key)).data,
+                    cached: (await window.responseCache.readResponseCache(key))
+                        .data,
                     failures,
                 };
             },
@@ -347,9 +350,12 @@ for (const warm of [false, true]) {
         expect(requests).toBe(beforeRecovery + 1);
         expect(
             await page.evaluate(
-                (prefix) =>
-                    JSON.parse(localStorage.getItem(prefix + "test"))
-                        .failureCount,
+                async (prefix) =>
+                    (
+                        await window.responseCache.readResponseCache(
+                            prefix + "test",
+                        )
+                    ).failureCount,
                 prefix,
             ),
         ).toBeUndefined();
@@ -383,16 +389,13 @@ test("forced retries bypass failure backoff and preserve its count until success
             : route.fulfill({ json: { value: requests } });
     });
     await openCacheHarness(page);
-    await page.evaluate((prefix) => {
-        localStorage.setItem(
-            prefix + "test",
-            JSON.stringify({
-                hasData: false,
-                lastAttemptAt: Date.now(),
-                error: "Previous failure",
-                failureCount: 16,
-            }),
-        );
+    await page.evaluate(async (prefix) => {
+        await window.responseCache.saveResponseCache(prefix + "test", {
+            hasData: false,
+            lastAttemptAt: Date.now(),
+            error: "Previous failure",
+            failureCount: 16,
+        });
     }, prefix);
     const fetch = (forceFetch = false) =>
         page.evaluate(
@@ -408,8 +411,9 @@ test("forced retries bypass failure backoff and preserve its count until success
     expect(requests).toBe(1);
     expect(
         await page.evaluate(
-            (prefix) =>
-                JSON.parse(localStorage.getItem(prefix + "test")).failureCount,
+            async (prefix) =>
+                (await window.responseCache.readResponseCache(prefix + "test"))
+                    .failureCount,
             prefix,
         ),
     ).toBe(17);
@@ -452,4 +456,178 @@ test("forced refresh bypasses a fresh cache and cache-only hydration stays offli
     });
     expect((await fetch()).data.value).toBe(2);
     expect(requests).toBe(2);
+});
+
+test("IndexedDB persists large XML responses without touching existing local storage", async ({
+    page,
+}) => {
+    await openCacheHarness(page);
+    const xml = "<weather>" + "x".repeat(3 * 1024 * 1024) + "</weather>";
+    let requests = 0;
+    await page.route("**/cache-api", (route) => {
+        requests++;
+        return route.fulfill({ contentType: "application/xml", body: xml });
+    });
+    await page.evaluate((prefix) => {
+        localStorage.setItem("language", "fi");
+        localStorage.setItem(prefix + "legacy", "leave this alone");
+        Storage.prototype.setItem = () => {
+            throw new DOMException("Full", "QuotaExceededError");
+        };
+    }, prefix);
+    await page.evaluate(
+        (policy) => window.cacheFetch(policy, { format: "text" }),
+        forecasts,
+    );
+    expect(await page.evaluate(() => ({ ...localStorage }))).toEqual({
+        language: "fi",
+        [prefix + "legacy"]: "leave this alone",
+    });
+    await openCacheHarness(page);
+    const hydrated = await page.evaluate(
+        (policy) =>
+            window.cacheFetch(policy, { format: "text", cacheOnly: true }),
+        forecasts,
+    );
+    expect(hydrated.data).toBe(xml);
+    expect(hydrated.fromCache).toBe(true);
+    expect(requests).toBe(1);
+});
+
+test("cache limits evict least recently used responses and expire unused entries", async ({
+    page,
+}) => {
+    await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+    await openCacheHarness(page);
+    const result = await page.evaluate(async (prefix) => {
+        const { saveResponseCache, readResponseCache } = window.responseCache;
+        const entry = {
+            data: { value: 1 },
+            hasData: true,
+            fetchedAt: Date.now(),
+            lastAttemptAt: Date.now(),
+            measurementAt: null,
+        };
+        for (let i = 0; i < 100; i++)
+            await saveResponseCache(prefix + i, entry);
+        return Boolean(await readResponseCache(prefix + "0"));
+    }, prefix);
+    expect(result).toBe(true);
+    await page.clock.runFor(1_000);
+    await page.evaluate(async (prefix) => {
+        const { saveResponseCache, readResponseCache } = window.responseCache;
+        await readResponseCache(prefix + "0");
+        await saveResponseCache(prefix + "new", {
+            data: 2,
+            hasData: true,
+            fetchedAt: Date.now(),
+            lastAttemptAt: Date.now(),
+            measurementAt: null,
+        });
+    }, prefix);
+    expect(
+        await page.evaluate(
+            async (prefix) => ({
+                recent: Boolean(
+                    await window.responseCache.readResponseCache(prefix + "0"),
+                ),
+                oldCount: (
+                    await Promise.all(
+                        Array.from({ length: 99 }, (_, i) =>
+                            window.responseCache.readResponseCache(
+                                prefix + (i + 1),
+                            ),
+                        ),
+                    )
+                ).filter(Boolean).length,
+                newest: Boolean(
+                    await window.responseCache.readResponseCache(
+                        prefix + "new",
+                    ),
+                ),
+            }),
+            prefix,
+        ),
+    ).toEqual({ recent: true, oldCount: 98, newest: true });
+    await page.clock.runFor(7 * 24 * 60 * 60_000);
+    expect(
+        await page.evaluate(
+            (prefix) => window.responseCache.readResponseCache(prefix + "0"),
+            prefix,
+        ),
+    ).toBeUndefined();
+    await page.evaluate(async (prefix) => {
+        await window.responseCache.saveResponseCache(prefix + "fresh", {
+            data: 3,
+            hasData: true,
+            fetchedAt: Date.now(),
+            lastAttemptAt: Date.now(),
+            measurementAt: null,
+        });
+    }, prefix);
+    await openCacheHarness(page);
+    expect(
+        await page.evaluate(
+            (prefix) => window.responseCache.readResponseCache(prefix + "new"),
+            prefix,
+        ),
+    ).toBeUndefined();
+    expect(
+        (
+            await page.evaluate(
+                (prefix) =>
+                    window.responseCache.readResponseCache(prefix + "fresh"),
+                prefix,
+            )
+        ).data,
+    ).toBe(3);
+});
+
+test("cache size limit evicts older responses and reset clears persisted data", async ({
+    page,
+}) => {
+    await openCacheHarness(page);
+    await page.evaluate(async (prefix) => {
+        const entry = {
+            data: "x".repeat(9 * 1024 * 1024),
+            hasData: true,
+            fetchedAt: Date.now(),
+            lastAttemptAt: Date.now(),
+            measurementAt: null,
+        };
+        await window.responseCache.saveResponseCache(prefix + "older", entry);
+    }, prefix);
+    await page.evaluate(async (prefix) => {
+        await window.responseCache.saveResponseCache(prefix + "newer", {
+            data: "x".repeat(9 * 1024 * 1024),
+            hasData: true,
+            fetchedAt: Date.now(),
+            lastAttemptAt: Date.now(),
+            measurementAt: null,
+        });
+    }, prefix);
+    expect(
+        await page.evaluate(
+            (prefix) =>
+                window.responseCache.readResponseCache(prefix + "older"),
+            prefix,
+        ),
+    ).toBeUndefined();
+    expect(
+        await page.evaluate(
+            async (prefix) =>
+                (await window.responseCache.readResponseCache(prefix + "newer"))
+                    .data.length,
+            prefix,
+        ),
+    ).toBe(9 * 1024 * 1024);
+    await page.evaluate(() => window.responseCache.clearResponseCache());
+    await openCacheHarness(page);
+    expect(
+        await page.evaluate(
+            (prefix) =>
+                window.responseCache.readResponseCache(prefix + "newer"),
+            prefix,
+        ),
+    ).toBeUndefined();
 });

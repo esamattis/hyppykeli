@@ -948,3 +948,10 @@ interface NearbyStations {
     fmi: NearbyStation | null;
     fintraffic: NearbyStation | null;
 }
+
+interface StoredResponseCacheEntry {
+    key: string;
+    entry: CachedResponseEntry<unknown>;
+    accessedAt: number;
+    bytes: number;
+}

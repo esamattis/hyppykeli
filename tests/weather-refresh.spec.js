@@ -54,19 +54,18 @@ for (const explicit of [false, true]) {
                     "json",
                     { "Digitraffic-User": "hyppykeli.fi" },
                 ]);
-            localStorage.setItem(
-                key,
-                JSON.stringify({
-                    data: {
-                        geometry: { coordinates: [25, 60] },
-                        properties: { names: { fi: "Cached road station" } },
-                    },
-                    hasData: true,
-                    fetchedAt: Date.now(),
-                    lastAttemptAt: Date.now(),
-                    measurementAt: null,
-                }),
-            );
+            const { saveResponseCache } =
+                await import("#app/shared/responseCache.js");
+            await saveResponseCache(key, {
+                data: {
+                    geometry: { coordinates: [25, 60] },
+                    properties: { names: { fi: "Cached road station" } },
+                },
+                hasData: true,
+                fetchedAt: Date.now(),
+                lastAttemptAt: Date.now(),
+                measurementAt: null,
+            });
             const { updateWeatherData } =
                 await import("#app/weather/refresh.js");
             await updateWeatherData();

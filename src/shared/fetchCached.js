@@ -1,24 +1,14 @@
 // @ts-check
 
-const PREFIX = "hyppykeli:response:v1:";
-/** @type {Map<string, CachedResponseEntry<unknown>>} */
-const memory = new Map();
+import {
+    RESPONSE_CACHE_PREFIX,
+    readResponseCache,
+    saveResponseCache,
+    removeResponseCache,
+} from "#app/shared/responseCache.js";
+
 /** @type {Map<string, Promise<CachedFetchResult<unknown>>>} */
 const pending = new Map();
-
-/** @param {string} key @param {CachedResponseEntry<unknown>} entry */
-function save(key, entry) {
-    try {
-        localStorage.setItem(key, JSON.stringify(entry));
-        memory.delete(key);
-    } catch (error) {
-        memory.set(key, entry);
-        console.warn(
-            "[API cache] Storage unavailable; keeping an in-memory cache",
-            { key, error },
-        );
-    }
-}
 
 /** @param {string} url @param {string} error @param {boolean} cached */
 function reportFailure(url, error, cached) {
@@ -48,7 +38,7 @@ function reportFailure(url, error, cached) {
  */
 /**
  * Cache JSON or text responses. cacheOnly hydrates the UI without network requests.
- * A successful refresh replaces the entry; a failure retains it indefinitely.
+ * A successful refresh replaces the entry; a failure retains it within cache limits.
  * @template T
  * @param {string} url
  * @param {CachedFetchOptions<T>} options
@@ -57,22 +47,15 @@ function reportFailure(url, error, cached) {
 export async function fetchCached(url, options) {
     options.signal?.throwIfAborted();
     const key =
-        PREFIX +
+        RESPONSE_CACHE_PREFIX +
         (options.cache.key ??
             JSON.stringify([url, options.format, options.headers ?? {}]));
-    const now = Date.now();
     const policy = options.cache;
-    /** @type {CachedResponseEntry<T> | undefined} */
-    let entry;
-    try {
-        const stored = localStorage.getItem(key);
-        entry = memory.get(key) ?? (stored ? JSON.parse(stored) : undefined);
-    } catch (error) {
-        console.warn("[API cache] Cache unreadable", { key, error });
-        entry = /** @type {CachedResponseEntry<T> | undefined} */ (
-            memory.get(key)
-        );
-    }
+    let entry = /** @type {CachedResponseEntry<T> | undefined} */ (
+        await readResponseCache(key)
+    );
+    options.signal?.throwIfAborted();
+    const now = Date.now();
     try {
         if (
             entry &&
@@ -95,13 +78,8 @@ export async function fetchCached(url, options) {
             key,
             error,
         });
-        memory.delete(key);
         entry = undefined;
-        try {
-            localStorage.removeItem(key);
-        } catch {
-            /* Storage may be blocked. */
-        }
+        await removeResponseCache(key);
     }
     const fetchAge = entry?.hasData ? now - entry.fetchedAt : null;
     const measurementAge =
@@ -194,7 +172,7 @@ export async function fetchCached(url, options) {
         }
     );
     attempt.lastAttemptAt = now;
-    save(key, attempt);
+    void saveResponseCache(key, attempt);
     /** @type {Promise<CachedFetchResult<T>>} */
     const request = Promise.resolve().then(async () => {
         options.onLoading?.(1);
@@ -227,7 +205,8 @@ export async function fetchCached(url, options) {
                         ? timestamp
                         : null,
             };
-            save(key, fresh);
+            await saveResponseCache(key, fresh);
+            options.signal?.throwIfAborted();
             console.info("[API cache] Fetch succeeded: response cached", {
                 url,
                 key,
@@ -252,7 +231,8 @@ export async function fetchCached(url, options) {
             attempt.error =
                 error instanceof Error ? error.message : String(error);
             attempt.failureCount = failureCount + 1;
-            save(key, attempt);
+            await saveResponseCache(key, attempt);
+            options.signal?.throwIfAborted();
             reportFailure(url, attempt.error, attempt.hasData);
             console.warn("[API cache] Fetch failed", {
                 url,
@@ -282,14 +262,9 @@ export async function fetchCached(url, options) {
         if (pending.get(key) !== request) return;
         pending.delete(key);
         if (previousEntry) {
-            save(key, previousEntry);
+            void saveResponseCache(key, previousEntry);
         } else {
-            memory.delete(key);
-            try {
-                localStorage.removeItem(key);
-            } catch {
-                /* Storage may be blocked. */
-            }
+            void removeResponseCache(key);
         }
     }
     pending.set(key, request);
