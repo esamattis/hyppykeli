@@ -1,8 +1,8 @@
 // @ts-check
 import {
     CompactCavok,
-    CompactCloudLayer,
-    CompactOpenMeteoCloudLayer,
+    CompactCloudLayers,
+    CompactOpenMeteoCloudLayers,
 } from "#app/weather/CompactCloudLayer.js";
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
@@ -17,7 +17,10 @@ import { CloudForecastTable } from "#app/weather/CloudForecastTable.js";
 import { PercentageCloudCover } from "#app/weather/CloudIndicators.js";
 import { DataSource } from "#app/weather/DataSource.js";
 import { TableDialog } from "#app/weather/WeatherTables.js";
-import { getLiftedCondensationLevel } from "#app/weather/calculations.js";
+import {
+    formatCloudBase,
+    getLiftedCondensationLevel,
+} from "#app/weather/calculations.js";
 import { getOpenMeteoCloudProfile } from "#app/weather/providers/openMeteo.js";
 import {
     FORECAST_SOURCE,
@@ -28,7 +31,6 @@ import {
     weatherSourceLabel,
 } from "#app/weather/state.js";
 import { h, html } from "htm/preact";
-import { useId, useState } from "preact/hooks";
 
 /** @param {{ profile: OpenMeteoCloudProfile | null }} props */
 function OpenMeteoClouds({ profile }) {
@@ -38,9 +40,10 @@ function OpenMeteoClouds({ profile }) {
         .cloud-profile-content {
             display: flow-root;
         }
-        .cloud-profile-note {
-            color: var(--color-muted);
-            font-size: 0.75rem;
+        .cloud-clear {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-1-5);
         }
         .cloud-profile-header {
             display: flex;
@@ -64,7 +67,20 @@ function OpenMeteoClouds({ profile }) {
                               <div
                                   class="cloud-list cloud-layers compact-cloud-layers cloud-profile-layers p-0 my-3"
                               >
-                                  ${profile.layers.map((layer) => h(CompactOpenMeteoCloudLayer, { layer }))}
+                                  ${
+                                      profile.layers.length
+                                          ? h(CompactOpenMeteoCloudLayers, {
+                                                layers: profile.layers,
+                                            })
+                                          : html`
+                                                <div class="cloud-clear">
+                                                    ${h(Icon, { name: "cloudClear", size: 20, label: t("cloud.none") })}
+                                                    <span>
+                                                        ${t("cloud.none")}
+                                                    </span>
+                                                </div>
+                                            `
+                                  }
                               </div>
                               <p class="summary-time">
                                   ${h(FromNow, { date: profile.time })}
@@ -75,14 +91,11 @@ function OpenMeteoClouds({ profile }) {
                           `
                 }
             </div>
-            <p class="cloud-profile-note">${t("cloud.modelHelp")}</p>
         </section>
     `;
 }
 
 export function CloudSummary() {
-    const [cloudSource, setCloudSource] = useState("METAR");
-    const tabId = useId();
     const scope = useScope(css`
         ${summaryStyles}
         .cloud-card-heading {
@@ -94,25 +107,6 @@ export function CloudSummary() {
         .cloud-card-heading h2 {
             margin: 0;
         }
-        .cloud-source-tabs {
-            display: flex;
-            flex-shrink: 0;
-            gap: var(--spacing-1);
-        }
-        .cloud-source-tabs button {
-            padding: var(--spacing-1) var(--spacing-2);
-            font-size: 0.75rem;
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-sm);
-            background: var(--color-surface-soft);
-            color: var(--color-muted);
-            cursor: pointer;
-        }
-        .cloud-source-tabs button[aria-selected="true"] {
-            color: var(--color-primary);
-            border-color: var(--color-primary);
-            font-weight: 650;
-        }
         .source-note {
             margin: 0;
             text-align: right;
@@ -122,14 +116,6 @@ export function CloudSummary() {
             justify-content: space-between;
             align-items: baseline;
             gap: var(--spacing-3);
-        }
-        .summary-metrics .condensation {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: var(--spacing-1) var(--spacing-4);
-        }
-        .condensation > .source-note {
-            grid-column: 1 / -1;
         }
         .cloud-list {
             list-style: none;
@@ -187,40 +173,25 @@ export function CloudSummary() {
             margin-inline-start: auto;
             cursor: pointer;
         }
-        .cloud-estimates {
-            min-height: 5rem;
-            border-top: 1px solid var(--color-border);
-        }
-        .summary-metrics > div {
+        .condensation-reading {
             display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: var(--spacing-4);
-        }
-        .summary-metrics dt {
-            margin: 0;
-        }
-        .summary-metrics dd {
+            align-items: center;
+            gap: var(--spacing-1-5);
+            font-variant-numeric: tabular-nums;
+            font-size: 0.8rem;
             white-space: nowrap;
-            font-size: 1.1rem;
         }
         .cloud-forecast {
-            border: 1px solid var(--color-border);
-            border-radius: var(--radius-sm);
-            background: var(--color-surface-soft);
+            border-top: 1px solid var(--color-border);
         }
         .forecast-heading {
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: var(--spacing-3);
-            font-size: 0.85rem;
-            font-weight: 650;
         }
         .forecast-heading h3 {
             margin: 0 auto 0 0;
-            font: inherit;
-            letter-spacing: normal;
         }
         .forecast-heading .source-note {
             margin: 0;
@@ -239,6 +210,8 @@ export function CloudSummary() {
             border-spacing: 0;
             width: max-content;
             font-variant-numeric: tabular-nums;
+            font-size: 0.8rem;
+            white-space: nowrap;
         }
         .cloud-forecast-table th,
         .cloud-forecast-table td {
@@ -286,12 +259,15 @@ export function CloudSummary() {
         OM_DATA.value,
         DROPZONE_ELEVATION.value,
     );
-    const showTabs = Boolean(metar && profile);
-    const selectedSource = metar
-        ? showTabs
-            ? cloudSource
-            : "METAR"
-        : "Open-Meteo";
+    const modelLayers =
+        profile?.layers.filter((layer) => layer.cover > 0) ?? [];
+    const metarLayers =
+        metar?.clouds.filter(
+            (cloud) => !["NCD", "NSC"].includes(cloud.amount),
+        ) ?? [];
+    const hasClouds = Boolean(
+        metarLayers.length || metar?.cbWithoutLayer || modelLayers.length,
+    );
     const latest = LATEST_OBSERVATION.value;
     const time = metar?.time ?? latest?.time;
     const forecasts =
@@ -304,73 +280,41 @@ export function CloudSummary() {
             ${scope.style}
             <div class="cloud-card-heading mb-4">
                 <h2 class="h2-with-icon">${t("weather.clouds")}</h2>
-                ${
-                    showTabs
-                        ? html`
-                              <div
-                                  class="cloud-source-tabs"
-                                  role="tablist"
-                                  aria-label=${t("cloud.source")}
-                              >
-                                  ${["METAR", "Open-Meteo"].map(
-                                      (source, index) => html`
-                                          <button
-                                              type="button"
-                                              role="tab"
-                                              id=${`${tabId}-${source}`}
-                                              aria-controls=${`${tabId}-panel`}
-                                              aria-selected=${selectedSource === source}
-                                              tabindex=${selectedSource === source ? 0 : -1}
-                                              onClick=${() => setCloudSource(source)}
-                                              onKeyDown=${
-                                                  /** @param {KeyboardEvent} event */ (
-                                                      event,
-                                                  ) => {
-                                                      if (
-                                                          ![
-                                                              "ArrowLeft",
-                                                              "ArrowRight",
-                                                              "Home",
-                                                              "End",
-                                                          ].includes(event.key)
-                                                      )
-                                                          return;
-                                                      event.preventDefault();
-                                                      const next =
-                                                          event.key === "Home"
-                                                              ? "METAR"
-                                                              : event.key ===
-                                                                  "End"
-                                                                ? "Open-Meteo"
-                                                                : index === 0
-                                                                  ? "Open-Meteo"
-                                                                  : "METAR";
-                                                      setCloudSource(next);
-                                                      document
-                                                          .getElementById(
-                                                              `${tabId}-${next}`,
-                                                          )
-                                                          ?.focus();
-                                                  }
-                                              }
-                                          >
-                                              ${source}
-                                          </button>
-                                      `,
-                                  )}
-                              </div>
-                          `
-                        : null
-                }
+                ${whenAll(
+                    [latest?.temperature, latest?.dewPoint],
+                    (temp, dew) => html`
+                        <div class="condensation condensation-reading">
+                            <span>
+                                ${t("weather.condensationLevelShort")}${" "}
+                                ${formatCloudBase(getLiftedCondensationLevel(temp, dew), "m")}
+                            </span>
+                            ${h(
+                                Help,
+                                {
+                                    id: "dewpoint",
+                                    label: t("weather.condensationLevel"),
+                                },
+                                html`
+                                    <h3>${t("weather.condensationLevel")}</h3>
+                                    <p>
+                                        ${t("cloud.estimateHelp", temp.toFixed(1), dew.toFixed(1))}
+                                        ${h(FromNow, { date: latest?.time })}
+                                    </p>
+                                    <p>${t("cloud.estimateCaveat")}</p>
+                                    ${h(DataSource, {
+                                        sources: [
+                                            weatherSourceLabel(latest?.source),
+                                        ],
+                                    })}
+                                `,
+                            )}
+                        </div>
+                    `,
+                )}
             </div>
-            <div
-                id=${`${tabId}-panel`}
-                role=${showTabs ? "tabpanel" : undefined}
-                tabindex=${showTabs ? 0 : undefined}
-                aria-labelledby=${showTabs ? `${tabId}-${selectedSource}` : undefined}
-            >
+            <div>
                 ${
-                    selectedSource === "METAR" && metar
+                    metar
                         ? html`
                               <div class="cloud-observation-header">
                                   <h3 class="cloud-observation-heading m-0">
@@ -378,32 +322,27 @@ export function CloudSummary() {
                                   </h3>
                                   ${h(DataSource, { sources: ["METAR"] })}
                               </div>
-                              ${
-                                  cavok
-                                      ? html`
-                                            <div
-                                                class="compact-cloud-layers my-3"
-                                            >
-                                                ${h(CompactCavok, { focusable: true })}
-                                            </div>
-                                        `
-                                      : html`
-                                            <div
-                                                class="cloud-list cloud-layers compact-cloud-layers p-0 my-3"
-                                            >
-                                                ${metar.clouds
-                                                    .toSorted(
-                                                        (a, b) =>
-                                                            a.base - b.base,
-                                                    )
-                                                    .map((cloud) =>
-                                                        h(CompactCloudLayer, {
-                                                            cloud,
-                                                        }),
-                                                    )}
-                                            </div>
-                                        `
-                              }
+                              <div
+                                  class="cloud-list cloud-layers compact-cloud-layers p-0 my-3"
+                              >
+                                  ${
+                                      cavok
+                                          ? h(CompactCavok, { focusable: true })
+                                          : !hasClouds
+                                            ? html`
+                                                  <div
+                                                      class="cloud-clear"
+                                                      tabindex="0"
+                                                      data-tooltip=${t(metar.clouds.some((cloud) => cloud.amount === "NSC") ? "cloud.noSignificant" : "cloud.none")}
+                                                  >
+                                                      ${h(Icon, { name: "cloudClear", size: 20, label: t("cloud.none") })}
+                                                  </div>
+                                              `
+                                            : h(CompactCloudLayers, {
+                                                  clouds: metarLayers,
+                                              })
+                                  }
+                              </div>
                               ${
                                   metar.cbWithoutLayer
                                       ? html`
@@ -459,46 +398,26 @@ export function CloudSummary() {
                                   </details>
                               </div>
                           `
-                        : h(OpenMeteoClouds, { profile })
+                        : null
                 }
+                ${h(OpenMeteoClouds, {
+                    profile: profile
+                        ? { ...profile, layers: modelLayers }
+                        : null,
+                })}
             </div>
 
-            <dl class="summary-metrics cloud-estimates mt-4 pt-4">
-                ${whenAll(
-                    [latest?.temperature, latest?.dewPoint],
-                    (temp, dew) => html`
-                        <div class="condensation">
-                            ${h(DataSource, {
-                                sources: [weatherSourceLabel(latest?.source)],
-                            })}
-                            <dt>${t("weather.condensationLevel")}</dt>
-                            <dd class="cloud-list-item-alt">
-                                <b>${getLiftedCondensationLevel(temp, dew)}M</b>
-                                ${h(
-                                    Help,
-                                    { id: "dewpoint" },
-                                    html`
-                                        <p>
-                                            ${t("cloud.estimateHelp", temp.toFixed(1), dew.toFixed(1))}
-                                            ${h(FromNow, { date: latest?.time })}
-                                        </p>
-                                        <p>${t("cloud.estimateCaveat")}</p>
-                                    `,
-                                )}
-                            </dd>
-                        </div>
-                    `,
-                )}
-            </dl>
             ${
                 forecasts.length
                     ? html`
                           <section
-                              class="cloud-forecast mt-4 py-3 px-3.5"
+                              class="cloud-forecast mt-4 pt-4"
                               aria-label=${t("cloud.forecast")}
                           >
                               <div class="forecast-heading mb-3">
-                                  <h3>${t("cloud.forecast12h")}</h3>
+                                  <h3 class="cloud-observation-heading">
+                                      ${t("cloud.forecast12h")}
+                                  </h3>
                                   ${h(DataSource, {
                                       sources: ["FMI"],
                                   })}
@@ -509,13 +428,6 @@ export function CloudSummary() {
                                           forecasts,
                                       }),
                                   })}
-                                  ${h(
-                                      Help,
-                                      { id: "cloudforecast" },
-                                      html`
-                                          <p>${t("cloud.forecastHelp")}</p>
-                                      `,
-                                  )}
                               </div>
                               <div
                                   class="forecast-scroll pb-1.5"

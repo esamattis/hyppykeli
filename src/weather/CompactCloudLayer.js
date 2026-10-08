@@ -1,6 +1,5 @@
 // @ts-check
 import { CloudCoverIcon, Icon } from "#app/shared/icons.js";
-import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { formatExactAltitude } from "#app/weather/altitudes.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
@@ -20,6 +19,27 @@ const compactLayerStyles = css`
         font-variant-numeric: tabular-nums;
     }
 `;
+
+/** @param {{ clouds: CloudLayer[], focusable?: boolean }} props */
+export function CompactCloudLayers({ clouds, focusable = true }) {
+    return html`
+        ${clouds
+            .toSorted((a, b) => a.base - b.base)
+            .map((cloud) => h(CompactCloudLayer, { cloud, focusable }))}
+    `;
+}
+
+/** @param {{ layers: OpenMeteoCloudProfile["layers"], focusable?: boolean }} props */
+export function CompactOpenMeteoCloudLayers({ layers, focusable = true }) {
+    return html`
+        ${layers
+            .filter((layer) => layer.cover > 0)
+            .toSorted((a, b) => a.height - b.height)
+            .map((layer) =>
+                h(CompactOpenMeteoCloudLayer, { layer, focusable }),
+            )}
+    `;
+}
 
 /** @param {{ focusable?: boolean }} props */
 export function CompactCavok({ focusable = true }) {
@@ -71,7 +91,7 @@ export function CompactCloudLayer({ cloud, focusable = true }) {
 /** @param {{ layer: OpenMeteoCloudProfile["layers"][number], focusable?: boolean }} props */
 export function CompactOpenMeteoCloudLayer({ layer, focusable = true }) {
     const scope = useScope(compactLayerStyles);
-    const tooltip = `Open-Meteo · ${layer.pressure} hPa · ${t("cloud.altitudeAboveDropzone")}: ${formatExactAltitude(layer.height)} · ${t("cloud.altitudeSeaLevel")}: ${formatExactAltitude(layer.height + DROPZONE_ELEVATION.value)}`;
+    const tooltip = `${layer.cover.toFixed(0)} % · ${layer.pressure} hPa · ${formatExactAltitude(layer.height)}`;
     return html`
         <div
             class="cloud-layer cloud-profile-layer map-cloud-layer"
@@ -80,9 +100,8 @@ export function CompactOpenMeteoCloudLayer({ layer, focusable = true }) {
         >
             ${scope.style}
             ${h(CloudCoverIcon, { percentage: layer.cover, size: 20 })}
-            <span>${`${layer.cover.toFixed(0)} %`}</span>
             <span class="map-cloud-height">
-                ${formatCloudBase(layer.height, "m", { approximate: true })}
+                ${formatCloudBase(Math.round(layer.height / 100) * 100, "m")}
             </span>
         </div>
     `;

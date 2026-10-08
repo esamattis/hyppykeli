@@ -135,7 +135,7 @@ export const english = {
     "cloud.observation": "Cloud observation",
     "cloud.observedLayers": "Observed cloud layers",
     "cloud.source": "Cloud data source",
-    "cloud.modelledLayers": "Modelled clouds · current hour",
+    "cloud.modelledLayers": "Modelled clouds",
     "cloud.altitudeSeaLevel": "Altitude above sea level",
     "cloud.altitudeAboveDropzone": "Height above dropzone",
     "cloud.modelUnavailable": "Current cloud forecast unavailable.",
@@ -143,8 +143,6 @@ export const english = {
         "Modelled means a computer weather model estimates the clouds using weather observations and calculations of how the atmosphere changes. This is the model's estimate for the current hour near the selected coordinates, rather than a direct cloud observation. Actual cloud cover and heights may differ.",
     "cloud.modelledCoverage":
         "The percentage estimates the part of the model's area covered by clouds at this altitude. It is not the probability of clouds. The sampled altitude is not a cloud base or top, and clouds between the sampled levels may be missed.",
-    "cloud.modelHelp":
-        "Modelled cloud cover at sampled altitudes, not live observations or cloud bases. Clouds between levels may be missed.",
     "cloud.forecast": "Cloud forecast",
     "cloud.forecast12h": "Forecast · 12 hours",
     "cloud.forecastTable": "Detailed cloud forecast",
@@ -590,7 +588,7 @@ const finnish = {
     "cloud.observation": "Pilvihavainto",
     "cloud.observedLayers": "Havaitut pilvikerrokset",
     "cloud.source": "Pilvitietojen lähde",
-    "cloud.modelledLayers": "Mallinnetut pilvet · nykyinen tunti",
+    "cloud.modelledLayers": "Mallinnetut pilvet",
     "cloud.altitudeSeaLevel": "Korkeus merenpinnasta",
     "cloud.altitudeAboveDropzone": "Korkeus hyppypaikan maanpinnasta",
     "cloud.modelUnavailable": "Nykyisen tunnin pilviennuste ei ole saatavilla.",
@@ -598,8 +596,6 @@ const finnish = {
         "Mallinnettu tarkoittaa, että tietokoneen säämalli arvioi pilviä säähavaintojen ja ilmakehän muutoksia kuvaavien laskelmien avulla. Tämä on mallin arvio nykyiselle tunnille valittujen koordinaattien lähellä, ei suora pilvihavainto. Todellinen pilvipeitto ja pilvien korkeudet voivat poiketa arviosta.",
     "cloud.modelledCoverage":
         "Prosenttiluku arvioi, kuinka suuri osa mallin alueesta on pilvien peitossa tällä korkeudella. Se ei tarkoita pilvien todennäköisyyttä. Näytetty korkeus ei ole pilven ala- tai yläraja, ja tasojen välissä olevat pilvet voivat jäädä näkymättä.",
-    "cloud.modelHelp":
-        "Mallinnettu pilvipeitto eri korkeuksilla, ei reaaliaikainen havainto tai pilven alaraja. Tasojen välissä olevat pilvet voivat jäädä näkymättä.",
     "cloud.forecast": "Pilvien ennuste",
     "cloud.forecast12h": "Ennuste · 12 tuntia",
     "cloud.forecastTable": "Yksityiskohtainen pilviennuste",

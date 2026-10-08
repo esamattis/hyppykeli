@@ -7,8 +7,8 @@ import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import {
     CompactCavok,
-    CompactCloudLayer,
-    CompactOpenMeteoCloudLayer,
+    CompactCloudLayers,
+    CompactOpenMeteoCloudLayers,
 } from "#app/weather/CompactCloudLayer.js";
 import { getOpenMeteoCloudProfile } from "#app/weather/providers/openMeteo.js";
 import { METARS, OM_DATA } from "#app/weather/state.js";
@@ -134,12 +134,10 @@ export function MapCloudSummary() {
                               ${
                                   hasMetarClouds
                                       ? html`
-                                            ${metar?.clouds.map((cloud) =>
-                                                h(CompactCloudLayer, {
-                                                    cloud,
-                                                    focusable: false,
-                                                }),
-                                            )}
+                                            ${h(CompactCloudLayers, {
+                                                clouds: metar?.clouds ?? [],
+                                                focusable: false,
+                                            })}
                                             ${
                                                 cavok && !metar?.clouds.length
                                                     ? h(CompactCavok, {
@@ -162,12 +160,10 @@ export function MapCloudSummary() {
                                                     : null
                                             }
                                         `
-                                      : profile?.layers.map((layer) =>
-                                            h(CompactOpenMeteoCloudLayer, {
-                                                layer,
-                                                focusable: false,
-                                            }),
-                                        )
+                                      : h(CompactOpenMeteoCloudLayers, {
+                                            layers: profile?.layers ?? [],
+                                            focusable: false,
+                                        })
                               }
                           </div>
                       `

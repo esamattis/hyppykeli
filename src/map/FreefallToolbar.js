@@ -279,7 +279,6 @@ export function FreefallToolbar({
             }
         }
     `);
-    const selectedWind = windLevels.levels.find((level) => level.selected);
     return html`
         <div
             class="freefall-toolbar"
@@ -371,23 +370,6 @@ export function FreefallToolbar({
                             </span>
                         </strong>
                     </span>
-                    ${
-                        selectedWind &&
-                        html`
-                            <span class="selected-wind-summary">
-                                <span class="value-label">
-                                    ${t("toolbar.wind")}
-                                </span>
-                                <strong
-                                    class="value-number ml-1"
-                                    tabindex=${selectedWind.altitudeTooltip ? 0 : undefined}
-                                    data-tooltip=${selectedWind.altitudeTooltip}
-                                >
-                                    ${selectedWind.label} · ${selectedWind.text}
-                                </strong>
-                            </span>
-                        `
-                    }
                 </div>
                 <div class="toolbar-window-actions ml-auto">
                     ${

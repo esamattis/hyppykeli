@@ -573,11 +573,12 @@ test("coordinate-only dropzone uses Open-Meteo without an observations card or M
     const clouds = page.locator("#clouds");
     await expect(clouds.getByRole("tablist")).toHaveCount(0);
     await expect(clouds.locator(".cloud-profile-layer")).toHaveCount(5);
-    await expect(clouds.locator(".cloud-profile-layer").first()).toContainText(
+    await expect(clouds.locator(".cloud-profile-layer").last()).toContainText(
         "4200 m",
     );
-    await expect(clouds.locator(".cloud-profile-layer").first()).toContainText(
-        "40 %",
+    await expect(clouds.locator(".cloud-profile-layer").last()).toHaveAttribute(
+        "data-tooltip",
+        /^40 % · 600 hPa · /,
     );
 
     await expect(page.locator("#winds .source-note")).toHaveText(
@@ -3757,9 +3758,33 @@ test("full-window cloud summary prefers METAR and falls back to current Open-Met
     await expect(summary.locator(".map-cloud-source")).toContainText(
         "Open-Meteo",
     );
-    await expect(summary.locator(".map-cloud-layer")).toHaveText([
-        /40 %\s*≈ 1500 m/,
-    ]);
+    await expect(summary.locator(".map-cloud-layer")).toHaveText([/1500 m/]);
+
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const data = structuredClone(OM_DATA.value);
+        data.hourly.cloud_cover_1000hPa.fill(20);
+        data.hourly.cloud_cover_700hPa.fill(75);
+        OM_DATA.value = data;
+    });
+    const modelLayers = summary.locator(".cloud-profile-layer");
+    await expect(modelLayers).toHaveCount(3);
+    for (const [index, pressure] of [1000, 850, 700].entries()) {
+        await expect(modelLayers.nth(index)).toHaveAttribute(
+            "data-tooltip",
+            new RegExp(` · ${pressure} hPa · `),
+        );
+    }
+    const mapTooltips = await modelLayers.evaluateAll((layers) =>
+        layers.map((layer) => layer.getAttribute("data-tooltip")),
+    );
+    expect(
+        await page
+            .locator("#clouds .cloud-profile-layer")
+            .evaluateAll((layers) =>
+                layers.map((layer) => layer.getAttribute("data-tooltip")),
+            ),
+    ).toEqual(mapTooltips);
 
     await page.evaluate(async () => {
         const { LIVE_METARS, OM_DATA } = await import("#app/weather/state.js");
@@ -4076,7 +4101,7 @@ test("map query state handles invalid input and browser history", async ({
     ).toHaveAttribute("aria-pressed", "true");
 });
 
-test("cloud source tabs switch between METAR and the current Open-Meteo profile", async ({
+test("cloud card shows METAR before the current Open-Meteo profile", async ({
     page,
 }) => {
     const response = openMeteoResponse();
@@ -4104,47 +4129,39 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
     });
     await page.goto(`/dz/?${params}`);
     const card = page.locator("#clouds");
-    const metarTab = card.getByRole("tab", { name: "METAR", exact: true });
-    const modelTab = card.getByRole("tab", { name: "Open-Meteo", exact: true });
-    await expect(metarTab).toHaveAttribute("aria-selected", "true");
-    await expect(card.locator(".cloud-layer")).toHaveCount(1);
-    await modelTab.click();
-    await expect(modelTab).toHaveAttribute("aria-selected", "true");
+    await expect(card.getByRole("tablist")).toHaveCount(0);
+    await expect(card.locator(".cloud-layer")).toHaveCount(4);
+    await expect(card.locator(".cloud-layer").first()).not.toHaveClass(
+        /cloud-profile-layer/,
+    );
     await expect(card.locator(".cloud-layer a")).toHaveCount(0);
-    const rows = card.getByRole("tabpanel").locator(".cloud-profile-layer");
+    const rows = card.locator(".cloud-profile-layer");
     await expect(rows).toHaveCount(3);
-    await expect(rows.first()).toContainText("4300 m");
-    const altitude = rows.first();
+    await expect(rows.first()).toContainText("0 m");
+    await expect(rows.nth(2)).toContainText("4300 m");
+    const altitude = rows.nth(2);
     await altitude.focus();
     await expect(page.getByRole("tooltip")).toContainText("4274 m");
     await page.keyboard.press("Escape");
 
     await expect(rows.nth(1)).toContainText("3000 m");
-    await expect(rows.nth(1)).toContainText("75 %");
     await rows.nth(1).focus();
+    await expect(page.getByRole("tooltip")).toContainText("75 %");
     await expect(page.getByRole("tooltip")).toContainText("700 hPa");
     await page.keyboard.press("Escape");
-    await modelTab.press("ArrowLeft");
-    await expect(metarTab).toBeFocused();
-    await expect(metarTab).toHaveAttribute("aria-selected", "true");
-    await expect(card.locator(".cloud-layer")).toHaveCount(1);
-    await metarTab.press("End");
-    await expect(modelTab).toBeFocused();
-    await expect(rows).toHaveCount(3);
     // Changing the URL elevation updates heights and filters levels below the DZ.
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs({ elevation: "1000.5" });
     });
     await expect(rows).toHaveCount(2);
-    await expect(rows.nth(1)).toContainText("2000 m");
+    await expect(rows.first()).toContainText("2000 m");
     await expect(page.locator("#title")).toContainText("1001 m merenpinnasta");
+    // Refocus the updated reading to reopen its tooltip after Escape.
     await rows.nth(1).focus();
-    await expect(page.getByRole("tooltip")).toContainText(
-        "Korkeus hyppypaikan maanpinnasta: 2000 m",
-    );
-    await expect(page.getByRole("tooltip")).toContainText(
-        "Korkeus merenpinnasta: 3000 m",
+    await rows.first().focus();
+    await expect(page.getByRole("tooltip")).toHaveText(
+        "75 % · 700 hPa · 2000 m",
     );
     await page.keyboard.press("Escape");
     await page.evaluate(async () => {
@@ -4153,13 +4170,98 @@ test("cloud source tabs switch between METAR and the current Open-Meteo profile"
     });
     await expect(rows).toHaveCount(3);
     await expect(rows.nth(1)).toContainText("3000 m");
-    // Losing METAR must also remove the tabs and leave the model visible.
+    // Losing METAR leaves the model visible.
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs({ icaocode: undefined, MANUAL_metar: undefined });
     });
     await expect(card.getByRole("tablist")).toHaveCount(0);
     await expect(card.locator(".cloud-profile-layer")).toHaveCount(3);
+});
+
+test("cloud card hides empty model levels, preserves CAVOK, and shows one sun without METAR", async ({
+    page,
+}) => {
+    const response = openMeteoResponse();
+    for (const level of [600, 700, 850, 925, 1000]) {
+        response.hourly[`cloud_cover_${level}hPa`] = response.hourly.time.map(
+            () => 0,
+        );
+    }
+    response.hourly.cloud_cover_700hPa[1] = 5;
+    await page.route("https://api.open-meteo.com/**", (route) =>
+        route.fulfill({ json: response }),
+    );
+    const params = new URLSearchParams({
+        name: "Cloud DZ",
+        lat: "40.7",
+        lon: "-74",
+        icaocode: "KJFK",
+        MANUAL_metar: "METAR KJFK 041200Z 00000KT CAVOK 10/05 Q1014=",
+    });
+    await page.goto(`/dz/?${params}`);
+    const card = page.locator("#clouds");
+    await expect(card.locator(".cloud-profile-layer")).toHaveCount(1);
+    await expect(card.locator(".cloud-profile-layer")).toHaveAttribute(
+        "data-tooltip",
+        /^5 % · 700 hPa · /,
+    );
+    await expect(card.locator(".cloud-clear")).toHaveCount(1);
+    await expect(card.locator(".cloud-clear")).toHaveText("CAVOK", {
+        useInnerText: true,
+    });
+    await expect(card).not.toContainText(
+        "Mallinnettu pilvipeitto eri korkeuksilla",
+    );
+
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const data = structuredClone(OM_DATA.value);
+        data.hourly.cloud_cover_700hPa.fill(0);
+        OM_DATA.value = data;
+    });
+    await expect(card.locator(".cloud-profile-layer")).toHaveCount(0);
+    await expect(card.locator(".open-meteo-clouds")).toHaveCount(1);
+    await expect(card.locator(".open-meteo-clouds")).toContainText(
+        "Mallinnetut pilvet",
+    );
+    await expect(card.locator(".open-meteo-clouds")).toContainText(
+        "Lähde: Open-Meteo",
+    );
+    await expect(card.locator(".open-meteo-clouds")).toContainText("Ei pilviä");
+    await expect(card.locator(".cloud-clear")).toHaveCount(2);
+    await expect(card.locator(".cloud-clear").first()).toHaveText("CAVOK", {
+        useInnerText: true,
+    });
+    const modelClear = card.locator(".open-meteo-clouds .cloud-clear");
+    await expect(modelClear).toHaveText("Ei pilviä", { useInnerText: true });
+    await expect(
+        modelClear.getByRole("img", { name: "Ei pilviä", exact: true }),
+    ).toHaveCount(1);
+
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const clearData = structuredClone(OM_DATA.value);
+        navigateQs({ icaocode: undefined, MANUAL_metar: undefined });
+        await updateWeatherData();
+        OM_DATA.value = clearData;
+    });
+    await expect(card.locator(".cloud-clear")).toHaveCount(1);
+    await expect(card.locator(".cloud-clear")).toHaveText("Ei pilviä", {
+        useInnerText: true,
+    });
+    await expect(card.locator(".cloud-clear").getByRole("img")).toHaveCount(1);
+
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        OM_DATA.value = null;
+    });
+    await expect(card.locator(".cloud-clear")).toHaveCount(0);
+    await expect(card).toContainText(
+        "Nykyisen tunnin pilviennuste ei ole saatavilla.",
+    );
 });
 
 test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({

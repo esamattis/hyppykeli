@@ -121,6 +121,10 @@
 
     html {
         scroll-padding-bottom: var(--spacing-20);
+        /* Prevent mobile browsers from enlarging map labels and attribution
+           independently of the wind controls when the layout changes. */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
     }
 
     html:has(dialog:modal),
