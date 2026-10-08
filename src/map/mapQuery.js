@@ -69,11 +69,11 @@ function decodeMapQuery(params, key, fallback) {
     if (text === undefined) return undefined;
     if (key === "map_jumpers") {
         if (text === "") return [];
-        return text.split(";").map((row) => {
-            const cells = row.split(",");
+        return text.split("_").map((row) => {
+            const cells = /^s([^h]*)h([^h]*)$/.exec(row);
             return {
-                speedKmh: cells.length === 2 ? readNumber(cells[0]) : NaN,
-                openingHeight: readNumber(cells[1]),
+                speedKmh: readNumber(cells?.[1]),
+                openingHeight: readNumber(cells?.[2]),
             };
         });
     }
@@ -89,7 +89,7 @@ function readNumber(text) {
 }
 
 /**
- * Encode objects as scalar fields and jumper lists as speed,height rows.
+ * Encode objects as scalar fields and jumper lists as s<speed>h<height> rows.
  * @template {MapStateKey} K
  * @param {K} key
  * @param {MapStateValues[K] | undefined} value
@@ -121,9 +121,9 @@ export function writeMapQuery(key, value) {
                   ? /** @type {JumpRunJumper[]} */ (value)
                         .map(
                             (/** @type {JumpRunJumper} */ jumper) =>
-                                `${jumper.speedKmh},${jumper.openingHeight}`,
+                                `s${jumper.speedKmh}h${jumper.openingHeight}`,
                         )
-                        .join(";")
+                        .join("_")
                   : String(value),
     };
 }

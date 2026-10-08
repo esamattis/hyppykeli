@@ -4411,7 +4411,7 @@ test("map setup survives URL reload and shares in full-window mode", async ({
     expect(setup.searchParams.get("map_run_separation")).toBe("5");
     expect(setup.searchParams.get("map_run_exit_height")).toBe("4000");
     expect(setup.searchParams.get("map_jumpers")).toBe(
-        Array(7).fill("180,800").join(";"),
+        Array(7).fill("s180h800").join("_"),
     );
     for (const [key, value] of setup.searchParams) {
         if (key.startsWith("map_")) expect(value).not.toMatch(/[{}\[\]"]/);
@@ -5847,7 +5847,7 @@ test("flat map parameters restore individual settings and plain wind selections"
         .getByRole("button", { name: "Lisää hyppääjä", exact: true })
         .click();
     expect(new URL(page.url()).searchParams.get("map_jumpers")).toBe(
-        "180,800;180,1000",
+        "s180h800_s180h1000",
     );
     await page.reload();
     await setUniformFreefallWind(page);
