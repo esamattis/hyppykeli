@@ -1,6 +1,5 @@
 // @ts-check
 import { CheckboxField } from "#app/shared/FormFields.js";
-import { QUERY_PARAMS } from "#app/app/settings.js";
 import { ANIMATIONS_RUNNING } from "#app/app/animationState.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { Help } from "#app/shared/Help.js";
@@ -245,8 +244,6 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
         }
     `);
 
-    const rc = parseInt(QUERY_PARAMS.value.rc ?? "0", 10);
-    const rotation = isNaN(rc) ? 0 : rc; // Default to 0 degrees if invalid
     const circle = INSTRUCTOR_LIMIT_LENGTH;
     const studentCircle = STUDENT_LIMIT_LENGTH;
     const latestObservation = LATEST_OBSERVATION.value;
@@ -268,7 +265,6 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
             ${scope.style}
             <svg
                 class=${[bouncing && "bouncing", spinning && "spinning"].filter(Boolean).join(" ")}
-                style="transform: rotate(${rotation}deg); "
                 viewBox="0 0 400 400"
                 xmlns="http://www.w3.org/2000/svg">
 
@@ -297,7 +293,6 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
                     text-anchor="middle"
                     fill="var(--color-text)"
                     class="compass-observations-gust text-px-24 font-bold"
-                    style="transform: rotate(-${rotation}deg); "
                 >
                     ${observation ? (observation.gust ?? "-") + " m/s" : ""}
                 </text>
@@ -307,7 +302,6 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
                     text-anchor="middle"
                     fill="var(--color-text)"
                     class="compass-observations-speed text-px-20"
-                    style="transform: rotate(-${rotation}deg); "
                 >
                     ${observation ? observation.speed + " m/s" : ""}
                 </text>

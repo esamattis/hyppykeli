@@ -12,7 +12,6 @@ export const completeDropzones = [
             icaocode: "EFJY",
             default_jump_group_count: 4,
             default_jump_run_direction: 315,
-            direction: 331,
             lat: 62.40711121411343,
             lon: 25.664491653442386,
             elevation: 140.208,

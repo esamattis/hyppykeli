@@ -1,7 +1,21 @@
+import {
+    readMapQuery,
+    writeMapQuery,
+    mapQuerySnapshot,
+    installMapQueryHelpers,
+} from "./map-query-helpers.js";
 import { test, expect } from "@playwright/test";
+test.beforeEach(async ({ page }) => {
+    await installMapQueryHelpers(page);
+});
 
 const manualPath =
     "/dz/?fmisid=137208&icaocode=EFJY&MANUAL_ground_obs=6.4%2C3.5%2C194%2C4.8%3B6.2%2C3.7%2C193%2C14.8%3B6.1%2C4%2C194%2C24.8%3B4%2C2.8%2C200%2C34.8%3B4.4%2C2.6%2C201%2C44.8%3B4.7%2C2.9%2C199%2C54.8&MANUAL_metar=METAR+EFJY+040720Z+AUTO+19007KT+160V220+9999+-SHRA+OVC005+%2F%2F%2F%2F%2F%2FCB+11%2F11+Q1014%3D";
+
+// Explicit manual heights keep these winds available across polling ticks.
+const uniformUpperWinds = [7000, 5500, 4200, 3000, 1500, 800, 110]
+    .map((height) => `10,0,${height}`)
+    .join(";");
 
 /** @param {import("@playwright/test").Page} page */
 async function setUniformFreefallWind(page) {
@@ -11,8 +25,11 @@ async function setUniformFreefallWind(page) {
         const params = QUERY_PARAMS.value;
         // Manual-placement tests supply a station only to make the map available.
         // Explicitly clear the run so the station fallback does not place it first.
-        if (!params.lat && !params.lon && !params.map_run_start) {
-            navigateQs({ map_run_start: "null" }, { replace: true });
+        if (!params.lat && !params.lon && !params.map_run_start_lat) {
+            navigateQs(
+                { ...writeMapQuery("map_run_start", null) },
+                { replace: true },
+            );
         }
         const { STATION_COORDINATES, OM_DATA } =
             await import("#app/weather/state.js");
@@ -60,9 +77,12 @@ async function middleOpening(page, landing = false) {
         } = await import("#app/map/freefall.js");
         const { latLng } = await import("leaflet");
         const params = new URL(location.href).searchParams;
-        const settings = JSON.parse(params.get("map_run_settings") ?? "");
-        const start = JSON.parse(params.get("map_run_start") ?? "");
-        const jumpers = JSON.parse(params.get("map_jumpers") ?? "");
+        const settings = readMapQuery(
+            Object.fromEntries(params),
+            "map_run_settings",
+        );
+        const start = readMapQuery(Object.fromEntries(params), "map_run_start");
+        const jumpers = readMapQuery(Object.fromEntries(params), "map_jumpers");
         const { freefallWinds: winds, canopyWinds } = getMapWindData();
         const velocity = getJumpRunVelocity(winds, settings);
         const middleIndex = (jumpers.length - 1) / 2;
@@ -120,9 +140,12 @@ async function runCenter(page) {
         const { jumpRunCoordinates, getJumpRunVelocity } =
             await import("#app/map/freefall.js");
         const params = new URL(location.href).searchParams;
-        const settings = JSON.parse(params.get("map_run_settings"));
-        const start = JSON.parse(params.get("map_run_start"));
-        const jumpers = JSON.parse(params.get("map_jumpers"));
+        const settings = readMapQuery(
+            Object.fromEntries(params),
+            "map_run_settings",
+        );
+        const start = readMapQuery(Object.fromEntries(params), "map_run_start");
+        const jumpers = readMapQuery(Object.fromEntries(params), "map_jumpers");
         const velocity = getJumpRunVelocity(
             getMapWindData().freefallWinds,
             settings,
@@ -1477,7 +1500,7 @@ test("higher forecast levels supply exit winds and drift at 6000 metres", async 
             speedKmh: 180,
             separationSeconds: 5,
         };
-        navigateQs({ map_run_settings: JSON.stringify(settings) });
+        navigateQs({ ...writeMapQuery("map_run_settings", settings) });
         OM_DATA.value.hourly.windspeed_400hPa = [30];
         OM_DATA.value.hourly.winddirection_400hPa = [270];
         OM_DATA.value.hourly.windspeed_500hPa = [20];
@@ -1855,7 +1878,7 @@ test("manual altitude table updates drift and restores cleared values", async ({
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs(
-            { map_run_start: JSON.stringify({ lat: 62.4, lng: 25.6 }) },
+            { ...writeMapQuery("map_run_start", { lat: 62.4, lng: 25.6 }) },
             { replace: true },
         );
     });
@@ -2115,12 +2138,20 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     await page.evaluate(async () => {
         const { QUERY_PARAMS, navigateQs } =
             await import("#app/app/settings.js");
-        const settings = JSON.parse(
-            QUERY_PARAMS.value.map_run_settings ??
-                '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
-        );
+        const settings =
+            QUERY_PARAMS.value.map_run_direction !== undefined
+                ? readMapQuery(QUERY_PARAMS.value, "map_run_settings")
+                : {
+                      direction: 0,
+                      speedKmh: 157,
+                      separationSeconds: 5,
+                      exitHeight: 4000,
+                  };
         navigateQs({
-            map_run_settings: JSON.stringify({ ...settings, exitHeight: 6000 }),
+            ...writeMapQuery("map_run_settings", {
+                ...settings,
+                exitHeight: 6000,
+            }),
         });
     });
     await expect(windIcon(page, "≈ 5500 m")).toHaveCount(1);
@@ -2128,24 +2159,40 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
     await page.evaluate(async () => {
         const { QUERY_PARAMS, navigateQs } =
             await import("#app/app/settings.js");
-        const settings = JSON.parse(
-            QUERY_PARAMS.value.map_run_settings ??
-                '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
-        );
+        const settings =
+            QUERY_PARAMS.value.map_run_direction !== undefined
+                ? readMapQuery(QUERY_PARAMS.value, "map_run_settings")
+                : {
+                      direction: 0,
+                      speedKmh: 157,
+                      separationSeconds: 5,
+                      exitHeight: 4000,
+                  };
         navigateQs({
-            map_run_settings: JSON.stringify({ ...settings, exitHeight: 6500 }),
+            ...writeMapQuery("map_run_settings", {
+                ...settings,
+                exitHeight: 6500,
+            }),
         });
     });
     await windIcon(page, "≈ 7000 m").click();
     await page.evaluate(async () => {
         const { QUERY_PARAMS, navigateQs } =
             await import("#app/app/settings.js");
-        const settings = JSON.parse(
-            QUERY_PARAMS.value.map_run_settings ??
-                '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
-        );
+        const settings =
+            QUERY_PARAMS.value.map_run_direction !== undefined
+                ? readMapQuery(QUERY_PARAMS.value, "map_run_settings")
+                : {
+                      direction: 0,
+                      speedKmh: 157,
+                      separationSeconds: 5,
+                      exitHeight: 4000,
+                  };
         navigateQs({
-            map_run_settings: JSON.stringify({ ...settings, exitHeight: 4000 }),
+            ...writeMapQuery("map_run_settings", {
+                ...settings,
+                exitHeight: 4000,
+            }),
         });
     });
     await expect(windIcon(page, "≈ 7000 m")).toHaveCount(0);
@@ -2474,8 +2521,8 @@ test("jump exit retains forward speed and responds gradually to changing wind", 
 test("jump-run header explains why an initial automatic run cannot be drawn and clears after recovery", async ({
     page,
 }) => {
-    const settings = encodeURIComponent(
-        JSON.stringify({
+    const settings = new URLSearchParams(
+        writeMapQuery("map_run_settings", {
             direction: 0,
             speedKmh: 157,
             separationSeconds: 5,
@@ -2483,7 +2530,7 @@ test("jump-run header explains why an initial automatic run cannot be drawn and 
         }),
     );
     await page.goto(
-        `${manualPath}&lat=62.99765&lon=10.63477&elevation=517&map_run_settings=${settings}`,
+        `${manualPath}&lat=62.99765&lon=10.63477&elevation=517&${settings}`,
     );
     const error = page.locator(".card-heading .jump-run-header-error");
     await expect(error).toContainText("uloshyppykorkeuden tuulitieto puuttuu");
@@ -2507,7 +2554,10 @@ test("jump-run header explains why an initial automatic run cannot be drawn and 
             data.hourly[`winddirection_${level}hPa`] = [90];
         }
         OM_DATA.value = data;
-        navigateQs({ map_run_start: undefined }, { replace: true });
+        navigateQs(
+            { ...writeMapQuery("map_run_start", undefined) },
+            { replace: true },
+        );
     });
     await expect(error).toContainText(
         "valittua suuntaa ei voi lentää tällä ilmanopeudella",
@@ -2539,7 +2589,10 @@ test("jump-run positions react to forecast changes and recover from missing or i
     await expect(jumpers).toHaveCount(6);
     const initialLength = await length.innerText();
     const second = await jumpers.nth(1).getAttribute("d");
-    const start = new URL(page.url()).searchParams.get("map_run_start");
+    const start = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     await page.evaluate(async () => {
         const { OM_DATA } = await import("#app/weather/state.js");
         const data = structuredClone(OM_DATA.value);
@@ -2549,7 +2602,9 @@ test("jump-run positions react to forecast changes and recover from missing or i
     });
     await expect(jumpers.nth(1)).not.toHaveAttribute("d", second);
     await expect(length).not.toHaveText(initialLength);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe(start);
     await page.evaluate(async () => {
         const { OM_DATA } = await import("#app/weather/state.js");
         const data = structuredClone(OM_DATA.value);
@@ -2588,7 +2643,9 @@ test("jump-run positions react to forecast changes and recover from missing or i
     await map.click({ position: { x: 180, y: 200 } });
     await page.getByRole("button", { name: "Avaus" }).click();
     await page.waitForTimeout(400);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe(start);
 });
 
 test.describe("upper wind forecast timezones", () => {
@@ -2700,7 +2757,7 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     isMobile,
 }) => {
     await page.goto(
-        `${manualPath}&default_jump_group_count=1&default_jump_run_direction=0`,
+        `${manualPath}&default_jump_group_count=1&default_jump_run_direction=0&MANUAL_upper_winds=${uniformUpperWinds}`,
     );
     await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
@@ -2720,10 +2777,15 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     const arrows = map.locator(".freefall-drift-line");
     await expect(jumpers).toHaveCount(1);
     await expect(length).toHaveText("0 m");
-    const firstStart = new URL(page.url()).searchParams.get("map_run_start");
+    const firstStart = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     await place(100, 80);
     await expect
-        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
+        .poll(() =>
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        )
         .not.toBe(firstStart);
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
@@ -2809,20 +2871,25 @@ test("jump run redraws all jumpers and applies individual settings immediately",
         .getByRole("slider", { name: "Hyppylinjan suunta" });
     await expect(direction).toHaveCount(0);
     const moved = await run.getAttribute("d");
-    const movedStart = new URL(page.url()).searchParams.get("map_run_start");
+    const movedStart = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     if (!isMobile) {
         const bounds = await map.boundingBox();
         await page.mouse.move(bounds.x + 250, bounds.y + 200);
         await page.evaluate(() => new Promise(requestAnimationFrame));
         await expect(run).toHaveAttribute("d", moved);
-        expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
-            movedStart,
-        );
+        expect(
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        ).toBe(movedStart);
     }
     // Another click repositions the run and does not enter direction mode.
     await place(250, 200);
     await expect
-        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
+        .poll(() =>
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        )
         .not.toBe(movedStart);
     await expect(
         directionControl(page, directionControls.drag),
@@ -2929,7 +2996,7 @@ for (const jumperCount of [1, 4]) {
             openingHeight: index === 2 ? 1200 : 800,
         }));
         await page.goto(
-            `${manualPath}&lat=62.4&lon=25.6&map_zoom=11&map_center_lat=62.4&map_center_lon=25.6&default_jump_run_direction=0&map_jumpers=${encodeURIComponent(JSON.stringify(group))}&map_run_start=${encodeURIComponent(JSON.stringify(original))}&map_run_settings=${encodeURIComponent(JSON.stringify(settings))}`,
+            `${manualPath}&lat=62.4&lon=25.6&map_zoom=11&map_center_lat=62.4&map_center_lon=25.6&default_jump_run_direction=0&${new URLSearchParams(writeMapQuery("map_jumpers", group))}&${new URLSearchParams(writeMapQuery("map_run_start", original))}&${new URLSearchParams(writeMapQuery("map_run_settings", settings))}`,
         );
         await setUniformFreefallWind(page);
         const map = page.locator(".dz-map");
@@ -2955,10 +3022,11 @@ for (const jumperCount of [1, 4]) {
                 await expect
                     .poll(
                         () =>
-                            JSON.parse(
-                                new URL(page.url()).searchParams.get(
-                                    "map_run_settings",
+                            readMapQuery(
+                                Object.fromEntries(
+                                    new URL(page.url()).searchParams,
                                 ),
+                                "map_run_settings",
                             ).direction,
                     )
                     .toBe(direction);
@@ -2999,7 +3067,7 @@ test("free rotation preserves the exit center across headings and reload", async
         openingHeight: index % 2 ? 1200 : 800,
     }));
     await page.goto(
-        `${manualPath}&map_zoom=13&map_jumpers=${encodeURIComponent(JSON.stringify(group))}&map_run_start=${encodeURIComponent(JSON.stringify({ lat: 62.4, lng: 25.6 }))}&map_run_settings=${encodeURIComponent(JSON.stringify(settings))}`,
+        `${manualPath}&map_zoom=13&${new URLSearchParams(writeMapQuery("map_jumpers", group))}&${new URLSearchParams(writeMapQuery("map_run_start", { lat: 62.4, lng: 25.6 }))}&${new URLSearchParams(writeMapQuery("map_run_settings", settings))}`,
     );
     await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
@@ -3008,8 +3076,9 @@ test("free rotation preserves the exit center across headings and reload", async
     await centerMapOn(page, center);
     await clickDirection(page, directionControls.drag);
     for (let turn = 0; turn < 4; turn++) {
-        const previous = JSON.parse(
-            new URL(page.url()).searchParams.get("map_run_settings"),
+        const previous = readMapQuery(
+            Object.fromEntries(new URL(page.url()).searchParams),
+            "map_run_settings",
         ).direction;
         const direction = (previous + 90) % 360;
         const pivot = await mapPoint(page, center);
@@ -3020,8 +3089,9 @@ test("free rotation preserves the exit center across headings and reload", async
         await page.mouse.down();
         await page.mouse.move(x, y + 70, { steps: 5 });
         await page.mouse.up();
-        const actual = JSON.parse(
-            new URL(page.url()).searchParams.get("map_run_settings"),
+        const actual = readMapQuery(
+            Object.fromEntries(new URL(page.url()).searchParams),
+            "map_run_settings",
         ).direction;
         expect(
             Math.min(
@@ -3059,17 +3129,23 @@ test("jump run turns into the selected wind around the opening center", async ({
         ["110 m", 90],
         ["Maanpinta", 194],
     ]) {
-        const previous = new URL(page.url()).searchParams.get(
+        const previous = mapQuerySnapshot(
+            new URL(page.url()).searchParams,
             "map_run_settings",
         );
         await windIcon(page, label).click();
-        expect(new URL(page.url()).searchParams.get("map_run_settings")).toBe(
-            previous,
-        );
+        expect(
+            mapQuerySnapshot(
+                new URL(page.url()).searchParams,
+                "map_run_settings",
+            ),
+        ).toBe(previous);
         await clickDirection(page, directionControls.intoWind);
         expect(
-            JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-                .direction,
+            readMapQuery(
+                Object.fromEntries(new URL(page.url()).searchParams),
+                "map_run_settings",
+            ).direction,
         ).toBeCloseTo(direction, 8);
         expect(await openingDistance(page, opening)).toBeLessThan(1);
     }
@@ -3082,8 +3158,10 @@ test("jump run turns into the selected wind around the opening center", async ({
     await windIcon(page, "1500 m").click();
     await clickDirection(page, directionControls.intoWind);
     expect(
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-            .direction,
+        readMapQuery(
+            Object.fromEntries(new URL(page.url()).searchParams),
+            "map_run_settings",
+        ).direction,
     ).toBe(315);
     expect(await openingDistance(page, opening)).toBeLessThan(1);
     await page.reload();
@@ -3133,8 +3211,10 @@ test("turning into wind requires a valid selected wind and uses refreshed data",
     }
     await clickDirection(page, directionControls.intoWind);
     expect(
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-            .direction,
+        readMapQuery(
+            Object.fromEntries(new URL(page.url()).searchParams),
+            "map_run_settings",
+        ).direction,
     ).toBe(270);
     await page.evaluate(async () => {
         const { OM_DATA } = await import("#app/weather/state.js");
@@ -3160,9 +3240,18 @@ test("adding, removing, and undoing jumpers preserves the exit center", async ({
             const { jumpRunCoordinates, getJumpRunVelocity } =
                 await import("#app/map/freefall.js");
             const params = new URL(location.href).searchParams;
-            const settings = JSON.parse(params.get("map_run_settings"));
-            const start = JSON.parse(params.get("map_run_start"));
-            const group = JSON.parse(params.get("map_jumpers"));
+            const settings = readMapQuery(
+                Object.fromEntries(params),
+                "map_run_settings",
+            );
+            const start = readMapQuery(
+                Object.fromEntries(params),
+                "map_run_start",
+            );
+            const group = readMapQuery(
+                Object.fromEntries(params),
+                "map_jumpers",
+            );
             const velocity = getJumpRunVelocity(
                 getMapWindData().freefallWinds,
                 settings,
@@ -3315,8 +3404,10 @@ for (const input of ["mouse", "touch"]) {
         const x = bounds.x + pivot.x + 120;
         const y = bounds.y + pivot.y;
         const direction = () =>
-            JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-                .direction;
+            readMapQuery(
+                Object.fromEntries(new URL(page.url()).searchParams),
+                "map_run_settings",
+            ).direction;
         const touch =
             input === "touch" ? await page.context().newCDPSession(page) : null;
         const start = async () => {
@@ -3392,7 +3483,9 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
     await expect(
         map.getByRole("button", { name: "Laskeutuminen" }),
     ).toBeVisible();
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe("null");
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe("null");
     await expect(map.locator(".jump-run-jumper")).toHaveCount(0);
 
     // Another map click dismisses the callout without choosing a new point.
@@ -3400,11 +3493,16 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
     await expect(confirm).toHaveCount(0);
     await page.waitForTimeout(400);
     await expect(confirm).toHaveCount(0);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe("null");
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe("null");
 
     await map.click({ position: { x: 120, y: 160 } });
     await confirm.click();
-    const start = new URL(page.url()).searchParams.get("map_run_start");
+    const start = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     expect(start).not.toBeNull();
     await expect(map.locator(".jump-run-jumper")).toHaveCount(6);
     await expect(confirm).toHaveCount(0);
@@ -3420,9 +3518,9 @@ test("jump-run positioning requires confirmation and cancels on other clicks", a
         await expect(confirm).toBeVisible();
         await cancel();
         await expect(confirm).toHaveCount(0);
-        expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
-            start,
-        );
+        expect(
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        ).toBe(start);
     }
 });
 
@@ -3450,9 +3548,12 @@ test("centering the jump run puts its middle exit at the tapped point", async ({
             await import("#app/map/freefall.js");
         const { latLng } = await import("leaflet");
         const params = new URL(location.href).searchParams;
-        const settings = JSON.parse(params.get("map_run_settings"));
-        const start = JSON.parse(params.get("map_run_start"));
-        const group = JSON.parse(params.get("map_jumpers"));
+        const settings = readMapQuery(
+            Object.fromEntries(params),
+            "map_run_settings",
+        );
+        const start = readMapQuery(Object.fromEntries(params), "map_run_start");
+        const group = readMapQuery(Object.fromEntries(params), "map_jumpers");
         const velocity = getJumpRunVelocity(
             getMapWindData().freefallWinds,
             settings,
@@ -3495,7 +3596,7 @@ test("parachute landing at a tapped point reuses automatic positioning for the c
         { speedKmh: 180, openingHeight: 800 },
     ];
     await page.goto(
-        `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&map_run_start=null&map_run_settings=${encodeURIComponent(JSON.stringify(settings))}&map_jumpers=${encodeURIComponent(JSON.stringify(group))}&map_center_lat=${target.lat}&map_center_lon=${target.lng}`,
+        `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&map_run_start_lat=null&map_run_start_lon=null&${new URLSearchParams(writeMapQuery("map_run_settings", settings))}&${new URLSearchParams(writeMapQuery("map_jumpers", group))}&map_center_lat=${target.lat}&map_center_lon=${target.lng}`,
     );
     await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
@@ -3508,8 +3609,12 @@ test("parachute landing at a tapped point reuses automatic positioning for the c
     await expect(map.locator(".jump-run-jumper")).toHaveCount(group.length);
     await expect(map.locator(".jump-run-placement")).toHaveCount(0);
     const params = new URL(page.url()).searchParams;
-    expect(JSON.parse(params.get("map_run_settings"))).toEqual(settings);
-    expect(JSON.parse(params.get("map_jumpers"))).toEqual(group);
+    expect(
+        readMapQuery(Object.fromEntries(params), "map_run_settings"),
+    ).toEqual(settings);
+    expect(readMapQuery(Object.fromEntries(params), "map_jumpers")).toEqual(
+        group,
+    );
     expect(params.get("lat")).toBe("62.4");
     expect(params.get("lon")).toBe("25.6");
     const distance = await page.evaluate(async (target) => {
@@ -3519,8 +3624,11 @@ test("parachute landing at a tapped point reuses automatic positioning for the c
         const { getMapWindData } = await import("#app/map/windData.js");
         const { latLng } = await import("leaflet");
         const params = new URL(location.href).searchParams;
-        const settings = JSON.parse(params.get("map_run_settings"));
-        const group = JSON.parse(params.get("map_jumpers"));
+        const settings = readMapQuery(
+            Object.fromEntries(params),
+            "map_run_settings",
+        );
+        const group = readMapQuery(Object.fromEntries(params), "map_jumpers");
         const { freefallWinds, canopyWinds } = getMapWindData();
         const expected = startForAutomaticRun(
             target,
@@ -3529,9 +3637,9 @@ test("parachute landing at a tapped point reuses automatic positioning for the c
             createJumpRunCalculator()(freefallWinds, settings),
             canopyWinds,
         );
-        return latLng(JSON.parse(params.get("map_run_start"))).distanceTo(
-            expected,
-        );
+        return latLng(
+            readMapQuery(Object.fromEntries(params), "map_run_start"),
+        ).distanceTo(expected);
     }, target);
     expect(distance).toBeLessThan(10);
     await expectAutomaticOpeningsUpwind(page, target.lat);
@@ -3556,7 +3664,10 @@ for (const [description, ground] of [
         await page
             .getByRole("button", { name: "Hyppylinja", exact: true })
             .click();
-        const start = new URL(page.url()).searchParams.get("map_run_start");
+        const start = mapQuerySnapshot(
+            new URL(page.url()).searchParams,
+            "map_run_start",
+        );
         expect(start).not.toBeNull();
         const errors = [];
         page.on("console", (message) => {
@@ -3576,9 +3687,9 @@ for (const [description, ground] of [
         );
         const message = (await error.textContent()).trim();
         await expect.poll(() => errors).toEqual([message]);
-        expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
-            start,
-        );
+        expect(
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        ).toBe(start);
         await page
             .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
             .click();
@@ -3605,9 +3716,9 @@ for (const [description, ground] of [
         await map.click({ position: { x: 180, y: 200 } });
         await page.getByRole("button", { name: "Avaus" }).click();
         await expect(page.locator(".jump-run-unavailable")).toHaveCount(0);
-        expect(new URL(page.url()).searchParams.get("map_run_start")).not.toBe(
-            start,
-        );
+        expect(
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        ).not.toBe(start);
         await map.click({ position: { x: 180, y: 200 } });
         await page.getByRole("button", { name: "Laskeutuminen" }).click();
         await expect(error).toBeVisible();
@@ -3641,9 +3752,12 @@ test("map clicks center a large group of jumpers", async ({ page }) => {
             await import("#app/map/freefall.js");
         const { latLng } = await import("leaflet");
         const params = new URL(location.href).searchParams;
-        const settings = JSON.parse(params.get("map_run_settings"));
-        const start = JSON.parse(params.get("map_run_start"));
-        const jumpers = JSON.parse(params.get("map_jumpers"));
+        const settings = readMapQuery(
+            Object.fromEntries(params),
+            "map_run_settings",
+        );
+        const start = readMapQuery(Object.fromEntries(params), "map_run_start");
+        const jumpers = readMapQuery(Object.fromEntries(params), "map_jumpers");
         const target = {
             lat: Number(params.get("map_center_lat")),
             lng: Number(params.get("map_center_lon")),
@@ -3796,7 +3910,9 @@ test("double-tap zoom preserves the positioned jump run", async ({
     // Allow the single-click delay to expire to detect late placement.
     await page.waitForTimeout(400);
     const result = new URL(page.url()).searchParams;
-    expect(result.get("map_run_start")).toBe(initial.get("map_run_start"));
+    expect(mapQuerySnapshot(result, "map_run_start")).toBe(
+        mapQuerySnapshot(initial, "map_run_start"),
+    );
     await expect(hint).toHaveCount(0);
 });
 
@@ -3832,7 +3948,10 @@ test("dragging sets jump run direction and clicking exits without moving the run
     await expect(directionButton).toHaveAttribute("aria-checked", "false");
     const center = await runCenter(page);
     await centerMapOn(page, center);
-    const placed = new URL(page.url()).searchParams.get("map_run_start");
+    const placed = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     await clickDirection(page, directionControls.drag);
     await expect(hint).toBeVisible();
     await expect(directionButton).toHaveAttribute("aria-checked", "true");
@@ -3841,7 +3960,10 @@ test("dragging sets jump run direction and clicking exits without moving the run
     const originX = bounds.x + pivot.x;
     const originY = bounds.y + pivot.y;
     const settings = () =>
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"));
+        readMapQuery(
+            Object.fromEntries(new URL(page.url()).searchParams),
+            "map_run_settings",
+        );
     await page.mouse.move(originX, originY);
     await page.mouse.down();
     await page.mouse.move(originX + 120, originY, { steps: 8 });
@@ -3850,9 +3972,9 @@ test("dragging sets jump run direction and clicking exits without moving the run
         .toBeCloseTo((Math.atan2(120, 40) * 180) / Math.PI, 0);
     await expect(hint).toHaveCount(0);
     expect(await runCenterDistance(page, center)).toBeLessThan(1);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).not.toBe(
-        placed,
-    );
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).not.toBe(placed);
     await page.mouse.up();
     await expect(hint).toBeVisible();
     await expect(map.locator(".freefall-drift-line")).toHaveCount(6);
@@ -3862,13 +3984,18 @@ test("dragging sets jump run direction and clicking exits without moving the run
     );
     await expect(directionButton).toHaveAttribute("aria-checked", "true");
     const aimed = settings().direction;
-    const start = new URL(page.url()).searchParams.get("map_run_start");
+    const start = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     await page.mouse.move(originX, originY + 140);
     await page.evaluate(() => new Promise(requestAnimationFrame));
     expect(settings().direction).toBeCloseTo(aimed, 0);
     await map.click({ position: { x: 100, y: 100 } });
     await page.waitForTimeout(400);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe(start);
     await expect(hint).toHaveCount(0);
     expect(settings().direction).toBeCloseTo(aimed, 0);
     await expect(hint).toHaveCount(0);
@@ -3879,7 +4006,9 @@ test("dragging sets jump run direction and clicking exits without moving the run
     await page.mouse.up();
     await page.evaluate(() => new Promise(requestAnimationFrame));
     expect(settings().direction).toBeCloseTo(aimed, 0);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(start);
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe(start);
     expect(await runCenterDistance(page, center)).toBeLessThan(1);
 });
 
@@ -4220,7 +4349,10 @@ test("jump run direction follows touch dragging and stays on after release", asy
     await page.evaluate(() => new Promise(requestAnimationFrame));
     await expect(run).toHaveAttribute("d", preview);
     await expect(hint).toBeVisible();
-    const aimedStart = new URL(page.url()).searchParams.get("map_run_start");
+    const aimedStart = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     await touch.send("Input.dispatchTouchEvent", {
         type: "touchStart",
         touchPoints: [{ x: bounds.x + 80, y: bounds.y + 120 }],
@@ -4233,9 +4365,9 @@ test("jump run direction follows touch dragging and stays on after release", asy
     await expect(directionButton).toHaveAttribute("aria-checked", "false");
     await expect(run).toHaveAttribute("d", preview);
     await page.waitForTimeout(400);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
-        aimedStart,
-    );
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe(aimedStart);
     await touch.detach();
 });
 
@@ -4267,12 +4399,28 @@ test("map setup survives URL reload and shares in full-window mode", async ({
         .poll(() => new URL(page.url()).searchParams.get("map_zoom"))
         .toBe("15");
     const setup = new URL(page.url());
-    expect(JSON.parse(setup.searchParams.get("map_jumpers"))).toHaveLength(7);
-    expect(JSON.parse(setup.searchParams.get("map_run_start"))).toHaveProperty(
-        "lat",
+    expect(setup.searchParams.has("map_run_settings")).toBe(false);
+    expect(setup.searchParams.has("map_run_start")).toBe(false);
+    expect(setup.searchParams.get("map_run_speed")).toBe("157");
+    expect(setup.searchParams.get("map_run_separation")).toBe("5");
+    expect(setup.searchParams.get("map_run_exit_height")).toBe("4000");
+    expect(setup.searchParams.get("map_jumpers")).toBe(
+        Array(7).fill("180,800").join(";"),
     );
+    for (const [key, value] of setup.searchParams) {
+        if (key.startsWith("map_")) expect(value).not.toMatch(/[{}\[\]"]/);
+    }
     expect(
-        JSON.parse(setup.searchParams.get("map_run_settings")),
+        readMapQuery(Object.fromEntries(setup.searchParams), "map_jumpers"),
+    ).toHaveLength(7);
+    expect(
+        readMapQuery(Object.fromEntries(setup.searchParams), "map_run_start"),
+    ).toHaveProperty("lat");
+    expect(
+        readMapQuery(
+            Object.fromEntries(setup.searchParams),
+            "map_run_settings",
+        ),
     ).toHaveProperty("direction");
     expect(
         Number.isFinite(Number(setup.searchParams.get("map_center_lat"))),
@@ -4312,7 +4460,8 @@ test("map query state handles invalid input and browser history", async ({
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs({
             map_full_window: "true",
-            map_run_start: "[null]",
+            map_run_start_lat: "[null]",
+            map_run_start_lon: "[null]",
             map_jumpers: "{}",
             map_zoom: "1000",
             map_center_lat: '"broken"',
@@ -4740,7 +4889,7 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         await page.evaluate(async (exitHeight) => {
             const { navigateQs } = await import("#app/app/settings.js");
             navigateQs({
-                map_run_settings: JSON.stringify({
+                ...writeMapQuery("map_run_settings", {
                     direction: 0,
                     speedKmh: 157,
                     separationSeconds: 5,
@@ -4858,22 +5007,23 @@ for (const [axis, wind, speed, expected] of [
             `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&default_jump_run_direction=${axis}&default_jump_group_count=4&MANUAL_upper_winds=${[7000, 5500, 4200, 3000, 1500, 800, 110].map((height) => `${speed},${wind},${height}`).join(";")}`,
         );
         expect(
-            new URL(page.url()).searchParams.get("map_run_start"),
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
         ).toBeNull();
         await setUniformFreefallWind(page);
         await expect(page.locator(".jump-run-jumper")).toHaveCount(4);
         const params = new URL(page.url()).searchParams;
-        expect(JSON.parse(params.get("map_run_settings")).direction).toBe(
-            expected,
-        );
+        expect(
+            readMapQuery(Object.fromEntries(params), "map_run_settings")
+                .direction,
+        ).toBe(expected);
         await expectAutomaticOpeningsUpwind(page);
         // A saved placement survives reload, even before fresh winds arrive.
-        const start = params.get("map_run_start");
+        const start = mapQuerySnapshot(params, "map_run_start");
         await page.reload();
         await setUniformFreefallWind(page);
-        expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
-            start,
-        );
+        expect(
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        ).toBe(start);
         await page.getByRole("button", { name: "Poista hyppylinja" }).click();
         await expect(page.locator(".jump-run-jumper")).toHaveCount(0);
         await page.reload();
@@ -4887,21 +5037,27 @@ for (const [axis, wind, speed, expected] of [
         await expect(page.locator(".jump-run-jumper")).toHaveCount(4);
         const restoredParams = new URL(page.url()).searchParams;
         expect(
-            JSON.parse(restoredParams.get("map_run_settings")).direction,
+            readMapQuery(Object.fromEntries(restoredParams), "map_run_settings")
+                .direction,
         ).toBe(expected);
-        expect(restoredParams.get("map_run_start")).toBe(start);
+        expect(mapQuerySnapshot(restoredParams, "map_run_start")).toBe(start);
         // Repositioning an existing run applies the same reversal to its
         // current axis.
         await page.evaluate(async (direction) => {
             const { navigateQs, QUERY_PARAMS } =
                 await import("#app/app/settings.js");
-            const settings = JSON.parse(
-                QUERY_PARAMS.value.map_run_settings ??
-                    '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
-            );
+            const settings =
+                QUERY_PARAMS.value.map_run_direction !== undefined
+                    ? readMapQuery(QUERY_PARAMS.value, "map_run_settings")
+                    : {
+                          direction: 0,
+                          speedKmh: 157,
+                          separationSeconds: 5,
+                          exitHeight: 4000,
+                      };
             navigateQs(
                 {
-                    map_run_settings: JSON.stringify({
+                    ...writeMapQuery("map_run_settings", {
                         ...settings,
                         direction,
                     }),
@@ -4915,8 +5071,10 @@ for (const [axis, wind, speed, expected] of [
             })
             .click();
         expect(
-            JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-                .direction,
+            readMapQuery(
+                Object.fromEntries(new URL(page.url()).searchParams),
+                "map_run_settings",
+            ).direction,
         ).toBe(expected);
         await expectAutomaticOpeningsUpwind(page);
     });
@@ -4951,7 +5109,7 @@ test("viewport positioning fits a saved run without landing coordinates and disa
 }) => {
     const start = { lat: 62.4, lng: 25.6 };
     const params = new URLSearchParams({
-        map_run_start: JSON.stringify(start),
+        ...writeMapQuery("map_run_start", start),
         map_run_automatic: "false",
         map_center_lat: "60",
         map_center_lon: "20",
@@ -4970,9 +5128,11 @@ test("viewport positioning fits a saved run without landing coordinates and disa
         .poll(() => Number(new URL(page.url()).searchParams.get("map_zoom")))
         .not.toBe(Number(original.get("map_zoom")));
     const fitted = new URL(page.url()).searchParams;
-    expect(fitted.get("map_run_start")).toBe(original.get("map_run_start"));
-    expect(fitted.get("map_run_settings")).toBe(
-        original.get("map_run_settings"),
+    expect(mapQuerySnapshot(fitted, "map_run_start")).toBe(
+        mapQuerySnapshot(original, "map_run_start"),
+    );
+    expect(mapQuerySnapshot(fitted, "map_run_settings")).toBe(
+        mapQuerySnapshot(original, "map_run_settings"),
     );
     expect(fitted.get("map_jumpers")).toBe(original.get("map_jumpers"));
     const point = await mapPoint(page, start);
@@ -4992,8 +5152,9 @@ test("initial automatic positioning finishes fitting the flight paths", async ({
         `${manualPath}&MANUAL_ground_obs=10,10,0,1&lat=62.4&lon=25.6&map_center_lat=62.4&map_center_lon=25.6&map_zoom=14&MANUAL_upper_winds=10,0,7000;10,0,5500;10,0,4200;10,0,3000;10,0,1500;10,0,800;10,0,110`,
     );
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
-    const start = JSON.parse(
-        new URL(page.url()).searchParams.get("map_run_start"),
+    const start = readMapQuery(
+        Object.fromEntries(new URL(page.url()).searchParams),
+        "map_run_start",
     );
     const landing = await middleOpening(page, true);
     await expect
@@ -5020,17 +5181,19 @@ test("viewport positioning keeps the flight path visible in a wide, short map", 
     await page.setViewportSize({ width: 1280, height: 320 });
     const start = { lat: 62.4, lng: 25.6 };
     const params = new URLSearchParams({
-        map_run_start: JSON.stringify(start),
+        ...writeMapQuery("map_run_start", start),
         map_run_automatic: "false",
         map_zoom: "19",
         map_full_window: "true",
-        map_run_settings: JSON.stringify({
+        ...writeMapQuery("map_run_settings", {
             exitHeight: 4000,
             speedKmh: 120,
             direction: 180,
             separationSeconds: 5,
         }),
-        map_jumpers: JSON.stringify([{ speedKmh: 180, openingHeight: 800 }]),
+        ...writeMapQuery("map_jumpers", [
+            { speedKmh: 180, openingHeight: 800 },
+        ]),
     });
     await page.goto(`${manualPath}&${params}`);
     await setUniformFreefallWind(page);
@@ -5067,16 +5230,21 @@ test("automatic positioning reverses the current axis into wind and reset restor
     await page.evaluate(async () => {
         const { navigateQs, QUERY_PARAMS } =
             await import("#app/app/settings.js");
-        const settings = JSON.parse(
-            QUERY_PARAMS.value.map_run_settings ??
-                '{"direction":0,"speedKmh":157,"separationSeconds":5,"exitHeight":4000}',
-        );
+        const settings =
+            QUERY_PARAMS.value.map_run_direction !== undefined
+                ? readMapQuery(QUERY_PARAMS.value, "map_run_settings")
+                : {
+                      direction: 0,
+                      speedKmh: 157,
+                      separationSeconds: 5,
+                      exitHeight: 4000,
+                  };
         navigateQs(
             {
                 MANUAL_upper_winds:
                     "10,0,7000;10,0,5500;10,0,4200;10,0,3000;10,0,1500;10,0,800;10,0,110",
-                map_run_start: JSON.stringify({ lat: 62.41, lng: 25.61 }),
-                map_run_settings: JSON.stringify({
+                ...writeMapQuery("map_run_start", { lat: 62.41, lng: 25.61 }),
+                ...writeMapQuery("map_run_settings", {
                     ...settings,
                     direction: 225,
                 }),
@@ -5092,11 +5260,14 @@ test("automatic positioning reverses the current axis into wind and reset restor
     await setUniformFreefallWind(page);
     await position.click();
     const positionedParams = new URL(page.url()).searchParams;
-    const positionedSettings = JSON.parse(
-        positionedParams.get("map_run_settings"),
+    const positionedSettings = readMapQuery(
+        Object.fromEntries(positionedParams),
+        "map_run_settings",
     );
     expect(positionedSettings.direction).toBe(45);
-    expect(JSON.parse(positionedParams.get("map_run_start"))).not.toEqual({
+    expect(
+        readMapQuery(Object.fromEntries(positionedParams), "map_run_start"),
+    ).not.toEqual({
         lat: 62.41,
         lng: 25.61,
     });
@@ -5108,7 +5279,9 @@ test("automatic positioning reverses the current axis into wind and reset restor
     await clickDirection(page, directionControls.reset);
     await expect(directionMode).toHaveAttribute("aria-checked", "false");
     const resetParams = new URL(page.url()).searchParams;
-    expect(JSON.parse(resetParams.get("map_run_settings"))).toEqual({
+    expect(
+        readMapQuery(Object.fromEntries(resetParams), "map_run_settings"),
+    ).toEqual({
         ...positionedSettings,
         direction: 0,
     });
@@ -5124,8 +5297,10 @@ test("automatic positioning reverses the current axis into wind and reset restor
     await position.click();
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
     expect(
-        JSON.parse(new URL(page.url()).searchParams.get("map_run_settings"))
-            .direction,
+        readMapQuery(
+            Object.fromEntries(new URL(page.url()).searchParams),
+            "map_run_settings",
+        ).direction,
     ).toBe(0);
 });
 
@@ -5169,8 +5344,9 @@ test("automatic positioning is disabled for an infeasible current direction and 
     await clickDirection(page, directionControls.reset);
     await expect(position).toBeEnabled();
     await expect(page.locator(".map-errors")).toHaveCount(0);
-    const run = JSON.parse(
-        new URL(page.url()).searchParams.get("map_run_settings"),
+    const run = readMapQuery(
+        Object.fromEntries(new URL(page.url()).searchParams),
+        "map_run_settings",
     );
     expect(run.direction).toBe(180);
     expect(run.speedKmh).toBe(20);
@@ -5185,9 +5361,12 @@ async function expectAutomaticOpeningsUpwind(page, targetLat = 62.4) {
         const { jumpRunCoordinates, driftCoordinates } =
             await import("#app/map/freefall.js");
         const params = new URL(location.href).searchParams;
-        const settings = JSON.parse(params.get("map_run_settings"));
-        const start = JSON.parse(params.get("map_run_start"));
-        const group = JSON.parse(params.get("map_jumpers"));
+        const settings = readMapQuery(
+            Object.fromEntries(params),
+            "map_run_settings",
+        );
+        const start = readMapQuery(Object.fromEntries(params), "map_run_start");
+        const group = readMapQuery(Object.fromEntries(params), "map_jumpers");
         const calculation = createJumpRunCalculator()(
             getMapWindData().freefallWinds,
             settings,
@@ -5229,7 +5408,7 @@ for (const [description, ground] of [
         await expect(position).toBeDisabled();
         await expect(page.locator(".automatic-run-unavailable")).toHaveCount(0);
         expect(
-            new URL(page.url()).searchParams.get("map_run_start"),
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
         ).toBeNull();
         await page.evaluate(async () => {
             const { navigateQs } = await import("#app/app/settings.js");
@@ -5437,7 +5616,10 @@ test("automatic jump run follows new winds until edited and can be reenabled", a
     });
     await expect(automatic).toBeChecked();
     await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
-    const first = new URL(page.url()).searchParams.get("map_run_start");
+    const first = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     const changeWind = async (speed) => {
         await page.evaluate(async (speed) => {
             const { navigateQs } = await import("#app/app/settings.js");
@@ -5454,7 +5636,7 @@ test("automatic jump run follows new winds until edited and can be reenabled", a
         await page.evaluate(async (fullWindow) => {
             const { navigateQs } = await import("#app/app/settings.js");
             navigateQs(
-                { map_full_window: JSON.stringify(fullWindow) },
+                { map_full_window: String(fullWindow) },
                 { replace: true },
             );
         }, fullWindow);
@@ -5463,16 +5645,18 @@ test("automatic jump run follows new winds until edited and can be reenabled", a
                 Number(new URL(page.url()).searchParams.get("map_center_lat")),
             )
             .toBeGreaterThan(62);
-        expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(
-            first,
-        );
+        expect(
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        ).toBe(first);
     }
     // Wind updates refit even a viewport chosen by the user.
     await centerMapOn(page, { lat: 60, lng: 20 });
     // Only the highest layer changes: canopy winds remain the same.
     await changeWind(20);
     await expect
-        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
+        .poll(() =>
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        )
         .not.toBe(first);
     await expectAutomaticOpeningsUpwind(page);
     await expect
@@ -5482,26 +5666,45 @@ test("automatic jump run follows new winds until edited and can be reenabled", a
         .toBeGreaterThan(62);
     await clickDirection(page, directionControls.clockwise);
     await expect(automatic).not.toBeChecked();
-    const edited = new URL(page.url()).searchParams.get("map_run_start");
+    const edited = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     await changeWind(15);
     await expect(automatic).not.toBeChecked();
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(edited);
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe(edited);
     await automatic.check();
     await expect
-        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
+        .poll(() =>
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        )
         .not.toBe(edited);
-    const enabled = new URL(page.url()).searchParams.get("map_run_start");
+    const enabled = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     await changeWind(25);
     await expect
-        .poll(() => new URL(page.url()).searchParams.get("map_run_start"))
+        .poll(() =>
+            mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+        )
         .not.toBe(enabled);
     await automatic.uncheck();
-    const paused = new URL(page.url()).searchParams.get("map_run_start");
+    const paused = mapQuerySnapshot(
+        new URL(page.url()).searchParams,
+        "map_run_start",
+    );
     await changeWind(5);
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(paused);
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe(paused);
     await page.reload();
     await expect(automatic).not.toBeChecked();
-    expect(new URL(page.url()).searchParams.get("map_run_start")).toBe(paused);
+    expect(
+        mapQuerySnapshot(new URL(page.url()).searchParams, "map_run_start"),
+    ).toBe(paused);
 });
 
 test("elevated Utti dropzone keeps a 4000 m jump run when 600 hPa falls below exit", async ({
@@ -5555,8 +5758,9 @@ test("elevated Utti dropzone keeps a 4000 m jump run when 600 hPa falls below ex
     });
     await expect(page.locator(".freefall-drift-line")).toHaveCount(8);
     await expect(page.locator(".jump-run-line")).toHaveCount(1);
-    const settings = JSON.parse(
-        new URL(page.url()).searchParams.get("map_run_settings"),
+    const settings = readMapQuery(
+        Object.fromEntries(new URL(page.url()).searchParams),
+        "map_run_settings",
     );
     expect(settings.exitHeight).toBe(4000);
     const heights = await page.evaluate(async () => {
@@ -5572,4 +5776,56 @@ test("elevated Utti dropzone keeps a 4000 m jump run when 600 hPa falls below ex
         OM_DATA.value = data;
     });
     await expect(page.locator(".freefall-drift-line")).toHaveCount(0);
+});
+
+test("flat map parameters restore individual settings and plain wind selections", async ({
+    page,
+}) => {
+    await page.goto(
+        `${manualPath}&lat=62.4&lon=25.6&MANUAL_upper_winds=${uniformUpperWinds}&map_run_automatic=false&map_run_exit_height=3500&map_run_separation=9&map_next_jumper_opening_height=1000&map_wind=700`,
+    );
+    await setUniformFreefallWind(page);
+    await expect(
+        page.getByRole("button", { name: /^3000 m:/ }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    const dialog = page.getByRole("dialog", { name: "Hyppylinjan asetukset" });
+    await expect(
+        dialog.getByRole("spinbutton", { name: "Uloshyppykorkeus (m)" }),
+    ).toHaveValue("3500");
+    await expect(
+        dialog.getByRole("spinbutton", {
+            name: "Todellinen ilmanopeus (km/h)",
+        }),
+    ).toHaveValue("157");
+    await expect(
+        dialog.getByRole("spinbutton", { name: "Hyppääjien porrastus (s)" }),
+    ).toHaveValue("9");
+    expect(
+        await page.evaluate(async () =>
+            (await import("#app/map/mapState.js")).getJumpRunExitHeight(),
+        ),
+    ).toBe(3500);
+    await page.keyboard.press("Escape");
+    await page
+        .getByRole("button", { name: "Lisää hyppääjä", exact: true })
+        .click();
+    expect(new URL(page.url()).searchParams.get("map_jumpers")).toBe(
+        "180,800;180,1000",
+    );
+    await page.reload();
+    await setUniformFreefallWind(page);
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    await expect(
+        dialog.getByRole("spinbutton", { name: "Uloshyppykorkeus (m)" }),
+    ).toHaveValue("3500");
+    await expect(
+        dialog
+            .getByRole("row", { name: "Hyppääjä 2", exact: true })
+            .getByRole("spinbutton", { name: "Avauskorkeus (m)" }),
+    ).toHaveValue("1000");
 });

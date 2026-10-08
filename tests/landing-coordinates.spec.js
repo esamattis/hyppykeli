@@ -1,6 +1,8 @@
+import { readMapQuery, installMapQueryHelpers } from "./map-query-helpers.js";
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page, baseURL }) => {
+    await installMapQueryHelpers(page);
     await page.route("**/*", (route) =>
         new URL(route.request().url()).origin === new URL(baseURL).origin
             ? route.continue()
@@ -108,11 +110,14 @@ test("automatic placement waits for station coordinates and uses them as the lan
             await import("#app/map/automaticPlacement.js");
         const { createJumpRunCalculator } = await import("#app/map/jumpRun.js");
         const params = new URL(location.href).searchParams;
-        const settings = JSON.parse(params.get("map_run_settings"));
-        const group = JSON.parse(params.get("map_jumpers"));
+        const settings = readMapQuery(
+            Object.fromEntries(params),
+            "map_run_settings",
+        );
+        const group = readMapQuery(Object.fromEntries(params), "map_jumpers");
         const { freefallWinds, canopyWinds } = getMapWindData();
         return {
-            start: JSON.parse(params.get("map_run_start")),
+            start: readMapQuery(Object.fromEntries(params), "map_run_start"),
             expected: startForAutomaticRun(
                 LANDING_COORDINATES.value,
                 settings,

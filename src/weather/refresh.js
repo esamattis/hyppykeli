@@ -3,7 +3,6 @@ import { QUERY_PARAMS } from "#app/app/settings.js";
 import { t } from "#app/translations.js";
 import { mockAllEntries } from "#app/manual/overrides.js";
 import { parseMetarMessages } from "#app/weather/metarMessages.js";
-import { getObservationStartTime } from "#app/weather/observationRange.js";
 import { hasValidWindData } from "#app/weather/calculations.js";
 import {
     fetchRoadObservations,
@@ -22,7 +21,6 @@ import {
     FMI_FORECAST_NAME,
     FORECASTS,
     FORECAST_COORDINATES,
-    FORECAST_DAY,
     FORECAST_LOCATION_NAME,
     FORECAST_SOURCE,
     LIVE_OBSERVATIONS,
@@ -84,9 +82,8 @@ function useObservations(observations) {
 
 /** @param {boolean} cacheOnly @param {AbortSignal} signal @param {boolean} retryErrors */
 async function fetchObservations(cacheOnly, signal, retryErrors) {
-    const startTime = getObservationStartTime(
-        Number(QUERY_PARAMS.value.observation_range) || 12,
-    );
+    const startTime = new Date();
+    startTime.setHours(startTime.getHours() - 12, 0, 0, 0);
     const fmisid = QUERY_PARAMS.value.fmisid;
     if (fmisid) {
         const selectedName =
@@ -173,10 +170,7 @@ async function fetchMetar(cacheOnly, signal, retryErrors) {
 let detailedForecastSettingsKey = "";
 
 function getForecastRange() {
-    return Math.max(
-        Number(QUERY_PARAMS.value.forecast_range) || 12,
-        detailedForecastSettingsKey === weatherSettingsKey() ? 48 : 12,
-    );
+    return detailedForecastSettingsKey === weatherSettingsKey() ? 48 : 12;
 }
 
 /** @param {string} coordinates @param {boolean} cacheOnly @param {AbortSignal} signal @param {boolean} retryErrors */
@@ -188,7 +182,6 @@ async function fetchForecasts(coordinates, cacheOnly, signal, retryErrors) {
             stale = value;
         },
         range: getForecastRange(),
-        day: FORECAST_DAY.value,
     });
     if (!result || signal.aborted) return false;
     FMI_FORECAST_NAME.value = result.forecastName;
@@ -214,21 +207,11 @@ function useOpenMeteoSurfaceWeather(data) {
         current ? { ...current, source: "openmeteo" } : undefined,
     );
 
-    const forecastRange = Math.max(
-        12,
-        Number(QUERY_PARAMS.value.forecast_range) || 12,
-    );
+    const forecastRange = 12;
     const start = new Date(now);
     start.setMinutes(0, 0, 0);
     const end = new Date(now);
     end.setHours(end.getHours() + forecastRange, 0, 0, 0);
-    const day = FORECAST_DAY.value;
-    if (day > 0) {
-        start.setHours(7, 0, 0, 0);
-        start.setDate(start.getDate() + day);
-        end.setHours(21, 0, 0, 0);
-        end.setDate(end.getDate() + day);
-    }
 
     return weather.filter(({ time }) => time >= start && time <= end);
 }

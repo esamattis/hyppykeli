@@ -34,19 +34,18 @@ function observationRange(startTime) {
 }
 
 /**
- * Moving request timestamps are excluded from keys; location, range and day
+ * Moving request timestamps are excluded from keys; location and range
  * still distinguish responses. Forecast timestamps are prediction validity
  * times, so forecasts expire by fetch age rather than measurement age.
  * @param {string} coordinates
  * @param {number} range
- * @param {number} day
  * @param {Date} startTime
  * @returns {ResponseCachePolicy<string>}
  */
-export function fmiForecastCache(coordinates, range, day, startTime) {
+export function fmiForecastCache(coordinates, range, startTime) {
     return {
         ...CACHE_POLICIES.fmiForecast,
-        key: `fmi:forecast:${coordinates}:${range}:${day}:${startTime.toDateString()}`,
+        key: `fmi:forecast:${coordinates}:${range}:${startTime.toDateString()}`,
     };
 }
 

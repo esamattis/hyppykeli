@@ -6,7 +6,6 @@ import { css, useScope } from "#app/useScope.js";
 import { DataSource } from "#app/weather/DataSource.js";
 import {
     FORECASTS,
-    FORECAST_DATE,
     FORECAST_SOURCE,
     HAS_WIND_OBSERVATIONS,
     HOVERED_OBSERVATION,
@@ -267,8 +266,8 @@ export function Graph(props) {
                 <h2>
                     ${t("weather.forecasts")}
                     <span class="date text-em-0-7 font-normal">
-                        ${formatDate(FORECAST_DATE.value)} ${" "}
-                        ${humanDayText(FORECAST_DATE.value)}
+                        ${formatDate(new Date())} ${" "}
+                        ${humanDayText(new Date())}
                     </span>
                 </h2>
                 ${h(DataSource, { sources: [FORECAST_SOURCE.value] })}

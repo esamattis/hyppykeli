@@ -262,34 +262,6 @@ export const NAME = computed(
  */
 export const ERRORS = signal([]);
 
-/**
- *  How many days in the future the forecast is for.
- *  0 = today, 1 = tomorrow, 2 = day after tomorrow, etc.
- *
- * @type {Signal<number>}
- */
-export const FORECAST_DAY = computed(() => {
-    const day = QUERY_PARAMS.value.forecast_day;
-    return day ? Number(day) : 0;
-});
-
-/**
- * @type {Signal<Date>}
- */
-export const FORECAST_DATE = computed(() => {
-    const day = FORECAST_DAY.value;
-
-    STALE_FORECASTS.value = true;
-
-    if (day === 0) {
-        return new Date();
-    }
-
-    const date = new Date();
-    date.setDate(date.getDate() + day);
-    return date;
-});
-
 /** @type {string[] | undefined} */
 let pendingErrors;
 

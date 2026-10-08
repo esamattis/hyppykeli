@@ -133,14 +133,6 @@ export async function fetchFmiForecasts(coordinates, options) {
         0,
     );
 
-    const day = options.day;
-    if (day > 0) {
-        forecastStartTime.setHours(7, 0, 0, 0);
-        forecastStartTime.setDate(forecastStartTime.getDate() + day);
-        forecastEndTime.setHours(21, 0, 0, 0);
-        forecastEndTime.setDate(forecastEndTime.getDate() + day);
-    }
-
     const forecastXml = await fmiRequest(
         // "fmi::forecast::hirlam::surface::point::timevaluepair",
         // "ecmwf::forecast::surface::point::simple",
@@ -176,7 +168,6 @@ export async function fetchFmiForecasts(coordinates, options) {
             cache: fmiForecastCache(
                 coordinates,
                 forecastRange,
-                day,
                 forecastStartTime,
             ),
         },

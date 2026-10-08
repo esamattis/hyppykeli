@@ -1,3 +1,4 @@
+import { readMapQuery } from "./map-query-helpers.js";
 import { expect, test } from "@playwright/test";
 
 const elevationUrl = "https://api.open-meteo.com/v1/elevation**";
@@ -146,7 +147,9 @@ test("creating a DZ includes the default jump run settings", async ({
         new URL(page.url()).searchParams.get("default_jump_group_count"),
     ).toBe("12");
     const params = new URL(page.url()).searchParams;
-    expect(JSON.parse(params.get("map_run_settings"))).toEqual({
+    expect(
+        readMapQuery(Object.fromEntries(params), "map_run_settings"),
+    ).toEqual({
         direction: 180,
         speedKmh: 157,
         separationSeconds: 5,

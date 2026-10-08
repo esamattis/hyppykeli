@@ -1,6 +1,6 @@
 {
     "name": "Hyppykeli",
-    "start_url": "/?pwa=true",
+    "start_url": "/",
     "short_name": "Hyppykeli",
     "display": "standalone",
     "background_color": "#eef7fc",

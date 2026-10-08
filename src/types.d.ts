@@ -373,6 +373,20 @@ interface MetarData {
  * Interface representing query parameters.
  */
 type MapQueryKey = Extract<keyof QueryParams, `map_${string}`>;
+interface MapStateValues {
+    map_satellite: boolean;
+    map_zoom: number;
+    map_center_lat: number | null;
+    map_center_lon: number | null;
+    map_full_window: boolean;
+    map_wind: string;
+    map_run_start: import("leaflet").LatLngLiteral | null;
+    map_run_automatic: boolean;
+    map_jumpers: JumpRunJumper[];
+    map_next_jumper: JumpRunJumper;
+    map_run_settings: JumpRunSettings;
+}
+type MapStateKey = keyof MapStateValues;
 
 interface QueryParams {
     map_satellite?: string;
@@ -381,18 +395,26 @@ interface QueryParams {
     map_center_lon?: string;
     map_full_window?: string;
     map_wind?: string;
-    map_run_start?: string;
+    map_run_start_lat?: string;
+    map_run_start_lon?: string;
     map_run_automatic?: string;
+    /** Semicolon-separated speed in km/h, opening height in metres above DZ. */
     map_jumpers?: string;
-    map_next_jumper?: string;
-    map_run_settings?: string;
+    map_next_jumper_speed?: string;
+    map_next_jumper_opening_height?: string;
+    map_run_direction?: string;
+    /** Aircraft true airspeed in km/h. */
+    map_run_speed?: string;
+    /** Exit separation in seconds. */
+    map_run_separation?: string;
+    /** Exit height in metres above the dropzone. */
+    map_run_exit_height?: string;
     MANUAL_ground_obs?: string;
     MANUAL_metar?: string;
     MANUAL_upper_winds?: string;
     __gusts?: string;
     __speeds?: string;
     __directions?: string;
-    rc?: string;
     fmisid?: string;
     roadsid?: string;
     icaocode?: string;
@@ -402,10 +424,6 @@ interface QueryParams {
     default_jump_run_direction?: string;
     default_jump_group_count?: string;
     name?: string;
-    observation_range?: string;
-    forecast_day?: string;
-    forecast_range?: string;
-    css?: string;
     save?: string;
 }
 
@@ -643,9 +661,7 @@ interface LandingDropzone {
     /** Map location for dropzones whose URLs use station-derived coordinates. */
     mapCoordinates?: [number, number];
     name: string;
-    qs: { [Key in keyof QueryParams]?: string | number } & {
-        direction?: number;
-    };
+    qs: { [Key in keyof QueryParams]?: string | number };
     description: string | (() => string);
 }
 
@@ -837,7 +853,6 @@ interface FmiRequestOptions {
 
 interface FmiForecastOptions extends FmiRequestOptions {
     range: number;
-    day: number;
 }
 
 interface FmiObservationOptions extends FmiRequestOptions {

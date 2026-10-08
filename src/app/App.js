@@ -27,13 +27,11 @@ import { WindSummary } from "#app/weather/WindSummary.js";
 import {
     ERRORS,
     FORECASTS,
-    FORECAST_DATE,
     OBSERVATIONS,
     STALE_FORECASTS,
     WIND_SOURCE,
 } from "#app/weather/state.js";
 import { Info } from "#app/app/Info.js";
-import { RenderInjectedCSS } from "#app/app/RenderInjectedCSS.js";
 import { FloatingMenuButton, SideMenu } from "#app/app/SideMenu.js";
 import { Title } from "#app/app/Title.js";
 import { h, html } from "htm/preact";
@@ -289,8 +287,8 @@ export function App() {
                     children: html`
                         <div class=${STALE_FORECASTS.value ? "stale" : "fresh"}>
                             <p class="date">
-                                ${formatDate(FORECAST_DATE.value)} ${" "}
-                                ${humanDayText(FORECAST_DATE.value)}
+                                ${formatDate(new Date())} ${" "}
+                                ${humanDayText(new Date())}
                             </p>
                             <p><${ForecastLocationInfo} /></p>
                             <div class="side-scroll">
@@ -312,7 +310,6 @@ export function App() {
         ${h(SideMenu, { manualEditorRef })}
         <${FloatingMenuButton} />
 
-        <${RenderInjectedCSS} />
         <${Tooltips} />
     `;
 }

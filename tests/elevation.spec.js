@@ -1,3 +1,4 @@
+import { readMapQuery, writeMapQuery } from "./map-query-helpers.js";
 import { expect, test } from "@playwright/test";
 
 const label = "Hyppypaikan korkeus merenpinnasta (m)";
@@ -149,9 +150,7 @@ test("landing form includes elevation in the dropzone URL", async ({
 test("forecast heights drive map labels, wind calculations and unrestricted exit heights", async ({
     page,
 }) => {
-    await page.goto(
-        `${dz}&elevation=200.5&map_wind=${encodeURIComponent(JSON.stringify("700"))}`,
-    );
+    await page.goto(`${dz}&elevation=200.5&map_wind=700`);
     const result = await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
         const { OM_DATA } = await import("#app/weather/state.js");
@@ -231,8 +230,9 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     await expect(exit).not.toHaveAttribute("max");
     await exit.fill("4151");
     expect(
-        JSON.parse(
-            new URL(page.url()).searchParams.get("map_run_settings") ?? "{}",
+        readMapQuery(
+            Object.fromEntries(new URL(page.url()).searchParams),
+            "map_run_settings",
         ).exitHeight,
     ).toBe(4151);
     await page.evaluate(async () => {
@@ -247,9 +247,12 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
     await expect(selected).toHaveAttribute("aria-label", /^≈ 3000 m:/);
     await expect(selected).toHaveAttribute("aria-label", /: \d+ m\/s 0°$/);
     await selected.click();
-    expect(JSON.parse(new URL(page.url()).searchParams.get("map_wind"))).toBe(
-        "700",
-    );
+    expect(
+        readMapQuery(
+            Object.fromEntries(new URL(page.url()).searchParams),
+            "map_wind",
+        ),
+    ).toBe("700");
     await page.evaluate(async () => {
         const { navigateQs } = await import("#app/app/settings.js");
         navigateQs({ elevation: "250.5" });
@@ -359,7 +362,7 @@ test("drawn canopy paths join the opening and integrate elevation-adjusted wind 
 }) => {
     const start = { lat: 62.4, lng: 25.6 };
     await page.goto(
-        `${dz}&lat=62.4&lon=25.6&map_run_automatic=false&map_run_start=${encodeURIComponent(JSON.stringify(start))}`,
+        `${dz}&lat=62.4&lon=25.6&map_run_automatic=false&${new URLSearchParams(writeMapQuery("map_run_start", start))}`,
     );
     await expect(page.locator(".freefall-drift-line")).toHaveCount(1);
     await page.evaluate(async () => {

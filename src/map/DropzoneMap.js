@@ -1,4 +1,5 @@
 // @ts-check
+import { isMapRunCleared, writeMapQuery } from "#app/map/mapQuery.js";
 import { CheckboxField } from "#app/shared/FormFields.js";
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
 import { holdAnimations } from "#app/app/animationState.js";
@@ -820,9 +821,9 @@ export function DropzoneMap() {
         openingTargetKeyRef.current = openingKey(start, settings, group);
         navigateQs(
             {
-                map_run_start: JSON.stringify(start),
-                map_run_settings: JSON.stringify(settings),
-                map_jumpers: JSON.stringify(group),
+                ...writeMapQuery("map_run_start", start),
+                ...writeMapQuery("map_run_settings", settings),
+                ...writeMapQuery("map_jumpers", group),
             },
             { replace: true },
         );
@@ -849,7 +850,7 @@ export function DropzoneMap() {
         disableAutomaticJumpRun();
         const creating = !jumpRunStart;
         const settings =
-            creating && !QUERY_PARAMS.value.map_run_settings
+            creating && !QUERY_PARAMS.value.map_run_direction
                 ? { ...jumpRunSettings, direction: defaultJumpRunDirection }
                 : jumpRunSettings;
         const group = placementGroup();
@@ -891,8 +892,8 @@ export function DropzoneMap() {
         ...jumpRunSettings,
         direction: directionIntoWind(
             jumpRunStart ||
-                (QUERY_PARAMS.value.map_run_settings &&
-                    QUERY_PARAMS.value.map_run_start !== "null")
+                (QUERY_PARAMS.value.map_run_direction &&
+                    !isMapRunCleared(QUERY_PARAMS.value))
                 ? jumpRunSettings.direction
                 : defaultJumpRunDirection,
         ),
@@ -1034,7 +1035,7 @@ export function DropzoneMap() {
         canopyWinds,
     ]);
     const lastAutomaticUpdate = useRef(
-        jumpRunStart || QUERY_PARAMS.peek().map_run_start === "null"
+        jumpRunStart || isMapRunCleared(QUERY_PARAMS.peek())
             ? automaticUpdateKey
             : null,
     );
@@ -1043,7 +1044,7 @@ export function DropzoneMap() {
             !automaticJumpRun ||
             !canPositionAutomatic ||
             !leafletInstance ||
-            QUERY_PARAMS.peek().map_run_start === "null" ||
+            isMapRunCleared(QUERY_PARAMS.peek()) ||
             lastAutomaticUpdate.current === automaticUpdateKey
         )
             return;
@@ -1121,8 +1122,8 @@ export function DropzoneMap() {
         );
         navigateQs(
             {
-                map_run_start: JSON.stringify({ lat, lng }),
-                map_jumpers: JSON.stringify(group),
+                ...writeMapQuery("map_run_start", { lat, lng }),
+                ...writeMapQuery("map_jumpers", group),
             },
             { replace: true },
         );
@@ -1731,7 +1732,7 @@ export function DropzoneMap() {
         automaticJumpRun &&
         !jumpRunStart &&
         landingCoordinates &&
-        QUERY_PARAMS.value.map_run_start !== "null" &&
+        !isMapRunCleared(QUERY_PARAMS.value) &&
         !automaticStart;
     const unavailableSettings = automaticPlacementMissing
         ? automaticSettings
@@ -1783,7 +1784,9 @@ export function DropzoneMap() {
         if (checked) {
             lastAutomaticUpdate.current = null;
             if (!jumpRunStart)
-                navigateQs({ map_run_start: undefined }, { replace: true });
+                navigateQs(writeMapQuery("map_run_start", undefined), {
+                    replace: true,
+                });
             positionAutomaticJumpRun();
         }
     }

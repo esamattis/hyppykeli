@@ -1,4 +1,5 @@
 // @ts-check
+import { writeMapQuery } from "#app/map/mapQuery.js";
 import {
     fetchElevation,
     fetchLocationName,
@@ -617,10 +618,8 @@ export function CreateDropzoneForm({ coordinates }) {
 
             ${
                 fields.exitHeight &&
-                h("input", {
-                    type: "hidden",
-                    name: "map_run_settings",
-                    value: JSON.stringify({
+                Object.entries(
+                    writeMapQuery("map_run_settings", {
                         direction: Number(
                             fields.default_jump_run_direction || 0,
                         ),
@@ -628,7 +627,9 @@ export function CreateDropzoneForm({ coordinates }) {
                         separationSeconds: 5,
                         exitHeight: Number(fields.exitHeight),
                     }),
-                })
+                ).map(([name, value]) =>
+                    h("input", { type: "hidden", name, value }),
+                )
             }
 
             <input type="hidden" name="save" value="1" />

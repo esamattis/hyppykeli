@@ -2,32 +2,40 @@
 import { QUERY_PARAMS, navigateQs } from "#app/app/settings.js";
 import { FREEFALL_EXIT } from "#app/map/freefall.js";
 import { computed } from "@preact/signals";
+import {
+    mapQueryKeys,
+    readMapQuery,
+    writeMapQuery,
+} from "#app/map/mapQuery.js";
 import { useMemo } from "preact/hooks";
 
 /**
  * Query-backed map state, with the same setter interface as useState.
  * Keep decoded objects stable when unrelated query parameters change.
- * @template T
- * @param {MapQueryKey} key
- * @param {T} fallback
- * @param {(value: T) => boolean} valid
- * @returns {[T, (value: T | ((current: T) => T)) => void]}
+ * @template {MapStateKey} K
+ * @param {K} key
+ * @param {MapStateValues[K]} fallback
+ * @param {(value: MapStateValues[K]) => boolean} valid
+ * @returns {[MapStateValues[K], (value: MapStateValues[K] | ((current: MapStateValues[K]) => MapStateValues[K])) => void]}
  */
 export function useMapState(key, fallback, valid) {
     const state = useMemo(() => {
-        /** @type {string | undefined} */
+        /** @type {(string | undefined)[] | undefined} */
         let previous;
         let value = fallback;
         return computed(() => {
-            const text = QUERY_PARAMS.value[key];
-            if (text === previous) return value;
-            previous = text;
+            const params = QUERY_PARAMS.value;
+            const texts = mapQueryKeys(key).map((field) => params[field]);
+            if (
+                previous &&
+                texts.every((text, index) => text === previous?.[index])
+            )
+                return value;
+            previous = texts;
             value = fallback;
-            if (text) {
-                try {
-                    const parsed = JSON.parse(text);
-                    if (valid(parsed)) value = parsed;
-                } catch {}
+            if (texts.some((value) => value !== undefined)) {
+                const parsed = readMapQuery(params, key, fallback);
+                if (parsed !== undefined && valid(parsed)) value = parsed;
             }
             return value;
         });
@@ -37,9 +45,11 @@ export function useMapState(key, fallback, valid) {
         (update) => {
             const value =
                 typeof update === "function"
-                    ? /** @type {(current: T) => T} */ (update)(state.peek())
+                    ? /** @type {(current: MapStateValues[K]) => MapStateValues[K]} */ (
+                          update
+                      )(state.peek())
                     : update;
-            navigateQs({ [key]: JSON.stringify(value) }, { replace: true });
+            navigateQs(writeMapQuery(key, value), { replace: true });
         },
     ];
 }
@@ -71,11 +81,6 @@ export const isValidJumpRunSettings = (value) =>
 
 /** Read the selected jump-run exit height above the dropzone, in metres. */
 export function getJumpRunExitHeight() {
-    try {
-        const settings = JSON.parse(
-            QUERY_PARAMS.value.map_run_settings ?? "null",
-        );
-        if (isValidJumpRunSettings(settings)) return settings.exitHeight;
-    } catch {}
-    return FREEFALL_EXIT;
+    const height = Number(QUERY_PARAMS.value.map_run_exit_height);
+    return isFiniteNumber(height) && height > 0 ? height : FREEFALL_EXIT;
 }
