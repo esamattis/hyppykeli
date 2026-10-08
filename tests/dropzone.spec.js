@@ -4450,9 +4450,9 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         "30 %",
     ]);
     await expect(compactRows.nth(1).locator("td")).toHaveText([
-        "70 %",
-        "40 %",
-        "0 %",
+        "100 %",
+        "100 %",
+        "100 %",
     ]);
     await expect(compactTable).not.toContainText("Tiivistymiskorkeus");
     await forecast
@@ -4525,7 +4525,11 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
     const summaryRow = dialog.getByRole("row").filter({
         has: page.getByRole("button", { name: /^Pilvipeitto 0–/ }),
     });
-    await expect(summaryRow.locator("td")).toHaveText(["70 %", "40 %", "0 %"]);
+    await expect(summaryRow.locator("td")).toHaveText([
+        "100 %",
+        "100 %",
+        "100 %",
+    ]);
     const setExitHeight = async (exitHeight) => {
         await page.evaluate(async (exitHeight) => {
             const { navigateQs } = await import("#app/app/settings.js");
@@ -4550,6 +4554,26 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
         "0 %",
     ]);
     await expect(summaryRow.locator("td")).toHaveText(["40 %", "40 %", "0 %"]);
+    // 3074 m is closer than 4200 m below the midpoint; ties use the lower level.
+    for (const exitHeight of [3500, 3637]) {
+        await setExitHeight(exitHeight);
+        await expect(summaryRow.locator("td")).toHaveText([
+            "70 %",
+            "40 %",
+            "0 %",
+        ]);
+        await expect(compactRows.nth(1).locator("td")).toHaveText([
+            "70 %",
+            "40 %",
+            "0 %",
+        ]);
+    }
+    await setExitHeight(3638);
+    await expect(summaryRow.locator("td")).toHaveText([
+        "100 %",
+        "100 %",
+        "100 %",
+    ]);
     await setExitHeight(4200);
     await expect(summaryRow.getByRole("rowheader")).toContainText("0–4.2 km");
     await expect(summaryRow.locator("td")).toHaveText([
@@ -4559,7 +4583,11 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
     ]);
     await setExitHeight(-1);
     await expect(summaryRow.getByRole("rowheader")).toContainText("0–4 km");
-    await expect(summaryRow.locator("td")).toHaveText(["70 %", "40 %", "0 %"]);
+    await expect(summaryRow.locator("td")).toHaveText([
+        "100 %",
+        "100 %",
+        "100 %",
+    ]);
     await setExitHeight(4000);
 
     const pressureRow = (level) =>

@@ -254,7 +254,7 @@ export const english = {
     "cloud.rangeCover": (/** @type {string} */ range) =>
         `Cloud cover at ${range}`,
     "cloud.rangeCoverHelp":
-        "The highest Open-Meteo cloud cover percentage among the available sampled levels from the dropzone ground to the selected jump-run exit altitude, calculated separately for each hour.",
+        "The highest Open-Meteo cloud cover percentage among the available sampled levels from the dropzone ground through the level closest to the selected jump-run exit altitude, calculated separately for each hour. The closest level may be slightly above the exit altitude; equally close levels use the lower one.",
     "cloud.lowCover": "Low cloud cover",
     "cloud.middleCover": "Middle cloud cover",
     "cloud.highCover": "High cloud cover",
@@ -812,7 +812,7 @@ const finnish = {
     "cloud.totalCover": "Kokonaispilvipeite",
     "cloud.rangeCover": (range) => `Pilvipeitto ${range}:n korkeudella`,
     "cloud.rangeCoverHelp":
-        "Suurin Open-Meteon pilvipeittoprosentti saatavilla olevilta mallitasoilta hyppypaikan maanpinnasta valittuun hyppylinjan uloshyppykorkeuteen, laskettuna erikseen jokaiselle tunnille.",
+        "Suurin Open-Meteon pilvipeittoprosentti saatavilla olevilta mallitasoilta hyppypaikan maanpinnasta valittua hyppylinjan uloshyppykorkeutta lähimpään mallitasoon asti, laskettuna erikseen jokaiselle tunnille. Lähin mallitaso voi olla hieman uloshyppykorkeuden yläpuolella; yhtä lähellä olevista tasoista käytetään alempaa.",
     "cloud.lowCover": "Matalat pilvet",
     "cloud.middleCover": "Keskipilvet",
     "cloud.highCover": "Korkeat pilvet",

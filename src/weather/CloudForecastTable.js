@@ -127,11 +127,24 @@ export function CloudForecastTable(props) {
         ),
     }));
     const openMeteoCover = props.forecasts.map((_, index) => {
-        const covers = openMeteoRows.flatMap(({ layers }) => {
+        const layers = openMeteoRows.flatMap(({ layers }) => {
             const layer = layers[index];
-            return layer && layer.height <= exitHeight ? [layer.cover] : [];
+            return layer ? [layer] : [];
         });
-        return covers.length ? Math.max(...covers) : null;
+        // Use the closest sampled level as the top of the range. On a tie,
+        // prefer the lower level so we do not include an extra layer above exit.
+        const nearest = layers.toSorted(
+            (a, b) =>
+                Math.abs(a.height - exitHeight) -
+                    Math.abs(b.height - exitHeight) || a.height - b.height,
+        )[0];
+        return nearest
+            ? Math.max(
+                  ...layers
+                      .filter((layer) => layer.height <= nearest.height)
+                      .map((layer) => layer.cover),
+              )
+            : null;
     });
 
     return html`
