@@ -154,6 +154,12 @@
 
 /* Wind labels grow with the same map container as their surrounding geometry. */
 @layer utilities {
+    @media (max-width: 899px) {
+        .mobile\:text-rem-1-15 {
+            font-size: var(--text-rem-1-15);
+        }
+    }
+
     @container wind-barb-map (min-width: 900px) and (min-height: 560px) {
         .wind-barb-large\:text-rem-0-65 {
             font-size: var(--text-rem-0-65);

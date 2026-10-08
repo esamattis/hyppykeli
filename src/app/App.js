@@ -226,6 +226,16 @@ export function App() {
             flex: 1;
             min-width: 0;
         }
+        .header-controls {
+            display: flex;
+            flex-shrink: 0;
+            gap: var(--spacing-3);
+        }
+        @media (max-width: 899px) {
+            .header-controls {
+                gap: 0;
+            }
+        }
         #info {
             grid-area: info;
         }
@@ -266,9 +276,11 @@ export function App() {
 
             <header class="page-header">
                 <${Title} />
-                <${ThemeToggle} />
-                <${WakeLockToggle} />
-                <${FullscreenToggle} />
+                <span class="header-controls">
+                    <${ThemeToggle} />
+                    <${WakeLockToggle} />
+                    <${FullscreenToggle} />
+                </span>
             </header>
 
             <div class="clouds p-panel" id="clouds">

@@ -41,8 +41,8 @@ export function Title() {
 
         .title-name-row {
             display: flex;
-            align-items: center;
-            gap: var(--spacing-1);
+            align-items: flex-start;
+            gap: 0;
         }
 
         .title-name {
@@ -55,12 +55,14 @@ export function Title() {
         }
 
         .edit-name {
+            position: relative;
+            top: var(--spacing-1);
             display: inline-flex;
             flex: 0 0 auto;
             align-items: center;
             justify-content: center;
-            width: 32px;
-            height: 32px;
+            width: 24px;
+            height: 24px;
             color: var(--color-primary);
             background: transparent;
             border: 0;
@@ -74,7 +76,9 @@ export function Title() {
 
         .title-temp {
             min-width: 0;
+            flex-shrink: 0;
             color: var(--color-muted);
+            white-space: nowrap;
         }
 
         .title-name,
@@ -155,7 +159,7 @@ export function Title() {
                             onClick: openNameEditor,
                         },
                         html`
-                            ${h(Icon, { name: "pen", size: 20 })}
+                            ${h(Icon, { name: "pen", size: 12 })}
                         `,
                     )}
                 </span>
@@ -163,7 +167,9 @@ export function Title() {
                     ${t("title.elevation", String(Math.round(DROPZONE_ELEVATION.value)))}
                 </span>
             </span>
-            <span class="title-temp text-em-0-65 font-mono">
+            <span
+                class="title-temp text-em-0-65 mobile:text-rem-1-15 font-mono"
+            >
                 ${
                     temps
                         ? html`
