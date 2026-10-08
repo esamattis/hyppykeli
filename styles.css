@@ -64,6 +64,8 @@
         --color-surface-soft: #f5fbff;
         /* Table headers, icon tiles, and hovered controls. */
         --color-surface-hover: #e1f2fc;
+        /* Input, select, and textarea fills stand apart from panel surfaces. */
+        --color-input: #eaf3f8;
         /* Main copy, compass labels, and wind-barb symbols. */
         --color-text: #19394d;
         /* Secondary copy, timestamps, and disabled map controls. */
@@ -170,6 +172,33 @@
         --compass-width: 100px;
     }
 
+    /* Dark sky palette; derived fills and map controls inherit these roles. */
+    :root[data-theme="dark"] {
+        color-scheme: dark;
+        --color-sky: #397696;
+        --color-page: #101820;
+        --color-surface: #182630;
+        --color-surface-soft: #1c2d39;
+        --color-surface-hover: #263e4e;
+        --color-input: #233744;
+        --color-text: #e0edf5;
+        --color-muted: #a5bdcc;
+        --color-primary: #83cef3;
+        --color-primary-hover: #b6e5ff;
+        --color-on-primary: #101820;
+        --color-border: #35505f;
+        --color-success: #74c8b4;
+        --color-warning: #e4b66a;
+        --color-danger: #e6818d;
+        --color-on-danger: #101820;
+        --color-wind-high: #614631;
+        --color-map-drift: #f29668;
+        --color-cloud-overcast: #627c8e;
+        --color-backdrop: rgb(0 0 0 / 65%);
+        --color-shadow-panel: rgb(0 0 0 / 18%);
+        --color-shadow-floating: rgb(0 0 0 / 40%);
+    }
+
     * {
         box-sizing: border-box;
     }
@@ -247,7 +276,7 @@
         max-width: 100%;
         padding: var(--spacing-2) var(--spacing-2-5);
         color: var(--color-text);
-        background: var(--color-surface);
+        background: var(--color-input);
         border: 1px solid var(--color-border);
         border-radius: var(--radius-sm);
     }

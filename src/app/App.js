@@ -33,6 +33,7 @@ import {
 } from "#app/weather/state.js";
 import { Info } from "#app/app/Info.js";
 import { FloatingMenuButton, SideMenu } from "#app/app/SideMenu.js";
+import { ThemeToggle } from "#app/app/ThemeToggle.js";
 import { Title } from "#app/app/Title.js";
 import { h, html } from "htm/preact";
 import { useRef, useState } from "preact/hooks";
@@ -210,8 +211,16 @@ export function App() {
             height: 30px;
             margin-left: 1ch;
         }
-        #title {
+        .page-header {
             grid-area: title;
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-3);
+            min-width: 0;
+        }
+        .page-header #title {
+            flex: 1;
+            min-width: 0;
         }
         #info {
             grid-area: info;
@@ -246,7 +255,10 @@ export function App() {
                     : null
             }
 
-            <${Title} />
+            <header class="page-header">
+                <${Title} />
+                <${ThemeToggle} />
+            </header>
 
             <div class="clouds p-panel" id="clouds">
                 <${CloudSummary} />

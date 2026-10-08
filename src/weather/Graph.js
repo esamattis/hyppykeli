@@ -1,5 +1,6 @@
 // @ts-check
 import { formatClock, formatDate, humanDayText } from "#app/shared/dates.js";
+import { RESOLVED_THEME } from "#app/app/theme.js";
 import { dateHeadingStyles, freshnessStyles, getTheme } from "#app/styles.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
@@ -74,9 +75,27 @@ function updateCharts(obs, fore) {
     const yMax = Math.ceil(maxWind / 2) * 2;
     for (const chart of [obs, fore]) {
         if (chart) {
+            chart.options.color = theme.muted;
+            chart.options.borderColor = theme.border;
+            chart.options.plugins = {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: theme.text,
+                    titleColor: theme.surface,
+                    bodyColor: theme.surface,
+                    footerColor: theme.surface,
+                    multiKeyBackground: theme.surface,
+                },
+            };
             chart.options.scales = {
                 x: {
-                    ticks: { minRotation: 0, maxRotation: 0 },
+                    ticks: {
+                        minRotation: 0,
+                        maxRotation: 0,
+                        color: theme.muted,
+                    },
+                    grid: { color: theme.border },
+                    border: { color: theme.border },
                     // Reserve one row even when a provider has no time labels.
                     afterFit: (scale) => {
                         scale.height = theme.fontSize * 2.5;
@@ -85,7 +104,9 @@ function updateCharts(obs, fore) {
                 y: {
                     min: 0,
                     max: yMax,
-                    ticks: { stepSize: 2 },
+                    ticks: { stepSize: 2, color: theme.muted },
+                    grid: { color: theme.border },
+                    border: { color: theme.border },
                 },
             };
         }
@@ -284,6 +305,8 @@ export function Graph(props) {
         }
 
         const unsubsribe = effect(() => {
+            // Canvas colors need an explicit update when appearance changes.
+            RESOLVED_THEME.value;
             updateCharts(obsChart, foreChart);
         });
 

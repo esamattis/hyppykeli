@@ -4,6 +4,19 @@ import { h, html } from "htm/preact";
 
 // All UI icon artwork lives here. Charts and the compass are data visualizations.
 const artwork = {
+    monitor: html`
+        <rect x="3" y="3" width="18" height="14" rx="2" />
+        <path d="M12 17v4M8 21h8" />
+    `,
+    sun: html`
+        <circle cx="12" cy="12" r="4" />
+        <path
+            d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"
+        />
+    `,
+    moon: html`
+        <path d="M20.5 13a9 9 0 0 1-9.5-9.5A9 9 0 1 0 20.5 13Z" />
+    `,
     plane: html`
         <path
             d="M12 3c-1 0-1.5 1-1.5 2v5L3 15v2l7.5-2v4L8 21v1l4-1 4 1v-1l-2.5-2v-4l7.5 2v-2L13.5 10V5c0-1-.5-2-1.5-2Z"

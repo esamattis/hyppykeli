@@ -1,4 +1,5 @@
 // @ts-check
+import { RESOLVED_THEME } from "#app/app/theme.js";
 import { isMapRunCleared, writeMapQuery } from "#app/map/mapQuery.js";
 import { CheckboxField } from "#app/shared/FormFields.js";
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
@@ -120,6 +121,7 @@ function windReading(wind) {
 }
 
 export function DropzoneMap() {
+    const resolvedTheme = RESOLVED_THEME.value;
     const mapLayerScope = useScope(css`
         :scope.direction-setting
             .leaflet-overlay-pane
@@ -583,13 +585,20 @@ export function DropzoneMap() {
         });
 
         const theme = getTheme();
-        circleMarker([lat, lon], {
+        const dropzoneMarker = circleMarker([lat, lon], {
             radius: 8,
             color: theme.primary,
             fillColor: theme.surface,
             fillOpacity: 1,
             weight: 3,
         }).addTo(leafletMap);
+        const unsubscribeTheme = RESOLVED_THEME.subscribe(() => {
+            const theme = getTheme();
+            dropzoneMarker.setStyle({
+                color: theme.primary,
+                fillColor: theme.surface,
+            });
+        });
         const saveView = () => {
             const current = leafletMap.getCenter();
             savedMapViewRef.current = JSON.stringify([
@@ -625,6 +634,7 @@ export function DropzoneMap() {
         });
         observer.observe(mapRef.current);
         return () => {
+            unsubscribeTheme();
             leafletMap.off("zoomstart", pauseMapAnimations);
             leafletMap.off("zoomend", releaseMapAnimations);
             releaseMapAnimations();
@@ -756,6 +766,7 @@ export function DropzoneMap() {
         stationCoordinates,
         stationName,
         stationLabel,
+        resolvedTheme,
     ]);
 
     useEffect(() => {
@@ -1570,6 +1581,7 @@ export function DropzoneMap() {
         updateLine();
         leafletInstance.on("moveend zoomend resize", updateLine);
         const theme = getTheme();
+        line.setStyle({ color: theme.mapDirection });
         jumperStarts.forEach((start, index) => {
             const isEndpoint = index === 0 || index === jumperCount - 1;
             const color =
@@ -1599,6 +1611,7 @@ export function DropzoneMap() {
     }, [
         leafletInstance,
         runLayers,
+        resolvedTheme,
         jumpRunStart,
         jumpRunSettings,
         jumperCount,
@@ -1649,8 +1662,12 @@ export function DropzoneMap() {
                 });
             freefall[index] = freefallLine;
             canopy[index] = canopyLine;
-            freefallLine.setLatLngs(positions);
-            canopyLine.setLatLngs(canopyPositions);
+            freefallLine
+                .setStyle({ color: theme.mapDrift })
+                .setLatLngs(positions);
+            canopyLine
+                .setStyle({ color: theme.mapDrift })
+                .setLatLngs(canopyPositions);
             if (positions.length) freefallLine.addTo(group);
             else group.removeLayer(freefallLine);
             if (canopyPositions.length) canopyLine.addTo(group);
@@ -1664,6 +1681,7 @@ export function DropzoneMap() {
     }, [
         leafletInstance,
         driftLayers,
+        resolvedTheme,
         jumpers,
         data,
         upperWindOverride,

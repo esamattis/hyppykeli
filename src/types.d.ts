@@ -665,8 +665,13 @@ interface LandingDropzone {
     description: string | (() => string);
 }
 
+type ThemePreference = "system" | "light" | "dark";
+
 interface IconProps {
     name:
+        | "monitor"
+        | "sun"
+        | "moon"
         | "plane"
         | "plus"
         | "minus"

@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <script src="/src/app/theme-init.js"></script>
         <link rel="stylesheet" href="/styles.css" />
         <link rel="stylesheet" href="/src/map/leaflet.css" />
         <link rel="icon" href="/assets/icon.png" />
@@ -31,6 +32,7 @@
             }
         </script>
         <script type="module">
+            import { ThemeToggle } from "#app/app/ThemeToggle.js";
             import { startLandingPage } from "#app/app/start.js";
             import { LandingPage } from "#app/landing/LandingPage.js";
             import { redirectToDz } from "#app/landing/redirect.js";
@@ -38,6 +40,7 @@
             redirectToDz();
             render(h(LandingPage), document.getElementById("landing-page"));
             startLandingPage();
+            render(h(ThemeToggle), document.getElementById("theme-toggle"));
         </script>
     </head>
     <body>
@@ -54,6 +57,12 @@
                             border: 1px solid var(--color-border);
                             border-radius: var(--radius-panel);
                             box-shadow: var(--shadow-panel);
+                        }
+                        .landing-header {
+                            display: flex;
+                            align-items: center;
+                            justify-content: space-between;
+                            gap: var(--spacing-3);
                         }
                         p {
                             line-height: 1.5;
@@ -74,7 +83,10 @@
                     }
                 }
             </style>
-            <h1>Hyppykeli</h1>
+            <div class="landing-header mb-4">
+                <h1 class="m-0">Hyppykeli</h1>
+                <div id="theme-toggle"></div>
+            </div>
 
             <section class="language-copy" data-language="en" lang="en">
                 <!-- prettier-ignore -->

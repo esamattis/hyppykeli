@@ -2,6 +2,13 @@
 import { effect, signal } from "@preact/signals";
 
 export const english = {
+    "theme.system": "System",
+    "theme.light": "Light",
+    "theme.dark": "Dark",
+    "theme.toggle": (
+        /** @type {string} */ current,
+        /** @type {string} */ next,
+    ) => `Appearance: ${current}. Switch to ${next}.`,
     "language.label": "Language",
     "language.english": "English",
     "language.finnish": "Finnish",
@@ -603,6 +610,11 @@ export const english = {
 
 /** @satisfies {TranslationCatalog<typeof english>} */
 const finnish = {
+    "theme.system": "Järjestelmä",
+    "theme.light": "Vaalea",
+    "theme.dark": "Tumma",
+    "theme.toggle": (current, next) =>
+        `Ulkoasu: ${current}. Vaihda tilaan ${next}.`,
     "language.label": "Kieli",
     "language.english": "Englanti",
     "language.finnish": "Suomi",

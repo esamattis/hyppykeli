@@ -1,4 +1,5 @@
 // @ts-check
+import { startTheme } from "#app/app/theme.js";
 import { t } from "#app/translations.js";
 import { updateWeatherData, weatherSettingsKey } from "#app/weather/refresh.js";
 import { HOVERED_OBSERVATION, NAME, addError } from "#app/weather/state.js";
@@ -9,6 +10,7 @@ import { startTooltips } from "#app/shared/tooltipEvents.js";
 import { ANIMATIONS_RUNNING, holdAnimations } from "#app/app/animationState.js";
 
 export function startLandingPage() {
+    startTheme();
     startTooltips();
 }
 
@@ -17,6 +19,7 @@ let started = false;
 export function startApp() {
     if (started) return;
     started = true;
+    startTheme();
     effect(() => {
         document.documentElement.style.setProperty(
             "--animation-play-state",

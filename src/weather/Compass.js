@@ -269,8 +269,8 @@ export function Compass({ floating = false, id, showControls = true } = {}) {
                 xmlns="http://www.w3.org/2000/svg">
 
               <!-- Circle for compass outline -->
-              <circle class="compass-outer-ring" cx="200" cy="200" r=${circle} stroke=${LIMIT_COLOR} stroke-width="2" fill="none" />
-              <circle cx="200" cy="200" r=${studentCircle} stroke="var(--color-warning)" stroke-width="2" fill="none" />
+              <circle class="compass-outer-ring" cx="200" cy="200" r=${circle} stroke=${LIMIT_COLOR} stroke-width="4" fill="none" />
+              <circle cx="200" cy="200" r=${studentCircle} stroke="var(--color-warning)" stroke-width="4" fill="none" />
 
               <!-- Directions Text -->
               <text x="200" y="40" class="font-bold font-monospace text-px-40" text-anchor="middle" fill="var(--color-text)">N</text>
