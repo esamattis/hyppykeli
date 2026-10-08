@@ -844,7 +844,7 @@ interface DataSourceProps {
 }
 
 interface FmiRequestOptions {
-    retryErrors?: boolean;
+    forceFetch?: boolean;
     signal?: AbortSignal;
     cacheOnly?: boolean;
     onCacheStatus?: (stale: boolean) => void;
@@ -873,7 +873,7 @@ interface ResponseCachePolicy<T> {
 }
 
 interface CachedFetchOptions<T> {
-    retryErrors?: boolean;
+    forceFetch?: boolean;
     onLoading?: (delta: number) => void;
     signal?: AbortSignal;
     format: "json" | "text";
@@ -901,7 +901,7 @@ interface CachedResponseEntry<T> {
 }
 
 interface FetchJSONOptions<T> {
-    retryErrors?: boolean;
+    forceFetch?: boolean;
     signal?: AbortSignal;
     headers?: Record<string, string>;
     cache: ResponseCachePolicy<T>;

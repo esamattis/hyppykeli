@@ -113,7 +113,7 @@ function isWindForecast(data) {
  * @param {boolean} cacheOnly
  * @param {((stale: boolean) => void) | undefined} onCacheStatus
  * @param {AbortSignal | undefined} signal
- * @param {boolean} retryErrors
+ * @param {boolean} forceFetch
  * @returns {Promise<OpenMeteoWeatherData | null>}
  */
 async function fetchDataWithCoordinates(
@@ -121,7 +121,7 @@ async function fetchDataWithCoordinates(
     cacheOnly,
     onCacheStatus,
     signal,
-    retryErrors = false,
+    forceFetch = false,
 ) {
     const [latitudeText = "", longitudeText = ""] = coordinates.split(",");
     const latitude = Number(latitudeText);
@@ -151,7 +151,7 @@ async function fetchDataWithCoordinates(
             format: "json",
             cacheOnly,
             signal,
-            retryErrors,
+            forceFetch,
             validate: isWindForecast,
             cache: openMeteoCache(latitude, longitude),
         };
@@ -172,21 +172,21 @@ async function fetchDataWithCoordinates(
  * @param {boolean} [cacheOnly]
  * @param {(stale: boolean) => void} [onCacheStatus]
  * @param {AbortSignal} [signal]
- * @param {boolean} [retryErrors]
+ * @param {boolean} [forceFetch]
  */
 export async function fetchHighWinds(
     coordinates,
     cacheOnly = false,
     onCacheStatus,
     signal,
-    retryErrors = false,
+    forceFetch = false,
 ) {
     return fetchDataWithCoordinates(
         coordinates,
         cacheOnly,
         onCacheStatus,
         signal,
-        retryErrors,
+        forceFetch,
     );
 }
 

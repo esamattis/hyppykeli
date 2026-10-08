@@ -9,7 +9,13 @@ import {
 } from "#app/weather/altitudes.js";
 import { t } from "#app/translations.js";
 import { forecastTime } from "#app/weather/providers/openMeteo.js";
-import { OBSERVATIONS, OM_DATA } from "#app/weather/state.js";
+import {
+    OBSERVATIONS,
+    METAR_OBSERVATION,
+    OPEN_METEO_CURRENT,
+    OM_DATA,
+} from "#app/weather/state.js";
+import { hasValidAverageWindData } from "#app/weather/calculations.js";
 
 import { WIND_LEVELS } from "#app/weather/windLevels.js";
 
@@ -24,17 +30,33 @@ export function getMapWindData(now = Date.now(), useManual = true) {
             return start <= now && now < start + 60 * 60 * 1000;
         }) ?? -1;
     const time = index >= 0 ? data?.hourly.time[index] : undefined;
-    const ground = OBSERVATIONS.value
+    /** @param {WeatherData | undefined} weather */
+    const usableGround = (weather) =>
+        Boolean(
+            weather &&
+            Number.isFinite(weather.time.getTime()) &&
+            // The map clock ticks once per minute; new observations may be newer.
+            now - weather.time.getTime() >= -60_000 &&
+            now - weather.time.getTime() <= MAX_GROUND_WIND_AGE_MS &&
+            (hasValidAverageWindData(weather) || weather.speed === 0),
+        );
+    const observation = OBSERVATIONS.value
         .filter(
             (obs) =>
                 obs.source === "fmi" ||
                 obs.source === "roads" ||
                 obs.source === "mock",
         )
+        .filter(usableGround)
         .reduce(
             (latest, obs) => (!latest || obs.time > latest.time ? obs : latest),
             /** @type {WeatherData | undefined} */ (undefined),
         );
+    const ground = [
+        observation,
+        METAR_OBSERVATION.value,
+        OPEN_METEO_CURRENT.value,
+    ].find(usableGround);
     const overrides = useManual
         ? parseUpperWinds(QUERY_PARAMS.value.MANUAL_upper_winds)
         : undefined;
@@ -125,17 +147,14 @@ export function getMapWindData(now = Date.now(), useManual = true) {
         },
     ];
 
-    const groundAge = ground ? now - ground.time.getTime() : Infinity;
-    // Observations can arrive after the map's most recent minute tick.
-    const freshGround = groundAge <= MAX_GROUND_WIND_AGE_MS;
     const canopyWinds = hasHeights
         ? [
               ...profile,
               {
                   height: 0,
                   label: t("map.ground"),
-                  speed: freshGround ? (ground?.speed ?? null) : null,
-                  direction: freshGround ? (ground?.direction ?? null) : null,
+                  speed: ground?.speed ?? null,
+                  direction: ground?.direction ?? null,
               },
           ]
         : [];

@@ -1826,7 +1826,7 @@ export function DropzoneMap() {
                                 ${t("map.groundObservationHelp")}
                                 <br />
                                 ${t("map.ground")}:
-                                ${ground?.source === "roads" ? "Fintraffic" : "FMI"}${ground ? `, ${t("time.clock", formatClock(ground.time))}` : ` — ${t("map.sourceNoObservation")}`}${STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
+                                ${weatherSourceLabel(ground?.source) ?? "—"}${ground ? `, ${t("time.clock", formatClock(ground.time))}` : ` — ${t("map.sourceNoObservation")}`}${ground && (ground.source === "fmi" || ground.source === "roads") && STATION_NAME.value ? ` (${STATION_NAME.value})` : ""}.
                             </p>
 
                             <h3>${t("map.usingHelpTitle")}</h3>

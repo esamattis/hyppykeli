@@ -28,7 +28,7 @@ export async function fmiRequest(storedQuery, params, options) {
             onLoading: options.onLoading,
             signal: options.signal,
             cacheOnly: options.cacheOnly,
-            retryErrors: options.retryErrors,
+            forceFetch: options.forceFetch,
             validate: (text) => {
                 const doc = new DOMParser().parseFromString(
                     text,

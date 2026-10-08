@@ -394,13 +394,13 @@ test("forced retries bypass failure backoff and preserve its count until success
             }),
         );
     }, prefix);
-    const fetch = (retryErrors = false) =>
+    const fetch = (forceFetch = false) =>
         page.evaluate(
-            ({ policy, retryErrors }) =>
+            ({ policy, forceFetch }) =>
                 window
-                    .cacheFetch(policy, { retryErrors })
+                    .cacheFetch(policy, { forceFetch })
                     .catch(() => undefined),
-            { policy: { ...forecasts, maxFetchAgeMs: 0 }, retryErrors },
+            { policy: { ...forecasts, maxFetchAgeMs: 0 }, forceFetch },
         );
     await fetch();
     expect(requests).toBe(0);
@@ -420,7 +420,36 @@ test("forced retries bypass failure backoff and preserve its count until success
         fromCache: false,
         data: { value: 2 },
     });
-    // Forcing error retries must not bypass the interval for a successful entry.
+    // Normal polling reuses a successful entry; explicit retries fetch again.
+    await fetch();
+    expect(requests).toBe(2);
     await fetch(true);
+    expect(requests).toBe(3);
+});
+
+test("forced refresh bypasses a fresh cache and cache-only hydration stays offline", async ({
+    page,
+}) => {
+    let requests = 0;
+    await page.route("**/cache-api", (route) =>
+        route.fulfill({ json: { value: ++requests } }),
+    );
+    await openCacheHarness(page);
+    const fetch = (extra = {}) =>
+        page.evaluate(({ policy, extra }) => window.cacheFetch(policy, extra), {
+            policy: forecasts,
+            extra,
+        });
+    await fetch();
+    expect((await fetch()).fromCache).toBe(true);
+    expect((await fetch({ forceFetch: true, cacheOnly: true })).fromCache).toBe(
+        true,
+    );
+    expect(requests).toBe(1);
+    expect(await fetch({ forceFetch: true })).toMatchObject({
+        fromCache: false,
+        data: { value: 2 },
+    });
+    expect((await fetch()).data.value).toBe(2);
     expect(requests).toBe(2);
 });

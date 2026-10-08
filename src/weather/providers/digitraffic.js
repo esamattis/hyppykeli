@@ -10,13 +10,13 @@ import { fetchJSON } from "#app/shared/fetchJSON.js";
  * @param {string} roadsid
  * @param {boolean} [cacheOnly]
  * @param {AbortSignal} [signal]
- * @param {boolean} [retryErrors]
+ * @param {boolean} [forceFetch]
  */
 export async function fetchRoadStationInfo(
     roadsid,
     cacheOnly = false,
     signal,
-    retryErrors = false,
+    forceFetch = false,
 ) {
     /** @type {RoadStationInfoDetailed | undefined} */
     const data = await fetchJSON(
@@ -25,7 +25,7 @@ export async function fetchRoadStationInfo(
             headers: { "Digitraffic-User": "hyppykeli.fi" },
             cacheOnly,
             signal,
-            retryErrors,
+            forceFetch,
             validate: (data) =>
                 Array.isArray(data?.geometry?.coordinates) &&
                 typeof data?.properties?.names?.fi === "string",
@@ -46,7 +46,7 @@ export async function fetchRoadStationInfo(
  * @param {(observations: WeatherData[]) => void} onCurrent
  * @param {boolean} [cacheOnly]
  * @param {AbortSignal} [signal]
- * @param {boolean} [retryErrors]
+ * @param {boolean} [forceFetch]
  */
 export async function fetchRoadObservations(
     roadsid,
@@ -54,7 +54,7 @@ export async function fetchRoadObservations(
     onCurrent,
     cacheOnly = false,
     signal,
-    retryErrors = false,
+    forceFetch = false,
 ) {
     // load in background as not so important
     /** @type {Promise<RoadStationHistory|undefined>} */
@@ -71,7 +71,7 @@ export async function fetchRoadObservations(
             },
             cacheOnly,
             signal,
-            retryErrors,
+            forceFetch,
             validate: (data) => Array.isArray(data?.values),
             cache: roadHistoryCache(roadsid, obsStartTime),
         },
@@ -86,7 +86,7 @@ export async function fetchRoadObservations(
             },
             cacheOnly,
             signal,
-            retryErrors,
+            forceFetch,
             validate: (data) =>
                 Array.isArray(data?.sensorValues) &&
                 typeof data?.dataUpdatedTime === "string",

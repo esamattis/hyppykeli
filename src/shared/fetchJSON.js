@@ -14,7 +14,7 @@ export async function fetchJSON(url, options) {
             signal: options.signal,
             headers: options.headers,
             cacheOnly: options.cacheOnly,
-            retryErrors: options.retryErrors,
+            forceFetch: options.forceFetch,
             validate: options.validate,
             cache: options.cache,
         });

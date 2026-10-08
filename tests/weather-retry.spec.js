@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("error panel immediately retries all failed providers while preserving healthy cached forecasts", async ({
+test("error panel forces fresh requests from all providers, including healthy cached forecasts", async ({
     page,
     baseURL,
 }) => {
@@ -56,10 +56,7 @@ test("error panel immediately retries all failed providers while preserving heal
         .toBe(4);
     release();
     await expect(button).toBeEnabled();
-    const healthyForecast = "opendata.fmi.fi/wfs";
-    expect(requests.get(healthyForecast)).toBe(1);
-    for (const [key, count] of requests)
-        if (key !== healthyForecast) expect(count).toBe(2);
+    expect([...requests.values()]).toEqual([2, 2, 2, 2, 2, 2]);
     const before = [...requests];
     await page.evaluate(async () => {
         const { updateWeatherData } = await import("#app/weather/refresh.js");

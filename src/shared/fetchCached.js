@@ -157,14 +157,14 @@ export async function fetchCached(url, options) {
     if (pending.has(key)) {
         return /** @type {Promise<CachedFetchResult<T>>} */ (pending.get(key));
     }
-    if (entry?.hasData && !stale) {
+    if (!options.forceFetch && entry?.hasData && !stale) {
         return cachedResult();
     }
     if (
         attemptAge !== null &&
         attemptAge >= 0 &&
         attemptAge < attemptInterval &&
-        !(options.retryErrors && entry?.error)
+        !options.forceFetch
     ) {
         if (entry?.error) reportFailure(url, entry.error, entry.hasData);
         if (entry?.hasData) return cachedResult();
@@ -174,13 +174,15 @@ export async function fetchCached(url, options) {
     }
     console.info("[API cache] Fetching", {
         ...details,
-        reason: !entry?.hasData
-            ? "No cached response"
-            : entry.error
-              ? "Retrying a failed refresh"
-              : fetchExpired
-                ? "Fetch age exceeded"
-                : "Measurement old or missing",
+        reason: options.forceFetch
+            ? "Forced refresh"
+            : !entry?.hasData
+              ? "No cached response"
+              : entry.error
+                ? "Retrying a failed refresh"
+                : fetchExpired
+                  ? "Fetch age exceeded"
+                  : "Measurement old or missing",
     });
     const previousEntry = entry ? { ...entry } : undefined;
     const attempt = /** @type {CachedResponseEntry<T>} */ (

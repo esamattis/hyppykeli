@@ -335,11 +335,11 @@ export const english = {
     "map.forecastNatureHelp":
         "The upper-level winds are not measurements taken at the dropzone. They are hourly weather-model forecasts retrieved from Open-Meteo for the selected forecast coordinates.",
     "map.forecastLevelsHelp":
-        "Open-Meteo provides wind speed, direction, and geopotential height at pressure levels. The map subtracts the dropzone elevation and uses the nearest wind level for freefall and aircraft wind correction. Canopy drift linearly interpolates wind vectors between reported heights, including the ground observation, and holds the nearest endpoint wind outside the available range. This assumes a gradual transition through unmeasured heights. Levels below model terrain or at/below the dropzone are excluded. Manual winds retain their fixed sea-level heights of 110, 800, 1,500, 3,000, and 4,200 m before this adjustment.",
+        "Open-Meteo provides wind speed, direction, and geopotential height at pressure levels. The map subtracts the dropzone elevation and uses the nearest wind level for freefall and aircraft wind correction. Canopy drift linearly interpolates wind vectors between reported heights, including the ground wind, and holds the nearest endpoint wind outside the available range. This assumes a gradual transition through unmeasured heights. Levels below model terrain or at/below the dropzone are excluded. Manual winds retain their fixed sea-level heights of 110, 800, 1,500, 3,000, and 4,200 m before this adjustment.",
     "map.forecastImplicationHelp":
         "Actual winds at the dropzone can differ from the forecast, especially between the modelled levels or when conditions change. Treat the drift arrow and jump-run layout as planning estimates, verify the current conditions with observations and information from the pilot or dropzone, and do not use the map as the sole basis for operational decisions.",
     "map.groundObservationHelp":
-        "The Ground row is separate from the forecast and shows the latest available measurement from the configured observation station.",
+        "Ground wind uses a valid station observation from the last hour, then a recent METAR, and finally the current Open-Meteo surface forecast. The selected source is shown below the map.",
     "map.usingHelpTitle": "Using the map",
     "map.jumpRunHelpTitle": "Jump run",
     "map.selectWind": "Select an altitude to show its wind on the map.",
@@ -910,11 +910,11 @@ const finnish = {
     "map.forecastNatureHelp":
         "Korkeuksien tuulet eivät ole hyppypaikalla mitattuja arvoja. Ne ovat Open-Meteosta valitun ennustesijainnin koordinaateille haettuja säämallin tuntiennusteita.",
     "map.forecastLevelsHelp":
-        "Open-Meteo antaa tuulen nopeuden, suunnan ja geopotentiaalikorkeuden painepinnoilla. Kartta vähentää hyppypaikan korkeuden merenpinnasta ja käyttää korkeudeltaan lähintä tuulitasoa vapaapudotuksessa ja lentokoneen tuulikorjauksessa. Varjon varassa tapahtuva ajautuminen interpoloidaan lineaarisesti tuulivektoreista ilmoitettujen korkeuksien välillä, mukaan lukien maatuulihavainto. Korkeusvälin ulkopuolella käytetään lähintä päätepisteen tuulta. Tämä olettaa asteittaisen muutoksen mittaamattomilla korkeuksilla. Mallin maaston alapuoliset sekä hyppypaikan tasolla tai sen alapuolella olevat tasot jätetään pois. Käsin syötettyjen tuulten kiinteät korkeudet ennen korjausta ovat 110, 800, 1 500, 3 000 ja 4 200 m merenpinnasta.",
+        "Open-Meteo antaa tuulen nopeuden, suunnan ja geopotentiaalikorkeuden painepinnoilla. Kartta vähentää hyppypaikan korkeuden merenpinnasta ja käyttää korkeudeltaan lähintä tuulitasoa vapaapudotuksessa ja lentokoneen tuulikorjauksessa. Varjon varassa tapahtuva ajautuminen interpoloidaan lineaarisesti tuulivektoreista ilmoitettujen korkeuksien välillä, mukaan lukien maatuuli. Korkeusvälin ulkopuolella käytetään lähintä päätepisteen tuulta. Tämä olettaa asteittaisen muutoksen mittaamattomilla korkeuksilla. Mallin maaston alapuoliset sekä hyppypaikan tasolla tai sen alapuolella olevat tasot jätetään pois. Käsin syötettyjen tuulten kiinteät korkeudet ennen korjausta ovat 110, 800, 1 500, 3 000 ja 4 200 m merenpinnasta.",
     "map.forecastImplicationHelp":
         "Hyppypaikan todellinen tuuli voi poiketa ennusteesta etenkin mallinnettujen korkeuksien välillä tai sään muuttuessa. Käytä ajautumisnuolta ja hyppylinjaa suunnittelun arvioina, varmista vallitsevat olosuhteet havainnoista sekä lentäjältä tai hyppypaikalta äläkä tee operatiivisia päätöksiä pelkän kartan perusteella.",
     "map.groundObservationHelp":
-        "Maanpinta-rivi on ennusteesta erillinen ja näyttää viimeisimmän saatavilla olevan mittaustuloksen määritetyltä havaintoasemalta.",
+        "Maatuuli käyttää kelvollista havaintoaseman havaintoa viimeisen tunnin ajalta, sitten tuoretta METAR-sanomaa ja lopuksi Open-Meteon nykyhetken pintatuuliennustetta. Valittu lähde näkyy kartan alla.",
     "map.usingHelpTitle": "Kartan käyttäminen",
     "map.jumpRunHelpTitle": "Hyppylinja",
     "map.selectWind": "Valitse korkeus nähdäksesi sen tuulen kartalla.",

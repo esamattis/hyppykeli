@@ -97,27 +97,8 @@ export const LATEST_OBSERVATION = computed(() => {
         return OBSERVATIONS.value[0];
     }
 
-    const metar = METARS.value?.[0];
-    if (metar) {
-        /** @type {WeatherData} */
-        const metarWeather = {
-            source: "metar",
-            time: metar.time,
-            gust: isNullish(metar.wind.gust)
-                ? undefined
-                : knotsToMs(metar.wind.gust),
-            speed: isNullish(metar.wind.speed)
-                ? undefined
-                : knotsToMs(metar.wind.speed),
-            direction:
-                typeof metar.wind.direction === "number"
-                    ? metar.wind.direction
-                    : undefined,
-            temperature: metar.temperature,
-            dewPoint: metar.dewpoint,
-        };
-        if (hasValidAverageWindData(metarWeather)) return metarWeather;
-    }
+    const metar = METAR_OBSERVATION.value;
+    if (hasValidAverageWindData(metar)) return metar;
 
     const model = OPEN_METEO_CURRENT.value;
     return hasValidWindData(model) ? model : undefined;
@@ -186,6 +167,31 @@ export const METARS = computed(() => {
         return parseMetarMessages([text]);
     } catch {
         return LIVE_METARS.value;
+    }
+});
+
+/** @type {ReadonlySignal<WeatherData | undefined>} */
+export const METAR_OBSERVATION = computed(() => {
+    const metar = METARS.value?.[0];
+    if (metar) {
+        /** @type {WeatherData} */
+        const metarWeather = {
+            source: "metar",
+            time: metar.time,
+            gust: isNullish(metar.wind.gust)
+                ? undefined
+                : knotsToMs(metar.wind.gust),
+            speed: isNullish(metar.wind.speed)
+                ? undefined
+                : knotsToMs(metar.wind.speed),
+            direction:
+                typeof metar.wind.direction === "number"
+                    ? metar.wind.direction
+                    : undefined,
+            temperature: metar.temperature,
+            dewPoint: metar.dewpoint,
+        };
+        return metarWeather;
     }
 });
 
