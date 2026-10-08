@@ -2471,6 +2471,59 @@ test("jump exit retains forward speed and responds gradually to changing wind", 
     expect(result.zeroAir).toEqual({ height: 800, east: 0, north: 0 });
 });
 
+test("jump-run header explains why an initial automatic run cannot be drawn and clears after recovery", async ({
+    page,
+}) => {
+    const settings = encodeURIComponent(
+        JSON.stringify({
+            direction: 0,
+            speedKmh: 157,
+            separationSeconds: 5,
+            exitHeight: 4444,
+        }),
+    );
+    await page.goto(
+        `${manualPath}&lat=62.99765&lon=10.63477&elevation=517&map_run_settings=${settings}`,
+    );
+    const error = page.locator(".card-heading .jump-run-header-error");
+    await expect(error).toContainText("uloshyppykorkeuden tuulitieto puuttuu");
+    await setUniformFreefallWind(page);
+    await expect(error).toHaveCount(0);
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const data = structuredClone(OM_DATA.value);
+        for (const level of [
+            "400",
+            "500",
+            "600",
+            "700",
+            "850",
+            "925",
+            "1000",
+        ]) {
+            data.hourly[`windspeed_${level}hPa`] = [50];
+            data.hourly[`winddirection_${level}hPa`] = [90];
+        }
+        OM_DATA.value = data;
+        navigateQs({ map_run_start: undefined }, { replace: true });
+    });
+    await expect(error).toContainText(
+        "valittua suuntaa ei voi lentää tällä ilmanopeudella",
+    );
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(0);
+    await setUniformFreefallWind(page);
+    await page.evaluate(async () => {
+        const { OM_DATA } = await import("#app/weather/state.js");
+        const data = structuredClone(OM_DATA.value);
+        data.hourly.windspeed_600hPa = [11];
+        OM_DATA.value = data;
+    });
+    await expect(error).toHaveCount(0);
+    await expect(page.locator(".jump-run-jumper")).toHaveCount(6);
+});
+
 test("jump-run positions react to forecast changes and recover from missing or infeasible wind", async ({
     page,
 }) => {

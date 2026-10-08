@@ -376,6 +376,10 @@ export const english = {
         "Automatic placement unavailable: current wind data is missing, the track cannot be flown, or all openings cannot be placed upwind of their accumulated canopy drift.",
     "map.jumpRunUnavailable":
         "Jump-run positions unavailable: exit-altitude wind is missing or the selected track cannot be flown at this airspeed.",
+    "map.jumpRunWindMissing":
+        "Jump run unavailable: wind data at exit altitude is missing.",
+    "map.jumpRunTrackInfeasible":
+        "Jump run unavailable: the selected direction cannot be flown at this airspeed in the current wind.",
     "map.directionHint":
         "Drag with the mouse or a finger. Open the direction menu and press the direction button again to finish.",
     "toolbar.freefallValues": "Freefall values",
@@ -947,6 +951,10 @@ const finnish = {
         "Automaattinen sijoitus ei ole saatavilla: ajantasaisia tuulitietoja puuttuu, lentorataa ei voi lentää tai kaikkia avautumiskohtia ei voi sijoittaa kertyvän tuuliajautumisensa tuulenpuolelle.",
     "map.jumpRunUnavailable":
         "Hyppylinjan paikat eivät ole saatavilla: uloshyppykorkeuden tuulitieto puuttuu tai valittua lentorataa ei voi lentää tällä ilmanopeudella.",
+    "map.jumpRunWindMissing":
+        "Hyppylinjan paikat eivät ole saatavilla: uloshyppykorkeuden tuulitieto puuttuu.",
+    "map.jumpRunTrackInfeasible":
+        "Hyppylinjan paikat eivät ole saatavilla: valittua suuntaa ei voi lentää tällä ilmanopeudella nykyisessä tuulessa.",
     "map.directionHint":
         "Vedä hiirellä tai sormella. Avaa suuntavalikko ja paina suuntapainiketta uudelleen lopettaaksesi.",
     "toolbar.freefallValues": "Vapaapudotuksen arvot",

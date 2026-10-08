@@ -36,6 +36,7 @@ import { MapNavigationControls } from "#app/map/MapNavigationControls.js";
 import {
     driftCoordinates,
     getWindLevelsInRange,
+    getWindAtHeight,
     jumpRunCoordinates,
 } from "#app/map/freefall.js";
 import {
@@ -344,6 +345,10 @@ export function DropzoneMap() {
         .card-heading {
             flex-wrap: wrap;
             align-items: center;
+        }
+        .jump-run-header-error {
+            flex-basis: 100%;
+            color: var(--color-danger);
         }
     `);
     /** @type {import('preact').RefObject<HTMLDivElement>} */
@@ -1722,12 +1727,34 @@ export function DropzoneMap() {
             : null;
 
     const driftError = driftMissing ? t("map.driftUnavailable") : "";
+    const automaticPlacementMissing =
+        automaticJumpRun &&
+        !jumpRunStart &&
+        landingCoordinates &&
+        QUERY_PARAMS.value.map_run_start !== "null" &&
+        !automaticStart;
+    const unavailableSettings = automaticPlacementMissing
+        ? automaticSettings
+        : jumpRunSettings;
+    const unavailableCalculation = automaticPlacementMissing
+        ? calculateAutomaticRun(freefallWinds, automaticSettings)
+        : calculation;
     const jumpRunError =
-        placementUnavailable || (jumpRunStart && !jumpRunVelocity)
+        placementUnavailable ||
+        (jumpRunStart && !jumpRunVelocity) ||
+        automaticPlacementMissing
             ? t(
-                  placementUnavailable === "landing"
-                      ? "map.automaticRunUnavailable"
-                      : "map.jumpRunUnavailable",
+                  !getWindAtHeight(
+                      freefallWinds,
+                      unavailableSettings.exitHeight,
+                  )
+                      ? "map.jumpRunWindMissing"
+                      : !unavailableCalculation.velocity
+                        ? "map.jumpRunTrackInfeasible"
+                        : placementUnavailable === "landing" ||
+                            automaticPlacementMissing
+                          ? "map.automaticRunUnavailable"
+                          : "map.jumpRunUnavailable",
               )
             : "";
     const fullWindowErrors = [
@@ -1738,15 +1765,17 @@ export function DropzoneMap() {
     ].filter((error) => error !== "");
     const previousErrorsRef = useRef(/** @type {string[]} */ ([]));
     useEffect(() => {
-        const errors = [driftError, jumpRunError, shareError].filter(
-            (error) => error !== "",
-        );
+        const errors = [
+            driftError,
+            automaticPlacementMissing ? "" : jumpRunError,
+            shareError,
+        ].filter((error) => error !== "");
         // Log each error when it appears, without repeating it on every drag frame.
         for (const error of errors)
             if (!previousErrorsRef.current.includes(error))
                 console.error(error);
         previousErrorsRef.current = errors;
-    }, [driftError, jumpRunError, shareError]);
+    }, [driftError, jumpRunError, shareError, automaticPlacementMissing]);
 
     /** @param {boolean} checked */
     function changeAutomaticJumpRun(checked) {
@@ -1830,6 +1859,18 @@ export function DropzoneMap() {
                         ground ? weatherSourceLabel(ground.source) : null,
                     ],
                 })}
+                ${
+                    jumpRunError
+                        ? html`
+                              <p
+                                  class="jump-run-header-error text-rem-0-75 m-0"
+                                  role="status"
+                              >
+                                  ${jumpRunError}
+                              </p>
+                          `
+                        : null
+                }
             </div>
             <div class="map-layout">
                 <div
@@ -1957,7 +1998,9 @@ export function DropzoneMap() {
                     >
                         ${
                             !fullWindow &&
-                            (driftError || jumpRunError || shareError)
+                            (driftError ||
+                                (!automaticPlacementMissing && jumpRunError) ||
+                                shareError)
                                 ? html`
                                       <div
                                           class="map-errors text-rem-0-75"
@@ -1975,6 +2018,7 @@ export function DropzoneMap() {
                                                   : null
                                           }
                                           ${
+                                              !automaticPlacementMissing &&
                                               jumpRunError
                                                   ? html`
                                                         <p
