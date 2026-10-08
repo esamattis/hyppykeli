@@ -54,6 +54,23 @@ export function WindSummary() {
             align-self: center;
             flex-shrink: 0;
         }
+        @media (prefers-reduced-motion: no-preference) {
+            .wind-variation-warning svg {
+                animation: wind-summary-warning-pulse 1.4s ease-in-out infinite;
+                transform-origin: center;
+            }
+        }
+        @keyframes wind-summary-warning-pulse {
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.3);
+                opacity: 0.7;
+            }
+        }
         .latest-value .direction-value {
             width: auto;
         }
