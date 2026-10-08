@@ -78,6 +78,9 @@ export async function fetchCached(url, options) {
             entry &&
             (typeof entry.hasData !== "boolean" ||
                 !Number.isFinite(entry.lastAttemptAt) ||
+                (entry.failureCount !== undefined &&
+                    (!Number.isSafeInteger(entry.failureCount) ||
+                        entry.failureCount < 0)) ||
                 (entry.hasData &&
                     (!Number.isFinite(entry.fetchedAt) ||
                         !("data" in entry) ||
@@ -114,6 +117,15 @@ export async function fetchCached(url, options) {
         (measurementAge === null ||
             measurementAge < 0 ||
             measurementAge >= policy.measurementMaxAgeMs);
+    // Older cached failures did not store a count; treat them as one failure.
+    const failureCount = entry?.error ? (entry.failureCount ?? 1) : 0;
+    const attemptInterval = entry?.error
+        ? failureCount <= 5
+            ? 5_000
+            : failureCount <= 15
+              ? 10_000
+              : 60_000
+        : policy.minFetchIntervalMs;
     const stale = fetchExpired || measurementExpired || Boolean(entry?.error);
     const details = {
         ...policy,
@@ -125,10 +137,10 @@ export async function fetchCached(url, options) {
         fetchExpired,
         measurementExpired,
         previousError: entry?.error,
+        failureCount,
+        attemptIntervalMs: attemptInterval,
         retryInMs:
-            attemptAge === null
-                ? 0
-                : Math.max(0, policy.minFetchIntervalMs - attemptAge),
+            attemptAge === null ? 0 : Math.max(0, attemptInterval - attemptAge),
         measurementTime: undefined,
     };
     /** @returns {CachedFetchResult<T>} */
@@ -140,36 +152,20 @@ export async function fetchCached(url, options) {
     });
 
     if (options.cacheOnly) {
-        console.info("[API cache] No fetch: cache-only hydration", {
-            ...details,
-            hasData: entry?.hasData ?? false,
-            stale,
-        });
         return entry?.hasData ? cachedResult() : undefined;
     }
     if (pending.has(key)) {
-        console.info(
-            "[API cache] No new fetch: sharing an in-flight request",
-            details,
-        );
         return /** @type {Promise<CachedFetchResult<T>>} */ (pending.get(key));
     }
     if (entry?.hasData && !stale) {
-        console.info(
-            "[API cache] No fetch: cached data meets all freshness rules",
-            details,
-        );
         return cachedResult();
     }
     if (
         attemptAge !== null &&
         attemptAge >= 0 &&
-        attemptAge < policy.minFetchIntervalMs
+        attemptAge < attemptInterval &&
+        !(options.retryErrors && entry?.error)
     ) {
-        console.info(
-            "[API cache] No fetch: minimum attempt interval has not elapsed",
-            details,
-        );
         if (entry?.error) reportFailure(url, entry.error, entry.hasData);
         if (entry?.hasData) return cachedResult();
         throw new Error(
@@ -199,6 +195,7 @@ export async function fetchCached(url, options) {
     save(key, attempt);
     /** @type {Promise<CachedFetchResult<T>>} */
     const request = Promise.resolve().then(async () => {
+        options.onLoading?.(1);
         try {
             const response = await fetch(url, {
                 headers: options.headers,
@@ -252,12 +249,14 @@ export async function fetchCached(url, options) {
             if (options.signal?.aborted) throw error;
             attempt.error =
                 error instanceof Error ? error.message : String(error);
+            attempt.failureCount = failureCount + 1;
             save(key, attempt);
             reportFailure(url, attempt.error, attempt.hasData);
             console.warn("[API cache] Fetch failed", {
                 url,
                 key,
                 error: attempt.error,
+                failureCount: attempt.failureCount,
                 action: attempt.hasData
                     ? "Returning stale cached data"
                     : "No cached data available",
@@ -270,6 +269,7 @@ export async function fetchCached(url, options) {
                 error: attempt.error,
             };
         } finally {
+            options.onLoading?.(-1);
             if (pending.get(key) === request) pending.delete(key);
             options.signal?.removeEventListener("abort", cancel);
         }

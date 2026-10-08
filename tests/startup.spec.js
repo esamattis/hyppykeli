@@ -56,11 +56,63 @@ test("weather modules stay idle until startup and repeated startup polls only on
             }),
         )
         .toBe(true);
+    await page.evaluate(async () => {
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        await updateWeatherData();
+        const { FORECASTS, STALE_FORECASTS, LOADING, ERRORS } =
+            await import("#app/weather/state.js");
+        window.weatherChanges = [];
+        for (const state of [FORECASTS, STALE_FORECASTS, LOADING, ERRORS]) {
+            let initial = true;
+            state.subscribe(() => {
+                if (!initial) window.weatherChanges.push("changed");
+                initial = false;
+            });
+        }
+    });
+    await page.clock.runFor(5_000);
+    await page.evaluate(async () => {
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        await updateWeatherData();
+    });
+    expect(forecastRequests).toBe(1);
+    expect(await page.evaluate(() => window.weatherChanges)).toEqual([]);
     // Expire the forecast cache before the next scheduled poll.
     const expired = await page.evaluate(() => Date.now() + 10 * 60_000);
     await page.clock.setSystemTime(expired);
-    await page.clock.runFor(60_000);
+    await page.clock.runFor(5_000);
     await expect.poll(() => forecastRequests).toBe(2);
+    await page.evaluate(async () => {
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        await updateWeatherData();
+    });
+    // Focus, visibility, and page restoration all use the same cache rules.
+    for (const event of ["focus", "visibilitychange", "pageshow"]) {
+        const expired = await page.evaluate(() => Date.now() + 10 * 60_000);
+        await page.clock.setSystemTime(expired);
+        const previousRequests = forecastRequests;
+        await page.evaluate((event) => {
+            if (event === "visibilitychange") {
+                Object.defineProperty(document, "visibilityState", {
+                    configurable: true,
+                    value: "visible",
+                });
+                document.dispatchEvent(new Event(event));
+            } else if (event === "pageshow") {
+                window.dispatchEvent(
+                    new PageTransitionEvent(event, { persisted: true }),
+                );
+            } else {
+                window.dispatchEvent(new Event(event));
+            }
+        }, event);
+        await expect.poll(() => forecastRequests).toBe(previousRequests + 1);
+        await page.evaluate(async () => {
+            const { updateWeatherData } =
+                await import("#app/weather/refresh.js");
+            await updateWeatherData();
+        });
+    }
 });
 
 test("weather UI renders before the map module and waits for Leaflet styles", async ({
@@ -126,7 +178,10 @@ test("map stylesheet failures leave the weather usable and can be retried", asyn
     });
     await page.goto("/dz/?lat=62&lon=25");
     await expect(page.locator("#winds .latest-wind-cell")).toHaveCount(3);
-    await page.getByRole("button", { name: "Yritä uudelleen" }).click();
+    await page
+        .locator("#dropzone-map")
+        .getByRole("button", { name: "Yritä uudelleen" })
+        .click();
     await expect(page.locator(".leaflet-container")).toHaveCount(1);
     expect(stylesheetRequests).toBe(2);
 });

@@ -67,14 +67,19 @@ export function startApp() {
         }
     });
 
-    let pollingStarted = false;
+    window.addEventListener("focus", () => {
+        updateWeatherData();
+    });
+
     async function pollWeather() {
         try {
             await updateWeatherData();
         } finally {
-            setTimeout(pollWeather, 60_000);
+            setTimeout(pollWeather, 5_000);
         }
     }
+
+    setTimeout(pollWeather, 5_000);
 
     let initial = true;
 
@@ -99,10 +104,6 @@ export function startApp() {
     // Refresh weather when its query settings change; map edits only update the URL.
     computed(weatherSettingsKey).subscribe(() => {
         updateWeatherData().then(() => {
-            if (!pollingStarted) {
-                pollingStarted = true;
-                setTimeout(pollWeather, 60_000);
-            }
             if (!initial) {
                 return;
             }

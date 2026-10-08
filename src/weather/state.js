@@ -290,11 +290,34 @@ export const FORECAST_DATE = computed(() => {
     return date;
 });
 
-/**
- * @param {string} msg
- */
+/** @type {string[] | undefined} */
+let pendingErrors;
+
+// Publish the completed error report once, so cache checks do not clear and
+// restore the same errors (and interrupt map interactions) every polling tick.
+export function collectWeatherErrors() {
+    const errors = /** @type {string[]} */ ([]);
+    pendingErrors = errors;
+    return () => {
+        if (pendingErrors !== errors) return;
+        pendingErrors = undefined;
+        const previous = ERRORS.peek();
+        if (
+            previous.length !== errors.length ||
+            errors.some((error) => !previous.includes(error))
+        ) {
+            ERRORS.value = errors;
+        }
+    };
+}
+
+/** @param {string} msg */
 export function addError(msg) {
-    if (!ERRORS.value.includes(msg)) ERRORS.value = [...ERRORS.value, msg];
+    if (pendingErrors) {
+        if (!pendingErrors.includes(msg)) pendingErrors.push(msg);
+    } else if (!ERRORS.value.includes(msg)) {
+        ERRORS.value = [...ERRORS.value, msg];
+    }
 }
 
 /**

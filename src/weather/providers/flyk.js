@@ -8,12 +8,19 @@ import { fetchJSON } from "#app/shared/fetchJSON.js";
  * @param {string} icaocode - The ICAO code of the airport.
  * @param {boolean} [cacheOnly]
  * @param {AbortSignal} [signal]
+ * @param {boolean} [retryErrors]
  */
-export async function fetchFlykMetar(icaocode, cacheOnly = false, signal) {
+export async function fetchFlykMetar(
+    icaocode,
+    cacheOnly = false,
+    signal,
+    retryErrors = false,
+) {
     /** @type {FlykMetar | undefined} */
     const data = await fetchJSON("https://flyk.com/api/metars.geojson", {
         cacheOnly,
         signal,
+        retryErrors,
         validate: (data) => Array.isArray(data?.features),
         cache: CACHE_POLICIES.metar,
     });

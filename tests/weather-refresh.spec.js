@@ -185,3 +185,43 @@ test("refreshing the same station preserves coordinates; switching stations clea
     expect(result.sameStation).toEqual(["60.89839,26.94882"]);
     expect(result.switchedStation).toEqual(["60.89839,26.94882", null]);
 });
+
+test("overlapping refresh triggers share one pass without repeating cached updates", async ({
+    page,
+}) => {
+    let release;
+    const blocked = new Promise((resolve) => {
+        release = resolve;
+    });
+    let requests = 0;
+    await page.route("https://opendata.fmi.fi/**", async (route) => {
+        requests++;
+        await blocked;
+        await route.fulfill({
+            contentType: "application/xml",
+            path: "tests/fixtures/forecast.xml",
+        });
+    });
+    await openRefreshHarness(page);
+    await page.evaluate(async () => {
+        const { QUERY_PARAMS } = await import("#app/app/settings.js");
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        const { FORECASTS } = await import("#app/weather/state.js");
+        QUERY_PARAMS.value = { lat: "60", lon: "25" };
+        window.forecastUpdates = 0;
+        FORECASTS.subscribe(() => window.forecastUpdates++);
+        window.refresh = updateWeatherData();
+    });
+    await expect.poll(() => requests).toBe(1);
+    const shared = await page.evaluate(async () => {
+        const { updateWeatherData } = await import("#app/weather/refresh.js");
+        return [updateWeatherData(), updateWeatherData()].every(
+            (promise) => promise === window.refresh,
+        );
+    });
+    expect(shared).toBe(true);
+    release();
+    await page.evaluate(() => window.refresh);
+    expect(requests).toBe(1);
+    expect(await page.evaluate(() => window.forecastUpdates)).toBe(2);
+});

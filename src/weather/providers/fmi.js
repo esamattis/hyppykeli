@@ -21,13 +21,14 @@ export async function fmiRequest(storedQuery, params, options) {
         url.searchParams.set(k, v);
     }
 
-    options.onLoading(1);
     try {
         /** @type {CachedFetchResult<string> | undefined} */
         const result = await fetchCached(url.toString(), {
             format: "text",
+            onLoading: options.onLoading,
             signal: options.signal,
             cacheOnly: options.cacheOnly,
+            retryErrors: options.retryErrors,
             validate: (text) => {
                 const doc = new DOMParser().parseFromString(
                     text,
@@ -52,8 +53,6 @@ export async function fmiRequest(storedQuery, params, options) {
     } catch (error) {
         console.warn("FMI request failed", error);
         return "error";
-    } finally {
-        options.onLoading(-1);
     }
 }
 

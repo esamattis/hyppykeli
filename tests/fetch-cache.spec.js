@@ -217,6 +217,9 @@ for (const warm of [false, true]) {
                     fetchedAt: Date.now() - 20 * 60_000,
                     lastAttemptAt: Date.now() - 20 * 60_000,
                     measurementAt: null,
+                    ...(warm
+                        ? { error: "Previous failure", failureCount: 15 }
+                        : {}),
                 };
                 if (warm) localStorage.setItem(key, JSON.stringify(previous));
                 let failures = 0;
@@ -252,8 +255,10 @@ for (const warm of [false, true]) {
             },
             { policy: forecasts, prefix, warm },
         );
-        if (warm) expect(result.restored.data).toEqual({ value: 1 });
-        else expect(result.restored).toBeNull();
+        if (warm) {
+            expect(result.restored.data).toEqual({ value: 1 });
+            expect(result.restored.failureCount).toBe(15);
+        } else expect(result.restored).toBeNull();
         expect(result.cancelled).toBe("AbortError");
         expect(result.requests).toBe(2);
         expect(result.replacement.data).toEqual({ value: 2 });
@@ -262,3 +267,160 @@ for (const warm of [false, true]) {
         expect(result.failures).toBe(0);
     });
 }
+
+for (const warm of [false, true]) {
+    test(`consecutive failures use 5s, 10s, then 60s retries and reset on success (warm: ${warm})`, async ({
+        page,
+    }) => {
+        await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+        await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"));
+        let requests = 0;
+        let failed = !warm;
+        await page.route("**/cache-api", (route) => {
+            requests++;
+            return failed
+                ? route.fulfill({ status: 503 })
+                : route.fulfill({ json: { value: requests } });
+        });
+        await openCacheHarness(page);
+        const policy = { ...forecasts, maxFetchAgeMs: 0 };
+        const fetch = () =>
+            page.evaluate(
+                (policy) => window.cacheFetch(policy).catch(() => undefined),
+                policy,
+            );
+        if (warm) {
+            await fetch();
+            await fetch();
+            expect(requests).toBe(1);
+            await page.clock.runFor(policy.minFetchIntervalMs);
+            failed = true;
+        }
+        await fetch();
+        for (const interval of [
+            5_000, 5_000, 5_000, 5_000, 5_000, 10_000, 10_000, 10_000, 10_000,
+            10_000, 10_000, 10_000, 10_000, 10_000, 10_000, 60_000, 60_000,
+        ]) {
+            const before = requests;
+            // Every stage must survive reload, for both cached and cold failures.
+            await openCacheHarness(page);
+            const hydrated = await page.evaluate(
+                (policy) => window.cacheFetch(policy, { cacheOnly: true }),
+                policy,
+            );
+            if (warm)
+                expect(hydrated).toMatchObject({
+                    data: { value: 1 },
+                    stale: true,
+                });
+            await page.clock.runFor(interval - 1);
+            await fetch();
+            expect(requests).toBe(before);
+            await page.clock.runFor(1);
+            await fetch();
+            expect(requests).toBe(before + 1);
+        }
+        // An unrelated request key starts with its own failure count.
+        await page.evaluate(
+            (policy) =>
+                window
+                    .cacheFetch({ ...policy, key: "other" })
+                    .catch(() => undefined),
+            policy,
+        );
+        await page.clock.runFor(5_000);
+        const beforeOther = requests;
+        await page.evaluate(
+            (policy) =>
+                window
+                    .cacheFetch({ ...policy, key: "other" })
+                    .catch(() => undefined),
+            policy,
+        );
+        expect(requests).toBe(beforeOther + 1);
+        const beforeRecovery = requests;
+        await fetch();
+        expect(requests).toBe(beforeRecovery);
+        await page.clock.runFor(55_000);
+        failed = false;
+        expect(await fetch()).toMatchObject({ fromCache: false, stale: false });
+        expect(requests).toBe(beforeRecovery + 1);
+        expect(
+            await page.evaluate(
+                (prefix) =>
+                    JSON.parse(localStorage.getItem(prefix + "test"))
+                        .failureCount,
+                prefix,
+            ),
+        ).toBeUndefined();
+        // Success restores the normal interval, then the next failure starts at 5s.
+        failed = true;
+        await fetch();
+        expect(requests).toBe(beforeRecovery + 1);
+        await page.clock.runFor(policy.minFetchIntervalMs);
+        await fetch();
+        expect(requests).toBe(beforeRecovery + 2);
+        await page.clock.runFor(4_999);
+        await fetch();
+        expect(requests).toBe(beforeRecovery + 2);
+        await page.clock.runFor(1);
+        await fetch();
+        expect(requests).toBe(beforeRecovery + 3);
+    });
+}
+
+test("forced retries bypass failure backoff and preserve its count until success", async ({
+    page,
+}) => {
+    await page.clock.install({ time: new Date("2026-01-01T00:00:00Z") });
+    await page.clock.pauseAt(new Date("2026-01-01T00:00:01Z"));
+    let requests = 0;
+    let failed = true;
+    await page.route("**/cache-api", (route) => {
+        requests++;
+        return failed
+            ? route.fulfill({ status: 503 })
+            : route.fulfill({ json: { value: requests } });
+    });
+    await openCacheHarness(page);
+    await page.evaluate((prefix) => {
+        localStorage.setItem(
+            prefix + "test",
+            JSON.stringify({
+                hasData: false,
+                lastAttemptAt: Date.now(),
+                error: "Previous failure",
+                failureCount: 16,
+            }),
+        );
+    }, prefix);
+    const fetch = (retryErrors = false) =>
+        page.evaluate(
+            ({ policy, retryErrors }) =>
+                window
+                    .cacheFetch(policy, { retryErrors })
+                    .catch(() => undefined),
+            { policy: { ...forecasts, maxFetchAgeMs: 0 }, retryErrors },
+        );
+    await fetch();
+    expect(requests).toBe(0);
+    await fetch(true);
+    expect(requests).toBe(1);
+    expect(
+        await page.evaluate(
+            (prefix) =>
+                JSON.parse(localStorage.getItem(prefix + "test")).failureCount,
+            prefix,
+        ),
+    ).toBe(17);
+    await fetch();
+    expect(requests).toBe(1);
+    failed = false;
+    expect(await fetch(true)).toMatchObject({
+        fromCache: false,
+        data: { value: 2 },
+    });
+    // Forcing error retries must not bypass the interval for a successful entry.
+    await fetch(true);
+    expect(requests).toBe(2);
+});

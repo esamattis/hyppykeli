@@ -10,8 +10,14 @@ import { fetchJSON } from "#app/shared/fetchJSON.js";
  * @param {string} roadsid
  * @param {boolean} [cacheOnly]
  * @param {AbortSignal} [signal]
+ * @param {boolean} [retryErrors]
  */
-export async function fetchRoadStationInfo(roadsid, cacheOnly = false, signal) {
+export async function fetchRoadStationInfo(
+    roadsid,
+    cacheOnly = false,
+    signal,
+    retryErrors = false,
+) {
     /** @type {RoadStationInfoDetailed | undefined} */
     const data = await fetchJSON(
         `https://tie.digitraffic.fi/api/weather/v1/stations/${roadsid}`,
@@ -19,6 +25,7 @@ export async function fetchRoadStationInfo(roadsid, cacheOnly = false, signal) {
             headers: { "Digitraffic-User": "hyppykeli.fi" },
             cacheOnly,
             signal,
+            retryErrors,
             validate: (data) =>
                 Array.isArray(data?.geometry?.coordinates) &&
                 typeof data?.properties?.names?.fi === "string",
@@ -39,6 +46,7 @@ export async function fetchRoadStationInfo(roadsid, cacheOnly = false, signal) {
  * @param {(observations: WeatherData[]) => void} onCurrent
  * @param {boolean} [cacheOnly]
  * @param {AbortSignal} [signal]
+ * @param {boolean} [retryErrors]
  */
 export async function fetchRoadObservations(
     roadsid,
@@ -46,6 +54,7 @@ export async function fetchRoadObservations(
     onCurrent,
     cacheOnly = false,
     signal,
+    retryErrors = false,
 ) {
     // load in background as not so important
     /** @type {Promise<RoadStationHistory|undefined>} */
@@ -62,6 +71,7 @@ export async function fetchRoadObservations(
             },
             cacheOnly,
             signal,
+            retryErrors,
             validate: (data) => Array.isArray(data?.values),
             cache: roadHistoryCache(roadsid, obsStartTime),
         },
@@ -76,6 +86,7 @@ export async function fetchRoadObservations(
             },
             cacheOnly,
             signal,
+            retryErrors,
             validate: (data) =>
                 Array.isArray(data?.sensorValues) &&
                 typeof data?.dataUpdatedTime === "string",

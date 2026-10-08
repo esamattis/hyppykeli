@@ -37,10 +37,20 @@ import { RenderInjectedCSS } from "#app/app/RenderInjectedCSS.js";
 import { FloatingMenuButton, SideMenu } from "#app/app/SideMenu.js";
 import { Title } from "#app/app/Title.js";
 import { h, html } from "htm/preact";
-import { useRef } from "preact/hooks";
+import { useRef, useState } from "preact/hooks";
+import { updateWeatherData } from "#app/weather/refresh.js";
 import { Tooltips } from "#app/shared/Tooltips.js";
 
 export function App() {
+    const [retrying, setRetrying] = useState(false);
+    async function retryErrors() {
+        setRetrying(true);
+        try {
+            await updateWeatherData(true);
+        } finally {
+            setRetrying(false);
+        }
+    }
     const manualEditorRef = useRef(
         /** @type {ManualModeHandle | null} */ (null),
     );
@@ -173,6 +183,15 @@ export function App() {
             white-space: nowrap;
         }
 
+        .errors button {
+            font-size: inherit;
+            line-height: inherit;
+            color: inherit;
+            background: transparent;
+            border: 1px solid currentColor;
+            border-radius: var(--radius-sm);
+        }
+
         .errors p {
             display: inline;
             margin: 0;
@@ -213,6 +232,14 @@ export function App() {
                 ERRORS.value.length > 0
                     ? html`
                           <div id="errors" class="errors">
+                              <button
+                                  type="button"
+                                  class="px-1 py-0.5 me-2"
+                                  disabled=${retrying}
+                                  onClick=${retryErrors}
+                              >
+                                  ${t("common.retry")}
+                              </button>
                               ${ERRORS.value.map((error) => {
                                   return html`
                                       <p role="alert">${error}</p>

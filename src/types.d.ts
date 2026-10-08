@@ -825,6 +825,7 @@ interface DataSourceProps {
 }
 
 interface FmiRequestOptions {
+    retryErrors?: boolean;
     signal?: AbortSignal;
     cacheOnly?: boolean;
     onCacheStatus?: (stale: boolean) => void;
@@ -854,6 +855,8 @@ interface ResponseCachePolicy<T> {
 }
 
 interface CachedFetchOptions<T> {
+    retryErrors?: boolean;
+    onLoading?: (delta: number) => void;
     signal?: AbortSignal;
     format: "json" | "text";
     headers?: Record<string, string>;
@@ -876,9 +879,11 @@ interface CachedResponseEntry<T> {
     lastAttemptAt: number;
     measurementAt: number | null;
     error?: string;
+    failureCount?: number;
 }
 
 interface FetchJSONOptions<T> {
+    retryErrors?: boolean;
     signal?: AbortSignal;
     headers?: Record<string, string>;
     cache: ResponseCachePolicy<T>;
@@ -889,6 +894,5 @@ interface FetchJSONOptions<T> {
 interface WeatherRefresh {
     key: string;
     controller: AbortController;
-    again: boolean;
     promise: Promise<void>;
 }

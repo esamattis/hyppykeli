@@ -2,16 +2,22 @@
 
 const MINUTE = 60_000;
 
-// Freshness limits and retry intervals for every API response live here.
-// Either age limit can trigger a refresh; minFetchIntervalMs limits all attempts.
+// Freshness limits for every API response live here. Either age limit can
+// trigger a refresh; failed attempts use the shared automatic retry schedule.
 export const CACHE_POLICIES = {
     groundObservations: {
         measurementMaxAgeMs: MINUTE,
         maxFetchAgeMs: MINUTE,
         minFetchIntervalMs: MINUTE,
     },
-    metar: { maxFetchAgeMs: MINUTE, minFetchIntervalMs: MINUTE },
-    fmiForecast: { maxFetchAgeMs: 10 * MINUTE, minFetchIntervalMs: MINUTE },
+    metar: {
+        maxFetchAgeMs: MINUTE,
+        minFetchIntervalMs: MINUTE,
+    },
+    fmiForecast: {
+        maxFetchAgeMs: 10 * MINUTE,
+        minFetchIntervalMs: MINUTE,
+    },
     openMeteoForecast: {
         maxFetchAgeMs: 30 * MINUTE,
         minFetchIntervalMs: MINUTE,
