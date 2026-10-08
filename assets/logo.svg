@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 128 128" role="img" aria-labelledby="logo-title">
+    <title id="logo-title">Hyppykeli parachute</title>
+    <!-- Palette copied from the shared dark theme by images.sh. -->
+    <style>
+        :root {
+            --color-page: #101820;
+            --color-muted: #a5bdcc;
+            --color-primary: #83cef3;
+            --color-text: #e0edf5;
+        }
+    </style>
+    <rect width="128" height="128" rx="28" fill="var(--color-page)" />
+    <g fill="none" stroke="var(--color-muted)" stroke-width="3" stroke-linecap="round">
+        <path d="M25 54 51 88 M44 54 59 83 M84 54 69 83 M103 54 77 88" />
+    </g>
+    <path d="M24 54C24 12 104 12 104 54Q94 44 84 54Q74 44 64 54Q54 44 44 54Q34 44 24 54Z" fill="var(--color-primary)" />
+    <path d="M44 49C44 34 51 23 58 23M84 49C84 34 77 23 70 23" fill="none" stroke="var(--color-page)" stroke-width="2.5" stroke-linecap="round" />
+    <circle cx="64" cy="85" r="6" fill="var(--color-text)" />
+    <g fill="none" stroke="var(--color-text)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M50 86 56 97H72L78 86M64 97V104M58 112V101M70 112V101" />
+    </g>
+</svg>
