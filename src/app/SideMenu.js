@@ -45,6 +45,8 @@ export function SideMenu({ manualEditorRef }) {
     const scope = useScope(css`
         :scope {
             position: fixed;
+            display: flex;
+            flex-direction: column;
             z-index: 200;
             top: 0;
             bottom: 0;
@@ -53,7 +55,7 @@ export function SideMenu({ manualEditorRef }) {
             background: var(--color-surface);
             border-left: 1px solid var(--color-border);
             box-shadow: var(--shadow-floating);
-            overflow-y: auto;
+            overflow: hidden;
             overscroll-behavior: contain;
             transform: translateX(100%);
             will-change: transform;
@@ -69,6 +71,7 @@ export function SideMenu({ manualEditorRef }) {
         }
 
         .menu-header {
+            flex-shrink: 0;
             position: sticky;
             top: 0;
             z-index: 1;
@@ -102,8 +105,11 @@ export function SideMenu({ manualEditorRef }) {
         }
 
         .menu-content {
-            padding: var(--spacing-4) var(--spacing-6)
-                calc(var(--spacing-24) + env(safe-area-inset-bottom));
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: var(--spacing-4) var(--spacing-6);
         }
 
         a {
@@ -195,11 +201,27 @@ export function SideMenu({ manualEditorRef }) {
             gap: var(--spacing-2-5);
         }
 
-        .menu-footer > a {
-            grid-column: 1 / -1;
-            justify-self: start;
-            padding: var(--spacing-1) 0;
-            margin-bottom: var(--spacing-1);
+        .menu-bottom {
+            flex-shrink: 0;
+            padding: var(--spacing-5) var(--spacing-6)
+                calc(var(--spacing-5) + env(safe-area-inset-bottom));
+        }
+
+        .menu-home {
+            display: grid;
+            place-items: center;
+            width: calc((100% - var(--spacing-2-5)) / 2);
+            min-height: 56px;
+            box-sizing: border-box;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-surface-soft);
+            color: var(--color-primary);
+            transition: background-color 0.15s ease;
+        }
+
+        .menu-home:hover {
+            background: var(--color-surface-hover);
         }
 
         .menu-footer > button,
@@ -363,7 +385,6 @@ export function SideMenu({ manualEditorRef }) {
                 </section>
 
                 <footer class="menu-section menu-footer text-rem-0-8">
-                    <a href="/?no_redirect=1">${t("menu.home")}</a>
                     <button type="button" onClick=${resetCurrentDz}>
                         ${t("menu.reset")}
                     </button>
@@ -374,6 +395,14 @@ export function SideMenu({ manualEditorRef }) {
                         },
                     })}
                 </footer>
+            </div>
+            <div class="menu-bottom">
+                <a
+                    class="menu-home text-rem-0-8 font-semibold px-3.5"
+                    href="/?no_redirect=1"
+                >
+                    ${t("menu.home")}
+                </a>
             </div>
         </aside>
     `;
