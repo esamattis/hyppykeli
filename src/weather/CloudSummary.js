@@ -15,6 +15,7 @@ import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { CloudForecastTable } from "#app/weather/CloudForecastTable.js";
 import { DataSource } from "#app/weather/DataSource.js";
+import { loadDetailedCloudForecast } from "#app/weather/refresh.js";
 import { TableDialog } from "#app/weather/WeatherTables.js";
 import {
     formatCloudBase,
@@ -375,13 +376,16 @@ export function CloudSummary() {
                                   ${h(TableDialog, {
                                       id: "cloud-forecast-table",
                                       title: t("cloud.forecastTable"),
+                                      onOpen: () => {
+                                          void loadDetailedCloudForecast();
+                                      },
                                       children: h(CloudForecastTable, {
                                           forecasts,
                                       }),
                                   })}
                               </div>
                               ${h(CloudForecastTable, {
-                                  forecasts,
+                                  forecasts: forecasts.slice(0, 12),
                                   summary: true,
                               })}
                           </section>

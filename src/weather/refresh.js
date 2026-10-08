@@ -169,6 +169,16 @@ async function fetchMetar(cacheOnly, signal, retryErrors) {
     if (!metar && !cacheOnly) addError(t("error.noMetar", icaocode));
 }
 
+// Expand the current location's forecast only after its detailed cloud table opens.
+let detailedForecastSettingsKey = "";
+
+function getForecastRange() {
+    return Math.max(
+        Number(QUERY_PARAMS.value.forecast_range) || 12,
+        detailedForecastSettingsKey === weatherSettingsKey() ? 48 : 12,
+    );
+}
+
 /** @param {string} coordinates @param {boolean} cacheOnly @param {AbortSignal} signal @param {boolean} retryErrors */
 async function fetchForecasts(coordinates, cacheOnly, signal, retryErrors) {
     let stale = true;
@@ -177,7 +187,7 @@ async function fetchForecasts(coordinates, cacheOnly, signal, retryErrors) {
         onCacheStatus: (value) => {
             stale = value;
         },
-        range: Number(QUERY_PARAMS.value.forecast_range) || 12,
+        range: getForecastRange(),
         day: FORECAST_DAY.value,
     });
     if (!result || signal.aborted) return false;
@@ -323,9 +333,42 @@ export function weatherSettingsKey() {
 let activeRefresh;
 let hydratedSettingsKey = "";
 
+/** @type {WeatherRefresh | undefined} */
+let detailedForecastRefresh;
+
+export function loadDetailedCloudForecast() {
+    const key = weatherSettingsKey();
+    if (detailedForecastRefresh?.key === key)
+        return detailedForecastRefresh.promise;
+    detailedForecastRefresh?.controller.abort();
+    detailedForecastSettingsKey = key;
+    const controller = new AbortController();
+    /** @type {WeatherRefresh} */
+    const refresh = { key, controller, promise: Promise.resolve() };
+    detailedForecastRefresh = refresh;
+    refresh.promise = (async () => {
+        // Let an initial short forecast finish before publishing the longer one.
+        await activeRefresh?.promise;
+        if (controller.signal.aborted || weatherSettingsKey() !== key) return;
+        const coordinates = FORECAST_COORDINATES.value;
+        if (coordinates) {
+            await fetchForecasts(coordinates, false, controller.signal, false);
+        }
+    })()
+        .catch(reportProviderError)
+        .finally(() => {
+            if (detailedForecastRefresh === refresh)
+                detailedForecastRefresh = undefined;
+        });
+    return refresh.promise;
+}
+
 /** @param {boolean} [retryErrors] */
 export function updateWeatherData(retryErrors = false) {
     const key = weatherSettingsKey();
+    if (detailedForecastRefresh && detailedForecastRefresh.key !== key) {
+        detailedForecastRefresh.controller.abort();
+    }
     if (activeRefresh?.key === key && !retryErrors) {
         return activeRefresh.promise;
     }

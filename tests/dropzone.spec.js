@@ -4432,6 +4432,53 @@ test("cloud card hides empty model levels, preserves CAVOK, and shows one sun wi
     );
 });
 
+test("cloud summary stays at 12 hours while the detailed table shows 48 hourly entries", async ({
+    page,
+}) => {
+    const labels = await page.evaluate(async () => {
+        const { FORECASTS, FORECAST_SOURCE } =
+            await import("#app/weather/state.js");
+        const { formatClock } = await import("#app/shared/dates.js");
+        const start = new Date();
+        start.setMinutes(0, 0, 0);
+        FORECASTS.value = Array.from({ length: 301 }, (_, index) => ({
+            source: "forecast",
+            time: new Date(start.getTime() + (index - 6) * 10 * 60 * 1000),
+            speed: 5,
+            gust: 8,
+            direction: 180,
+            lowCloudCover: 20,
+        }));
+        FORECAST_SOURCE.value = "FMI";
+        return [
+            formatClock(start),
+            formatClock(new Date(start.getTime() + 47 * 60 * 60 * 1000)),
+        ];
+    });
+    const forecast = page.locator("#clouds .cloud-forecast");
+    await expect(forecast.getByRole("heading")).toHaveText(
+        "Ennuste · 12 tuntia",
+    );
+    const headers = forecast
+        .locator(":scope > .cloud-forecast-details .cloud-forecast-table")
+        .getByRole("columnheader", { includeHidden: true });
+    await expect(headers).toHaveCount(13);
+    await expect(headers.nth(1)).toHaveText(labels[0]);
+    await forecast
+        .getByRole("button", {
+            name: "Yksityiskohtainen pilviennuste taulukkona",
+        })
+        .click();
+    const dialog = page.getByRole("dialog", {
+        name: "Yksityiskohtainen pilviennuste",
+    });
+    const detailHeaders = dialog.getByRole("columnheader");
+    await expect(detailHeaders).toHaveCount(49);
+    await expect(detailHeaders.nth(1)).toHaveText(labels[0]);
+    await expect(detailHeaders.last()).toHaveText(labels[1]);
+    await expect(headers).toHaveCount(13);
+});
+
 test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
     page,
 }) => {

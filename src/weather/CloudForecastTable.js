@@ -26,6 +26,12 @@ const CLOUD_FORECAST_LEVELS = ["600", "700", "850", "925", "1000"];
  */
 export function CloudForecastTable(props) {
     const summary = props.summary ?? false;
+    const dayStarts = props.forecasts.map(
+        (forecast, index) =>
+            index > 0 &&
+            forecast.time.toDateString() !==
+                props.forecasts[index - 1]?.time.toDateString(),
+    );
     const scope = useScope(css`
         .forecast-scroll {
             isolation: isolate;
@@ -78,6 +84,9 @@ export function CloudForecastTable(props) {
             tr.forecast-group-start:not(:first-child)
             > * {
             border-top: 3px solid var(--color-border);
+        }
+        .cloud-forecast-detail-table .forecast-day-start {
+            border-inline-start: 2px solid var(--color-border);
         }
         .forecast-source-label {
             display: block;
@@ -154,10 +163,11 @@ export function CloudForecastTable(props) {
                         <tr>
                             <th scope="col">${t("weather.clock")}</th>
                             ${props.forecasts.map(
-                                (forecast) => html`
+                                (forecast, index) => html`
                                     <th
                                         scope="col"
-                                        title=${formatDate(forecast.time)}
+                                        class=${dayStarts[index] ? "forecast-day-start" : ""}
+                                        data-tooltip=${formatDate(forecast.time)}
                                     >
                                         ${formatClock(forecast.time)}
                                     </th>
@@ -194,8 +204,10 @@ export function CloudForecastTable(props) {
                                               )}
                                           </th>
                                           ${props.forecasts.map(
-                                              (forecast) => html`
-                                                  <td class="forecast-label">
+                                              (forecast, index) => html`
+                                                  <td
+                                                      class=${`forecast-label${dayStarts[index] ? " forecast-day-start" : ""}`}
+                                                  >
                                                       ${
                                                           whenAll(
                                                               [
@@ -287,8 +299,10 @@ export function CloudForecastTable(props) {
                                             )}
                                         </th>
                                         ${row.values.map(
-                                            (percentage) => html`
-                                                <td class="forecast-reading">
+                                            (percentage, index) => html`
+                                                <td
+                                                    class=${`forecast-reading${dayStarts[index] ? " forecast-day-start" : ""}`}
+                                                >
                                                     ${
                                                         isNullish(percentage)
                                                             ? "—"
@@ -327,8 +341,10 @@ export function CloudForecastTable(props) {
                                 )}
                             </th>
                             ${openMeteoCover.map(
-                                (percentage) => html`
-                                    <td class="forecast-reading">
+                                (percentage, index) => html`
+                                    <td
+                                        class=${`forecast-reading${dayStarts[index] ? " forecast-day-start" : ""}`}
+                                    >
                                         ${
                                             isNullish(percentage)
                                                 ? "—"
@@ -362,10 +378,12 @@ export function CloudForecastTable(props) {
                                                       })
                                             }
                                         </th>
-                                        ${layers.map((layer) => {
+                                        ${layers.map((layer, index) => {
                                             const cover = layer?.cover;
                                             return html`
-                                                <td class="forecast-reading">
+                                                <td
+                                                    class=${`forecast-reading${dayStarts[index] ? " forecast-day-start" : ""}`}
+                                                >
                                                     ${
                                                         isNullish(cover)
                                                             ? "—"

@@ -171,7 +171,7 @@ export const HOURLY_CLOUD_FORECASTS = computed(() => {
                 forecast.time.getTime() >= currentHour.getTime() &&
                 forecast.time.getMinutes() === 0,
         )
-        .slice(0, 12);
+        .slice(0, 48);
 });
 
 /**

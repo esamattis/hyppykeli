@@ -227,6 +227,7 @@ export function DataTable(props) {
  * @param {Object} props
  * @param {string} props.id
  * @param {string} props.title
+ * @param {() => void} [props.onOpen]
  * @param {import("preact").ComponentChildren} props.children
  */
 export function TableDialog(props) {
@@ -287,8 +288,11 @@ export function TableDialog(props) {
             aria-label=${t("common.asTable", props.title)}
             aria-haspopup="dialog"
             aria-controls=${props.id}
-            title=${t("common.asTable", props.title)}
-            onClick=${() => ref.current?.showModal()}
+            data-tooltip=${t("common.asTable", props.title)}
+            onClick=${() => {
+                ref.current?.showModal();
+                props.onOpen?.();
+            }}
         >
             ${scope.style} ${h(Icon, { name: "table", size: 24 })}
         </button>

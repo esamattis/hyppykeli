@@ -225,3 +225,34 @@ test("overlapping refresh triggers share one pass without repeating cached updat
     expect(requests).toBe(1);
     expect(await page.evaluate(() => window.forecastUpdates)).toBe(2);
 });
+
+test("48-hour FMI forecasts load on demand and reset when the location changes", async ({
+    page,
+}) => {
+    const ranges = [];
+    await page.route("https://opendata.fmi.fi/**", (route) => {
+        const params = new URL(route.request().url()).searchParams;
+        ranges.push(
+            (Date.parse(params.get("endtime")) -
+                Date.parse(params.get("starttime"))) /
+                3_600_000,
+        );
+        return route.fulfill({ status: 503 });
+    });
+    await openRefreshHarness(page);
+    await page.evaluate(async () => {
+        const { QUERY_PARAMS } = await import("#app/app/settings.js");
+        const { updateWeatherData, loadDetailedCloudForecast } =
+            await import("#app/weather/refresh.js");
+        QUERY_PARAMS.value = { lat: "60", lon: "25" };
+        await updateWeatherData();
+        await Promise.all([
+            loadDetailedCloudForecast(),
+            loadDetailedCloudForecast(),
+        ]);
+        await loadDetailedCloudForecast();
+        QUERY_PARAMS.value = { lat: "61", lon: "25" };
+        await updateWeatherData();
+    });
+    expect(ranges).toEqual([12, 48, 12]);
+});
