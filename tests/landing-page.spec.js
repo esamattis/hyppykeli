@@ -170,7 +170,7 @@ test("every listed dropzone has a pin linking to its dropzone", async ({
 }) => {
     await page.goto("/?no_redirect");
     const pins = page.locator(".dropzone-pin");
-    await expect(pins).toHaveCount(15);
+    await expect(pins).toHaveCount(16);
     const links = await page.locator(".dz-list a").evaluateAll((links) =>
         links.map((link) => ({
             name: link.textContent.trim(),

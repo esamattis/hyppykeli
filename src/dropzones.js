@@ -38,6 +38,7 @@ export const completeDropzones = [
         qs: {
             fmisid: 101044,
             icaocode: "EFPO",
+            default_jump_run_direction: 123.86831214563642,
             elevation: 13.5636,
         },
         description: "– Pori",
@@ -48,6 +49,7 @@ export const completeDropzones = [
         qs: {
             fmisid: 101237,
             icaocode: "EFLP",
+            default_jump_run_direction: 246.94481365446393,
             elevation: 106.3752,
         },
         description: "– Lappeenranta",
@@ -58,6 +60,7 @@ export const completeDropzones = [
         qs: {
             fmisid: 101570,
             icaocode: "EFKU",
+            default_jump_run_direction: 158.73545711208953,
             elevation: 98.7552,
         },
         description: "– Rissala, Siilinjärvi",
@@ -68,6 +71,7 @@ export const completeDropzones = [
         qs: {
             fmisid: 101786,
             icaocode: "EFOU",
+            default_jump_run_direction: 119.46945423942509,
             elevation: 14.6304,
         },
         description: "– Oulunsalo, Oulu",
@@ -79,6 +83,7 @@ export const completeDropzones = [
             name: "EFTP",
             fmisid: 101118,
             icaocode: "EFTP",
+            default_jump_run_direction: 66.34997828860338,
             elevation: 119.0244,
         },
         description: "– Tampere-Pirkkala",
@@ -89,6 +94,7 @@ export const completeDropzones = [
         qs: {
             fmisid: 101065,
             icaocode: "EFTU",
+            default_jump_run_direction: 84.28013807069266,
             elevation: 49.0728,
         },
         description: "– Turku",
@@ -109,6 +115,7 @@ export const completeDropzones = [
         qs: {
             fmisid: 101462,
             icaocode: "EFVA",
+            default_jump_run_direction: 163.12222940870856,
             elevation: 6.4008,
         },
         description: "- Vaasa",
@@ -118,9 +125,21 @@ export const completeDropzones = [
 /** @type {LandingDropzone[]} */
 export const partialDropzones = [
     {
+        name: "EERA",
+        qs: {
+            name: "EERA — Kuusiku",
+            lat: 58.9967,
+            lon: 24.71593,
+            elevation: 58,
+            default_jump_run_direction: 180,
+        },
+        description: "— Kuusiku",
+    },
+    {
         name: "EFJM",
         qs: {
             fmisid: 101291,
+            default_jump_run_direction: 93.88406444150928,
             lat: 61.780727,
             lon: 22.718886,
             name: "EFJM",
@@ -132,6 +151,7 @@ export const partialDropzones = [
         name: "EFAL",
         qs: {
             roadsid: 10035,
+            default_jump_run_direction: 79.0089716837789,
             lat: 62.5551416,
             lon: 23.571403,
             name: "EFAL",
@@ -144,6 +164,7 @@ export const partialDropzones = [
         qs: {
             fmisid: 104796,
             icaocode: "EFLA",
+            default_jump_run_direction: 248.64169605454686,
             lat: 61.146406,
             lon: 25.693366,
             elevation: 153.0096,
@@ -155,6 +176,7 @@ export const partialDropzones = [
         qs: {
             name: "EFIM",
             roadsid: 5004,
+            default_jump_run_direction: 199.66293421973296,
             icaocode: "",
             lat: 61.2496030163607,
             lon: 28.90338474282989,
