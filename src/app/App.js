@@ -1,5 +1,6 @@
 // @ts-check
 import { Button } from "#app/shared/Button.js";
+import { AuthorCredit } from "#app/shared/AuthorCredit.js";
 import { ManualBanner } from "#app/manual/ManualMode.js";
 import { LazyDropzoneMap } from "#app/map/LazyDropzoneMap.js";
 import { formatDate, humanDayText } from "#app/shared/dates.js";
@@ -233,6 +234,7 @@ export function App() {
     `);
 
     return html`
+        <${AuthorCredit} />
         ${h(ManualBanner, { onEdit: () => manualEditorRef.current?.open() })}
         <div class="content grid">
             ${scope.style}
