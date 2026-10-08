@@ -1,6 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { startForAutomaticRun } from "../src/map/automaticPlacement.js";
-import { createJumpRunCalculator } from "../src/map/jumpRun.js";
+import { getCanopyDrift } from "../src/map/canopy.js";
+import {
+    createJumpRunCalculator,
+    landingTargetForRun,
+} from "../src/map/jumpRun.js";
 import { driftCoordinates, jumpRunCoordinates } from "../src/map/freefall.js";
 
 const target = { lat: 62.4, lng: 25.6 };
@@ -93,31 +97,83 @@ test("canopy drift integrates interpolated winds by descent time, including high
     expect(high.north - low.north).toBeCloseTo((700 * 1) / 5, 1);
 });
 
-test("each lower wind constrains placement even when the average points elsewhere", () => {
+test("changing lower winds constrain openings by accumulated canopy drift", () => {
     const winds = profile();
     winds.find((wind) => wind.height === 110).direction = 90;
     winds.find((wind) => wind.height === 0).direction = 90;
+    const drift = getCanopyDrift(winds, 800).at(-1);
+    const length = Math.hypot(drift.east, drift.north);
     const { openings } = place(
         winds,
         Array.from({ length: 6 }, () => jumper),
     );
     for (const opening of openings) {
-        expect(opening.north).toBeGreaterThanOrEqual(50);
-        expect(opening.east).toBeGreaterThanOrEqual(50);
+        const upwind =
+            -(opening.east * drift.east + opening.north * drift.north) / length;
+        expect(upwind).toBeGreaterThanOrEqual(50);
     }
 });
 
-test("opposing lower winds reject automatic placement instead of cancelling out", () => {
+test("opposing lower winds are integrated instead of rejecting placement", () => {
     const winds = profile();
     winds.at(-1).direction = 180;
-    expect(place(winds).start).toBeNull();
+    const drift = getCanopyDrift(winds, 800).at(-1);
+    const { start, openings } = place(winds);
+    expect(start).not.toBeNull();
+    expect(openings[0].north).toBeCloseTo(-drift.north, 1);
 });
 
-test("higher opening layers also constrain placement", () => {
+test("higher opening layers can reverse the accumulated canopy drift", () => {
     const winds = profile();
     winds.find((wind) => wind.height === 1500).direction = 180;
-    expect(place(winds).start).not.toBeNull();
-    expect(place(winds, [{ ...jumper, openingHeight: 1500 }]).start).toBeNull();
+    winds.find((wind) => wind.height === 1500).speed = 100;
+    expect(place(winds).openings[0].north).toBeGreaterThan(50);
+    expect(
+        place(winds, [{ ...jumper, openingHeight: 1500 }]).openings[0].north,
+    ).toBeLessThan(-50);
+});
+
+test("Utti wind reversal keeps automatic placement near the landing target", () => {
+    const target = { lat: 60.89755354967867, lng: 26.926031112670902 };
+    const options = { ...settings, direction: 323.5014355348678 };
+    const winds = [
+        [26.44, 256, 7057.1628],
+        [17.87, 261, 5440.6728],
+        [18.01, 266, 4065.6728],
+        [11.08, 255, 2870.6728],
+        [5.32, 270, 1332.6728],
+        [3.37, 264, 649.6728],
+        [1.2, 222, 13.6728],
+        [1.1, 123, 0],
+    ].map(([speed, direction, height]) => ({ speed, direction, height }));
+    const group = Array.from({ length: 8 }, () => jumper);
+    const calculation = createJumpRunCalculator()(winds.slice(0, -1), options);
+    const start = startForAutomaticRun(
+        target,
+        options,
+        group,
+        calculation,
+        winds,
+    );
+    expect(start).not.toBeNull();
+    const landing = landingTargetForRun(
+        start,
+        options,
+        group,
+        calculation,
+        winds,
+    );
+    const distance = (a, b) =>
+        Math.hypot(
+            (((a.lat - b.lat) * Math.PI) / 180) * 6371000,
+            (((a.lng - b.lng) * Math.PI) / 180) *
+                6371000 *
+                Math.cos((target.lat * Math.PI) / 180),
+        );
+    expect(distance(landing, target)).toBeLessThan(1);
+    expect(
+        distance(start, { lat: 60.8901676724241, lng: 26.91353551188604 }),
+    ).toBeLessThan(150);
 });
 
 test("calm lower winds do not require a bearing or force an upwind offset", () => {

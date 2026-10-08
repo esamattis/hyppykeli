@@ -3488,7 +3488,7 @@ test("parachute landing at a tapped point reuses automatic positioning for the c
 });
 
 for (const [description, ground] of [
-    ["opposing", "10,10,180,1"],
+    ["invalid", "10,-1,180,1"],
     ["stale", "10,10,0,61"],
     ["missing", ""],
 ]) {
@@ -3734,9 +3734,9 @@ test("double-tap zoom preserves the positioned jump run", async ({
 test("dragging sets jump run direction and clicking exits without moving the run", async ({
     page,
 }) => {
-    // Opposing lower winds prevent automatic placement, but allow free rotation.
+    // Stale ground winds prevent automatic placement, but allow free rotation.
     await page.goto(
-        `${manualPath}&MANUAL_ground_obs=10,10,180,1&lat=62.4&lon=25.6`,
+        `${manualPath}&MANUAL_ground_obs=10,10,180,61&lat=62.4&lon=25.6`,
     );
     await setUniformFreefallWind(page);
     await expect(
@@ -5067,7 +5067,7 @@ async function expectAutomaticOpeningsUpwind(page, targetLat = 62.4) {
 }
 
 for (const [description, ground] of [
-    ["opposing", "10,10,180,1"],
+    ["invalid", "10,-1,180,1"],
     ["stale", "10,10,0,61"],
     ["missing", ""],
 ]) {

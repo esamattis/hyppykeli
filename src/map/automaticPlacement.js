@@ -1,5 +1,5 @@
 // @ts-check
-import { getCanopyDrift, getCanopyWindAtHeight } from "#app/map/canopy.js";
+import { getCanopyDrift } from "#app/map/canopy.js";
 import {
     EARTH_RADIUS_METRES,
     driftCoordinates,
@@ -12,7 +12,7 @@ const UPWIND_BUFFER_METRES = 50;
 
 // Numerical tolerances are separate from the planning assumptions above.
 const PROJECTION_MARGIN_METRES = 1;
-const ZERO_WIND_TOLERANCE_MPS = 1e-6;
+const ZERO_DRIFT_TOLERANCE_METRES = 1e-6;
 const CONSTRAINT_TOLERANCE_METRES = 1e-7;
 // Unit-vector distance and determinant magnitude, respectively (dimensionless).
 const DIRECTION_MATCH_TOLERANCE = 1e-10;
@@ -83,9 +83,9 @@ function closestTranslation(preferred, constraints) {
 }
 
 /**
- * Place every predicted opening upwind of the landing point at every non-calm
- * layer below that opening. Prefer the offset compensating time-integrated
- * canopy wind drift, then enforce the individual layer constraints.
+ * Place every predicted opening upwind of the landing point relative to its
+ * time-integrated canopy drift. Prefer the offset compensating that drift,
+ * then enforce the individual opening constraints.
  * Wind heights are above the dropzone; they must include ground (0 m).
  * @param {import('leaflet').LatLngLiteral} target
  * @param {JumpRunSettings} settings
@@ -121,45 +121,33 @@ export function startForAutomaticRun(
             east: opening.east + velocity.ground.east * seconds,
             north: opening.north + velocity.ground.north * seconds,
         };
-        const heights = [
-            jumper.openingHeight,
-            ...profile
-                .filter((wind) => wind.height < jumper.openingHeight)
-                .map((wind) => wind.height),
-        ];
-        const vectors = heights.map((height) =>
-            getCanopyWindAtHeight(profile, height),
-        );
         const drift = getCanopyDrift(profile, jumper.openingHeight)?.at(-1);
         if (!drift) return null;
         /** @type {WindVector[]} */
         const directions = [];
-        for (const vector of vectors) {
-            if (!vector) return null;
-            const speed = Math.hypot(vector.east, vector.north);
-            if (speed > ZERO_WIND_TOLERANCE_MPS) {
-                const direction = {
-                    east: -vector.east / speed,
-                    north: -vector.north / speed,
-                };
-                directions.push(direction);
-                // The margin absorbs local-plane/spherical projection error;
-                // the final geographic openings are checked below as well.
-                const minimum =
-                    UPWIND_BUFFER_METRES +
-                    PROJECTION_MARGIN_METRES -
-                    dot(offset, direction);
-                const existing = constraints.find(
-                    (item) =>
-                        Math.hypot(
-                            item.direction.east - direction.east,
-                            item.direction.north - direction.north,
-                        ) < DIRECTION_MATCH_TOLERANCE,
-                );
-                if (existing)
-                    existing.minimum = Math.max(existing.minimum, minimum);
-                else constraints.push({ direction, minimum });
-            }
+        const distance = Math.hypot(drift.east, drift.north);
+        if (distance > ZERO_DRIFT_TOLERANCE_METRES) {
+            const direction = {
+                east: -drift.east / distance,
+                north: -drift.north / distance,
+            };
+            directions.push(direction);
+            // The margin absorbs local-plane/spherical projection error;
+            // the final geographic openings are checked below as well.
+            const minimum =
+                UPWIND_BUFFER_METRES +
+                PROJECTION_MARGIN_METRES -
+                dot(offset, direction);
+            const existing = constraints.find(
+                (item) =>
+                    Math.hypot(
+                        item.direction.east - direction.east,
+                        item.direction.north - direction.north,
+                    ) < DIRECTION_MATCH_TOLERANCE,
+            );
+            if (existing)
+                existing.minimum = Math.max(existing.minimum, minimum);
+            else constraints.push({ direction, minimum });
         }
         preferred.east -= (offset.east + drift.east) / group.length;
         preferred.north -= (offset.north + drift.north) / group.length;

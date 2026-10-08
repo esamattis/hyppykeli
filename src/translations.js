@@ -349,7 +349,7 @@ export const english = {
     "map.automaticUpdate": "Update automatically",
     "map.automaticHelpTitle": "Automatic placement",
     "map.automaticHelp":
-        "On initial placement, the configured default axis is reversed when necessary to face into the average upper wind. Every predicted opening is placed at least 50 m upwind of the landing target relative to each non-calm wind layer at or below that opening. The preferred offset estimates canopy wind drift at a constant descent speed of 5 m/s, interpolating wind vectors between the ground observation and upper wind levels. This does not model canopy glide or guarantee landing-area reachability.",
+        "On initial placement, the configured default axis is reversed when necessary to face into the average upper wind. Every predicted opening is placed at least 50 m upwind of the landing target relative to the accumulated canopy wind drift below that opening. The preferred offset estimates canopy wind drift at a constant descent speed of 5 m/s, interpolating wind vectors between the ground observation and upper wind levels. This does not model canopy glide or guarantee landing-area reachability.",
     "map.automaticLimitsHelp":
         "Automatic placement requires a ground observation no older than one hour and current forecast winds. Missing data, an unachievable ground track, or conflicting wind directions can prevent placement. The positioning button reverses the current direction by 180° when needed to face into the average upper wind, then repeats the calculation for the configured landing coordinates. With Update automatically checked, new wind data repeats placement. Manual edits uncheck it and can leave openings outside these limits.",
     "map.positioningHelpTitle": "Manual positioning",
@@ -373,7 +373,7 @@ export const english = {
     "map.driftUnavailable":
         "Drift estimate unavailable: upper-wind data is missing.",
     "map.automaticRunUnavailable":
-        "Automatic placement unavailable: current wind data is missing, the track cannot be flown, or all openings cannot be placed upwind of every lower wind layer.",
+        "Automatic placement unavailable: current wind data is missing, the track cannot be flown, or all openings cannot be placed upwind of their accumulated canopy drift.",
     "map.jumpRunUnavailable":
         "Jump-run positions unavailable: exit-altitude wind is missing or the selected track cannot be flown at this airspeed.",
     "map.directionHint":
@@ -907,7 +907,7 @@ const finnish = {
     "map.automaticUpdate": "Päivitä automaattisesti",
     "map.automaticHelpTitle": "Automaattinen sijoitus",
     "map.automaticHelp":
-        "Ensimmäisessä sijoituksessa määritetty oletusakseli käännetään tarvittaessa vasten yläkorkeuksien keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskohteen tuulenpuolelle suhteessa jokaiseen avautumiskorkeuden tai sen alapuoliseen tuulikerrokseen, jossa ei ole tyyntä. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin interpoloimalla tuulivektoreita maatuulihavainnon ja ylätuulitasojen välillä. Arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä.",
+        "Ensimmäisessä sijoituksessa määritetty oletusakseli käännetään tarvittaessa vasten yläkorkeuksien keskituulta. Jokainen ennustettu avautumiskohta sijoitetaan vähintään 50 m laskeutumiskohteen tuulenpuolelle suhteessa avautumiskorkeuden alapuolella kertyvään tuuliajautumiseen. Tavoitesiirtymä arvioi varjon varassa tapahtuvaa tuuliajautumista vakionopeudella 5 m/s alaspäin interpoloimalla tuulivektoreita maatuulihavainnon ja ylätuulitasojen välillä. Arvio ei mallinna varjon liitoa eikä takaa laskeutumisalueelle pääsyä.",
     "map.automaticLimitsHelp":
         "Automaattinen sijoitus vaatii enintään tunnin ikäisen maatuulihavainnon ja nykyisen tunnin ennustetuulet. Puuttuvat tiedot, lentorata jota ei voi lentää tai ristiriitaiset tuulensuunnat voivat estää sijoittamisen. Sijoituspainike kääntää nykyistä suuntaa tarvittaessa 180° vasten yläkorkeuksien keskituulta ja toistaa laskennan määritetyille laskeutumiskoordinaateille. Kun Päivitä automaattisesti on valittuna, uudet tuulitiedot toistavat sijoituksen. Käsin tehdyt muutokset poistavat valinnan ja voivat jättää avautumiskohtia näiden rajojen ulkopuolelle.",
     "map.positioningHelpTitle": "Sijoittaminen käsin",
@@ -931,7 +931,7 @@ const finnish = {
     "map.driftUnavailable":
         "Ajautumisarvio ei saatavilla: ylätuulitietoja puuttuu.",
     "map.automaticRunUnavailable":
-        "Automaattinen sijoitus ei ole saatavilla: ajantasaisia tuulitietoja puuttuu, lentorataa ei voi lentää tai kaikkia avautumiskohtia ei voi sijoittaa jokaisen alatuulikerroksen tuulenpuolelle.",
+        "Automaattinen sijoitus ei ole saatavilla: ajantasaisia tuulitietoja puuttuu, lentorataa ei voi lentää tai kaikkia avautumiskohtia ei voi sijoittaa kertyvän tuuliajautumisensa tuulenpuolelle.",
     "map.jumpRunUnavailable":
         "Hyppylinjan paikat eivät ole saatavilla: uloshyppykorkeuden tuulitieto puuttuu tai valittua lentorataa ei voi lentää tällä ilmanopeudella.",
     "map.directionHint":
