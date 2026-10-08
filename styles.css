@@ -138,6 +138,8 @@
             var(--color-text) 10%,
             transparent
         );
+        /* Yellow sun discs and rays in cloud-condition icons. */
+        --color-cloud-sun: #e6b800;
         /* Cloud forecast blue-grey endpoints, interpolated by cover percentage. */
         --color-cloud-clear: var(--color-surface-soft);
         --color-cloud-overcast: #bfd0dc;

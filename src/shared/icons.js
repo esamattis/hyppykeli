@@ -146,21 +146,29 @@ const artwork = {
         />
     `,
     cloudClear: html`
-        <circle cx="12" cy="12" r="4" />
-        <path
-            d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"
-        />
+        <g stroke="var(--color-cloud-sun)">
+            <circle cx="12" cy="12" r="4" fill="var(--color-cloud-sun)" />
+            <path
+                d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"
+            />
+        </g>
     `,
     cloudNsc: html`
-        <circle cx="9" cy="9" r="3.5" />
+        <g stroke="var(--color-cloud-sun)">
+            <circle cx="9" cy="9" r="3.5" fill="var(--color-cloud-sun)" />
+            <path d="M9 2v1M2 9h1M4 4l1 1M14 4l-1 1M5 15l-1 1" />
+        </g>
         <path
-            d="M9 2v1M2 9h1M4 4l1 1M14 4l-1 1M5 15l-1 1M13 19h6a3 3 0 0 0 0-6 4 4 0 0 0-7.5 1A2.5 2.5 0 0 0 13 19Z"
+            d="M13 19h6a3 3 0 0 0 0-6 4 4 0 0 0-7.5 1A2.5 2.5 0 0 0 13 19Z"
         />
     `,
     cloudFew: html`
-        <circle cx="7" cy="7" r="3" />
+        <g stroke="var(--color-cloud-sun)">
+            <circle cx="7" cy="7" r="3" fill="var(--color-cloud-sun)" />
+            <path d="M7 1v1M1 7h1M2.5 2.5l1 1M11.5 2.5l-1 1" />
+        </g>
         <path
-            d="M7 1v1M1 7h1M2.5 2.5l1 1M11.5 2.5l-1 1M6 19h12a4 4 0 0 0 0-8 5 5 0 0 0-9.5 1A3.5 3.5 0 0 0 6 19Z"
+            d="M6 19h12a4 4 0 0 0 0-8 5 5 0 0 0-9.5 1A3.5 3.5 0 0 0 6 19Z"
         />
     `,
     cloudScattered: html`
