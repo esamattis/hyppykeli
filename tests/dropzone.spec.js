@@ -912,8 +912,86 @@ test("METAR cloud layers expose descriptions and original feet in tooltips", asy
     await expect(
         layers.nth(2).getByRole("img", { name: "Ukkospilviä", exact: true }),
     ).toBeVisible();
-    await card.locator(".cloud-metar-details summary").click();
+    await card.getByRole("button", { name: "Näin luet tämän METARin" }).click();
     await expect(card.getByLabel("METAR", { exact: true })).toHaveText(metar);
+});
+
+test("METAR help explains the current report and closes with Escape", async ({
+    page,
+}) => {
+    const card = page.locator("#clouds");
+    const trigger = card.getByRole("button", {
+        name: "Näin luet tämän METARin",
+    });
+    await trigger.click();
+    const dialog = card.locator("dialog[open]");
+    await expect(dialog.getByLabel("METAR", { exact: true })).toHaveText(
+        "METAR EFJY 040720Z AUTO 19007KT 160V220 9999 -SHRA OVC005 //////CB 11/11 Q1014=",
+    );
+    const group = (code) =>
+        dialog.locator(".metar-group").filter({
+            has: page.locator("dt", { hasText: new RegExp(`^${code}$`) }),
+        });
+    await expect(group("EFJY")).toContainText("ICAO-tunnus: EFJY");
+    await expect(group("040720Z")).toContainText("07:20 UTC");
+    await expect(group("19007KT")).toContainText("7 kt");
+    await expect(group("160V220")).toContainText("160–220°");
+    await expect(group("9999")).toContainText("vähintään 10 km");
+    await expect(group("-SHRA")).toContainText("kuuroja");
+    await expect(group("-SHRA")).toContainText("vesisade");
+    await expect(group("OVC005")).toContainText("500 ft");
+    await expect(group("//////CB")).toContainText("CB tarkoittaa");
+    await expect(group("11/11")).toContainText("11 / 11 °C");
+    await expect(group("Q1014")).toContainText("1014 hPa");
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    await page.evaluate(async () => {
+        const { setLanguage } = await import("#app/translations.js");
+        setLanguage("en");
+    });
+    await card.getByRole("button", { name: "How to read this METAR" }).click();
+    await expect(card.locator("dialog[open]")).toContainText("SH: showers");
+    await expect(card.locator("dialog[open]")).toContainText(
+        "above the reporting aerodrome",
+    );
+    await card
+        .locator("dialog[open]")
+        .getByRole("button", { name: "Close", exact: true })
+        .click();
+    await expect(card.locator("dialog[open]")).toHaveCount(0);
+});
+
+test("METAR explanations preserve unfamiliar groups and decode international variants", async ({
+    page,
+}) => {
+    const sections = await page.evaluate(async () => {
+        const { setLanguage } = await import("#app/translations.js");
+        const { explainMetar } = await import("#app/weather/MetarHelp.js");
+        setLanguage("en");
+        return explainMetar(
+            "SPECI COR KJFK 041200Z VRB03G15KT 1 1/2SM R04L/0600U BKN030TCU M02/M05 A2992 RERA TEMPO FM1230 00000KT CAVOK MYSTERY RMK AO2=",
+        );
+    });
+    const description = (code) =>
+        sections.find((section) => section.code === code)?.description;
+    expect(description("SPECI")).toContain("special report");
+    expect(description("COR")).toContain("Corrected");
+    expect(description("VRB03G15KT")).toContain("variable wind direction");
+    expect(description("VRB03G15KT")).toContain("gusts up to 15 kt");
+    expect(description("1 1/2SM")).toContain("statute miles");
+    expect(description("R04L/0600U")).toContain("Runway visual range");
+    expect(description("BKN030TCU")).toContain("3000 ft");
+    expect(description("BKN030TCU")).toContain("towering cumulus");
+    expect(description("M02/M05")).toContain("-2 / -5 °C");
+    expect(description("A2992")).toContain("29.92 inHg");
+    expect(description("RERA")).toContain("recent weather");
+    expect(description("TEMPO")).toContain("temporary conditions");
+    expect(description("FM1230")).toContain("FM = from");
+    expect(description("00000KT")).toContain("calm wind");
+    expect(description("CAVOK")).toContain("no CB or TCU");
+    expect(description("MYSTERY")).toContain("not decoded");
+    expect(description("RMK AO2 =")).toContain("supplementary remarks");
 });
 
 test("CAVOK exposes its clear-weather explanation in a tooltip", async ({

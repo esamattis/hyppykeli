@@ -70,7 +70,7 @@ export function Help(props) {
             onClick=${open}
             id=${props.id}
             aria-label=${props.label ?? t("common.help")}
-            title=${props.label ?? t("common.help")}
+            data-tooltip=${props.label ?? t("common.help")}
             aria-haspopup="dialog"
         >
             ${scope.style} ${h(Icon, { name: "help", size: 20 })}

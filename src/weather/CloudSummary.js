@@ -6,6 +6,7 @@ import {
 } from "#app/weather/CompactCloudLayer.js";
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
+import { MetarHelp } from "#app/weather/MetarHelp.js";
 import { Help } from "#app/shared/Help.js";
 import { Icon } from "#app/shared/icons.js";
 import { whenAll } from "#app/shared/values.js";
@@ -150,26 +151,16 @@ export function CloudSummary() {
             flex: 1;
         }
         .cloud-observation-footer {
-            position: relative;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--spacing-2);
             color: var(--color-muted);
             font-size: 0.75rem;
         }
         .cloud-observation-footer .summary-time {
-            position: absolute;
-            inset-block-start: 0;
-            inset-inline-start: 0;
             margin: 0;
             font-size: inherit;
-        }
-        .cloud-metar-details {
-            width: 100%;
-            min-width: 0;
-            max-width: 100%;
-        }
-        .cloud-metar-details summary {
-            width: max-content;
-            margin-inline-start: auto;
-            cursor: pointer;
         }
         .condensation-reading {
             display: flex;
@@ -338,16 +329,7 @@ export function CloudSummary() {
                                   <div class="summary-time">
                                       ${h(FromNow, { date: time })}
                                   </div>
-                                  <details class="cloud-metar-details">
-                                      <summary>METAR</summary>
-                                      <code
-                                          class="metar mt-2 pb-1"
-                                          tabindex="0"
-                                          aria-label="METAR"
-                                      >
-                                          ${metar.metar}
-                                      </code>
-                                  </details>
+                                  ${h(MetarHelp, { report: metar.metar })}
                               </div>
                           `
                         : null

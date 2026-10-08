@@ -99,7 +99,7 @@ export function Dialog(props) {
                     class="dialog-close"
                     type="button"
                     aria-label=${t("common.close")}
-                    title=${t("common.close")}
+                    data-tooltip=${t("common.close")}
                     onClick=${() => ref.current?.close()}
                 >
                     ${h(Icon, { name: "close", size: 24 })}

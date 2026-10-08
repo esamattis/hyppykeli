@@ -94,6 +94,108 @@ export const english = {
         new Intl.RelativeTimeFormat(getIntlLocale()).format(value, "hours"),
     "fromNow.minutes": (/** @type {number} */ value) =>
         new Intl.RelativeTimeFormat(getIntlLocale()).format(value, "minutes"),
+    "metar.help": "How to read this METAR",
+    "metar.intro":
+        "Read the groups from left to right. Times are UTC; wind directions refer to true north. Cloud heights are above the reporting aerodrome, not the dropzone.",
+    "metar.report": "METAR: routine aerodrome weather report.",
+    "metar.special":
+        "SPECI: special report issued when weather changes significantly.",
+    "metar.station": (/** @type {string} */ value) =>
+        `ICAO identifier of the reporting aerodrome: ${value}.`,
+    "metar.day": (/** @type {string} */ value) => `Day of the month: ${value}.`,
+    "metar.utc": (/** @type {string} */ value) =>
+        `Observation time: ${value} UTC. Z means UTC (Zulu).`,
+    "metar.auto": "AUTO: automatic observation.",
+    "metar.correction": "Corrected report.",
+    "metar.direction": (/** @type {string} */ value) =>
+        `Wind from ${value}° true north.`,
+    "metar.windFormat":
+        "The first three digits give direction, the next digits speed, and G introduces gusts. KT = knots, MPS = m/s, KPH = km/h.",
+    "metar.ndv": "NDV: no directional visibility variation is reported.",
+    "metar.variable": "VRB: variable wind direction.",
+    "metar.calm": "00000: calm wind.",
+    "metar.speed": (/** @type {string} */ value) =>
+        `Mean wind speed: ${value}.`,
+    "metar.gust": (/** @type {string} */ value) => `G: gusts up to ${value}.`,
+    "metar.knots": "kt (knots; 1 kt ≈ 0.514 m/s)",
+    "metar.variation": (/** @type {string} */ value) =>
+        `Wind direction varies between ${value}°; V separates the limits.`,
+    "metar.visibility": (/** @type {string} */ value) =>
+        `Horizontal visibility: ${value} m. Four digits give metres; a suffix gives the direction of minimum visibility.`,
+    "metar.visibility10": "9999: horizontal visibility 10 km or more.",
+    "metar.visibility50": "0000: horizontal visibility less than 50 m.",
+    "metar.miles": (/** @type {string} */ value) =>
+        `Horizontal visibility: ${value} statute miles. SM means statute miles; P means more than, M means less than.`,
+    "metar.cavok":
+        "CAVOK: visibility at least 10 km, no significant weather, no clouds below 5,000 ft or the highest minimum sector altitude (whichever is higher), and no CB or TCU clouds.",
+    "metar.height": (/** @type {string} */ value) =>
+        `The three digits × 100 give a height of ${value} ft above the aerodrome.`,
+    "metar.unknownHeight": "///: height unavailable.",
+    "metar.unknownCover": "//////: cloud amount and height unavailable.",
+    "metar.unknownType": "/// after the height: cloud type unavailable.",
+    "metar.tcu": "TCU: towering cumulus clouds.",
+    "metar.skc": "SKC: sky clear.",
+    "metar.clr":
+        "CLR: no clouds detected below 12,000 ft by the automatic system.",
+    "metar.temperature": (/** @type {string} */ value) =>
+        `Temperature / dew point: ${value} °C. M means minus; // means unavailable.`,
+    "metar.pressure": (/** @type {string} */ value) =>
+        `QNH: ${value} hPa, pressure adjusted to sea level. Q is followed by four digits.`,
+    "metar.inches": (/** @type {string} */ value) =>
+        `Altimeter setting: ${value} inHg. Divide the four digits after A by 100.`,
+    "metar.rvr":
+        "Runway visual range. R identifies the runway; L/C/R mean left/centre/right. Values are metres unless FT is present; M/P mean below/above, V separates a variable range, and U/D/N mean increasing/decreasing/no change.",
+    "metar.nosig":
+        "NOSIG: no significant change expected in the next two hours.",
+    "metar.becmg":
+        "BECMG: becoming; the following groups describe an expected change in the next two hours.",
+    "metar.tempo":
+        "TEMPO: temporary conditions expected in the next two hours.",
+    "metar.trendTime":
+        "Trend timing: FM = from, TL = until, AT = at; the four digits are hours and minutes in UTC.",
+    "metar.nsw": "NSW: no significant weather expected.",
+    "metar.recent":
+        "RE: recent weather, observed since the previous report but no longer present.",
+    "metar.light": "−: light intensity.",
+    "metar.heavy": "+: heavy intensity.",
+    "metar.moderate": "No intensity sign: moderate precipitation.",
+    "metar.remarks":
+        "RMK: supplementary remarks follow. These groups use regional conventions and are not decoded here.",
+    "metar.unknown":
+        "This group is not decoded here. Slashes indicate missing data; additional groups may use local conventions.",
+    "metar.end": "= marks the end of the report.",
+    "metar.nil": "NIL: no observation available.",
+    "metar.weatherVC": "VC: in the vicinity.",
+    "metar.weatherMI": "MI: shallow.",
+    "metar.weatherPR": "PR: partial.",
+    "metar.weatherBC": "BC: patches.",
+    "metar.weatherDR": "DR: low drifting.",
+    "metar.weatherBL": "BL: blowing.",
+    "metar.weatherSH": "SH: showers.",
+    "metar.weatherTS": "TS: thunderstorm.",
+    "metar.weatherFZ": "FZ: freezing.",
+    "metar.weatherRA": "RA: rain.",
+    "metar.weatherDZ": "DZ: drizzle.",
+    "metar.weatherSN": "SN: snow.",
+    "metar.weatherSG": "SG: snow grains.",
+    "metar.weatherIC": "IC: ice crystals.",
+    "metar.weatherPL": "PL: ice pellets.",
+    "metar.weatherGR": "GR: hail.",
+    "metar.weatherGS": "GS: small hail or snow pellets.",
+    "metar.weatherUP": "UP: unknown precipitation.",
+    "metar.weatherFG": "FG: fog.",
+    "metar.weatherVA": "VA: volcanic ash.",
+    "metar.weatherBR": "BR: mist.",
+    "metar.weatherHZ": "HZ: haze.",
+    "metar.weatherDU": "DU: widespread dust.",
+    "metar.weatherFU": "FU: smoke.",
+    "metar.weatherSA": "SA: sand.",
+    "metar.weatherPY": "PY: spray.",
+    "metar.weatherSQ": "SQ: squalls.",
+    "metar.weatherPO": "PO: dust or sand whirls.",
+    "metar.weatherDS": "DS: duststorm.",
+    "metar.weatherSS": "SS: sandstorm.",
+    "metar.weatherFC": "FC: funnel cloud.",
     "cloud.none": "No clouds",
     "cloud.noneObserved": "No clouds observed",
     "cloud.noneDescription":
@@ -551,6 +653,108 @@ const finnish = {
         new Intl.RelativeTimeFormat(getIntlLocale()).format(value, "hours"),
     "fromNow.minutes": (value) =>
         new Intl.RelativeTimeFormat(getIntlLocale()).format(value, "minutes"),
+    "metar.help": "Näin luet tämän METARin",
+    "metar.intro":
+        "Lue ryhmät vasemmalta oikealle. Ajat ovat UTC-aikaa ja tuulen suunnat viittaavat tosipohjoiseen. Pilvikorkeudet mitataan havaintolentopaikan maanpinnasta, eivät hyppypaikasta.",
+    "metar.report": "METAR: lentopaikan määräaikainen säähavainto.",
+    "metar.special":
+        "SPECI: erityissäähavainto merkittävän säämuutoksen vuoksi.",
+    "metar.station": (value) => `Havaintolentopaikan ICAO-tunnus: ${value}.`,
+    "metar.day": (value) => `Kuukauden päivä: ${value}.`,
+    "metar.utc": (value) =>
+        `Havaintoaika: ${value} UTC. Z tarkoittaa UTC-aikaa (Zulu).`,
+    "metar.auto": "AUTO: automaattinen säähavainto.",
+    "metar.correction": "Korjattu säähavainto.",
+    "metar.direction": (value) =>
+        `Tuuli suunnasta ${value}° tosipohjoiseen nähden.`,
+    "metar.windFormat":
+        "Kolme ensimmäistä numeroa kertoo suunnan, seuraavat nopeuden ja G aloittaa puuskanopeuden. KT = solmua, MPS = m/s, KPH = km/h.",
+    "metar.ndv": "NDV: näkyvyyden vaihtelua eri suunnissa ei ilmoiteta.",
+    "metar.variable": "VRB: tuulen suunta vaihtelee.",
+    "metar.calm": "00000: tyyntä.",
+    "metar.speed": (value) => `Tuulen keskinopeus: ${value}.`,
+    "metar.gust": (value) => `G: puuskat enintään ${value}.`,
+    "metar.knots": "kt (solmua; 1 kt ≈ 0,514 m/s)",
+    "metar.variation": (value) =>
+        `Tuulen suunta vaihtelee välillä ${value}°; V erottaa rajat.`,
+    "metar.visibility": (value) =>
+        `Vaakanäkyvyys: ${value} m. Neljä numeroa kertoo metrit; mahdollinen kirjainosa kertoo huonoimman näkyvyyden suunnan.`,
+    "metar.visibility10": "9999: vaakanäkyvyys vähintään 10 km.",
+    "metar.visibility50": "0000: vaakanäkyvyys alle 50 m.",
+    "metar.miles": (value) =>
+        `Vaakanäkyvyys: ${value} mailia. SM tarkoittaa maamaileja; P tarkoittaa enemmän kuin ja M vähemmän kuin.`,
+    "metar.cavok":
+        "CAVOK: näkyvyys vähintään 10 km, ei merkittävää säätä eikä pilviä alle 5 000 jalan tai korkeimman minimisektorikorkeuden (näistä korkeampi), eikä CB- tai TCU-pilviä.",
+    "metar.height": (value) =>
+        `Kolme numeroa × 100 kertoo korkeuden ${value} ft lentopaikan maanpinnasta.`,
+    "metar.unknownHeight": "///: korkeutta ei ole saatavilla.",
+    "metar.unknownCover":
+        "//////: pilvien määrää ja korkeutta ei ole saatavilla.",
+    "metar.unknownType":
+        "/// korkeuden jälkeen: pilven tyyppiä ei ole saatavilla.",
+    "metar.tcu": "TCU: korkeaksi kasvaneita kumpupilviä.",
+    "metar.skc": "SKC: taivas selkeä.",
+    "metar.clr":
+        "CLR: automaattinen järjestelmä ei havainnut pilviä alle 12 000 jalan.",
+    "metar.temperature": (value) =>
+        `Lämpötila / kastepiste: ${value} °C. M tarkoittaa miinusta; // tarkoittaa puuttuvaa tietoa.`,
+    "metar.pressure": (value) =>
+        `QNH: ${value} hPa, merenpinnan tasolle korjattu ilmanpaine. Q:n jälkeen on neljä numeroa.`,
+    "metar.inches": (value) =>
+        `Korkeusmittarin paineasetus: ${value} inHg. Jaa A:n jälkeiset neljä numeroa sadalla.`,
+    "metar.rvr":
+        "Kiitotienäkyvyys. R kertoo kiitotien; L/C/R tarkoittavat vasenta/keskimmäistä/oikeaa. Arvot ovat metrejä, ellei mukana ole FT; M/P tarkoittavat alle/yli, V erottaa vaihteluvälin ja U/D/N tarkoittavat paranevaa/heikkenevää/muuttumatonta.",
+    "metar.nosig":
+        "NOSIG: merkittäviä muutoksia ei odoteta seuraavien kahden tunnin aikana.",
+    "metar.becmg":
+        "BECMG: sää muuttuu; seuraavat ryhmät kuvaavat odotettua muutosta seuraavien kahden tunnin aikana.",
+    "metar.tempo":
+        "TEMPO: tilapäisiä sääolosuhteita odotetaan seuraavien kahden tunnin aikana.",
+    "metar.trendTime":
+        "Muutoksen aika: FM = alkaen, TL = asti, AT = hetkellä; neljä numeroa kertoo tunnit ja minuutit UTC-ajassa.",
+    "metar.nsw": "NSW: merkittävää säätä ei odoteta.",
+    "metar.recent":
+        "RE: viimeaikaista säätä, jota havaittiin edellisen sanoman jälkeen mutta ei enää havaintohetkellä.",
+    "metar.light": "−: heikko voimakkuus.",
+    "metar.heavy": "+: voimakas.",
+    "metar.moderate": "Ei voimakkuusmerkkiä: kohtalainen sade.",
+    "metar.remarks":
+        "RMK: seuraavat lisähuomiot käyttävät alueellisia käytäntöjä, eikä niitä pureta tässä.",
+    "metar.unknown":
+        "Tätä ryhmää ei pureta tässä. Kauttaviivat ilmaisevat puuttuvia tietoja; lisäryhmät voivat käyttää paikallisia käytäntöjä.",
+    "metar.end": "= merkitsee sanoman loppua.",
+    "metar.nil": "NIL: havaintoa ei ole saatavilla.",
+    "metar.weatherVC": "VC: lähiympäristössä.",
+    "metar.weatherMI": "MI: matala.",
+    "metar.weatherPR": "PR: osittainen.",
+    "metar.weatherBC": "BC: lauttoja.",
+    "metar.weatherDR": "DR: matalaa tuiskua.",
+    "metar.weatherBL": "BL: korkeaa tuiskua.",
+    "metar.weatherSH": "SH: kuuroja.",
+    "metar.weatherTS": "TS: ukkonen.",
+    "metar.weatherFZ": "FZ: jäätävä.",
+    "metar.weatherRA": "RA: vesisade.",
+    "metar.weatherDZ": "DZ: tihkusade.",
+    "metar.weatherSN": "SN: lumisade.",
+    "metar.weatherSG": "SG: lumijyväset.",
+    "metar.weatherIC": "IC: jääkiteet.",
+    "metar.weatherPL": "PL: jääjyväset.",
+    "metar.weatherGR": "GR: rakeet.",
+    "metar.weatherGS": "GS: pienet rakeet tai lumirakeet.",
+    "metar.weatherUP": "UP: tunnistamaton sade.",
+    "metar.weatherFG": "FG: sumu.",
+    "metar.weatherVA": "VA: vulkaaninen tuhka.",
+    "metar.weatherBR": "BR: utu.",
+    "metar.weatherHZ": "HZ: auer.",
+    "metar.weatherDU": "DU: laaja-alainen pöly.",
+    "metar.weatherFU": "FU: savu.",
+    "metar.weatherSA": "SA: hiekka.",
+    "metar.weatherPY": "PY: pärskeet.",
+    "metar.weatherSQ": "SQ: puuskarintamat.",
+    "metar.weatherPO": "PO: pöly- tai hiekkapyörteet.",
+    "metar.weatherDS": "DS: pölymyrsky.",
+    "metar.weatherSS": "SS: hiekkamyrsky.",
+    "metar.weatherFC": "FC: suppilopilvi.",
     "cloud.none": "Ei pilviä",
     "cloud.noneObserved": "Ei havaittuja pilviä",
     "cloud.noneDescription":
