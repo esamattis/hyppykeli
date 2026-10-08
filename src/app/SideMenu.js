@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { ManualMode } from "#app/manual/ManualMode.js";
 import {
     completeDropzones,
@@ -268,16 +269,20 @@ export function SideMenu({ manualEditorRef }) {
                     </span>
                     <h1 class="text-rem-1-4">${NAME.value}</h1>
                 </div>
-                <button
-                    class="menu-close p-0"
-                    type="button"
-                    aria-label=${t("menu.close")}
-                    onClick=${() => {
-                        MENU_OPEN.value = false;
-                    }}
-                >
-                    ${h(Icon, { name: "close", size: 20 })}
-                </button>
+                ${h(
+                    Button,
+                    {
+                        class: "menu-close p-0",
+                        type: "button",
+                        "aria-label": t("menu.close"),
+                        onClick: () => {
+                            MENU_OPEN.value = false;
+                        },
+                    },
+                    html`
+                        ${h(Icon, { name: "close", size: 20 })}
+                    `,
+                )}
             </header>
 
             <div class="menu-content">
@@ -311,33 +316,49 @@ export function SideMenu({ manualEditorRef }) {
                                     >
                                         ${name}
                                     </a>
-                                    <button
-                                        type="button"
-                                        aria-label=${t("menu.removeSaved", name)}
-                                        onClick=${() => {
-                                            if (
-                                                confirm(t("menu.confirmRemove"))
-                                            ) {
-                                                // Keep the target present until outside click detection runs.
-                                                setTimeout(() =>
-                                                    removeSavedDz(name),
-                                                );
-                                            }
-                                        }}
-                                    >
-                                        ${h(Icon, { name: "close", size: 16 })}
-                                    </button>
+                                    ${h(
+                                        Button,
+                                        {
+                                            type: "button",
+                                            "aria-label": t(
+                                                "menu.removeSaved",
+                                                name,
+                                            ),
+                                            onClick: () => {
+                                                if (
+                                                    confirm(
+                                                        t("menu.confirmRemove"),
+                                                    )
+                                                ) {
+                                                    // Keep the target present until outside click detection runs.
+                                                    setTimeout(() =>
+                                                        removeSavedDz(name),
+                                                    );
+                                                }
+                                            },
+                                        },
+                                        html`
+                                            ${h(Icon, { name: "close", size: 16 })}
+                                        `,
+                                    )}
                                 </div>
                             `;
                         })}
                     </div>
-                    <button
-                        class="save-dz text-rem-0-85 mt-1.5"
-                        type="button"
-                        onClick=${() => saveCurrentDz(prompt(t("menu.namePrompt"), NAME.value))}
-                    >
-                        ${t("menu.saveCurrent")}
-                    </button>
+                    ${h(
+                        Button,
+                        {
+                            class: "save-dz text-rem-0-85 mt-1.5",
+                            type: "button",
+                            onClick: () =>
+                                saveCurrentDz(
+                                    prompt(t("menu.namePrompt"), NAME.value),
+                                ),
+                        },
+                        html`
+                            ${t("menu.saveCurrent")}
+                        `,
+                    )}
                     <div class="dzs dz-grid mt-4" onClick=${savePreviousDz}>
                         ${OTHER_DZs.map(
                             (dz) => html`
@@ -361,33 +382,45 @@ export function SideMenu({ manualEditorRef }) {
                         role="group"
                         aria-labelledby="menu-language"
                     >
-                        <button
-                            type="button"
-                            aria-pressed=${LANGUAGE.value === "en"}
-                            onClick=${() => {
-                                setLanguage("en");
-                                MENU_OPEN.value = false;
-                            }}
-                        >
-                            ${t("language.english")}
-                        </button>
-                        <button
-                            type="button"
-                            aria-pressed=${LANGUAGE.value === "fi"}
-                            onClick=${() => {
-                                setLanguage("fi");
-                                MENU_OPEN.value = false;
-                            }}
-                        >
-                            ${t("language.finnish")}
-                        </button>
+                        ${h(
+                            Button,
+                            {
+                                type: "button",
+                                "aria-pressed": LANGUAGE.value === "en",
+                                onClick: () => {
+                                    setLanguage("en");
+                                    MENU_OPEN.value = false;
+                                },
+                            },
+                            html`
+                                ${t("language.english")}
+                            `,
+                        )}
+                        ${h(
+                            Button,
+                            {
+                                type: "button",
+                                "aria-pressed": LANGUAGE.value === "fi",
+                                onClick: () => {
+                                    setLanguage("fi");
+                                    MENU_OPEN.value = false;
+                                },
+                            },
+                            html`
+                                ${t("language.finnish")}
+                            `,
+                        )}
                     </div>
                 </section>
 
                 <footer class="menu-section menu-footer text-rem-0-8">
-                    <button type="button" onClick=${resetCurrentDz}>
-                        ${t("menu.reset")}
-                    </button>
+                    ${h(
+                        Button,
+                        { type: "button", onClick: resetCurrentDz },
+                        html`
+                            ${t("menu.reset")}
+                        `,
+                    )}
                     ${h(ManualMode, {
                         editorRef: manualEditorRef,
                         onOpen: () => {
@@ -433,18 +466,22 @@ export function FloatingMenuButton() {
     `);
 
     return html`
-        <button
-            class="menu-burger"
-            type="button"
-            aria-label=${t("menu.label")}
-            aria-expanded=${MENU_OPEN.value}
-            aria-controls="side-menu"
-            onClick=${() => {
-                MENU_OPEN.value = !MENU_OPEN.value;
-            }}
-        >
-            ${scope.style}
-            ${h(Icon, { name: MENU_OPEN.value ? "close" : "menu", size: 24 })}
-        </button>
+        ${h(
+            Button,
+            {
+                class: "menu-burger",
+                type: "button",
+                "aria-label": t("menu.label"),
+                "aria-expanded": MENU_OPEN.value,
+                "aria-controls": "side-menu",
+                onClick: () => {
+                    MENU_OPEN.value = !MENU_OPEN.value;
+                },
+            },
+            html`
+                ${scope.style}
+                ${h(Icon, { name: MENU_OPEN.value ? "close" : "menu", size: 24 })}
+            `,
+        )}
     `;
 }

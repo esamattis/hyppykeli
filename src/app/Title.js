@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { FormField } from "#app/shared/FormFields.js";
 import { Dialog } from "#app/shared/Dialog.js";
 import { FromNow } from "#app/shared/FromNow.js";
@@ -143,16 +144,20 @@ export function Title() {
             <span class="title-details">
                 <span class="title-name-row">
                     <span class="title-name">${NAME}</span>
-                    <button
-                        class="edit-name p-1"
-                        type="button"
-                        aria-label=${t("title.edit")}
-                        data-tooltip=${t("title.edit")}
-                        aria-haspopup="dialog"
-                        onClick=${openNameEditor}
-                    >
-                        ${h(Icon, { name: "pen", size: 20 })}
-                    </button>
+                    ${h(
+                        Button,
+                        {
+                            class: "edit-name p-1",
+                            type: "button",
+                            "aria-label": t("title.edit"),
+                            "data-tooltip": t("title.edit"),
+                            "aria-haspopup": "dialog",
+                            onClick: openNameEditor,
+                        },
+                        html`
+                            ${h(Icon, { name: "pen", size: 20 })}
+                        `,
+                    )}
                 </span>
                 <span class="title-elevation text-rem-0-75 font-normal">
                     ${t("title.elevation", String(Math.round(DROPZONE_ELEVATION.value)))}
@@ -230,7 +235,13 @@ export function Title() {
                             ${t("title.emptyName")}
                         </p>
                         <div class="name-actions mt-5">
-                            <button type="submit">${t("common.save")}</button>
+                            ${h(
+                                Button,
+                                { type: "submit" },
+                                html`
+                                    ${t("common.save")}
+                                `,
+                            )}
                         </div>
                     </form>
                 </div>

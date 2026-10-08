@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { writeMapQuery } from "#app/map/mapQuery.js";
 import {
     fetchElevation,
@@ -634,9 +635,13 @@ export function CreateDropzoneForm({ coordinates }) {
 
             <input type="hidden" name="save" value="1" />
 
-            <button class="create-dz mt-2.5">
-                ${t("landing.createButton")}
-            </button>
+            ${h(
+                Button,
+                { class: "create-dz mt-2.5", type: "submit" },
+                html`
+                    ${t("landing.createButton")}
+                `,
+            )}
         </form>
         <p>${t("landing.savedLocally")}</p>
     `;

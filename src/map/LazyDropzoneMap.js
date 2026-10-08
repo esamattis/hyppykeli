@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { cardHeadingStyles } from "#app/styles.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
@@ -75,12 +76,16 @@ export function LazyDropzoneMap() {
             ${
                 failed &&
                 html`
-                    <button
-                        type="button"
-                        onClick=${() => setAttempt(attempt + 1)}
-                    >
-                        ${t("common.retry")}
-                    </button>
+                    ${h(
+                        Button,
+                        {
+                            type: "button",
+                            onClick: () => setAttempt(attempt + 1),
+                        },
+                        html`
+                            ${t("common.retry")}
+                        `,
+                    )}
                 `
             }
         </section>

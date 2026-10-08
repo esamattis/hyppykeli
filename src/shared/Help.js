@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { Dialog } from "#app/shared/Dialog.js";
@@ -59,17 +60,21 @@ export function Help(props) {
     };
 
     return html`
-        <button
-            class="help p-1"
-            type="button"
-            onClick=${open}
-            id=${props.id}
-            aria-label=${props.label ?? t("common.help")}
-            data-tooltip=${props.label ?? t("common.help")}
-            aria-haspopup="dialog"
-        >
-            ${scope.style} ${h(Icon, { name: "help", size: 20 })}
-        </button>
+        ${h(
+            Button,
+            {
+                class: "help p-1",
+                type: "button",
+                onClick: open,
+                id: props.id,
+                "aria-label": props.label ?? t("common.help"),
+                "data-tooltip": props.label ?? t("common.help"),
+                "aria-haspopup": "dialog",
+            },
+            html`
+                ${scope.style} ${h(Icon, { name: "help", size: 20 })}
+            `,
+        )}
         ${h(
             Dialog,
             {

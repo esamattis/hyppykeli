@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { Help } from "#app/shared/Help.js";
 import { Dialog } from "#app/shared/Dialog.js";
 import { CheckboxField } from "#app/shared/FormFields.js";
@@ -457,28 +458,32 @@ export function FreefallToolbar({
                     <div class="wind-level-bar">
                         ${windLevels.levels.map(
                             (level) => html`
-                                <button
-                                    type="button"
-                                    class="wind-level-choice p-0 pb-0.5"
-                                    aria-label=${`${level.label}: ${level.text}`}
-                                    aria-pressed=${level.selected}
-                                    onClick=${() =>
-                                        windLevels.onSelect(level.id)}
-                                >
-                                    ${level.graphic}
-                                    <span
-                                        class="wind-level-speed text-rem-0-5 wind-barb-large:text-rem-0-65 mb-0.5"
-                                        aria-hidden="true"
-                                    >
-                                        ${level.speedLabel}
-                                    </span>
-                                    <span
-                                        class="wind-level-height text-rem-0-5 wind-barb-large:text-rem-0-65"
-                                        aria-hidden="true"
-                                    >
-                                        ${level.heightLabel}
-                                    </span>
-                                </button>
+                                ${h(
+                                    Button,
+                                    {
+                                        type: "button",
+                                        class: "wind-level-choice p-0 pb-0.5",
+                                        "aria-label": `${level.label}: ${level.text}`,
+                                        "aria-pressed": level.selected,
+                                        onClick: () =>
+                                            windLevels.onSelect(level.id),
+                                    },
+                                    html`
+                                        ${level.graphic}
+                                        <span
+                                            class="wind-level-speed text-rem-0-5 wind-barb-large:text-rem-0-65 mb-0.5"
+                                            aria-hidden="true"
+                                        >
+                                            ${level.speedLabel}
+                                        </span>
+                                        <span
+                                            class="wind-level-height text-rem-0-5 wind-barb-large:text-rem-0-65"
+                                            aria-hidden="true"
+                                        >
+                                            ${level.heightLabel}
+                                        </span>
+                                    `,
+                                )}
                             `,
                         )}
                     </div>

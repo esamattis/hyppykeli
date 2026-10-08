@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { ManualBanner } from "#app/manual/ManualMode.js";
 import { LazyDropzoneMap } from "#app/map/LazyDropzoneMap.js";
 import { formatDate, humanDayText } from "#app/shared/dates.js";
@@ -237,14 +238,18 @@ export function App() {
                 ERRORS.value.length > 0
                     ? html`
                           <div id="errors" class="errors text-rem-0-7">
-                              <button
-                                  type="button"
-                                  class="px-1 py-0.5 me-2 text-inherit"
-                                  disabled=${retrying}
-                                  onClick=${retryErrors}
-                              >
-                                  ${t("common.retry")}
-                              </button>
+                              ${h(
+                                  Button,
+                                  {
+                                      type: "button",
+                                      class: "px-1 py-0.5 me-2 text-inherit",
+                                      disabled: retrying,
+                                      onClick: retryErrors,
+                                  },
+                                  html`
+                                      ${t("common.retry")}
+                                  `,
+                              )}
                               ${ERRORS.value.map((error) => {
                                   return html`
                                       <p role="alert">${error}</p>

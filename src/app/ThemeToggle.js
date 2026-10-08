@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { THEME_PREFERENCE, setThemePreference } from "#app/app/theme.js";
 import { Icon } from "#app/shared/icons.js";
 import { t } from "#app/translations.js";
@@ -33,14 +34,18 @@ export function ThemeToggle() {
     const next = modes[(modes.indexOf(mode) + 1) % modes.length] ?? "system";
     const label = t("theme.toggle", t(`theme.${mode}`), t(`theme.${next}`));
     return html`
-        <button
-            class="theme-toggle p-2"
-            type="button"
-            aria-label=${label}
-            data-tooltip=${label}
-            onClick=${() => setThemePreference(next)}
-        >
-            ${scope.style} ${h(Icon, { name: icons[mode], size: 24 })}
-        </button>
+        ${h(
+            Button,
+            {
+                class: "theme-toggle p-2",
+                type: "button",
+                "aria-label": label,
+                "data-tooltip": label,
+                onClick: () => setThemePreference(next),
+            },
+            html`
+                ${scope.style} ${h(Icon, { name: icons[mode], size: 24 })}
+            `,
+        )}
     `;
 }

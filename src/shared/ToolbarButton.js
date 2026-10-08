@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { css, useScope } from "#app/useScope.js";
 import { Icon } from "#app/shared/icons.js";
 import { h, html } from "htm/preact";
@@ -41,20 +42,24 @@ export function ToolbarButton({
         }
     `);
     return html`
-        <button
-            type="button"
-            class=${`arrow-action p-0 text-rem-0-75${className ? ` ${className}` : ""}`}
-            aria-label=${label}
-            data-tooltip=${showTooltip ? label : undefined}
-            aria-pressed=${pressed}
-            aria-expanded=${expanded === undefined ? undefined : String(expanded)}
-            aria-controls=${controls}
-            aria-haspopup=${hasPopup}
-            popovertarget=${popoverTarget}
-            disabled=${disabled}
-            onClick=${onClick}
-        >
-            ${scope.style} ${h(Icon, { name: icon, size })}
-        </button>
+        ${h(
+            Button,
+            {
+                type: "button",
+                class: `arrow-action p-0 text-rem-0-75${className ? ` ${className}` : ""}`,
+                "aria-label": label,
+                "data-tooltip": showTooltip ? label : undefined,
+                "aria-pressed": pressed,
+                "aria-expanded": expanded,
+                "aria-controls": controls,
+                "aria-haspopup": hasPopup,
+                popovertarget: popoverTarget,
+                disabled: disabled,
+                onClick: onClick,
+            },
+            html`
+                ${scope.style} ${h(Icon, { name: icon, size })}
+            `,
+        )}
     `;
 }

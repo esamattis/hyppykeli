@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { Icon } from "#app/shared/icons.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { t } from "#app/translations.js";
@@ -77,38 +78,42 @@ export function MapCompass() {
     `);
     const label = t(minimized ? "compass.restore" : "compass.minimize");
     return html`
-        <button
-            type="button"
-            class=${`map-compass${minimized ? " minimized text-rem-0-75" : ""}`}
-            aria-label=${label}
-            title=${label}
-            aria-expanded=${!minimized}
-            onClick=${() => setMinimized((value) => !value)}
-        >
-            ${scope.style}
-            ${
-                minimized
-                    ? h(Icon, { name: "compass", size: 18 })
-                    : html`
-                          <div
-                              class="map-compass-gust px-3 py-2"
-                              aria-label=${t("weather.groundGust")}
-                          >
+        ${h(
+            Button,
+            {
+                type: "button",
+                class: `map-compass${minimized ? " minimized text-rem-0-75" : ""}`,
+                "aria-label": label,
+                "data-tooltip": label,
+                "aria-expanded": !minimized,
+                onClick: () => setMinimized((value) => !value),
+            },
+            html`
+                ${scope.style}
+                ${
+                    minimized
+                        ? h(Icon, { name: "compass", size: 18 })
+                        : html`
                               <div
-                                  class="map-compass-gust-label text-rem-0-5 font-heading mb-1"
+                                  class="map-compass-gust px-3 py-2"
+                                  aria-label=${t("weather.groundGust")}
                               >
-                                  ${t("weather.groundGust")}
+                                  <div
+                                      class="map-compass-gust-label text-rem-0-5 font-heading mb-1"
+                                  >
+                                      ${t("weather.groundGust")}
+                                  </div>
+                                  ${h(GustReading, {})}
+                                  <div
+                                      class="map-compass-gust-age text-rem-0-5 font-heading mt-1"
+                                  >
+                                      ${h(FromNow, { date: LATEST_OBSERVATION.value?.time, showClock: false })}
+                                  </div>
                               </div>
-                              ${h(GustReading, {})}
-                              <div
-                                  class="map-compass-gust-age text-rem-0-5 font-heading mt-1"
-                              >
-                                  ${h(FromNow, { date: LATEST_OBSERVATION.value?.time, showClock: false })}
-                              </div>
-                          </div>
-                          ${h(Compass, { id: "map-compass", showControls: false })}
-                      `
-            }
-        </button>
+                              ${h(Compass, { id: "map-compass", showControls: false })}
+                          `
+                }
+            `,
+        )}
     `;
 }

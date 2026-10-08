@@ -1,6 +1,7 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { css, useScope } from "#app/useScope.js";
-import { html } from "htm/preact";
+import { h, html } from "htm/preact";
 
 const presets = [
     { label: "FS", value: 180 },
@@ -33,16 +34,20 @@ export function SpeedPresets({ onSelect }) {
             ${scope.style}
             ${presets.map(
                 (preset) => html`
-                    <button
-                        class="text-rem-0-7 p-1"
-                        type="button"
-                        onClick=${() => onSelect(preset.value)}
-                    >
-                        ${preset.label}
-                        <span class="preset-speed text-rem-0-6 font-normal">
-                            ${preset.value} km/h
-                        </span>
-                    </button>
+                    ${h(
+                        Button,
+                        {
+                            class: "text-rem-0-7 p-1",
+                            type: "button",
+                            onClick: () => onSelect(preset.value),
+                        },
+                        html`
+                            ${preset.label}
+                            <span class="preset-speed text-rem-0-6 font-normal">
+                                ${preset.value} km/h
+                            </span>
+                        `,
+                    )}
                 `,
             )}
         </div>

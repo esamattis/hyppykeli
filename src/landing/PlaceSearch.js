@@ -1,8 +1,9 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { searchPlaces } from "#app/landing/api.js";
 import { LANGUAGE, t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
-import { html } from "htm/preact";
+import { h, html } from "htm/preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 /** @param {{ onSelect: (result: PlaceSearchResult) => void, disabled: boolean }} props */
@@ -92,12 +93,16 @@ export function PlaceSearch({ onSelect, disabled }) {
                         disabled=${disabled}
                         onInput=${(/** @type {import("preact").JSX.TargetedEvent<HTMLInputElement>} */ event) => setQuery(event.currentTarget.value)}
                     />
-                    <button
-                        type="submit"
-                        disabled=${disabled || busy || !query.trim()}
-                    >
-                        ${t(busy ? "landing.searching" : "landing.search")}
-                    </button>
+                    ${h(
+                        Button,
+                        {
+                            type: "submit",
+                            disabled: disabled || busy || !query.trim(),
+                        },
+                        html`
+                            ${t(busy ? "landing.searching" : "landing.search")}
+                        `,
+                    )}
                 </div>
             </form>
             <div role="status" aria-live="polite">
@@ -120,12 +125,16 @@ export function PlaceSearch({ onSelect, disabled }) {
                                 <li
                                     key=${`${result.lat},${result.lon},${result.display_name}`}
                                 >
-                                    <button
-                                        type="button"
-                                        onClick=${() => onSelect(result)}
-                                    >
-                                        ${result.display_name}
-                                    </button>
+                                    ${h(
+                                        Button,
+                                        {
+                                            type: "button",
+                                            onClick: () => onSelect(result),
+                                        },
+                                        html`
+                                            ${result.display_name}
+                                        `,
+                                    )}
                                 </li>
                             `,
                         )}

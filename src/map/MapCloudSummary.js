@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
 import { formatClock } from "#app/shared/dates.js";
@@ -99,72 +100,77 @@ export function MapCloudSummary() {
     const label = t(minimized ? "cloud.restore" : "cloud.minimize");
 
     return html`
-        <button
-            type="button"
-            class=${`map-cloud-summary text-rem-0-75 font-inherit ${minimized ? "minimized p-0" : "px-2 py-1.5"}`}
-            aria-label=${label}
-            data-tooltip=${label}
-            aria-expanded=${!minimized}
-            onClick=${() => setMinimized((value) => !value)}
-        >
-            ${scope.style}
-            ${
-                minimized
-                    ? h(Icon, { name: "cloudOvercast", size: 18 })
-                    : html`
-                          <div class="map-cloud-source text-rem-0-65 mb-1">
-                              <span
-                                  data-tooltip=${hasMetarClouds ? metar?.metar : undefined}
+        ${h(
+            Button,
+            {
+                type: "button",
+                class: `map-cloud-summary text-rem-0-75 font-inherit ${minimized ? "minimized p-0" : "px-2 py-1.5"}`,
+                "aria-label": label,
+                "data-tooltip": label,
+                "aria-expanded": !minimized,
+                onClick: () => setMinimized((value) => !value),
+            },
+            html`
+                ${scope.style}
+                ${
+                    minimized
+                        ? h(Icon, { name: "cloudOvercast", size: 18 })
+                        : html`
+                              <div class="map-cloud-source text-rem-0-65 mb-1">
+                                  <span
+                                      data-tooltip=${hasMetarClouds ? metar?.metar : undefined}
+                                  >
+                                      ${hasMetarClouds ? "METAR" : "Open-Meteo"}
+                                  </span>
+                                  <span
+                                      data-tooltip=${time ? formatClock(time) : undefined}
+                                  >
+                                      ${h(FromNow, { date: time, showClock: false })}
+                                  </span>
+                              </div>
+                              <div
+                                  class="map-cloud-layers"
+                                  aria-label=${t("weather.clouds")}
                               >
-                                  ${hasMetarClouds ? "METAR" : "Open-Meteo"}
-                              </span>
-                              <span
-                                  data-tooltip=${time ? formatClock(time) : undefined}
-                              >
-                                  ${h(FromNow, { date: time, showClock: false })}
-                              </span>
-                          </div>
-                          <div
-                              class="map-cloud-layers"
-                              aria-label=${t("weather.clouds")}
-                          >
-                              ${
-                                  hasMetarClouds
-                                      ? html`
-                                            ${h(CompactCloudLayers, {
-                                                clouds: metar?.clouds ?? [],
+                                  ${
+                                      hasMetarClouds
+                                          ? html`
+                                                ${h(CompactCloudLayers, {
+                                                    clouds: metar?.clouds ?? [],
+                                                    focusable: false,
+                                                })}
+                                                ${
+                                                    cavok &&
+                                                    !metar?.clouds.length
+                                                        ? h(CompactCavok, {
+                                                              focusable: false,
+                                                          })
+                                                        : null
+                                                }
+                                                ${
+                                                    metar?.cbWithoutLayer
+                                                        ? html`
+                                                              <div
+                                                                  class="map-cloud-layer map-cloud-warning"
+                                                              >
+                                                                  ${h(Icon, { name: "lightning", size: 20 })}
+                                                                  <span>
+                                                                      ${t("cloud.cumulonimbus")}
+                                                                  </span>
+                                                              </div>
+                                                          `
+                                                        : null
+                                                }
+                                            `
+                                          : h(CompactOpenMeteoCloudLayers, {
+                                                layers: profile?.layers ?? [],
                                                 focusable: false,
-                                            })}
-                                            ${
-                                                cavok && !metar?.clouds.length
-                                                    ? h(CompactCavok, {
-                                                          focusable: false,
-                                                      })
-                                                    : null
-                                            }
-                                            ${
-                                                metar?.cbWithoutLayer
-                                                    ? html`
-                                                          <div
-                                                              class="map-cloud-layer map-cloud-warning"
-                                                          >
-                                                              ${h(Icon, { name: "lightning", size: 20 })}
-                                                              <span>
-                                                                  ${t("cloud.cumulonimbus")}
-                                                              </span>
-                                                          </div>
-                                                      `
-                                                    : null
-                                            }
-                                        `
-                                      : h(CompactOpenMeteoCloudLayers, {
-                                            layers: profile?.layers ?? [],
-                                            focusable: false,
-                                        })
-                              }
-                          </div>
-                      `
-            }
-        </button>
+                                            })
+                                  }
+                              </div>
+                          `
+                }
+            `,
+        )}
     `;
 }

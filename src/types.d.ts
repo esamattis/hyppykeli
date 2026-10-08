@@ -1,6 +1,10 @@
 type Signal<T> = import("@preact/signals").Signal<T>;
 type ReadonlySignal<T> = import("@preact/signals").ReadonlySignal<T>;
 
+type ButtonProps = import("preact").JSX.IntrinsicElements["button"] & {
+    "data-tooltip"?: string;
+};
+
 interface GeographicPosition {
     lat: number;
     lng: number;

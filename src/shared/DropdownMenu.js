@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { ToolbarButton } from "#app/shared/ToolbarButton.js";
 import { Icon } from "#app/shared/icons.js";
 import { css, useScope } from "#app/useScope.js";
@@ -263,19 +264,23 @@ export function DropdownMenu({
             ${
                 trigger
                     ? html`
-                          <button
-                              type="button"
-                              class="dropdown-trigger dropdown-trigger-labeled text-rem-0-8 font-semibold py-1 pl-2 pr-7"
-                              aria-label=${label}
-                              aria-haspopup="menu"
-                              aria-expanded=${String(open)}
-                              aria-controls=${menuId}
-                              aria-pressed=${pressed}
-                              popovertarget=${menuId}
-                              disabled=${disabled}
-                          >
-                              ${trigger}
-                          </button>
+                          ${h(
+                              Button,
+                              {
+                                  type: "button",
+                                  class: "dropdown-trigger dropdown-trigger-labeled text-rem-0-8 font-semibold py-1 pl-2 pr-7",
+                                  "aria-label": label,
+                                  "aria-haspopup": "menu",
+                                  "aria-expanded": open,
+                                  "aria-controls": menuId,
+                                  "aria-pressed": pressed,
+                                  popovertarget: menuId,
+                                  disabled: disabled,
+                              },
+                              html`
+                                  ${trigger}
+                              `,
+                          )}
                       `
                     : h(ToolbarButton, {
                           label,
@@ -318,23 +323,29 @@ export function DropdownMenu({
                 ${items.map((item) => {
                     const toggle = typeof item.pressed === "boolean";
                     return html`
-                        <button
-                            type="button"
-                            class="dropdown-item text-rem-0-85 font-semibold py-2 px-2.5"
-                            role=${toggle ? "menuitemcheckbox" : "menuitem"}
-                            aria-label=${item.label}
-                            aria-checked=${toggle ? String(item.pressed) : undefined}
-                            disabled=${item.disabled}
-                            onClick=${() => {
-                                if (item.disabled) return;
-                                item.onSelect();
-                                if (item.closeOnSelect !== false)
-                                    menuRef.current?.hidePopover();
-                            }}
-                        >
-                            ${h(Icon, { name: item.icon, size: item.size ?? 18 })}
-                            <span>${item.label}</span>
-                        </button>
+                        ${h(
+                            Button,
+                            {
+                                type: "button",
+                                class: "dropdown-item text-rem-0-85 font-semibold py-2 px-2.5",
+                                role: toggle ? "menuitemcheckbox" : "menuitem",
+                                "aria-label": item.label,
+                                "aria-checked": toggle
+                                    ? item.pressed
+                                    : undefined,
+                                disabled: item.disabled,
+                                onClick: () => {
+                                    if (item.disabled) return;
+                                    item.onSelect();
+                                    if (item.closeOnSelect !== false)
+                                        menuRef.current?.hidePopover();
+                                },
+                            },
+                            html`
+                                ${h(Icon, { name: item.icon, size: item.size ?? 18 })}
+                                <span>${item.label}</span>
+                            `,
+                        )}
                     `;
                 })}
                 ${children}

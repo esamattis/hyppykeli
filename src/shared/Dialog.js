@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { Icon } from "#app/shared/icons.js";
@@ -95,15 +96,19 @@ export function Dialog(props) {
         >
             ${scope.style}
             <div class="dialog-controls">
-                <button
-                    class="dialog-close"
-                    type="button"
-                    aria-label=${t("common.close")}
-                    data-tooltip=${t("common.close")}
-                    onClick=${() => ref.current?.close()}
-                >
-                    ${h(Icon, { name: "close", size: 24 })}
-                </button>
+                ${h(
+                    Button,
+                    {
+                        class: "dialog-close",
+                        type: "button",
+                        "aria-label": t("common.close"),
+                        "data-tooltip": t("common.close"),
+                        onClick: () => ref.current?.close(),
+                    },
+                    html`
+                        ${h(Icon, { name: "close", size: 24 })}
+                    `,
+                )}
             </div>
             ${props.children}
         </dialog>

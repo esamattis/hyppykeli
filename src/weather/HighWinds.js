@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { ErrorBoundary } from "#app/shared/ErrorBoundary.js";
 import { Help } from "#app/shared/Help.js";
 import { t } from "#app/translations.js";
@@ -29,12 +30,16 @@ export function HighWinds() {
             </div>
 
             <p>
-                <button
-                    type="button"
-                    onClick=${() => setShowDetails(!showDetails)}
-                >
-                    ${showDetails ? t("highWinds.showSummary") : t("highWinds.showDetails")}
-                </button>
+                ${h(
+                    Button,
+                    {
+                        type: "button",
+                        onClick: () => setShowDetails(!showDetails),
+                    },
+                    html`
+                        ${showDetails ? t("highWinds.showSummary") : t("highWinds.showDetails")}
+                    `,
+                )}
             </p>
 
             <div

@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { Dialog } from "#app/shared/Dialog.js";
 import { Help } from "#app/shared/Help.js";
 import { formatClock } from "#app/shared/dates.js";
@@ -282,20 +283,24 @@ export function TableDialog(props) {
     const ref = useRef(null);
 
     return html`
-        <button
-            class="table-button"
-            type="button"
-            aria-label=${t("common.asTable", props.title)}
-            aria-haspopup="dialog"
-            aria-controls=${props.id}
-            data-tooltip=${t("common.asTable", props.title)}
-            onClick=${() => {
-                ref.current?.showModal();
-                props.onOpen?.();
-            }}
-        >
-            ${scope.style} ${h(Icon, { name: "table", size: 24 })}
-        </button>
+        ${h(
+            Button,
+            {
+                class: "table-button",
+                type: "button",
+                "aria-label": t("common.asTable", props.title),
+                "aria-haspopup": "dialog",
+                "aria-controls": props.id,
+                "data-tooltip": t("common.asTable", props.title),
+                onClick: () => {
+                    ref.current?.showModal();
+                    props.onOpen?.();
+                },
+            },
+            html`
+                ${scope.style} ${h(Icon, { name: "table", size: 24 })}
+            `,
+        )}
         ${h(
             Dialog,
             {

@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { ClearableInput, FormField } from "#app/shared/FormFields.js";
 import { QUERY_PARAMS, navigateQs } from "#app/app/settings.js";
 import { ManualWindTable } from "#app/manual/ManualWindTable.js";
@@ -151,17 +152,25 @@ export function ManualBanner({ onEdit }) {
                 ${" "}${t("manual.manualValues")}
             </span>
             <div class="developer-banner-actions">
-                <button
-                    type="button"
-                    aria-haspopup="dialog"
-                    aria-controls="developer-mode"
-                    onClick=${onEdit}
-                >
-                    ${t("manual.edit")}
-                </button>
-                <button type="button" onClick=${clearOverrides}>
-                    ${t("manual.restore")}
-                </button>
+                ${h(
+                    Button,
+                    {
+                        type: "button",
+                        "aria-haspopup": "dialog",
+                        "aria-controls": "developer-mode",
+                        onClick: onEdit,
+                    },
+                    html`
+                        ${t("manual.edit")}
+                    `,
+                )}
+                ${h(
+                    Button,
+                    { type: "button", onClick: clearOverrides },
+                    html`
+                        ${t("manual.restore")}
+                    `,
+                )}
             </div>
         </aside>
     `;
@@ -455,14 +464,18 @@ export function ManualMode(props) {
     return html`
         <div class="developer-controls">
             ${scope.style}
-            <button
-                type="button"
-                aria-haspopup="dialog"
-                aria-controls="developer-mode"
-                onClick=${open}
-            >
-                ${t("manual.title")}
-            </button>
+            ${h(
+                Button,
+                {
+                    type: "button",
+                    "aria-haspopup": "dialog",
+                    "aria-controls": "developer-mode",
+                    onClick: open,
+                },
+                html`
+                    ${t("manual.title")}
+                `,
+            )}
         </div>
         ${h(
             Dialog,
@@ -476,21 +489,33 @@ export function ManualMode(props) {
                 <h2 id="developer-mode-title">${t("manual.title")}</h2>
                 <p>${t("manual.description")}</p>
                 <div class="developer-actions mt-5">
-                    <button type="button" onClick=${captureCurrentValues}>
-                        ${t("manual.capture")}
-                    </button>
-                    <button type="button" onClick=${copyCurrentUrl}>
-                        ${t("manual.copyUrl")}
-                    </button>
-                    <button
-                        type="button"
-                        onClick=${() => {
-                            clearOverrides();
-                            dialogRef.current?.close();
-                        }}
-                    >
-                        ${t("manual.clear")}
-                    </button>
+                    ${h(
+                        Button,
+                        { type: "button", onClick: captureCurrentValues },
+                        html`
+                            ${t("manual.capture")}
+                        `,
+                    )}
+                    ${h(
+                        Button,
+                        { type: "button", onClick: copyCurrentUrl },
+                        html`
+                            ${t("manual.copyUrl")}
+                        `,
+                    )}
+                    ${h(
+                        Button,
+                        {
+                            type: "button",
+                            onClick: () => {
+                                clearOverrides();
+                                dialogRef.current?.close();
+                            },
+                        },
+                        html`
+                            ${t("manual.clear")}
+                        `,
+                    )}
                 </div>
                 <p>${t("manual.immediate")}</p>
                 ${
@@ -672,12 +697,16 @@ export function ManualMode(props) {
                         </tbody>
                     </table>
                     <div class="ground-table-actions mt-3">
-                        <button
-                            type="button"
-                            onClick=${resetGroundObservations}
-                        >
-                            ${t("manual.resetGroundObservations")}
-                        </button>
+                        ${h(
+                            Button,
+                            {
+                                type: "button",
+                                onClick: resetGroundObservations,
+                            },
+                            html`
+                                ${t("manual.resetGroundObservations")}
+                            `,
+                        )}
                     </div>
                     <p>${t("manual.groundHelp")}</p>
                     ${

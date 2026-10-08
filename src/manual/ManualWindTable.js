@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { ClearableInput } from "#app/shared/FormFields.js";
 import {
     QUERY_PARAMS,
@@ -239,9 +240,13 @@ export function ManualWindTable({
                 </tbody>
             </table>
             <div class="wind-table-actions mt-3">
-                <button type="button" onClick=${resetUpperWinds}>
-                    ${t("manual.resetUpperWinds")}
-                </button>
+                ${h(
+                    Button,
+                    { type: "button", onClick: resetUpperWinds },
+                    html`
+                        ${t("manual.resetUpperWinds")}
+                    `,
+                )}
             </div>
 
             ${

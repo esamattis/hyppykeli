@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { PlaceSearch } from "#app/landing/PlaceSearch.js";
 import { Icon } from "#app/shared/icons.js";
 import {
@@ -11,6 +12,7 @@ import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
 import { divIcon, marker, popup, map, tileLayer } from "leaflet";
+import { render } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 /**
@@ -49,6 +51,7 @@ export function DropzoneCoordinateMap({ onSelect }) {
     const popupRef = useRef(
         /** @type {import("leaflet").Popup | null} */ (null),
     );
+    const popupContentRef = useRef(/** @type {HTMLDivElement | null} */ (null));
     const onSelectRef = useRef(onSelect);
     onSelectRef.current = onSelect;
     const [locating, setLocating] = useState(false);
@@ -63,6 +66,7 @@ export function DropzoneCoordinateMap({ onSelect }) {
         }).setView([64.5, 26], 5);
         mapRef.current = leafletMap;
         popupRef.current = popup({ closeButton: false });
+        popupContentRef.current = document.createElement("div");
         tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
             attribution:
                 '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> | <a href="https://nominatim.org/">Nominatim</a> | <a href="https://open-meteo.com/">Open-Meteo</a>',
@@ -110,6 +114,8 @@ export function DropzoneCoordinateMap({ onSelect }) {
             observer.disconnect();
             mapRef.current = null;
             popupRef.current = null;
+            if (popupContentRef.current) render(null, popupContentRef.current);
+            popupContentRef.current = null;
             leafletMap.remove();
         };
     }, []);
@@ -118,18 +124,25 @@ export function DropzoneCoordinateMap({ onSelect }) {
     function showCreatePopup(latitude, longitude, autoPan = true) {
         const leafletMap = mapRef.current;
         const createPopup = popupRef.current;
-        if (!leafletMap || !createPopup) return;
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = t("landing.mapCreate");
-        button.addEventListener("click", () => {
-            onSelectRef.current(latitude.toFixed(5), longitude.toFixed(5));
-            leafletMap.closePopup();
-        });
+        const content = popupContentRef.current;
+        if (!leafletMap || !createPopup || !content) return;
+        render(
+            h(Button, {
+                children: t("landing.mapCreate"),
+                onClick: () => {
+                    onSelectRef.current(
+                        latitude.toFixed(5),
+                        longitude.toFixed(5),
+                    );
+                    leafletMap.closePopup();
+                },
+            }),
+            content,
+        );
         createPopup.options.autoPan = autoPan;
         createPopup
             .setLatLng([latitude, longitude])
-            .setContent(button)
+            .setContent(content)
             .openOn(leafletMap);
     }
 
@@ -161,17 +174,21 @@ export function DropzoneCoordinateMap({ onSelect }) {
         <div class="mb-4" role="region" aria-label=${t("landing.mapRegion")}>
             ${scope.style}
             <div class="map-canvas" ref=${containerRef}></div>
-            <button
-                class="location-button p-0"
-                id="get-location"
-                type="button"
-                aria-label=${t("landing.useLocation")}
-                data-tooltip=${t("landing.useLocation")}
-                disabled=${locating || !ready}
-                onClick=${getLocation}
-            >
-                ${h(Icon, { name: "location", size: 24 })}
-            </button>
+            ${h(
+                Button,
+                {
+                    class: "location-button p-0",
+                    id: "get-location",
+                    type: "button",
+                    "aria-label": t("landing.useLocation"),
+                    "data-tooltip": t("landing.useLocation"),
+                    disabled: locating || !ready,
+                    onClick: getLocation,
+                },
+                html`
+                    ${h(Icon, { name: "location", size: 24 })}
+                `,
+            )}
         </div>
         ${h(PlaceSearch, { onSelect: selectPlace, disabled: !ready })}
     `;

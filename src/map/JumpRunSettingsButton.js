@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { FieldHelp, FormField, NumberInput } from "#app/shared/FormFields.js";
 import { DROPZONE_ELEVATION, navigateQs } from "#app/app/settings.js";
 import { Dialog } from "#app/shared/Dialog.js";
@@ -449,14 +450,18 @@ export function JumpRunSettingsButton({
                                 }));
                             },
                         })}
-                        <button
-                            type="button"
-                            class="add-jumper text-rem-0-8 py-1.5 px-2"
-                            onClick=${addJumper}
-                        >
-                            ${h(Icon, { name: "plus", size: 16 })}
-                            ${t("settings.addJumper")}
-                        </button>
+                        ${h(
+                            Button,
+                            {
+                                type: "button",
+                                class: "add-jumper text-rem-0-8 py-1.5 px-2",
+                                onClick: addJumper,
+                            },
+                            html`
+                                ${h(Icon, { name: "plus", size: 16 })}
+                                ${t("settings.addJumper")}
+                            `,
+                        )}
                     </fieldset>
                     ${
                         jumperDrafts.length > 0 &&
@@ -552,15 +557,28 @@ export function JumpRunSettingsButton({
                                                         ),
                                                 })}
                                                 <td>
-                                                    <button
-                                                        type="button"
-                                                        class="remove-jumper p-0"
-                                                        aria-label=${t("settings.removeJumper", index + 1)}
-                                                        data-tooltip=${t("settings.removeJumper", index + 1)}
-                                                        onClick=${() => removeJumper(index)}
-                                                    >
-                                                        ${h(Icon, { name: "trash", size: 16 })}
-                                                    </button>
+                                                    ${h(
+                                                        Button,
+                                                        {
+                                                            type: "button",
+                                                            class: "remove-jumper p-0",
+                                                            "aria-label": t(
+                                                                "settings.removeJumper",
+                                                                index + 1,
+                                                            ),
+                                                            "data-tooltip": t(
+                                                                "settings.removeJumper",
+                                                                index + 1,
+                                                            ),
+                                                            onClick: () =>
+                                                                removeJumper(
+                                                                    index,
+                                                                ),
+                                                        },
+                                                        html`
+                                                            ${h(Icon, { name: "trash", size: 16 })}
+                                                        `,
+                                                    )}
                                                 </td>
                                             </tr>
                                         `,

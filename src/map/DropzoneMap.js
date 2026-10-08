@@ -1,6 +1,8 @@
 // @ts-check
 import { isMapRunCleared, writeMapQuery } from "#app/map/mapQuery.js";
 import { CheckboxField } from "#app/shared/FormFields.js";
+import { Button } from "#app/shared/Button.js";
+import { render } from "preact";
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
 import { holdAnimations } from "#app/app/animationState.js";
 import { getCanopyDrift } from "#app/map/canopy.js";
@@ -152,14 +154,6 @@ export function DropzoneMap() {
         .jump-run-placement .leaflet-popup-content > div {
             display: grid;
             gap: var(--spacing-1-5);
-        }
-        .jump-run-placement button {
-            font: inherit;
-            cursor: pointer;
-            background: var(--color-map-control);
-        }
-        .jump-run-placement button:hover {
-            background: var(--color-map-control-hover);
         }
         .jump-run-placement .leaflet-popup-tip-container {
             translate: calc(-1 * var(--placement-offset-x, 0px)) 0;
@@ -1334,6 +1328,7 @@ export function DropzoneMap() {
         let dismissedClick = null;
         const dismissPlacement = () => {
             cancelPendingPoint();
+            if (placementContent) render(null, placementContent);
             const element = placementCallout?.getElement();
             placementCallout?.remove();
             // Leaflet fades removed popups out; their buttons must stop
@@ -1367,17 +1362,20 @@ export function DropzoneMap() {
                 ["opening", t("map.confirmJumpRunPosition")],
                 ["landing", t("map.parachuteLandingPosition")],
             ];
-            for (const [placement, label] of options) {
-                const button = document.createElement("button");
-                button.type = "button";
-                button.textContent = label;
-                button.addEventListener("click", (event) => {
-                    event.stopPropagation();
-                    dismissPlacement();
-                    positionJumpRunAtRef.current?.(target, placement);
-                });
-                placementContent.append(button);
-            }
+            render(
+                options.map(([placement, label]) =>
+                    h(Button, {
+                        key: placement,
+                        children: label,
+                        onClick: (event) => {
+                            event.stopPropagation();
+                            dismissPlacement();
+                            positionJumpRunAtRef.current?.(target, placement);
+                        },
+                    }),
+                ),
+                placementContent,
+            );
             DomEvent.disableClickPropagation(placementContent);
             placementCallout = popup({
                 closeButton: false,

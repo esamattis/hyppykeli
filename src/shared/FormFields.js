@@ -1,4 +1,5 @@
 // @ts-check
+import { Button } from "#app/shared/Button.js";
 import { Help } from "#app/shared/Help.js";
 import { Icon } from "#app/shared/icons.js";
 import { t } from "#app/translations.js";
@@ -190,15 +191,19 @@ export function ClearableInput({
             ${
                 value
                     ? html`
-                          <button
-                              class="clear-input p-0"
-                              type="button"
-                              aria-label=${t("landing.clear", label)}
-                              data-tooltip=${t("landing.clear", label)}
-                              onClick=${clear}
-                          >
-                              ${h(Icon, { name: "close", size: 18 })}
-                          </button>
+                          ${h(
+                              Button,
+                              {
+                                  class: "clear-input p-0",
+                                  type: "button",
+                                  "aria-label": t("landing.clear", label),
+                                  "data-tooltip": t("landing.clear", label),
+                                  onClick: clear,
+                              },
+                              html`
+                                  ${h(Icon, { name: "close", size: 18 })}
+                              `,
+                          )}
                       `
                     : null
             }
