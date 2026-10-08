@@ -76,23 +76,35 @@
         --color-on-primary: #ffffff;
         /* Dividers, field borders, map chrome, and chart grids. */
         --color-border: #c8e2ef;
-        /* Bright green for safe wind readings, compass needles, and the first jumper. */
-        --color-success: #22c55e;
-        /* Bright orange for the student wind limit: readings, compass, and charts. */
-        --color-warning: #f28c00;
-        /* Bright red for the licensed wind limit and danger readings/markers. */
-        --color-danger: #ef3340;
+        /* Deep teal for safe wind readings, compass needles, and the first jumper. */
+        --color-success: #247568;
+        /* Warm amber for the student wind limit: readings, compass, and charts. */
+        --color-warning: #a56812;
+        /* Muted crimson for the licensed wind limit and danger readings/markers. */
+        --color-danger: #b54751;
         /* Subtle severe-cloud warning background. */
         --color-danger-soft: color-mix(
             in srgb,
             var(--color-danger) 8%,
             var(--color-surface)
         );
-        /* Wind-speed table fills, ordered from calm to strongest winds. */
-        --color-wind-low: #dcf2e3;
-        --color-wind-medium: #fff2b8;
-        --color-wind-high: #ffdbad;
-        --color-wind-very-high: #ffcbd0;
+        /* Quiet teal, amber, peach, and rose fills from calm to strongest winds. */
+        --color-wind-low: color-mix(
+            in srgb,
+            var(--color-success) 14%,
+            var(--color-surface)
+        );
+        --color-wind-medium: color-mix(
+            in srgb,
+            var(--color-warning) 18%,
+            var(--color-surface)
+        );
+        --color-wind-high: #f2dac8;
+        --color-wind-very-high: color-mix(
+            in srgb,
+            var(--color-danger) 22%,
+            var(--color-surface)
+        );
         /* Translucent map controls; hover increases opacity over map tiles. */
         --color-map-control: color-mix(
             in srgb,
