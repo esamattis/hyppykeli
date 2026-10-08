@@ -82,6 +82,8 @@
         --color-warning: #a56812;
         /* Muted crimson for the licensed wind limit and danger readings/markers. */
         --color-danger: #b54751;
+        /* Text and icon details on solid danger backgrounds. */
+        --color-on-danger: #ffffff;
         /* Subtle severe-cloud warning background. */
         --color-danger-soft: color-mix(
             in srgb,

@@ -53,12 +53,16 @@ const artwork = {
     `,
     warning: html`
         <path d="m12 3 10 18H2L12 3Z" fill="currentColor" />
-        <path d="M12 9v5" stroke="var(--color-text)" stroke-width="2.4" />
+        <path
+            d="M12 9v5"
+            stroke="var(--warning-icon-mark-color, var(--color-text))"
+            stroke-width="2.4"
+        />
         <circle
             cx="12"
             cy="17"
             r="1.2"
-            fill="var(--color-text)"
+            fill="var(--warning-icon-mark-color, var(--color-text))"
             stroke="none"
         />
     `,

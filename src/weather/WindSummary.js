@@ -49,7 +49,8 @@ export function WindSummary() {
             gap: var(--spacing-1);
         }
         .wind-variation-warning {
-            color: var(--color-warning);
+            --warning-icon-mark-color: var(--color-on-danger);
+            color: var(--color-danger);
             display: inline-flex;
             align-self: center;
             flex-shrink: 0;
@@ -64,11 +65,9 @@ export function WindSummary() {
             0%,
             100% {
                 transform: scale(1);
-                opacity: 1;
             }
             50% {
                 transform: scale(1.3);
-                opacity: 0.7;
             }
         }
         .latest-value .direction-value {
