@@ -90,7 +90,21 @@ export function CompactCloudLayer({ cloud, focusable = true }) {
 
 /** @param {{ layer: OpenMeteoCloudProfile["layers"][number], focusable?: boolean }} props */
 export function CompactOpenMeteoCloudLayer({ layer, focusable = true }) {
-    const scope = useScope(compactLayerStyles);
+    const scope = useScope(css`
+        ${compactLayerStyles}
+        .cloud-cover {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            line-height: 1;
+            gap: var(--spacing-0-5);
+        }
+        .cloud-cover-percentage {
+            color: var(--color-muted);
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+    `);
     const tooltip = `${layer.cover.toFixed(0)} % · ${layer.pressure} hPa · ${formatExactAltitude(layer.height)}`;
     return html`
         <div
@@ -99,7 +113,14 @@ export function CompactOpenMeteoCloudLayer({ layer, focusable = true }) {
             data-tooltip=${tooltip}
         >
             ${scope.style}
-            ${h(CloudCoverIcon, { percentage: layer.cover, size: 20 })}
+            <span class="cloud-cover">
+                ${h(CloudCoverIcon, { percentage: layer.cover, size: 24 })}
+                <span
+                    class="cloud-cover-percentage font-sans font-semibold text-rem-0-5 wind-barb-large:text-rem-0-65"
+                >
+                    ${layer.cover.toFixed(0)}%
+                </span>
+            </span>
             <span class="map-cloud-height">
                 ${formatCloudBase(Math.round(layer.height / 100) * 100, "m")}
             </span>
