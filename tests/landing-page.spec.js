@@ -684,7 +684,9 @@ test("place search opens the first result and lets users select another result",
             return flyTo.apply(this, args);
         };
     });
-    const input = page.getByRole("searchbox", { name: "Hae paikkaa" });
+    const input = page.getByRole("searchbox", {
+        name: "Hae luodaksesi hyppypaikan",
+    });
     await input.fill("Utti & Kouvola");
     expect(searches).toBe(0);
     const request = page.waitForRequest(searchUrl);
@@ -754,7 +756,9 @@ test("place search handles empty results and errors and can retry", async ({
         },
     );
     await page.goto("/?no_redirect");
-    const input = page.getByRole("searchbox", { name: "Hae paikkaa" });
+    const input = page.getByRole("searchbox", {
+        name: "Hae luodaksesi hyppypaikan",
+    });
     const search = page.getByRole("button", { name: "Hae", exact: true });
     await expect(search).toBeDisabled();
     await input.fill("Missing place");

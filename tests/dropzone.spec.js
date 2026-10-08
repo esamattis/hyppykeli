@@ -3110,7 +3110,7 @@ test("jump run turns into the selected wind around the opening center", async ({
     page,
 }) => {
     await page.goto(
-        `${manualPath}&lat=62.4&lon=25.6&MANUAL_upper_winds=10,225,7000;10,225,5500;10,225,4200;10,270,3000;10,315,1500;10,360,800;10,90,110`,
+        `${manualPath}&lat=62.4&lon=25.6&${new URLSearchParams(writeMapQuery("map_run_start", null))}&MANUAL_upper_winds=10,225,7000;10,225,5500;10,225,4200;10,270,3000;10,315,1500;10,360,800;10,90,110`,
     );
     const intoWind = directionControl(page, directionControls.intoWind);
     await expect(intoWind).toBeDisabled();
