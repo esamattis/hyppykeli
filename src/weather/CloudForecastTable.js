@@ -88,6 +88,29 @@ export function CloudForecastTable(props) {
         .cloud-forecast-detail-table .forecast-day-start {
             border-inline-start: 2px solid var(--color-border);
         }
+        :scope:not(.cloud-forecast-summary) tbody tr:hover > td {
+            position: relative;
+        }
+        :scope:not(.cloud-forecast-summary) tbody tr:hover > *::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            pointer-events: none;
+            border-block: 2px solid var(--color-primary);
+        }
+        :scope:not(.cloud-forecast-summary)
+            tbody
+            tr:hover
+            > :first-child::after {
+            border-inline-start: 2px solid var(--color-primary);
+        }
+        :scope:not(.cloud-forecast-summary)
+            tbody
+            tr:hover
+            > :last-child::after {
+            border-inline-end: 2px solid var(--color-primary);
+        }
         .forecast-source-label {
             display: block;
             color: var(--color-primary);
@@ -148,7 +171,9 @@ export function CloudForecastTable(props) {
     });
 
     return html`
-        <div class="cloud-forecast-details">
+        <div
+            class=${`cloud-forecast-details${summary ? " cloud-forecast-summary" : ""}`}
+        >
             ${scope.style}
             <div
                 class="forecast-scroll"
