@@ -173,6 +173,10 @@ export function DropzoneMap() {
         .parachute-drift-line {
             opacity: 1;
         }
+        .map-location-marker {
+            stroke: var(--color-map-direction);
+            fill: var(--color-map-outline);
+        }
         .jump-run-line,
         .freefall-drift-line,
         .parachute-drift-line {
@@ -218,6 +222,7 @@ export function DropzoneMap() {
             gap: var(--spacing-4);
         }
         .map-frame {
+            --color-map-wind: var(--color-map-direction);
             container: dropzone-map / inline-size;
             position: relative;
             width: calc(100% + 2 * var(--panel-padding));
@@ -226,6 +231,12 @@ export function DropzoneMap() {
             isolation: isolate;
             border-radius: 0 0 var(--radius-panel) var(--radius-panel);
             overflow: hidden;
+        }
+        .map-frame[data-map-layer="satellite"] {
+            --color-map-direction: var(--color-map-satellite-direction);
+            --color-map-first-jumper: var(--color-map-satellite-first-jumper);
+            --color-map-last-jumper: var(--color-map-satellite-last-jumper);
+            --color-map-drift: var(--color-map-satellite-drift);
         }
         .map-viewport {
             position: relative;
@@ -620,8 +631,9 @@ export function DropzoneMap() {
             passive: true,
         });
 
-        const theme = getTheme();
+        const theme = getTheme(mapRef.current ?? undefined);
         circleMarker([lat, lon], {
+            className: "map-location-marker",
             radius: 8,
             color: theme.mapDirection,
             fillColor: theme.mapOutline,
@@ -773,7 +785,7 @@ export function DropzoneMap() {
             !isValidPosition({ lat, lng })
         )
             return;
-        const theme = getTheme();
+        const theme = getTheme(mapRef.current ?? undefined);
         const label = document.createElement("span");
         label.textContent = stationLabel;
         const station = circleMarker([lat, lng], {
@@ -799,6 +811,7 @@ export function DropzoneMap() {
         stationCoordinates,
         stationName,
         stationLabel,
+        satellite,
     ]);
 
     useEffect(() => {
@@ -1560,7 +1573,7 @@ export function DropzoneMap() {
         () => ({
             group: layerGroup(),
             line: polyline([], {
-                color: getTheme().mapDirection,
+                color: getTheme(mapRef.current ?? undefined).mapDirection,
                 weight: 3,
                 dashArray: "8 6",
                 interactive: false,
@@ -1616,7 +1629,7 @@ export function DropzoneMap() {
         };
         updateLine();
         leafletInstance.on("moveend zoomend resize", updateLine);
-        const theme = getTheme();
+        const theme = getTheme(mapRef.current ?? undefined);
         line.setStyle({ color: theme.mapDirection });
         jumperStarts.forEach((start, index) => {
             const isEndpoint = index === 0 || index === jumperCount - 1;
@@ -1647,6 +1660,7 @@ export function DropzoneMap() {
     }, [
         leafletInstance,
         runLayers,
+        satellite,
         jumpRunStart,
         jumpRunSettings,
         jumperCount,
@@ -1661,7 +1675,7 @@ export function DropzoneMap() {
             return;
         const { group, freefall, canopy } = driftLayers;
         let missing = false;
-        const theme = getTheme();
+        const theme = getTheme(mapRef.current ?? undefined);
         jumperStarts.forEach((start, index) => {
             const jumper = jumpers[index] ?? DEFAULT_JUMPER;
             const path = calculation.drift(jumper);
@@ -1716,6 +1730,7 @@ export function DropzoneMap() {
     }, [
         leafletInstance,
         driftLayers,
+        satellite,
         jumpers,
         data,
         upperWindOverride,
@@ -1930,6 +1945,7 @@ export function DropzoneMap() {
             <div class="map-layout">
                 <div
                     class=${`map-frame${fullWindow ? " full-window" : ""}${placingJumpRunDirection ? " direction-setting" : ""}${draggingMap ? " map-dragging" : ""}`}
+                    data-map-layer=${satellite ? "satellite" : "street"}
                 >
                     ${h(FreefallToolbar, {
                         fullWindow,
@@ -2129,7 +2145,7 @@ export function DropzoneMap() {
                             ${mapLayerScope.style}
                             ${!coordinates ? t("common.waitingCoordinates") : null}
                         </div>
-                        ${coordinates ? h(MapWindOverlay, { wind: selectedWind }) : null}
+                        ${coordinates ? h(MapWindOverlay, { wind: selectedWind, satellite }) : null}
                         ${fullWindow ? h(MapCloudSummary, {}) : null}
                         ${fullWindow ? h(MapCompass, {}) : null}
                         ${h(MapNavigationControls, {

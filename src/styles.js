@@ -112,9 +112,11 @@ export const upperWindTableStyles = css`
     }
 `;
 
-/** Read shared CSS tokens for canvas and map renderers. */
-export function getTheme() {
-    const styles = getComputedStyle(document.documentElement);
+/** Read shared CSS tokens, including local overrides for canvas and map renderers.
+ * @param {Element} [element]
+ */
+export function getTheme(element = document.documentElement) {
+    const styles = getComputedStyle(element);
     return {
         success: styles.getPropertyValue("--color-success").trim(),
         text: styles.getPropertyValue("--color-text").trim(),

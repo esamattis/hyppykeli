@@ -27,8 +27,8 @@ export function getMapWindMotion({ speed, direction }) {
     };
 }
 
-/** @param {{ wind: MapWindLevel }} props */
-export function MapWindOverlay({ wind }) {
+/** @param {{ wind: MapWindLevel, satellite: boolean }} props */
+export function MapWindOverlay({ wind, satellite }) {
     const scope = useScope(css`
         :scope {
             position: absolute;
@@ -61,7 +61,7 @@ export function MapWindOverlay({ wind }) {
         const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
         let width = 0;
         let height = 0;
-        const theme = getTheme();
+        const theme = getTheme(canvas);
         const color = theme.mapWind;
         let frame = 0;
         let lastTime = 0;
@@ -267,7 +267,7 @@ export function MapWindOverlay({ wind }) {
             reducedMotion.removeEventListener("change", updateAnimation);
             document.removeEventListener("visibilitychange", updateAnimation);
         };
-    }, []);
+    }, [satellite]);
 
     useEffect(() => {
         targetMotion.current = getMapWindMotion(wind);

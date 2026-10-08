@@ -120,15 +120,19 @@
             var(--color-surface) 85%,
             transparent
         );
-        /* Fixed, bright map artwork palette, independent of page appearance.
-           Cyan flight paths, orange drift, and green/pink endpoint markers. */
-        --color-map-direction: #00bfff;
-        --color-map-first-jumper: #00e69d;
-        --color-map-last-jumper: #ff3d71;
-        /* Dark outlines and marker centers contrast with bright artwork. */
-        --color-map-outline: #10212d;
+        /* Street-map overlays contrast with pale roads, fields, and forests. */
+        --color-map-direction: #3478f6;
+        --color-map-first-jumper: #11bfa0;
+        --color-map-last-jumper: #f45768;
+        /* Dark outlines and marker centers keep artwork legible over tiles. */
+        --color-map-outline: #263b48;
         /* Freefall and canopy drift paths share a color, with different widths. */
-        --color-map-drift: #ff7800;
+        --color-map-drift: #ed3d8b;
+        /* Brighter satellite overlays remain legible over dark imagery. */
+        --color-map-satellite-direction: #3478f6;
+        --color-map-satellite-first-jumper: #20d5b0;
+        --color-map-satellite-last-jumper: #ff657a;
+        --color-map-satellite-drift: #ffb627;
         /* Animated wind particles and their contrasting halo over map tiles. */
         --color-map-wind: var(--color-map-direction);
         --color-map-wind-halo: var(--color-map-outline);
