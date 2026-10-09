@@ -142,7 +142,9 @@ export function DropzoneMap() {
             path:not(.jump-run-line):not(.jump-run-jumper):not(
                 .freefall-drift-line
             ):not(.parachute-drift-line),
-        :scope.direction-setting .leaflet-marker-pane,
+        :scope.direction-setting
+            .leaflet-marker-pane
+            > :not(.calculated-landing-marker),
         :scope.direction-setting .leaflet-tooltip-pane,
         :scope.direction-setting .leaflet-popup-pane {
             visibility: hidden;
@@ -198,6 +200,14 @@ export function DropzoneMap() {
         .map-location-marker {
             stroke: var(--color-map-direction);
             fill: var(--color-map-outline);
+        }
+        .calculated-landing-marker svg {
+            display: block;
+            fill: none;
+            stroke: var(--color-map-canopy-reach);
+            stroke-width: 4;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 1px var(--color-map-outline));
         }
         .jump-run-line,
         .freefall-drift-line,
@@ -1734,6 +1744,16 @@ export function DropzoneMap() {
     const driftLayers = useMemo(
         () => ({
             group: layerGroup(),
+            landing: marker([0, 0], {
+                icon: divIcon({
+                    className: "calculated-landing-marker",
+                    html: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5L19 19M19 5L5 19"/></svg>',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12],
+                }),
+                interactive: false,
+                keyboard: false,
+            }),
             freefall: /** @type {import('leaflet').Polyline[]} */ ([]),
             canopy: /** @type {import('leaflet').Polyline[]} */ ([]),
         }),
@@ -1749,6 +1769,20 @@ export function DropzoneMap() {
             driftLayers.group.remove();
         };
     }, [leafletInstance, runLayers, driftLayers]);
+    useEffect(() => {
+        if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
+            return;
+        if (runLandingTarget)
+            driftLayers.landing
+                .setLatLng(runLandingTarget)
+                .addTo(driftLayers.group);
+        else driftLayers.group.removeLayer(driftLayers.landing);
+    }, [
+        leafletInstance,
+        driftLayers,
+        runLandingTarget?.lat,
+        runLandingTarget?.lng,
+    ]);
     useEffect(() => {
         if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
             return;
