@@ -18,6 +18,7 @@ test.beforeEach(async ({ page, baseURL }) => {
     await page.addInitScript(() => {
         window.canopyLayers = new Map();
         window.driftLayers = new Set();
+        window.freefallLayers = new Set();
         window.canopyProbe = import("/vendor/build/leaflet.js").then(
             ({ Circle, Polyline }) => {
                 const setRadius = Circle.prototype.setRadius;
@@ -28,6 +29,8 @@ test.beforeEach(async ({ page, baseURL }) => {
                 };
                 const setLatLngs = Polyline.prototype.setLatLngs;
                 Polyline.prototype.setLatLngs = function (points) {
+                    if (this.options.className === "freefall-drift-line")
+                        window.freefallLayers.add(this);
                     if (this.options.className === "parachute-drift-line")
                         window.driftLayers.add(this);
                     return setLatLngs.call(this, points);
@@ -107,7 +110,7 @@ test("canopy settings update reach and drift, validate drafts, and survive reloa
     }
     await page.keyboard.press("Escape");
     await expect(page.locator(".canopy-reach-summary")).toContainText(
-        "800 / 1200 → 300 m · 4:1 · 2.5 m/s",
+        "2000 m / 3600 m",
     );
     await page.reload();
     await expect
@@ -195,4 +198,82 @@ test("descent rates of 1 and 10 update canopy calculations and survive reopening
         await expect(input).toHaveValue(String(rate));
         await page.keyboard.press("Escape");
     }
+});
+
+test("distance summaries use straight endpoint distances and distinct values in exit order", async ({
+    page,
+}) => {
+    const changingWinds = [7000, 5500, 4200, 3000, 1500, 800, 110]
+        .map((height) => `5,${height >= 1500 ? 270 : 0},${height}`)
+        .join(";");
+    const url = new URL(dz, "http://localhost");
+    url.searchParams.set("MANUAL_upper_winds", changingWinds);
+    url.searchParams.set(
+        "map_jumpers",
+        "s180h1200_s180h800_s180h1200_s180h800",
+    );
+    await page.goto(url.pathname + url.search);
+    await expect.poll(async () => (await geometry(page)).drift.length).toBe(4);
+    const expected = await page.evaluate(async () => {
+        await window.canopyProbe;
+        const freefall = [...window.freefallLayers]
+            .filter((layer) => layer._map)
+            .map((layer) => layer.getLatLngs());
+        const canopy = [...window.driftLayers]
+            .filter((layer) => layer._map)
+            .map((layer) => layer.getLatLngs());
+        const format = (distances) =>
+            [
+                ...new Set(
+                    distances.map((distance) => `${Math.round(distance)} m`),
+                ),
+            ].join(" / ");
+        const distance = (path) => path[0].distanceTo(path.at(-1));
+        const openings = freefall.map((path) => path.at(-1));
+        return {
+            freefall: format(freefall.map(distance)),
+            canopy: format(canopy.map(distance)),
+            openings: format(
+                openings
+                    .slice(1)
+                    .map((opening, index) =>
+                        opening.distanceTo(openings[index]),
+                    ),
+            ),
+            curvedCanopy: canopy.some(
+                (path) =>
+                    path
+                        .slice(1)
+                        .reduce(
+                            (sum, point, index) =>
+                                sum + point.distanceTo(path[index]),
+                            0,
+                        ) >
+                    distance(path) + 10,
+            ),
+        };
+    });
+    expect(expected.curvedCanopy).toBe(true);
+    await expect(page.locator(".jump-summary .value-number")).toHaveText(
+        expected.freefall,
+    );
+    await expect(
+        page.locator(".canopy-drift-summary .value-number"),
+    ).toHaveText(expected.canopy);
+    await expect(
+        page.locator(".opening-distance-summary .value-number"),
+    ).toHaveText(expected.openings);
+    await expect(page.locator(".canopy-reach-summary")).toHaveText(
+        "Varjon kantama 2700 m / 1500 m",
+    );
+    await expect(page.locator(".jump-summary [data-tooltip]")).toHaveAttribute(
+        "data-tooltip",
+        /ei kaarevan ajautumisreitin pituus/,
+    );
+    await expect(
+        page.locator(".canopy-drift-summary [data-tooltip]"),
+    ).toHaveAttribute(
+        "data-tooltip",
+        /ei kaarevan varjoajautumisreitin pituus/,
+    );
 });

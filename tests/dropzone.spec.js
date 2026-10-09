@@ -2822,7 +2822,7 @@ test("jump-run positions react to forecast changes and recover from missing or i
     const jumpers = page.locator(".jump-run-jumper");
     const arrows = page.locator(".freefall-drift-line");
     const unavailable = page.locator(".jump-run-unavailable");
-    const length = page.locator(".jump-run-summary [data-tooltip]").nth(3);
+    const length = page.locator(".jump-run-summary [data-tooltip]");
     await expect(jumpers).toHaveCount(6);
     const initialLength = await length.innerText();
     const second = await jumpers.nth(1).getAttribute("d");
@@ -3000,9 +3000,12 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await setUniformFreefallWind(page);
     const map = page.locator(".dz-map");
     const summary = page.locator(".toolbar-summary");
-    const length = summary.locator(".jump-run-summary [data-tooltip]").nth(3);
-    await expect(summary).toContainText(/Hyppylinja\s*\d+° · 157 km\/h/);
-    await expect(summary).toContainText(/157 km\/h · 5s · —/);
+    const length = summary.locator(".jump-run-summary [data-tooltip]");
+    await expect(summary.locator(".jump-run-summary")).toContainText(
+        "Hyppylinjan pituus",
+    );
+    await expect(length).toHaveText("—");
+    await expect(summary.locator(".opening-distance-summary")).toHaveCount(0);
     const place = async (x = 100, y = 160) => {
         await map.scrollIntoViewIfNeeded();
         if (isMobile) await map.tap({ position: { x, y } });
@@ -3029,6 +3032,15 @@ test("jump run redraws all jumpers and applies individual settings immediately",
     await page.getByRole("button", { name: "Lisää hyppääjä" }).click();
     await expect(jumpers).toHaveCount(3);
     await expect(length).toHaveText("336 m");
+    await expect(
+        summary.locator(".opening-distance-summary .value-number"),
+    ).toHaveText("168 m");
+    await expect(summary.locator(".jump-summary .value-number")).toHaveText(
+        /^[0-9]+ m$/,
+    );
+    await expect(
+        summary.locator(".canopy-drift-summary .value-number"),
+    ).toHaveText(/^[0-9]+ m$/);
     await expect(arrows).toHaveCount(3);
     const edit = page.getByRole("button", {
         name: "Hyppylinjan asetukset",
@@ -3085,17 +3097,21 @@ test("jump run redraws all jumpers and applies individual settings immediately",
         name: "Todellinen ilmanopeus (km/h)",
     });
     await speed.fill("0");
-    await expect(summary).toContainText(/Hyppylinja\s*\d+° · 157 km\/h/);
+    await expect(summary.locator(".jump-run-summary")).toContainText(
+        "Hyppylinjan pituus",
+    );
     await expect(run).toHaveAttribute("d", runPath);
     await speed.fill("180");
-    await expect(summary).toContainText(/Hyppylinja\s*\d+° · 180 km\/h/);
+    await expect(speed).toHaveValue("180");
     await expect(length).toHaveText("400 m");
     await expect(run).toHaveAttribute("d", runPath);
     await expect(arrows.nth(1)).not.toHaveAttribute("d", secondArrow);
     await settings
         .getByRole("spinbutton", { name: "Hyppääjien porrastus (s)" })
         .fill("10");
-    await expect(summary).toContainText(/180 km\/h · 10s · 800 m/);
+    await expect(summary.locator(".opening-distance-summary")).toContainText(
+        /\d+ m/,
+    );
     await expect(length).toHaveText("800 m");
     await page.keyboard.press("Escape");
     const previous = await run.getAttribute("d");
@@ -3415,7 +3431,12 @@ test("jump run turns into the selected wind around the opening center", async ({
     ).toBe(315);
     expect(await openingDistance(page, opening)).toBeLessThan(1);
     await page.reload();
-    await expect(page.locator(".toolbar-summary")).toContainText("315°");
+    expect(
+        readMapQuery(
+            Object.fromEntries(new URL(page.url()).searchParams),
+            "map_run_settings",
+        ).direction,
+    ).toBe(315);
     await expect(intoWind).toBeEnabled();
     await page.getByRole("button", { name: "Poista hyppylinja" }).click();
     await expect(intoWind).toBeDisabled();

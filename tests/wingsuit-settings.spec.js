@@ -130,7 +130,7 @@ test("wingsuit settings update reach, validate drafts, and survive reload", asyn
     }
     await page.keyboard.press("Escape");
     await expect(page.locator(".wingsuit-reach-summary")).toContainText(
-        "4000 → 800 / 1200 m · 4:1 · 36 km/h",
+        "14300 m / 13900 m",
     );
     await page.reload();
     await expect

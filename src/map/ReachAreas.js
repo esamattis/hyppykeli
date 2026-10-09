@@ -30,8 +30,24 @@ export function ReachAreas({
         :scope {
             --reach-color: var(--color-map-canopy-reach);
             display: inline-flex;
-            align-items: baseline;
+            align-items: center;
             gap: var(--spacing-1);
+        }
+        .unavailable-value {
+            display: none;
+        }
+        @container dropzone-map (max-width: 699px) {
+            .unavailable-value {
+                display: inline;
+            }
+            .summary-label {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                overflow: hidden;
+                clip-path: inset(50%);
+                white-space: nowrap;
+            }
         }
         :scope.wingsuit-reach-summary {
             --reach-color: var(--color-map-wingsuit-reach);
@@ -59,14 +75,12 @@ export function ReachAreas({
     ]);
     const areas = useMemo(
         () =>
-            [...new Set(openingHeights)]
-                .sort((a, b) => a - b)
-                .map((height) => ({
-                    height,
-                    reach: wingsuit
-                        ? getWingsuitCanopyReach(winds, height, settings)
-                        : getCanopyReach(winds, height, ratio, rate),
-                })),
+            [...new Set(openingHeights)].map((height) => ({
+                height,
+                reach: wingsuit
+                    ? getWingsuitCanopyReach(winds, height, settings)
+                    : getCanopyReach(winds, height, ratio, rate),
+            })),
         [key],
     );
     const layers = useMemo(
@@ -132,23 +146,38 @@ export function ReachAreas({
             data-tooltip=${t(wingsuit ? "map.wingsuitReachHelp" : "map.canopyReachHelp")}
         >
             ${scope.style}
-            ${
-                available.length
-                    ? t(
-                          wingsuit
-                              ? "map.wingsuitReachLabel"
-                              : "map.canopyReachLabel",
-                          available.map(({ height }) => height).join(" / "),
-                          ratio,
-                          wingsuit ? Number((rate * 3.6).toFixed(6)) : rate,
-                          settings.exitHeight,
-                      )
-                    : t(
-                          wingsuit
-                              ? "map.wingsuitReachUnavailable"
-                              : "map.canopyReachUnavailable",
-                      )
-            }
+            <span class="summary-label">
+                ${
+                    available.length
+                        ? t(
+                              wingsuit
+                                  ? "map.wingsuitReachLabel"
+                                  : "map.canopyReachLabel",
+                              "",
+                          ).trim()
+                        : t(
+                              wingsuit
+                                  ? "map.wingsuitReachUnavailable"
+                                  : "map.canopyReachUnavailable",
+                          )
+                }
+            </span>
+            <span
+                class=${`value-number${available.length ? "" : " unavailable-value"}`}
+            >
+                ${
+                    available.length
+                        ? [
+                              ...new Set(
+                                  available.map(
+                                      ({ reach }) =>
+                                          `${Math.round(reach?.radius ?? 0)} m`,
+                                  ),
+                              ),
+                          ].join(" / ")
+                        : "—"
+                }
+            </span>
         </span>
     `;
 }

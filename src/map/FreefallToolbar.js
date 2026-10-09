@@ -1,4 +1,5 @@
 // @ts-check
+import { Icon } from "#app/shared/icons.js";
 import { Button } from "#app/shared/Button.js";
 import { Help } from "#app/shared/Help.js";
 import { Dialog } from "#app/shared/Dialog.js";
@@ -11,6 +12,21 @@ import { JumpRunControls } from "#app/map/JumpRunControls.js";
 import { JumpRunSettingsButton } from "#app/map/JumpRunSettingsButton.js";
 import { h, html } from "htm/preact";
 import { useId, useRef } from "preact/hooks";
+
+/** Distinct rounded distances retain their first occurrence in exit order.
+ * @param {(number | null)[]} distances
+ */
+function formatDistances(distances) {
+    return (
+        [
+            ...new Set(
+                distances.map((distance) =>
+                    distance === null ? "—" : `${Math.round(distance)} m`,
+                ),
+            ),
+        ].join(" / ") || "—"
+    );
+}
 
 /** @param {FreefallToolbarProps} props */
 export function FreefallToolbar({
@@ -27,6 +43,9 @@ export function FreefallToolbar({
     onUndo,
     jumpRun,
     jumpRunLengthMeters,
+    openingDistances,
+    freefallDistances,
+    canopyDistances,
     canopyReach,
     wingsuitReach,
     windLevels,
@@ -138,7 +157,7 @@ export function FreefallToolbar({
         }
         .toolbar-summary-values {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             flex: 1;
             gap: var(--spacing-1) var(--spacing-3-5);
             min-width: 0;
@@ -152,8 +171,16 @@ export function FreefallToolbar({
         }
         .drift-summaries {
             display: inline-flex;
-            align-items: baseline;
+            align-items: center;
             gap: var(--spacing-2);
+        }
+        .jump-run-summary,
+        .opening-distance-summary,
+        .jump-summary,
+        .canopy-drift-summary {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-1);
         }
         .line-legend {
             display: inline-block;
@@ -182,6 +209,32 @@ export function FreefallToolbar({
                 var(--map-direction-color, var(--color-map-direction)) 0 4px,
                 transparent 4px 7px
             );
+        }
+        .separation-legend::before {
+            content: none;
+        }
+        .separation-legend > svg {
+            position: absolute;
+            inset-inline-start: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--color-map-drift);
+        }
+        @container dropzone-map (max-width: 699px) {
+            .line-legend {
+                flex: 0 0 12px;
+                width: 12px;
+                height: 12px;
+                padding-inline-start: 0;
+            }
+            .summary-label {
+                position: absolute;
+                width: 1px;
+                height: 1px;
+                overflow: hidden;
+                clip-path: inset(50%);
+                white-space: nowrap;
+            }
         }
         .value-number {
             color: var(--color-text);
@@ -357,83 +410,69 @@ export function FreefallToolbar({
                 <div class="toolbar-summary-values text-rem-0-65">
                     <span class="jump-run-summary">
                         <span class="value-label line-legend jump-run-legend">
-                            ${t("toolbar.jumpRun")}
+                            <span class="summary-label">
+                                ${t("toolbar.jumpRunLength")}
+                            </span>
                         </span>
-                        <strong class="value-number font-semibold ml-1">
-                            <span
-                                tabindex="0"
-                                data-tooltip=${t("toolbar.jumpRunDirectionTooltip")}
-                            >
-                                ${`${Math.round(jumpRun.settings.direction)}°`}
-                            </span>
-                            ${" · "}
-                            <span
-                                tabindex="0"
-                                data-tooltip=${t("toolbar.jumpRunSpeedTooltip")}
-                            >
-                                ${`${jumpRun.settings.speedKmh} km/h`}
-                            </span>
-                            ${" · "}
-                            <span
-                                tabindex="0"
-                                data-tooltip=${t("toolbar.separationTooltip")}
-                            >
-                                ${`${jumpRun.settings.separationSeconds}s`}
-                            </span>
-                            ${" · "}
-                            <span
-                                tabindex="0"
-                                data-tooltip=${t("toolbar.jumpRunLengthTooltip")}
-                            >
-                                ${
-                                    jumpRunLengthMeters === null
-                                        ? "—"
-                                        : `${Math.round(jumpRunLengthMeters)} m`
-                                }
-                            </span>
+                        <strong
+                            class="value-number font-semibold"
+                            tabindex="0"
+                            data-tooltip=${t("toolbar.jumpRunLengthTooltip")}
+                        >
+                            ${jumpRunLengthMeters === null ? "—" : `${Math.round(jumpRunLengthMeters)} m`}
                         </strong>
                     </span>
+                    ${
+                        jumpRun.jumpers.length > 1 &&
+                        html`
+                            <span class="opening-distance-summary">
+                                <span
+                                    class="value-label line-legend separation-legend"
+                                >
+                                    ${h(Icon, { name: "separation", size: 12 })}
+                                    <span class="summary-label">
+                                        ${t("toolbar.openingDistances")}
+                                    </span>
+                                </span>
+                                <strong
+                                    class="value-number font-semibold"
+                                    tabindex="0"
+                                    data-tooltip=${t("toolbar.openingDistancesTooltip")}
+                                >
+                                    ${formatDistances(openingDistances)}
+                                </strong>
+                            </span>
+                        `
+                    }
                     <span class="drift-summaries">
                         <span class="jump-summary">
                             <span class="value-label line-legend">
-                                ${t("toolbar.freefall")}
+                                <span class="summary-label">
+                                    ${t("toolbar.freefallDrift")}
+                                </span>
                             </span>
-                            <strong class="value-number font-semibold ml-1">
-                                <span
-                                    tabindex="0"
-                                    data-tooltip=${t("toolbar.exitTooltip")}
-                                >
-                                    ${jumpRun.settings.exitHeight}
-                                </span>
-                                ${"-"}
-                                <span
-                                    tabindex="0"
-                                    data-tooltip=${t("toolbar.openingTooltip")}
-                                >
-                                    ${`${jumpRun.nextJumper.openingHeight}m`}
-                                </span>
-                                ${" · "}
-                                <span
-                                    tabindex="0"
-                                    data-tooltip=${t("toolbar.speedTooltip")}
-                                >
-                                    ${`${jumpRun.nextJumper.speedKmh} km/h`}
-                                </span>
+                            <strong
+                                class="value-number font-semibold"
+                                tabindex="0"
+                                data-tooltip=${t("toolbar.freefallDriftTooltip")}
+                            >
+                                ${formatDistances(freefallDistances)}
                             </strong>
                         </span>
                         <span class="canopy-drift-summary">
                             <span
                                 class="value-label line-legend canopy-drift-legend"
                             >
-                                ${t("toolbar.canopyDrift")}
-                            </span>
-                            <strong class="value-number font-semibold ml-1">
-                                <span
-                                    tabindex="0"
-                                    data-tooltip=${t("settings.canopyDescentRate")}
-                                >
-                                    ${`${jumpRun.settings.canopyDescentRateMps} m/s`}
+                                <span class="summary-label">
+                                    ${t("toolbar.canopyDrift")}
                                 </span>
+                            </span>
+                            <strong
+                                class="value-number font-semibold"
+                                tabindex="0"
+                                data-tooltip=${t("toolbar.canopyDriftTooltip")}
+                            >
+                                ${formatDistances(canopyDistances)}
                             </strong>
                         </span>
                     </span>

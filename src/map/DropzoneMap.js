@@ -1734,6 +1734,26 @@ export function DropzoneMap() {
                   ),
               )
             : [];
+    const freefallOffsets = jumpers.map((jumper) =>
+        calculation.drift(jumper)?.at(-1),
+    );
+    const canopyOffsets = jumpers.map((jumper) =>
+        getCanopyDrift(
+            canopyWinds,
+            jumper.openingHeight,
+            jumpRunSettings.canopyDescentRateMps,
+            CANOPY_PATTERN_HEIGHT,
+        )?.at(-1),
+    );
+    const openingPositions = jumperStarts.map((start, index) => {
+        const offset = freefallOffsets[index];
+        return offset ? latLng(driftCoordinates(start, offset)) : null;
+    });
+    const openingDistances = jumpers.slice(1).map((_, index) => {
+        const previous = openingPositions[index];
+        const next = openingPositions[index + 1];
+        return previous && next ? previous.distanceTo(next) : null;
+    });
     // Keep Leaflet layers mounted across weather updates and minute ticks.
     const runLayers = useMemo(
         () => ({
@@ -2148,6 +2168,23 @@ export function DropzoneMap() {
                         },
                         onToggleFullWindow: () =>
                             setFullWindow((expanded) => !expanded),
+                        openingDistances,
+                        freefallDistances: openingPositions.map(
+                            (opening, index) => {
+                                const exit = jumperStarts[index];
+                                return exit && opening
+                                    ? exit.distanceTo(opening)
+                                    : null;
+                            },
+                        ),
+                        canopyDistances: canopyOffsets.map((offset, index) => {
+                            const opening = openingPositions[index];
+                            return opening && offset
+                                ? opening.distanceTo(
+                                      latLng(driftCoordinates(opening, offset)),
+                                  )
+                                : null;
+                        }),
                         jumpRunLengthMeters:
                             jumpRunStart && jumpRunVelocity && jumperCount > 0
                                 ? Math.hypot(

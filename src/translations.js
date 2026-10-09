@@ -362,23 +362,16 @@ export const english = {
         "Canopy circles show opening positions that can reach the predicted landing target at 300 m. One circle per opening altitude; glide sets its radius and wind shifts its centre.",
     "map.symbolsWingsuitReachHelp":
         "The larger wingsuit circle shows exit positions that can reach the same target: wingsuit flight to opening, then canopy flight to 300 m. Its radius adds both glide ranges; its centre accounts for wind drift during both phases.",
-    "map.wingsuitReachLabel": (
-        /** @type {string} */ heights,
-        /** @type {number} */ ratio,
-        /** @type {number} */ rate,
-        /** @type {number} */ exit,
-    ) => `Wingsuit reach · ${exit} → ${heights} m · ${ratio}:1 · ${rate} km/h`,
+    "map.wingsuitReachLabel": (/** @type {string} */ distances) =>
+        `Wingsuit reach ${distances}`,
     "map.wingsuitReachUnavailable": "Wingsuit reach · unavailable",
     "map.wingsuitReachHelp":
-        "Includes wingsuit flight to opening, then canopy flight to 300 m. Wind shifts the centre; both glide ranges add to the radius.",
-    "map.canopyReachLabel": (
-        /** @type {string} */ heights,
-        /** @type {number} */ ratio,
-        /** @type {number} */ rate,
-    ) => `Canopy reach · ${heights} → 300 m · ${ratio}:1 · ${rate} m/s`,
+        "The number is the wingsuit reach circle’s radius: the horizontal glide distance through the air from exit to opening, plus canopy glide from opening to 300 m. Wind shifts the circle’s centre. Exits inside the circle can reach the predicted landing target.",
+    "map.canopyReachLabel": (/** @type {string} */ distances) =>
+        `Canopy reach ${distances}`,
     "map.canopyReachUnavailable": "Canopy reach · no wind data",
     "map.canopyReachHelp":
-        "Opening positions that can reach the predicted landing target at 300 m. Glide sets the radius; wind shifts the centre.",
+        "The number is the canopy reach circle’s radius: the horizontal distance the canopy can glide through the air from opening to 300 m. Wind shifts the circle’s centre. Openings inside the circle can reach the predicted landing target.",
     "map.symbolsWindHelp":
         "Wind arrows and moving lines show where the wind flows. Longer lines mean stronger wind.",
     "map.featuresHelpTitle": "Features",
@@ -410,6 +403,14 @@ export const english = {
     "toolbar.freefallValues": "Freefall values",
     "toolbar.freefall": "Freefall",
     "toolbar.canopyDrift": "Canopy drift",
+    "toolbar.freefallDrift": "Freefall drift",
+    "toolbar.openingDistances": "Opening separation",
+    "toolbar.openingDistancesTooltip":
+        "Straight-line distances between consecutive canopy openings; distinct values in exit order.",
+    "toolbar.freefallDriftTooltip":
+        "Straight-line horizontal distance from exit to opening, not the length of the curved drift path. Distinct values in exit order.",
+    "toolbar.canopyDriftTooltip":
+        "Straight-line horizontal distance from opening to landing pattern entry at 300 m, not the length of the curved canopy drift path. Distinct values in exit order.",
     "toolbar.jumpRun": "Jump run",
     "toolbar.jumpRunLength": "Jump run length",
     "toolbar.jumpRunLengthTooltip":
@@ -992,16 +993,14 @@ const finnish = {
         "Varjon ympyrät näyttävät avauspaikat, joista voi päästä arvioituun laskeutumispisteeseen 300 metrissä. Kullekin avauskorkeudelle on oma ympyrä; liito määrää säteen ja tuuli siirtää keskipistettä.",
     "map.symbolsWingsuitReachHelp":
         "Suurempi liitopuvun ympyrä näyttää uloshyppypaikat, joista voi päästä samaan pisteeseen: liitopuvulla avaukseen ja varjolla 300 metriin. Säde on molempien liitomatkojen summa; keskipiste huomioi molempien vaiheiden tuuliajautumisen.",
-    "map.wingsuitReachLabel": (heights, ratio, rate, exit) =>
-        `Liitopuvun kantama · ${exit} → ${heights} m · ${ratio}:1 · ${rate} km/h`,
+    "map.wingsuitReachLabel": (distances) => `Liitopuvun kantama ${distances}`,
     "map.wingsuitReachUnavailable": "Liitopuvun kantama · ei saatavilla",
     "map.wingsuitReachHelp":
-        "Sisältää liitopukulennon avaukseen ja varjolennon 300 metriin. Tuuli siirtää keskipistettä; säde on molempien liitomatkojen summa.",
-    "map.canopyReachLabel": (heights, ratio, rate) =>
-        `Varjon kantama · ${heights} → 300 m · ${ratio}:1 · ${rate} m/s`,
+        "Luku on liitopuvun kantamaympyrän säde: vaakasuora liitomatka ilmamassan suhteen uloshypystä avaukseen sekä varjon liitomatka avauksesta 300 metriin yhteensä. Tuuli siirtää ympyrän keskipistettä. Ympyrän sisältä hyppäämällä voi päästä arvioituun laskeutumispisteeseen.",
+    "map.canopyReachLabel": (distances) => `Varjon kantama ${distances}`,
     "map.canopyReachUnavailable": "Varjon kantama · tuulitiedot puuttuvat",
     "map.canopyReachHelp":
-        "Avauspaikat, joista voi päästä arvioituun laskeutumispisteeseen 300 metrissä. Liito määrää säteen; tuuli siirtää keskipistettä.",
+        "Luku on varjon kantamaympyrän säde: vaakasuora matka, jonka varjo voi liitää ilmamassan suhteen avauksesta 300 metriin. Tuuli siirtää ympyrän keskipistettä. Ympyrän sisältä avaamalla voi päästä arvioituun laskeutumispisteeseen.",
     "map.symbolsWindHelp":
         "Tuulinuolet ja liikkuvat viivat näyttävät, mihin tuuli puhaltaa. Pidemmät viivat tarkoittavat voimakkaampaa tuulta.",
     "map.featuresHelpTitle": "Toiminnot",
@@ -1033,6 +1032,14 @@ const finnish = {
     "toolbar.freefallValues": "Vapaapudotuksen arvot",
     "toolbar.freefall": "Vapaapudotus",
     "toolbar.canopyDrift": "Varjon tuuliajautuma",
+    "toolbar.freefallDrift": "Vapaapudotusajautuma",
+    "toolbar.openingDistances": "Avausten väli",
+    "toolbar.openingDistancesTooltip":
+        "Peräkkäisten varjon avausten väliset suorat etäisyydet; eri arvot uloshyppyjärjestyksessä.",
+    "toolbar.freefallDriftTooltip":
+        "Suora vaakasuora etäisyys uloshypystä avaukseen, ei kaarevan ajautumisreitin pituus. Eri arvot uloshyppyjärjestyksessä.",
+    "toolbar.canopyDriftTooltip":
+        "Suora vaakasuora etäisyys avauksesta laskukierroksen alkuun 300 metrissä, ei kaarevan varjoajautumisreitin pituus. Eri arvot uloshyppyjärjestyksessä.",
     "toolbar.jumpRun": "Hyppylinja",
     "toolbar.jumpRunLength": "Hyppylinjan pituus",
     "toolbar.jumpRunLengthTooltip":

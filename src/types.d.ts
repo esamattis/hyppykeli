@@ -229,6 +229,9 @@ interface FreefallToolbarProps {
     onShare: () => void;
     jumpRun: JumpRunControlsProps;
     jumpRunLengthMeters: number | null;
+    openingDistances: (number | null)[];
+    freefallDistances: (number | null)[];
+    canopyDistances: (number | null)[];
     canopyReach: import("preact").ComponentChildren;
     wingsuitReach: import("preact").ComponentChildren;
     arrowCount: number;
@@ -713,6 +716,7 @@ interface IconProps {
     name:
         | "weatherStation"
         | "screenAwake"
+        | "separation"
         | "monitor"
         | "sun"
         | "moon"
