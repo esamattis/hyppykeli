@@ -4,6 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Parempi Hyppykeli</title>
+        <script src="/src/app/theme-init.js"></script>
         <link rel="stylesheet" href="/styles.css" />
         <link rel="preconnect" href="https://opendata.fmi.fi/" />
 
@@ -23,33 +24,47 @@
         <script type="importmap">
             {
                 "imports": {
-                    "./": "/src/",
+                    "#app/": "/src/",
                     "@preact/signals": "/vendor/build/preact-signals.js",
                     "preact/hooks": "/vendor/build/preact-hooks.js",
                     "htm/preact": "/vendor/build/htm.js",
                     "preact": "/vendor/build/preact.js",
                     "chart.js": "/vendor/build/chart.js",
-                    "metar": "/vendor/metar.js"
+                    "leaflet": "/vendor/build/leaflet.js"
                 }
             }
         </script>
+        <!-- Discover the initial UI and deep weather dependencies without a bundler.
+             The map and its stylesheet load after the weather UI has rendered. -->
+        <link rel="modulepreload" href="/src/app/App.js" />
+        <link rel="modulepreload" href="/src/app/start.js" />
+        <link rel="modulepreload" href="/src/app/settings.js" />
+        <link rel="modulepreload" href="/src/app/SideMenu.js" />
+        <link rel="modulepreload" href="/src/weather/CloudSummary.js" />
+        <link rel="modulepreload" href="/src/weather/WindSummary.js" />
+        <link rel="modulepreload" href="/src/weather/WeatherTables.js" />
+        <link rel="modulepreload" href="/src/weather/CloudForecastTable.js" />
+        <link rel="modulepreload" href="/src/weather/UpperWindTable.js" />
+        <link rel="modulepreload" href="/src/weather/calculations.js" />
+        <link rel="modulepreload" href="/src/weather/providers/fmi.js" />
+        <link rel="modulepreload" href="/src/weather/providers/openMeteo.js" />
+        <link rel="modulepreload" href="/src/weather/state.js" />
+        <link rel="modulepreload" href="/src/weather/refresh.js" />
+        <link rel="modulepreload" href="/src/shared/dates.js" />
+        <link rel="modulepreload" href="/src/weather/Graph.js" />
+        <link rel="modulepreload" href="/src/weather/Compass.js" />
+        <link rel="modulepreload" href="/vendor/build/htm.js" />
+        <link rel="modulepreload" href="/vendor/build/preact-hooks.js" />
+        <link rel="modulepreload" href="/vendor/build/preact-signals.js" />
+        <link rel="modulepreload" href="/vendor/build/chart.js" />
         <script type="module">
-            // preload to avoid request waterfalls
-            import "./data.js";
-            import "./utils.js";
-            import "./graph.js";
-            import "./compass.js";
-            import "htm/preact";
-            import "preact/hooks";
-            import "@preact/signals";
-            import "chart.js";
-            import "metar";
-
             // init the app
-            import { Root } from "./ui.js";
+            import { App } from "#app/app/App.js";
+            import { startApp } from "#app/app/start.js";
             import { render, h } from "preact";
+            startApp();
             const root = document.getElementById("root");
-            render(h(Root), root);
+            render(h(App), root);
         </script>
     </head>
     <body>

@@ -17,13 +17,11 @@ jobs:
               uses: actions/checkout@v3
 
             - name: Set up Node.js
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v6
               with:
-                  node-version: "20"
+                  node-version-file: "package.json"
 
             - uses: pnpm/action-setup@v4
-              with:
-                  version: 8
 
             - name: Install dependencies
               run: pnpm install
@@ -31,5 +29,5 @@ jobs:
             - name: Run TypeScript typecheck
               run: pnpm run tsc
 
-            - name: Check formatting (auto fix with `npm run prettier`)
-              run: pnpm run prettier-check
+            - name: Check formatting (auto fix with `pnpm run oxfmt`)
+              run: pnpm run oxfmt-check

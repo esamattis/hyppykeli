@@ -1,582 +1,344 @@
-:root {
-    --compass-width: 100px;
-}
+@layer base, components, utilities;
+@import url("/spacing.css");
+@import url("/typography.css");
 
-body {
-    margin: 0;
-    padding: 0;
-}
-
-button {
-    padding: 5px;
-}
-
-#title {
-    grid-area: title;
-    width: calc(100vw - 30px - var(--compass-width));
-    word-break: break-word;
-}
-
-.nowrap {
-    white-space: nowrap;
-}
-
-#info {
-    grid-area: info;
-    width: calc(100vw - 30px - var(--compass-width));
-    line-height: 1.8;
-}
-
-#clouds {
-    grid-area: clouds;
-}
-
-#winds {
-    grid-area: winds;
-}
-
-#compass {
-    grid-area: compass;
-}
-
-#observations-graph {
-    grid-area: observations-graph;
-}
-
-#forecasts-graph {
-    grid-area: forecasts-graph;
-}
-
-#forecasts-table {
-    grid-area: forecasts-table;
-}
-
-#observations-table {
-    grid-area: observations-table;
-}
-
-#high-winds-today {
-    grid-area: high-winds-today;
-}
-
-#high-winds-tomorrow {
-    grid-area: high-winds-tomorrow;
-    align-self: end;
-}
-
-#high-winds-details {
-    grid-area: high-winds-details;
-}
-
-#errors {
-    grid-area: errors;
-}
-
-.content {
-    display: grid;
-    margin: 10px;
-    margin-bottom: 100px;
-}
-
-.compass svg {
-    width: 100%;
-}
-
-.compass {
-    display: flex;
-    width: var(--compass-width);
-    z-index: 100;
-    position: fixed;
-    padding: 2px;
-    /* border: 1px dashed black; */
-    box-shadow: 0 0 10px 5px gray;
-    border-radius: 5px;
-    background: white;
-    top: 5px;
-    right: 5px;
-    flex-direction: column;
-}
-
-.title-temp {
-    font-size: 65%;
-    color: #707070;
-    font-family: monospace;
-}
-
-.title-name,
-.title-temp {
-    display: block;
-}
-
-.latest-wind-cell {
-    display: flex;
-    white-space: nowrap;
-    justify-content: space-between;
-    max-width: 20ch;
-}
-
-.grid {
-    display: grid;
-    margin: 10px;
-    margin-bottom: 100px;
-    grid-template-columns: 1fr;
-    gap: 10px;
-
-    /** MOBILE **/
-    grid-template-areas:
-        "errors errors"
-        "title title"
-        "info info"
-        "clouds clouds"
-        "winds winds"
-        "compass compass"
-        "observations-graph observations-graph"
-        "forecasts-graph forecasts-graph"
-        "observations-table observations-table"
-        "forecasts-table forecasts-table"
-        "high-winds-details high-winds-details"
-        "high-winds-today high-winds-today"
-        "high-winds-tomorrow high-winds-tomorrow";
-}
-
-@media (min-width: 900px) {
+/* Shared sky-blue theme. Override these tokens to customize the whole app. */
+@layer base {
     :root {
-        --compass-width: 200px;
+        color-scheme: light;
+        --font-sans:
+            "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Arial,
+            sans-serif;
+        --font-mono:
+            ui-monospace, "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        /* Typography tokens retain the original rem, em, px, and fluid sizes. */
+        --font-monospace: monospace;
+        --font-map: "Helvetica Neue", Arial, Helvetica, sans-serif;
+        --font-map-zoom: "Lucida Console", Monaco, monospace;
+        --font-map-close: Tahoma, Verdana, sans-serif;
+        --text-em-0-65: 0.65em;
+        --text-em-0-7: 0.7em;
+        --text-em-0-75: 0.75em;
+        --text-em-0-8: 0.8em;
+        --text-em-1-08333: 1.08333em;
+        --text-em-1-2: 1.2em;
+        --text-heading: clamp(2rem, 4vw, 3rem);
+        --text-px-12: 12px;
+        --text-px-16: 16px;
+        --text-px-18: 18px;
+        --text-px-20: 20px;
+        --text-px-22: 22px;
+        --text-px-24: 24px;
+        --text-px-28: 28px;
+        --text-px-40: 40px;
+        --text-reading: clamp(1.25rem, 3vw, 1.75rem);
+        --text-rem-0-5: 0.5rem;
+        --text-rem-0-6: 0.6rem;
+        --text-rem-0-65: 0.65rem;
+        --text-rem-0-7: 0.7rem;
+        --text-rem-0-75: 0.75rem;
+        --text-rem-0-8: 0.8rem;
+        --text-rem-0-8125: 0.8125rem;
+        --text-rem-0-85: 0.85rem;
+        --text-rem-0-9: 0.9rem;
+        --text-rem-1: 1rem;
+        --text-rem-1-05: 1.05rem;
+        --text-rem-1-15: 1.15rem;
+        --text-rem-1-25: 1.25rem;
+        --text-rem-1-3: 1.3rem;
+        --text-rem-1-35: 1.35rem;
+        --text-rem-1-4: 1.4rem;
+        --text-rem-1-5: 1.5rem;
+        --font-weight-normal: 400;
+        --font-weight-medium: 500;
+        --font-weight-semibold: 600;
+        --font-weight-heading: 650;
+        --font-weight-bold: 700;
+        /* Sky accent: button hover, selection, and sustained-wind graph lines. */
+        --color-sky: skyblue;
+        /* Page canvas behind cards. Keep manifest.json background_color in sync. */
+        --color-page: #eef7fc;
+        /* Opaque surfaces; keep manifest.json theme_color in sync. */
+        --color-surface: #ffffff;
+        /* Quiet panel sections and toolbar backgrounds. */
+        --color-surface-soft: #f5fbff;
+        /* Table headers, icon tiles, and hovered controls. */
+        --color-surface-hover: #e1f2fc;
+        /* Input, select, and textarea fills stand apart from panel surfaces. */
+        --color-input: #eaf3f8;
+        /* Main copy, compass labels, and wind-barb symbols. */
+        --color-text: #19394d;
+        /* Secondary copy, timestamps, and disabled map controls. */
+        --color-muted: #526e80;
+        /* Links, focus rings, selected controls, and gust graph lines. */
+        --color-primary: #126b98;
+        /* Hovered links and map popup close buttons. */
+        --color-primary-hover: #084d73;
+        /* Text and icons on solid primary backgrounds. */
+        --color-on-primary: #ffffff;
+        /* Dividers, field borders, map chrome, and chart grids. */
+        --color-border: #c8e2ef;
+        /* Deep teal for safe wind readings, compass needles, and the first jumper. */
+        --color-success: #74c8b4;
+        /* Warm amber for the student wind limit: readings, compass, and charts. */
+        --color-warning: #e4b66a;
+        /* Muted crimson for the licensed wind limit and danger readings/markers. */
+        --color-danger: #e6818d;
+        /* Text and icon details on solid danger backgrounds. */
+        --color-on-danger: #ffffff;
+        /* Subtle severe-cloud warning background. */
+        --color-danger-soft: color-mix(
+            in srgb,
+            var(--color-danger) 8%,
+            var(--color-surface)
+        );
+        /* Quiet teal, amber, peach, and rose fills from calm to strongest winds. */
+        --color-wind-low: color-mix(
+            in srgb,
+            var(--color-success) 14%,
+            var(--color-surface)
+        );
+        --color-wind-medium: color-mix(
+            in srgb,
+            var(--color-warning) 18%,
+            var(--color-surface)
+        );
+        --color-wind-high: #f2dac8;
+        --color-wind-very-high: color-mix(
+            in srgb,
+            var(--color-danger) 22%,
+            var(--color-surface)
+        );
+        /* Translucent map controls; hover increases opacity over map tiles. */
+        --color-map-control: color-mix(
+            in srgb,
+            var(--color-surface) 70%,
+            transparent
+        );
+        --color-map-control-hover: color-mix(
+            in srgb,
+            var(--color-surface) 85%,
+            transparent
+        );
+        /* Street-map overlays contrast with pale roads, fields, and forests. */
+        --color-map-direction: #3478f6;
+        --color-map-first-jumper: #11bfa0;
+        --color-map-last-jumper: #f45768;
+        /* Dark outlines and marker centers keep artwork legible over tiles. */
+        --color-map-outline: #263b48;
+        /* Freefall and canopy drift paths share a color, with different widths. */
+        --color-map-drift: #ed3d8b;
+        /* Brighter satellite overlays remain legible over dark imagery. */
+        --color-map-satellite-direction: #3478f6;
+        --color-map-satellite-first-jumper: #20d5b0;
+        --color-map-satellite-last-jumper: #ff657a;
+        --color-map-satellite-drift: #ffb627;
+        /* Animated wind particles and their contrasting halo over map tiles. */
+        --color-map-wind: var(--color-map-direction);
+        --color-map-wind-halo: var(--color-map-outline);
+        /* Previous compass needles remain faint behind the current reading. */
+        --color-compass-history: color-mix(
+            in srgb,
+            var(--color-text) 10%,
+            transparent
+        );
+        /* Yellow sun discs and rays in cloud-condition icons. */
+        --color-cloud-sun: #e6b800;
+        /* Bright lightning fill; outlined bolts stay distinct on either theme. */
+        --color-cloud-lightning: #ffd43b;
+        /* Opaque blue-grey cloud artwork, including clouds in front of lightning. */
+        --color-cloud-fill: #dce7ef;
+        /* Cloud forecast blue-grey endpoints: greater cover is always darker. */
+        --color-cloud-clear: var(--color-surface-soft);
+        --color-cloud-overcast: #bfd0dc;
+        /* Modal scrim and shared elevation shadows. */
+        --color-backdrop: rgb(18 49 69 / 35%);
+        --color-shadow-panel: rgb(25 79 108 / 7%);
+        --color-shadow-floating: rgb(25 79 108 / 16%);
+        /* Stronger menu-button shadow stays visible over pale map tiles. */
+        --color-shadow-menu: rgb(25 79 108 / 36%);
+        /* Spacing: one Tailwind-style step is 4px at the default font size. */
+        --spacing: 0.25rem;
+        --spacing-0: 0px;
+        --spacing-0-5: calc(var(--spacing) * 0.5);
+        --spacing-1: calc(var(--spacing) * 1);
+        --spacing-1-5: calc(var(--spacing) * 1.5);
+        --spacing-2: calc(var(--spacing) * 2);
+        --spacing-2-5: calc(var(--spacing) * 2.5);
+        --spacing-3: calc(var(--spacing) * 3);
+        --spacing-3-5: calc(var(--spacing) * 3.5);
+        --spacing-4: calc(var(--spacing) * 4);
+        --spacing-5: calc(var(--spacing) * 5);
+        --spacing-5-5: calc(var(--spacing) * 5.5);
+        --spacing-6: calc(var(--spacing) * 6);
+        --spacing-7: calc(var(--spacing) * 7);
+        --spacing-8: calc(var(--spacing) * 8);
+        --spacing-9-5: calc(var(--spacing) * 9.5);
+        --spacing-10: calc(var(--spacing) * 10);
+        --spacing-11: calc(var(--spacing) * 11);
+        --spacing-12: calc(var(--spacing) * 12);
+        --spacing-14: calc(var(--spacing) * 14);
+        --spacing-16: calc(var(--spacing) * 16);
+        --spacing-20: calc(var(--spacing) * 20);
+        --spacing-24: calc(var(--spacing) * 24);
+        --spacing-25: calc(var(--spacing) * 25);
+        --radius-sm: 8px;
+        --radius-panel: 16px;
+        --shadow-panel: 0 4px 20px var(--color-shadow-panel);
+        --shadow-floating: 0 8px 32px var(--color-shadow-floating);
+        --compass-width: 100px;
     }
 
-    .latest-wind-cell {
-        display: inline;
+    /* Dark sky palette; derived fills and map controls inherit these roles. */
+    :root[data-theme="dark"] {
+        color-scheme: dark;
+        --color-sky: #397696;
+        --color-page: #101820;
+        --color-surface: #182630;
+        --color-surface-soft: #1c2d39;
+        --color-surface-hover: #263e4e;
+        --color-input: #233744;
+        --color-text: #e0edf5;
+        --color-muted: #a5bdcc;
+        --color-primary: #83cef3;
+        --color-primary-hover: #b6e5ff;
+        --color-on-primary: #101820;
+        --color-border: #35505f;
+        --color-success: #74c8b4;
+        --color-warning: #e4b66a;
+        --color-danger: #e6818d;
+        --color-on-danger: #101820;
+        --color-wind-high: #614631;
+        /* Muted dark blue-grey scale, retaining darker shading for more cover. */
+        --color-cloud-clear: #4b6373;
+        --color-cloud-overcast: var(--color-surface-soft);
+        --color-cloud-fill: #526c7b;
+        --color-backdrop: rgb(0 0 0 / 65%);
+        --color-shadow-panel: rgb(0 0 0 / 18%);
+        --color-shadow-floating: rgb(0 0 0 / 40%);
     }
 
-    /** BIG SCREEN **/
-    .grid {
-        grid-template-columns: minmax(250px, 1fr) minmax(250px, 1fr);
-        grid-template-areas:
-            "errors errors"
-            "title title"
-            "info info"
-            "clouds winds"
-            "observations-graph forecasts-graph"
-            "observations-table forecasts-table"
-            "high-winds-today high-winds-tomorrow"
-            "high-winds-details high-winds-details";
-    }
-}
-
-.vertical-center {
-    display: inline-flex;
-    align-items: center;
-}
-
-a:visited {
-    color: blue;
-}
-
-.weather-table {
-    table-layout: fixed;
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.side-scroll {
-    overflow-x: auto;
-    overflow-y: hidden;
-    width: 100%;
-    position: relative;
-    white-space: nowrap;
-}
-
-.weather-table th {
-    text-align: left;
-    width: 8ch;
-}
-
-.weather-table td,
-.weather-table th {
-    white-space: nowrap;
-    background-color: white;
-}
-
-.weather-table td:first-of-type,
-.weather-table th:first-of-type {
-    position: sticky;
-    width: 5ch;
-    z-index: 10;
-    left: 0;
-}
-
-.weather-table tbody tr:hover th,
-.weather-table tbody tr:hover td {
-    background-color: #e9e9e9;
-}
-
-.cloud-cover {
-    display: inline-flex;
-}
-
-.cloud-cover svg {
-    margin-right: 1ch;
-}
-
-.ok {
-    color: green;
-}
-
-.warning {
-    color: orange;
-}
-
-.danger {
-    color: red;
-}
-
-.ball {
-    display: inline-block;
-    transform: scale(2);
-}
-
-.sticky-footer .item .icon,
-.sticky-footer .item .text {
-    display: flex;
-    justify-content: center;
-}
-
-.sticky-footer .item {
-    display: flex;
-    justify-items: center;
-    align-items: center;
-    text-decoration: none;
-    height: 100%;
-}
-
-.sticky-footer {
-    display: flex;
-    z-index: 200;
-    align-items: center;
-    height: 50px;
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background-color: white;
-    box-shadow: 0 -4px 2px -2px gray;
-    overflow-x: auto;
-    justify-content: space-around;
-}
-
-.chart {
-    position: relative;
-    height: clamp(350px, 70vh, 600px);
-    border: 1px solid black;
-}
-
-.latest-value {
-    font-weight: bold;
-    font-size: 130%;
-}
-
-.ext,
-.ext:visited,
-a[href^="http"]:not([href*="hyppykeli.fi"]),
-a[href^="http"]:not([href*="hyppykeli.fi"]):visited {
-    color: black;
-    border-bottom: 1px dashed blue;
-    text-decoration: none;
-}
-
-.errors p {
-    color: red;
-}
-
-.historic {
-    opacity: 0.5;
-}
-
-svg .historic {
-    opacity: 0.3;
-}
-
-dialog {
-    margin: 0 auto;
-    margin-top: 20px;
-    font-weight: normal;
-    width: clamp(300px, 400px, 95vw);
-    white-space: wrap;
-}
-
-.help-content {
-    font-size: initial;
-    font-family: initial;
-    font-weight: initial;
-    font-style: normal;
-    width: clamp(300px, 400px, 90vw);
-}
-
-.help {
-    margin: 0;
-    padding: 5px;
-    background-color: transparent;
-    color: blue;
-    border: none;
-}
-
-.metar {
-    font-size: 70%;
-    font-family: monospace;
-}
-
-.disclaimer {
-    font-style: italic;
-    font-weight: bold;
-}
-
-.sticky {
-    position: sticky;
-    top: 0;
-    background-color: white;
-    z-index: 50;
-}
-
-.show-more {
-    font-size: 80%;
-}
-
-.anchor {
-    height: 0;
-}
-
-.side-menu {
-    position: fixed;
-    z-index: 200;
-    background-color: white;
-    right: -100%;
-    top: 0;
-    bottom: 0px;
-    width: clamp(250px, 300px, 70vw);
-    overflow-y: auto;
-    background-color: white;
-    box-shadow: -6px 0 2px -2px gray;
-    transition: right 0.3s ease;
-    padding: 40px;
-    padding-bottom: 100px;
-}
-
-.side-menu select {
-    width: 100%;
-    margin-bottom: 5px;
-}
-
-.menu-burger {
-    height: 40px;
-    width: 40px;
-    font-size: 150%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.side-menu.open {
-    right: 0;
-}
-
-.hide {
-    display: none;
-}
-
-button[value="share"] {
-    margin-left: 1ch;
-}
-
-h2 .date {
-    font-size: 70%;
-    font-weight: normal;
-    margin-left: 1ch;
-}
-
-.fresh {
-    transition: opacity 0.3s ease;
-    opacity: 1;
-}
-
-.stale {
-    opacity: 0.2;
-}
-
-.h2-with-icon {
-    display: flex;
-    align-items: center;
-}
-
-.anvil {
-    height: 30px;
-    margin-left: 1ch;
-}
-
-.direction-value {
-    width: 4ch;
-    display: inline-block;
-    padding-right: 3px;
-    z-index: -1;
-}
-
-.direction {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 80%;
-    width: 20px;
-    height: 20px;
-    transform: rotate(var(--direction));
-}
-
-.icon-parachute {
-    height: 20px;
-}
-
-.scale {
-    transform: scale(2);
-}
-
-.rotate {
-    animation: rotate 2s linear infinite;
-}
-
-.swing {
-    animation: swing 2s ease-in-out infinite;
-}
-
-@keyframes swing {
-    0% {
-        transform: rotate(30deg);
+    * {
+        box-sizing: border-box;
     }
 
-    50% {
-        transform: rotate(-30deg);
+    html {
+        scroll-padding-bottom: var(--spacing-20);
+        /* Prevent mobile browsers from enlarging map labels and attribution
+           independently of the wind controls when the layout changes. */
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
     }
 
-    100% {
-        transform: rotate(30deg);
-    }
-}
-
-@keyframes rotate {
-    0% {
-        transform: rotate(0deg);
+    html:has(dialog:modal),
+    body:has(dialog:modal) {
+        overflow: hidden;
     }
 
-    100% {
-        transform: rotate(360deg);
+    body {
+        margin: 0;
+        padding: 0;
+        background: var(--color-page);
+        color: var(--color-text);
+        font-family: var(--font-sans);
+        font-size: var(--text-px-16);
+        line-height: 1.5;
     }
-}
 
-.compass-observations-gust {
-    display: none;
-}
+    h1,
+    h2,
+    h3 {
+        color: var(--color-text);
+        line-height: 1.25;
+        font-weight: var(--font-weight-heading);
+        letter-spacing: -0.025em;
+    }
+    h1 {
+        font-size: var(--text-heading);
+    }
+    h2 {
+        font-size: var(--text-rem-1-3);
+        margin: 0 0 var(--spacing-4);
+    }
+    h3 {
+        font-size: var(--text-rem-1-05);
+    }
 
-.compass-observations-speed {
-    display: none;
-}
+    button,
+    input,
+    select,
+    textarea {
+        font: inherit;
+    }
 
-.back-link {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    padding: 5px 10px;
-    background-color: #f0f0f0;
-    border-radius: 5px;
-    text-decoration: none;
-    color: black;
-}
+    input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+    select,
+    textarea {
+        max-width: 100%;
+        padding: var(--spacing-2) var(--spacing-2-5);
+        color: var(--color-text);
+        background: var(--color-input);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+    }
+    input[type="checkbox"],
+    input[type="radio"] {
+        accent-color: var(--color-primary);
+    }
+    :focus-visible {
+        outline: 3px solid var(--color-primary);
+        outline-offset: 3px;
+    }
 
-.css-editor textarea {
-    width: 100%;
-    height: 30ch;
-}
+    a,
+    a:visited {
+        color: var(--color-primary);
+        text-underline-offset: 3px;
+    }
+    a:hover {
+        color: var(--color-primary-hover);
+    }
+    .ext,
+    .ext:visited,
+    a[href^="http"]:not([href*="hyppykeli.fi"]),
+    a[href^="http"]:not([href*="hyppykeli.fi"]):visited {
+        color: var(--color-primary);
+        border-bottom: 1px dashed var(--color-sky);
+        text-decoration: none;
+    }
 
-/* OpenMeteo */
+    fieldset {
+        margin: var(--spacing-4) 0;
+        padding: var(--spacing-5);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-panel);
+    }
+    legend {
+        color: var(--color-primary);
+        font-weight: var(--font-weight-semibold);
+        padding: 0 var(--spacing-2);
+    }
+    dialog {
+        overscroll-behavior: contain;
+        padding: var(--spacing-6);
+        max-width: calc(100vw - 24px);
+        color: var(--color-text);
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-panel);
+        box-shadow: var(--shadow-floating);
+    }
+    dialog::backdrop {
+        background: var(--color-backdrop);
+    }
+    ::selection {
+        background: var(--color-sky);
+        color: var(--color-text);
+    }
 
-.wind-table {
-    border-collapse: collapse;
-    margin-bottom: 20px;
-}
-.wind-table th,
-.wind-table td {
-    border: 1px solid #ddd;
-    padding: 2px;
-    text-align: center;
-}
-.wind-table th {
-    background-color: #f2f2f2;
-}
-.time-header {
-    min-width: 80px;
-}
-.pressure-cell {
-    text-align: left;
-    font-weight: bold;
-}
-.wind-cell {
-    padding: 2px;
-}
-.wind-speed {
-    font-weight: bold;
-}
-.wind-direction {
-    color: #666;
-}
-.wind-low {
-    background-color: #90ee90; /* vihreä */
-}
-.wind-medium {
-    background-color: #ffff00; /* keltainen */
-}
-.wind-high {
-    background-color: #ffa500; /* oranssi */
-}
-.wind-very-high {
-    background-color: #ff6347; /* punainen */
-}
-.past-column {
-    opacity: 0.5;
-}
-.wind-direction {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.wind-direction span {
-    margin-left: 4px;
-    font-size: 14px;
-}
-.wind-table th.current-column,
-.wind-table td.current-column {
-    border-left: 2px solid #333;
-    border-right: 2px solid #333;
-}
-.wind-table th.current-column {
-    border-top: 2px solid #333;
-}
-.wind-table tr:last-child td.current-column {
-    border-bottom: 2px solid #333;
-}
-
-.compass-time {
-    margin: 0;
-    padding-left: 5px;
-    padding-right: 5px;
-    font-size: 70%;
-    text-align: center;
-}
-
-.dz-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 2px;
-}
-
-.dynamic-parachute {
-    fill: var(--parachute-color);
-}
-
-.parachute-color {
-    fill: var(--parachute-color);
+    @media (min-width: 900px) {
+        :root {
+            --compass-width: 200px;
+        }
+    }
 }

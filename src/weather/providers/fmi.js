@@ -1,0 +1,368 @@
+// @ts-check
+import {
+    fmiForecastCache,
+    fmiObservationCache,
+} from "#app/weather/providers/cachePolicies.js";
+import { fetchCached } from "#app/shared/fetchCached.js";
+import { t } from "#app/translations.js";
+
+/**
+ * Makes a request to the FMI API with the given options.
+ * @param {StoredQuery} storedQuery - The stored query ID for the request.
+ * @param {Object} params - The parameters for the request.
+ * @param {FmiRequestOptions & {cache: ResponseCachePolicy<string>}} options
+ * @returns {Promise<Document|undefined|"error">} The parsed XML document from the response.
+ * @throws Will throw an error if the request fails.
+ */
+export async function fmiRequest(storedQuery, params, options) {
+    const url = new URL(`https://opendata.fmi.fi/wfs?request=getFeature`);
+    url.searchParams.set("storedquery_id", storedQuery);
+    for (const [k, v] of Object.entries(params)) {
+        url.searchParams.set(k, v);
+    }
+
+    try {
+        /** @type {CachedFetchResult<string> | undefined} */
+        const result = await fetchCached(url.toString(), {
+            format: "text",
+            onLoading: options.onLoading,
+            signal: options.signal,
+            cacheOnly: options.cacheOnly,
+            forceFetch: options.forceFetch,
+            validate: (text) => {
+                const doc = new DOMParser().parseFromString(
+                    text,
+                    "application/xml",
+                );
+                return (
+                    !doc.querySelector("parsererror") &&
+                    doc.getElementsByTagNameNS("*", "ExceptionReport")
+                        .length === 0 &&
+                    doc.getElementsByTagNameNS("*", "MeasurementTimeseries")
+                        .length > 0
+                );
+            },
+            cache: options.cache,
+        });
+        const text = result?.data;
+        options.onCacheStatus?.(result?.stale ?? true);
+        if (text === undefined) return;
+        const data = new DOMParser().parseFromString(text, "application/xml");
+
+        return data;
+    } catch (error) {
+        console.warn("FMI request failed", error);
+        return "error";
+    }
+}
+
+/**
+ * @param {Document} doc
+ * @param {string} path
+ * @returns {Element|null}
+ */
+function xpath(doc, path) {
+    const node = doc.evaluate(
+        path,
+        doc,
+        function (prefix) {
+            switch (prefix) {
+                case "wml2":
+                    return "http://www.opengis.net/waterml/2.0";
+                case "gml":
+                    return "http://www.opengis.net/gml/3.2";
+                default:
+                    return null;
+            }
+        },
+        XPathResult.FIRST_ORDERED_NODE_TYPE,
+        null,
+    ).singleNodeValue;
+
+    if (node instanceof Element) {
+        return node;
+    }
+
+    return null;
+}
+
+/**
+ * @param {Element} node
+ * @param {number} fallback
+ */
+function pointsToTimeSeries(node, fallback) {
+    return Array.from(node.querySelectorAll("point")).map((point) => {
+        const value = Number(point.querySelector("value")?.innerHTML);
+        return {
+            value: isNaN(value) ? fallback : value,
+            time: new Date(
+                point.querySelector("time")?.innerHTML ?? new Date(),
+            ),
+        };
+    });
+}
+
+/**
+ * @param {Document} doc
+ * @param {string} id
+ * @param {number} fallback
+ */
+function parseTimeSeries(doc, id, fallback) {
+    const node = xpath(doc, `//wml2:MeasurementTimeseries[@gml:id="${id}"]`);
+    if (!node) {
+        return [];
+    }
+
+    return pointsToTimeSeries(node, fallback);
+}
+
+/**
+ * @param {string} coordinates
+ * @param {FmiForecastOptions} options
+ */
+export async function fetchFmiForecasts(coordinates, options) {
+    const forecastRange = Math.max(12, options.range);
+
+    const forecastStartTime = new Date();
+    forecastStartTime.setMinutes(0, 0, 0);
+    const forecastEndTime = new Date();
+    forecastEndTime.setHours(
+        forecastEndTime.getHours() + forecastRange,
+        0,
+        0,
+        0,
+    );
+
+    const forecastXml = await fmiRequest(
+        // "fmi::forecast::hirlam::surface::point::timevaluepair",
+        // "ecmwf::forecast::surface::point::simple",
+        // "ecmwf::forecast::surface::point::timevaluepair",
+        "fmi::forecast::edited::weather::scandinavia::point::timevaluepair",
+        {
+            starttime: forecastStartTime.toISOString(),
+            endtime: forecastEndTime.toISOString(),
+
+            timestep: 10,
+            // parameters: FORECAST_PAREMETERS.join(","),
+            // parameters: "WindGust",
+            // TotalCloudCover, LowCloudCover, MediumCloudCover,
+            // HighCloudCover, MiddleAndLowCloudCover
+            parameters: [
+                "HourlyMaximumGust",
+                "WindDirection",
+                "WindSpeedMS",
+                "TotalCloudCover",
+                "LowCloudCover",
+                "MediumCloudCover",
+                "HighCloudCover",
+                "MiddleAndLowCloudCover",
+                "Temperature",
+                "DewPoint",
+                "PoP", // precipitation probability
+            ].join(","),
+            // place: "Utti",
+            latlon: coordinates,
+        },
+        {
+            ...options,
+            cache: fmiForecastCache(
+                coordinates,
+                forecastRange,
+                forecastStartTime,
+            ),
+        },
+    );
+
+    if (forecastXml === "error") {
+        return false;
+    }
+
+    if (!forecastXml) {
+        return false;
+    }
+
+    // const allFeatures = Array.from(
+    //     forecastXml.querySelectorAll("SF_SpatialSamplingFeature"),
+    // ).map((el) => el.getAttribute("gml:id"));
+    // console.log(allFeatures);
+
+    const gustForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-HourlyMaximumGust",
+        -1,
+    );
+
+    const speedForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-WindSpeedMS",
+        -1,
+    );
+
+    const popForecasts = parseTimeSeries(forecastXml, "mts-1-1-PoP", 0);
+
+    const temperatureForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-Temperature",
+        -100,
+    );
+
+    const dewPointForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-DewPoint",
+        -100,
+    );
+
+    const directionForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-WindDirection",
+        -1,
+    );
+
+    const cloudCoverForecasts = parseTimeSeries(
+        forecastXml,
+        // "mts-1-1-MiddleAndLowCloudCover",
+        "mts-1-1-LowCloudCover",
+        -1,
+    );
+
+    const middleCloudCoverForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-MiddleAndLowCloudCover",
+        -1,
+    );
+
+    const middleOnlyCloudCoverForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-MediumCloudCover",
+        -1,
+    );
+
+    const highCloudCoverForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-HighCloudCover",
+        -1,
+    );
+
+    const totalCloudCoverForecasts = parseTimeSeries(
+        forecastXml,
+        "mts-1-1-TotalCloudCover",
+        -1,
+    );
+
+    const locationCollection = forecastXml.querySelector("LocationCollection");
+    const locationName = locationCollection?.querySelector("name")?.innerHTML;
+    const regionName = locationCollection?.querySelector("region")?.innerHTML;
+
+    /** @type {WeatherData[]} */
+    const combinedForecasts = gustForecasts.map((gust, i) => {
+        return {
+            source: "forecast",
+            gust: gust.value,
+            direction: directionForecasts[i]?.value ?? -1,
+            speed: speedForecasts[i]?.value ?? -1,
+            time: gust.time,
+            lowCloudCover: cloudCoverForecasts[i]?.value,
+            middleCloudCover: middleCloudCoverForecasts[i]?.value,
+            middleOnlyCloudCover: middleOnlyCloudCoverForecasts[i]?.value,
+            highCloudCover: highCloudCoverForecasts[i]?.value,
+            totalCloudCover: totalCloudCoverForecasts[i]?.value,
+            rain: popForecasts[i]?.value,
+            temperature: temperatureForecasts[i]?.value,
+            dewPoint: dewPointForecasts[i]?.value,
+        };
+    });
+
+    return {
+        forecasts: combinedForecasts,
+        forecastName: locationName?.trim() || undefined,
+        locationName:
+            [locationName, regionName].filter(Boolean).join(", ") || null,
+    };
+}
+
+/**
+ * @param {string} fmisid
+ * @param {FmiObservationOptions} options
+ */
+export async function fetchFmiObservations(fmisid, options) {
+    const obsStartTime = options.startTime;
+
+    const doc = await fmiRequest(
+        "fmi::observations::weather::timevaluepair",
+        {
+            starttime: obsStartTime.toISOString(),
+            // endtime:
+            parameters: [
+                "winddirection",
+                "windspeedms",
+                "windgust",
+                "t2m",
+                "td",
+            ],
+            fmisid,
+        },
+        {
+            ...options,
+            cache: fmiObservationCache(fmisid, obsStartTime),
+        },
+    );
+
+    if (!doc) {
+        throw new Error(t("error.stationNotFound", fmisid));
+    }
+
+    if (doc === "error") {
+        throw new Error(t("error.fmiFetch", fmisid));
+    }
+
+    // const allFeatures = Array.from(
+    //     doc.querySelectorAll("SF_SpatialSamplingFeature"),
+    // ).map((el) => el.getAttribute("gml:id"));
+    // console.log(allFeatures.join(", "));
+
+    // <gml:name codeSpace="http://xml.fmi.fi/namespace/locationcode/name">Kouvola Utti lentoasema</gml:name>
+    const name = xpath(
+        doc,
+        "//gml:name[@codeSpace='http://xml.fmi.fi/namespace/locationcode/name']",
+    )?.innerHTML;
+
+    if (!name) {
+        throw new Error(t("error.stationInvalid", fmisid));
+    }
+
+    const coordinates =
+        doc.querySelector("pos")?.innerHTML.trim().split(/\s+/).join(",") ??
+        null;
+
+    const gusts = parseTimeSeries(doc, "obs-obs-1-1-windgust", -1).reverse();
+    const windSpeed = parseTimeSeries(
+        doc,
+        "obs-obs-1-1-windspeedms",
+        -1,
+    ).reverse();
+    const directions = parseTimeSeries(
+        doc,
+        "obs-obs-1-1-winddirection",
+        -1,
+    ).reverse();
+
+    const temperatures = parseTimeSeries(doc, "obs-obs-1-1-t2m", -99).reverse();
+    const dewPoints = parseTimeSeries(doc, "obs-obs-1-1-td", -99).reverse();
+
+    /** @type {WeatherData[]} */
+    const combined = gusts.map((gust, i) => {
+        return {
+            source: "fmi",
+            gust: gust.value,
+            speed: windSpeed[i]?.value,
+            direction: directions[i]?.value,
+            time: gust.time,
+            middleCloudCover: undefined,
+            lowCloudCover: undefined,
+            temperature: temperatures[i]?.value,
+            dewPoint: dewPoints[i]?.value,
+        };
+    });
+
+    return { observations: combined, name: name + " (FMI)", coordinates };
+}

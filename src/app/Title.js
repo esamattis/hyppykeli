@@ -1,0 +1,257 @@
+// @ts-check
+import { Button } from "#app/shared/Button.js";
+import { FormField } from "#app/shared/FormFields.js";
+import { Dialog } from "#app/shared/Dialog.js";
+import { FromNow } from "#app/shared/FromNow.js";
+import { Help } from "#app/shared/Help.js";
+import { Icon } from "#app/shared/icons.js";
+import { isNullish } from "#app/shared/values.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { LATEST_OBSERVATION, NAME } from "#app/weather/state.js";
+import {
+    DROPZONE_ELEVATION,
+    QUERY_PARAMS,
+    navigateQs,
+} from "#app/app/settings.js";
+import { h, html } from "htm/preact";
+import { useId, useRef, useState } from "preact/hooks";
+
+export function Title() {
+    const scope = useScope(css`
+        :scope {
+            grid-area: title;
+            box-sizing: border-box;
+            max-width: 100%;
+            width: 100%;
+            word-break: break-word;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            column-gap: var(--spacing-3);
+        }
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .title-details {
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .title-name-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+        }
+
+        .title-name {
+            min-width: 0;
+        }
+
+        .title-elevation {
+            display: block;
+            color: var(--color-muted);
+        }
+
+        .edit-name {
+            position: relative;
+            top: var(--spacing-1);
+            display: inline-flex;
+            flex: 0 0 auto;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            color: var(--color-primary);
+            background: transparent;
+            border: 0;
+            border-radius: 50%;
+        }
+
+        .edit-name:hover {
+            color: var(--color-primary-hover);
+            background: var(--color-surface-hover);
+        }
+
+        .title-temp {
+            min-width: 0;
+            flex-shrink: 0;
+            color: var(--color-muted);
+            white-space: nowrap;
+        }
+
+        .title-name,
+        .title-temp {
+            display: block;
+        }
+    `);
+    const dialogScope = useScope(css`
+        :scope:is(dialog) {
+            width: min(420px, calc(100vw - 24px));
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin-top: 0;
+        }
+
+        .name-field {
+            --form-field-gap: var(--spacing-2);
+        }
+
+        .name-hint {
+            color: var(--color-muted);
+        }
+
+        .name-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+    `);
+    /** @type {import('preact').RefObject<HTMLDialogElement>} */
+    const dialogRef = useRef(null);
+    /** @type {import('preact').RefObject<HTMLInputElement>} */
+    const inputRef = useRef(null);
+    const [nameDraft, setNameDraft] = useState("");
+    const dialogTitleId = useId();
+
+    const openNameEditor = () => {
+        setNameDraft(QUERY_PARAMS.value.name?.trim() || NAME.value);
+        dialogRef.current?.showModal();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+    };
+
+    /** @param {SubmitEvent} event */
+    const saveName = (event) => {
+        event.preventDefault();
+        navigateQs({ name: nameDraft.trim() || undefined });
+        dialogRef.current?.close();
+    };
+
+    const time = LATEST_OBSERVATION.value?.time;
+    const temperature = LATEST_OBSERVATION.value?.temperature;
+
+    const temps = isNullish(temperature)
+        ? null
+        : {
+              1: temperature - 6.5 * 1,
+              2: temperature - 6.5 * 2,
+              3: temperature - 6.5 * 3,
+              4: temperature - 6.5 * 4,
+          };
+
+    return html`
+        <h1 id="title" class="m-0 pl-2">
+            ${scope.style}
+            <span class="title-details">
+                <span class="title-name-row">
+                    <span class="title-name">${NAME}</span>
+                    ${h(
+                        Button,
+                        {
+                            class: "edit-name p-1",
+                            type: "button",
+                            "aria-label": t("title.edit"),
+                            "data-tooltip": t("title.edit"),
+                            "aria-haspopup": "dialog",
+                            onClick: openNameEditor,
+                        },
+                        html`
+                            ${h(Icon, { name: "pen", size: 12 })}
+                        `,
+                    )}
+                </span>
+                <span class="title-elevation text-rem-0-75 font-normal">
+                    ${t("title.elevation", String(Math.round(DROPZONE_ELEVATION.value)))}
+                </span>
+            </span>
+            <span
+                class="title-temp text-em-0-65 mobile:text-rem-1-15 font-mono"
+            >
+                ${
+                    temps
+                        ? html`
+                              <span>
+                                  <span class="nowrap">
+                                      ${t("title.groundTemperature", temperature?.toFixed(0) ?? "")}
+                                  </span>
+                                  ${" "}
+                                  <span class="nowrap">
+                                      ${t("title.altitudeTemperature", temps[4].toFixed(0))}
+                                  </span>
+                                  ${h(
+                                      Help,
+                                      {},
+                                      html`
+                                          <p>${t("title.temperatureHelp")}</p>
+
+                                          <ul>
+                                              <li>
+                                                  1km ${temps[1].toFixed(1)}°C
+                                              </li>
+                                              <li>
+                                                  2km ${temps[2].toFixed(1)}°C
+                                              </li>
+                                              <li>
+                                                  3km ${temps[3].toFixed(1)}°C
+                                              </li>
+                                              <li>
+                                                  4km ${temps[4].toFixed(1)}°C
+                                              </li>
+                                          </ul>
+
+                                          <p>${h(FromNow, { date: time })}</p>
+                                      `,
+                                  )}
+                              </span>
+                          `
+                        : null
+                }
+            </span>
+        </h1>
+        ${h(
+            Dialog,
+            { dialogRef, labelledBy: dialogTitleId },
+            html`
+                ${dialogScope.style}
+                <div>
+                    <h2 id=${dialogTitleId}>${t("title.edit")}</h2>
+                    <form onSubmit=${saveName}>
+                        ${h(
+                            FormField,
+                            {
+                                id: `${dialogTitleId}-name`,
+                                label: t("menu.namePrompt"),
+                                layout: "stacked",
+                                className: "name-field",
+                            },
+                            h("input", {
+                                id: `${dialogTitleId}-name`,
+                                ref: inputRef,
+                                name: "name",
+                                type: "text",
+                                value: nameDraft,
+                                onInput: (event) =>
+                                    setNameDraft(event.currentTarget.value),
+                            }),
+                        )}
+                        <p class="name-hint text-rem-0-85">
+                            ${t("title.emptyName")}
+                        </p>
+                        <div class="name-actions mt-5">
+                            ${h(
+                                Button,
+                                { type: "submit" },
+                                html`
+                                    ${t("common.save")}
+                                `,
+                            )}
+                        </div>
+                    </form>
+                </div>
+            `,
+        )}
+    `;
+}

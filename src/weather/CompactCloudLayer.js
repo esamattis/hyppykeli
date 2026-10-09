@@ -1,0 +1,161 @@
+// @ts-check
+import { CloudCoverIcon, Icon } from "#app/shared/icons.js";
+import { formatExactAltitude } from "#app/weather/altitudes.js";
+import { t } from "#app/translations.js";
+import { css, useScope } from "#app/useScope.js";
+import { formatCloudBase } from "#app/weather/calculations.js";
+import { cloudTypes } from "#app/weather/cloudTypes.js";
+import { h, html } from "htm/preact";
+
+const compactLayerStyles = css`
+    :scope {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: var(--spacing-1-5);
+        white-space: nowrap;
+    }
+    .map-cloud-height {
+        font-variant-numeric: tabular-nums;
+    }
+    .cloud-storm-icon {
+        position: relative;
+        isolation: isolate;
+        display: inline-block;
+        flex-shrink: 0;
+        width: 30px;
+        height: 24px;
+    }
+    .cloud-storm-icon > svg:first-of-type {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+    }
+    .cloud-storm-icon > .cloud-lightning {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        z-index: 0;
+    }
+`;
+
+/** @param {{ clouds: CloudLayer[], focusable?: boolean }} props */
+export function CompactCloudLayers({ clouds, focusable = true }) {
+    return html`
+        ${clouds
+            .toSorted((a, b) => a.base - b.base)
+            .map((cloud) => h(CompactCloudLayer, { cloud, focusable }))}
+    `;
+}
+
+/** @param {{ layers: OpenMeteoCloudProfile["layers"], focusable?: boolean }} props */
+export function CompactOpenMeteoCloudLayers({ layers, focusable = true }) {
+    return html`
+        ${layers
+            .filter((layer) => layer.cover > 0)
+            .toSorted((a, b) => a.height - b.height)
+            .map((layer) =>
+                h(CompactOpenMeteoCloudLayer, { layer, focusable }),
+            )}
+    `;
+}
+
+/** @param {{ focusable?: boolean }} props */
+export function CompactCavok({ focusable = true }) {
+    const scope = useScope(compactLayerStyles);
+    return html`
+        <div
+            class="cloud-clear map-cloud-layer"
+            tabindex=${focusable ? 0 : undefined}
+            data-tooltip=${t("cloud.cavokMessage")}
+        >
+            ${scope.style}
+            ${h(Icon, { name: "cloudNsc", size: 20, label: t("cloud.cavok") })}
+            <span>CAVOK</span>
+        </div>
+    `;
+}
+
+/** @param {{ cloud: CloudLayer, focusable?: boolean }} props */
+export function CompactCloudLayer({ cloud, focusable = true }) {
+    const scope = useScope(compactLayerStyles);
+    const type = cloudTypes()[cloud.amount];
+    const label = type?.label ?? cloud.amount;
+    const hasBase =
+        Number.isFinite(cloud.base) && !["NCD", "NSC"].includes(cloud.amount);
+    const tooltip = `${label}${hasBase ? ` · ${t(cloud.amount === "VV" ? "cloud.verticalVisibility" : "cloud.base")}: ${cloud.base} ${cloud.unit}` : ""}`;
+
+    return html`
+        <div
+            class="cloud-layer map-cloud-layer"
+            tabindex=${focusable ? 0 : undefined}
+            data-tooltip=${tooltip}
+        >
+            ${scope.style}
+            ${
+                cloud.cumulonimbus
+                    ? html`
+                          <span class="cloud-storm-icon">
+                              ${h(Icon, { name: type?.icon ?? "cloudOvercast", size: 20, label })}
+                              ${h(Icon, { name: "lightning", size: 18, className: "cloud-lightning", label: t("cloud.cumulonimbus") })}
+                          </span>
+                      `
+                    : h(Icon, {
+                          name: type?.icon ?? "cloudOvercast",
+                          size: 20,
+                          label,
+                      })
+            }
+            ${
+                hasBase
+                    ? html`
+                          <span class="map-cloud-height">
+                              ${formatCloudBase(cloud.base, cloud.unit, { approximate: true }).replace(/^≈ /, "")}
+                          </span>
+                      `
+                    : null
+            }
+        </div>
+    `;
+}
+
+/** @param {{ layer: OpenMeteoCloudProfile["layers"][number], focusable?: boolean }} props */
+export function CompactOpenMeteoCloudLayer({ layer, focusable = true }) {
+    const scope = useScope(css`
+        ${compactLayerStyles}
+        .cloud-cover {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            line-height: 1;
+            gap: var(--spacing-0-5);
+        }
+        .cloud-cover-percentage {
+            color: var(--color-muted);
+            line-height: 1.1;
+            font-variant-numeric: tabular-nums;
+        }
+    `);
+    const tooltip = `${layer.cover.toFixed(0)} % · ${layer.pressure} hPa · ${formatExactAltitude(layer.height)}`;
+    return html`
+        <div
+            class="cloud-layer cloud-profile-layer map-cloud-layer"
+            tabindex=${focusable ? 0 : undefined}
+            data-tooltip=${tooltip}
+        >
+            ${scope.style}
+            ${h(CloudCoverIcon, { percentage: layer.cover, size: 24 })}
+            <span class="cloud-cover">
+                <span
+                    class="cloud-cover-percentage font-sans font-semibold text-rem-0-5 wind-barb-large:text-rem-0-65"
+                >
+                    ${layer.cover.toFixed(0)}%
+                </span>
+                <span class="map-cloud-height">
+                    ${formatCloudBase(Math.round(layer.height / 100) * 100, "m")}
+                </span>
+            </span>
+        </div>
+    `;
+}

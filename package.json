@@ -1,10 +1,19 @@
 {
     "type": "module",
+    "packageManager": "pnpm@12.8.1",
+    "devEngines": {
+        "runtime": {
+            "name": "node",
+            "version": "26.10.0"
+        }
+    },
     "scripts": {
         "dev": "python3 -m http.server",
-        "prettier-check": "prettier --check index.html src/ *.css",
-        "prettier": "prettier --write index.html src/ *.css",
+        "oxfmt-check": "oxfmt --check .",
+        "oxfmt": "oxfmt --write .",
         "tsc": "tsc",
+        "test": "pnpm run oxfmt && pnpm run tsc && playwright test",
+        "test:e2e": "playwright test",
         "build": "./build.sh"
     },
     "dependencies": {
@@ -12,8 +21,16 @@
         "chart.js": "^4.4.3",
         "esbuild": "^0.21.5",
         "htm": "^3.1.1",
+        "leaflet": "^1.9.4",
         "preact": "^10.22.0",
-        "prettier": "^3.3.2",
-        "typescript": "^5.5.3"
+        "typescript": "^7.0.2"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.63.0",
+        "@types/leaflet": "^1.9.22",
+        "oxfmt": "^0.71.0"
+    },
+    "imports": {
+        "#app/*": "./src/*"
     }
 }

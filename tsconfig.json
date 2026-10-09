@@ -5,6 +5,7 @@
         "noEmit": true,
         "module": "NodeNext",
         "allowJs": true,
+        "checkJs": true,
         "moduleResolution": "NodeNext",
         "strict": true,
         "skipLibCheck": true,
