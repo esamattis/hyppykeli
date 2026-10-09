@@ -649,6 +649,8 @@ export const english = {
     "landing.partialImmola": "– Immola. No METAR messages.",
     "landing.partialMeripuisto":
         "– Meripuisto, Helsinki. EFHK observations and METAR messages.",
+    "landing.partialYyteri":
+        "– Yyteri, Pori. No METAR messages; a road weather observation station is used.",
 };
 
 /** @satisfies {TranslationCatalog<typeof english>} */
@@ -1277,6 +1279,8 @@ const finnish = {
     "landing.partialImmola": "– Immola. Ei METAR-sanomia.",
     "landing.partialMeripuisto":
         "– Meripuisto, Helsinki. EFKH:n havainnot ja METAR-sanomat.",
+    "landing.partialYyteri":
+        "– Yyteri, Pori. Ei METAR-sanomia, käytetään tieliikenteen säähavaintoasemaa.",
 };
 
 export const supportedLanguages = /** @type {const} */ (["en", "fi"]);
