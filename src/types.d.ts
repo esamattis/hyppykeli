@@ -390,8 +390,19 @@ interface CloudLayer {
 /**
  * Interface representing METAR data.
  */
+type MetarPhenomenon =
+    | "thunderstorm"
+    | "freezing"
+    | "rain"
+    | "snow"
+    | "hail"
+    | "icePellets"
+    | "fog"
+    | "mist";
+
 interface MetarData {
     clouds: CloudLayer[];
+    phenomena: MetarPhenomenon[];
     temperature: number;
     dewpoint?: number;
     wind: {
@@ -757,6 +768,12 @@ interface IconProps {
         | "cloudScattered"
         | "cloudBroken"
         | "cloudOvercast"
+        | "cloudRain"
+        | "cloudSnow"
+        | "cloudHail"
+        | "cloudIcePellets"
+        | "cloudMist"
+        | "freezing"
         | "cloudFog";
     size?: number | string;
     label?: string;

@@ -1218,6 +1218,116 @@ test("Fintraffic station supplies observations and fallback coordinates", async 
     );
 });
 
+test("METAR rain is exposed with or without reported cloud layers", async ({
+    page,
+}) => {
+    const params = new URLSearchParams(manualPath.split("?")[1]);
+    for (const conditions of ["-SHRA BKN015", "FZDZ //////", "BKN015"]) {
+        params.set(
+            "MANUAL_metar",
+            `METAR EFJY 041200Z 19007KT 9999 ${conditions} 11/08 Q1014=`,
+        );
+        await page.goto(`/dz/?${params}`);
+        await expect(
+            page
+                .locator("#clouds")
+                .getByRole("img", { name: "Sade", exact: true }),
+        ).toHaveCount(conditions === "BKN015" ? 0 : 1);
+    }
+});
+
+test("METAR weather phenomena are available in the cloud card and full-window map", async ({
+    page,
+}) => {
+    const params = new URLSearchParams(manualPath.split("?")[1]);
+    params.set(
+        "MANUAL_metar",
+        "METAR EFJY 091200Z 19007KT 0800 TSRASNGR FZDZPL FG BR BKN005 M01/M02 Q1008=",
+    );
+    await page.goto(`/dz/?${params}`);
+    const labels = [
+        "Ukkonen",
+        "Jäätävä sade tai sumu",
+        "Sade",
+        "Lumisade",
+        "Raesade",
+        "Jääjyväsiä",
+        "Sumu",
+        "Utu",
+    ];
+    for (const label of labels) {
+        await expect(
+            page
+                .locator("#clouds")
+                .getByRole("img", { name: label, exact: true }),
+        ).toHaveCount(1);
+    }
+    await expect(page.locator("#clouds .cloud-fog")).toHaveAttribute(
+        "data-tooltip",
+        "SUMUA PERKELE",
+    );
+    await page.setViewportSize({ width: 1280, height: 1000 });
+    await page
+        .locator("#dropzone-map")
+        .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
+        .click();
+    for (const label of labels) {
+        await expect(
+            page
+                .locator(".map-cloud-summary")
+                .getByRole("img", { name: label, exact: true }),
+        ).toHaveCount(1);
+    }
+    await expect(page.locator(".map-cloud-summary .cloud-fog")).toHaveAttribute(
+        "data-tooltip",
+        "SUMUA PERKELE",
+    );
+});
+
+test("METAR weather replaces clear-sky indicators while retaining cloud heights", async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 1280, height: 1000 });
+    const params = new URLSearchParams(manualPath.split("?")[1]);
+    for (const conditions of [
+        "-RA NSC",
+        "SN NCD",
+        "FG NSC",
+        "-RA NSC BKN015",
+        "NSC",
+    ]) {
+        params.set(
+            "MANUAL_metar",
+            `METAR EFJY 091200Z 19007KT 9999 ${conditions} 10/05 Q1008=`,
+        );
+        await page.goto(`/dz/?${params}`);
+        await page
+            .locator("#dropzone-map")
+            .getByRole("button", { name: "Laajenna Hyppylinja koko ikkunaan" })
+            .click();
+        const summary = page.locator(".map-cloud-summary");
+        await expect(
+            summary.getByRole("img", {
+                name: "Ei merkittäviä pilviä",
+                exact: true,
+            }),
+        ).toHaveCount(conditions === "NSC" ? 1 : 0);
+        await expect(
+            summary.getByRole("img", { name: "Ei pilviä", exact: true }),
+        ).toHaveCount(0);
+        if (conditions.startsWith("-RA")) {
+            await expect(
+                summary.getByRole("img", { name: "Sade", exact: true }),
+            ).toHaveCount(1);
+        }
+        if (conditions.includes("BKN015")) {
+            await expect(summary.locator(".map-cloud-height")).toHaveText(
+                "500 m",
+            );
+        }
+    }
+});
+
 test("METAR cloud layers expose descriptions and original feet in tooltips", async ({
     page,
 }) => {

@@ -1,9 +1,7 @@
 // @ts-check
 import {
-    CompactCavok,
-    CompactCloudLayers,
+    CompactMetarClouds,
     CompactOpenMeteoCloudLayers,
-    CompactUnknownCumulonimbus,
 } from "#app/weather/CompactCloudLayer.js";
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
@@ -216,19 +214,10 @@ export function CloudSummary() {
     );
     const modelLayers =
         profile?.layers.filter((layer) => layer.cover > 0) ?? [];
-    const metarLayers =
-        metar?.clouds.filter(
-            (cloud) => !["NCD", "NSC"].includes(cloud.amount),
-        ) ?? [];
-    const hasClouds = Boolean(
-        metarLayers.length || metar?.cbWithoutLayer || modelLayers.length,
-    );
     const latest = LATEST_OBSERVATION.value;
     const time = metar?.time ?? latest?.time;
     const forecasts =
         FORECAST_SOURCE.value === "FMI" ? HOURLY_CLOUD_FORECASTS.value : [];
-
-    const cavok = metar?.clouds.length === 0 && metar.metar.includes("CAVOK");
 
     return html`
         <div class="cloud-summary">
@@ -287,30 +276,7 @@ export function CloudSummary() {
                               <div
                                   class="cloud-list cloud-layers compact-cloud-layers font-heading p-0 my-3"
                               >
-                                  ${
-                                      cavok
-                                          ? h(CompactCavok, { focusable: true })
-                                          : !hasClouds
-                                            ? html`
-                                                  <div
-                                                      class="cloud-clear"
-                                                      tabindex="0"
-                                                      data-tooltip=${t(metar.clouds.some((cloud) => cloud.amount === "NSC") ? "cloud.noSignificant" : "cloud.none")}
-                                                  >
-                                                      ${h(Icon, { name: "cloudClear", size: 20, label: t("cloud.none") })}
-                                                  </div>
-                                              `
-                                            : h(CompactCloudLayers, {
-                                                  clouds: metarLayers,
-                                              })
-                                  }
-                                  ${
-                                      metar.cbWithoutLayer
-                                          ? h(CompactUnknownCumulonimbus, {
-                                                focusable: true,
-                                            })
-                                          : null
-                                  }
+                                  ${h(CompactMetarClouds, { metar })}
                               </div>
                               <div
                                   class="cloud-observation-footer text-rem-0-75 mt-3"

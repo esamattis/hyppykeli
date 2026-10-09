@@ -2,6 +2,13 @@
 import { css, useScope } from "#app/useScope.js";
 import { h, html } from "htm/preact";
 
+const precipitationCloud = html`
+    <path
+        d="M6 15a4 4 0 0 1-1-8 5 5 0 0 1 9-3 4 4 0 0 1 5 3 4 4 0 0 1-1 8Z"
+        fill="var(--color-cloud-fill)"
+    />
+`;
+
 // All UI icon artwork lives here. Charts and the compass are data visualizations.
 const artwork = {
     separation: html`
@@ -227,6 +234,41 @@ const artwork = {
             fill="var(--color-cloud-fill)"
         />
         <path d="M4 23h16" />
+    `,
+    cloudRain: html`
+        ${precipitationCloud}
+        <path d="m7 18-1 3m6-3-1 3m6-3-1 3" />
+    `,
+    cloudSnow: html`
+        ${precipitationCloud}
+        <path
+            d="M7 18v5m-2-4 4 3m-4 0 4-3M17 18v5m-2-4 4 3m-4 0 4-3"
+            stroke-width="1.2"
+        />
+    `,
+    cloudHail: html`
+        ${precipitationCloud}
+        <circle cx="6" cy="20" r="2" fill="currentColor" />
+        <circle cx="12" cy="22" r="2" fill="currentColor" />
+        <circle cx="18" cy="20" r="2" fill="currentColor" />
+    `,
+    cloudIcePellets: html`
+        ${precipitationCloud}
+        <path
+            d="m6 18 1.5 2L6 22l-1.5-2ZM12 19l1.5 2-1.5 2-1.5-2ZM18 18l1.5 2-1.5 2-1.5-2Z"
+            stroke-width="1.2"
+        />
+    `,
+    cloudMist: html`
+        ${precipitationCloud}
+        <path d="M4 19h6m4 0h6M7 23h10" />
+    `,
+    freezing: html`
+        <path
+            d="M8 3v18M3 7l10 10M3 17 13 7M5 4l3 3 3-3M5 20l3-3 3 3M2 10l4-1-1-4M2 14l4 1-1 4M14 10l-4-1 1-4M14 14l-4 1 1 4"
+            stroke-width="1.2"
+        />
+        <path d="M19 11s-3 4-3 6a3 3 0 0 0 6 0c0-2-3-6-3-6Z" />
     `,
     cloudFog: html`
         <path

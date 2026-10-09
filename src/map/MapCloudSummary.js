@@ -7,10 +7,9 @@ import { Icon } from "#app/shared/icons.js";
 import { t } from "#app/translations.js";
 import { css, useScope } from "#app/useScope.js";
 import {
-    CompactCavok,
-    CompactCloudLayers,
+    CompactMetarClouds,
     CompactOpenMeteoCloudLayers,
-    CompactUnknownCumulonimbus,
+    metarPhenomenonIcons,
 } from "#app/weather/CompactCloudLayer.js";
 import { getOpenMeteoCloudProfile } from "#app/weather/providers/openMeteo.js";
 import { METARS, OM_DATA } from "#app/weather/state.js";
@@ -90,7 +89,11 @@ export function MapCloudSummary() {
     const metar = METARS.value?.at(-1);
     const cavok = metar?.metar.includes("CAVOK");
     const hasMetarClouds = Boolean(
-        metar && (metar.clouds.length || cavok || metar.cbWithoutLayer),
+        metar &&
+        (metar.clouds.length ||
+            cavok ||
+            metar.cbWithoutLayer ||
+            metar.phenomena.length),
     );
     const profile = hasMetarClouds
         ? null
@@ -114,7 +117,12 @@ export function MapCloudSummary() {
                 ${scope.style}
                 ${
                     minimized
-                        ? h(Icon, { name: "cloudOvercast", size: 18 })
+                        ? h(Icon, {
+                              name: metar?.phenomena[0]
+                                  ? metarPhenomenonIcons[metar.phenomena[0]]
+                                  : "cloudOvercast",
+                              size: 18,
+                          })
                         : html`
                               <div class="map-cloud-source text-rem-0-65 mb-1">
                                   <span
@@ -133,31 +141,11 @@ export function MapCloudSummary() {
                                   aria-label=${t("weather.clouds")}
                               >
                                   ${
-                                      hasMetarClouds
-                                          ? html`
-                                                ${h(CompactCloudLayers, {
-                                                    clouds: metar?.clouds ?? [],
-                                                    focusable: false,
-                                                })}
-                                                ${
-                                                    cavok &&
-                                                    !metar?.clouds.length
-                                                        ? h(CompactCavok, {
-                                                              focusable: false,
-                                                          })
-                                                        : null
-                                                }
-                                                ${
-                                                    metar?.cbWithoutLayer
-                                                        ? h(
-                                                              CompactUnknownCumulonimbus,
-                                                              {
-                                                                  focusable: false,
-                                                              },
-                                                          )
-                                                        : null
-                                                }
-                                            `
+                                      hasMetarClouds && metar
+                                          ? h(CompactMetarClouds, {
+                                                metar,
+                                                focusable: false,
+                                            })
                                           : h(CompactOpenMeteoCloudLayers, {
                                                 layers: profile?.layers ?? [],
                                                 focusable: false,

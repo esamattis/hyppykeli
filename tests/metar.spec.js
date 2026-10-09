@@ -1,6 +1,94 @@
 // Ported from https://github.com/skydivejkl/metar.js/blob/master/test/metar.test.js
 import { test, expect } from "@playwright/test";
 import { parseMETAR as parseMetar, parseRVR } from "#app/weather/metar.js";
+import { parseMetarMessages } from "#app/weather/metarMessages.js";
+
+test.describe("METAR rain observations", () => {
+    for (const weather of [
+        "RA",
+        "-RA",
+        "+RA",
+        "SHRA",
+        "-SHRA",
+        "TSRA",
+        "FZRA",
+        "DZ",
+        "FZDZ",
+        "RASN",
+        "VCSHRA",
+    ]) {
+        test(`recognizes ${weather}`, () => {
+            const [report] = parseMetarMessages([
+                `EFJY 041200Z 19007KT 9999 ${weather} BKN015 10/05 Q1014`,
+            ]);
+            expect(report.phenomena).toContain("rain");
+        });
+    }
+
+    for (const conditions of [
+        "9999 BKN015 10/05 Q1014",
+        "9999 SN BKN015 10/05 Q1014",
+        "9999 BR BKN015 10/05 Q1014",
+        "9999 BKN015 10/05 Q1014 RERA",
+        "9999 BKN015 10/05 Q1014 TEMPO RA",
+        "9999 BKN015 10/05 Q1014 RMK RA",
+        "CAVOK 10/05 Q1014",
+    ]) {
+        test(`does not show current rain for ${conditions}`, () => {
+            const [report] = parseMetarMessages([
+                `EFJY 041200Z 19007KT ${conditions}`,
+            ]);
+            expect(report.phenomena).not.toContain("rain");
+        });
+    }
+});
+
+test.describe("METAR weather phenomena", () => {
+    for (const [weather, expected] of [
+        ["SN", ["snow"]],
+        ["SG", ["snow"]],
+        ["GR", ["hail"]],
+        ["GS", ["hail"]],
+        ["PL", ["icePellets"]],
+        ["FG", ["fog"]],
+        ["BR", ["mist"]],
+        ["TS", ["thunderstorm"]],
+        ["FZRA", ["freezing", "rain"]],
+        ["FZDZ", ["freezing", "rain"]],
+        ["FZFG", ["freezing", "fog"]],
+        ["RASN", ["rain", "snow"]],
+        [
+            "TSRASNGR FZDZPL FG BR",
+            [
+                "thunderstorm",
+                "freezing",
+                "rain",
+                "snow",
+                "hail",
+                "icePellets",
+                "fog",
+                "mist",
+            ],
+        ],
+        ["SN SG", ["snow"]],
+        ["GR GS", ["hail"]],
+        ["", []],
+    ]) {
+        test(`classifies ${weather || "no weather"}`, () => {
+            const [report] = parseMetarMessages([
+                `METAR EFJY 091200Z 19007KT 0800 ${weather} BKN005 M01/M02 Q1008=`,
+            ]);
+            expect(report.phenomena).toEqual(expected);
+        });
+    }
+
+    test("ignores phenomena in recent weather, trends and remarks", () => {
+        const [report] = parseMetarMessages([
+            "METAR EFJY 091200Z 19007KT 9999 BKN005 10/05 Q1008 RETS TEMPO TSRA SN GR FG BR RMK FZRA=",
+        ]);
+        expect(report.phenomena).toEqual([]);
+    });
+});
 
 test.describe("METAR parser", function () {
     test("can parse type", function () {

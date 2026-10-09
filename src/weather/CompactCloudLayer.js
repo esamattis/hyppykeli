@@ -40,6 +40,43 @@ const compactLayerStyles = css`
     }
 `;
 
+/** @param {{ metar: MetarData, focusable?: boolean }} props */
+export function CompactMetarClouds({ metar, focusable = true }) {
+    const scope = useScope(compactLayerStyles);
+    const clouds = metar.clouds.filter(
+        (cloud) => !["NCD", "NSC", "SKC", "CLR"].includes(cloud.amount),
+    );
+    const hasWeather = Boolean(
+        clouds.length || metar.phenomena.length || metar.cbWithoutLayer,
+    );
+    const cavok = !metar.clouds.length && metar.metar.includes("CAVOK");
+    const noSignificantClouds = metar.clouds.some(
+        (cloud) => cloud.amount === "NSC",
+    );
+    const label = t(noSignificantClouds ? "cloud.noSignificant" : "cloud.none");
+
+    return html`
+        ${
+            cavok
+                ? h(CompactCavok, { focusable })
+                : hasWeather
+                  ? h(CompactCloudLayers, { clouds, focusable })
+                  : html`
+                        <div
+                            class="cloud-clear map-cloud-layer"
+                            tabindex=${focusable ? 0 : undefined}
+                            data-tooltip=${label}
+                        >
+                            ${scope.style}
+                            ${h(Icon, { name: noSignificantClouds ? "cloudNsc" : "cloudClear", size: 20, label })}
+                        </div>
+                    `
+        }
+        ${h(CompactMetarWeather, { phenomena: metar.phenomena, focusable })}
+        ${metar.cbWithoutLayer ? h(CompactUnknownCumulonimbus, { focusable }) : null}
+    `;
+}
+
 /** @param {{ clouds: CloudLayer[], focusable?: boolean }} props */
 export function CompactCloudLayers({ clouds, focusable = true }) {
     return html`
@@ -50,6 +87,41 @@ export function CompactCloudLayers({ clouds, focusable = true }) {
                     (Number.isFinite(b.base) ? b.base : Infinity),
             )
             .map((cloud) => h(CompactCloudLayer, { cloud, focusable }))}
+    `;
+}
+
+/** @type {Record<MetarPhenomenon, IconProps["name"]>} */
+export const metarPhenomenonIcons = {
+    thunderstorm: "storm",
+    freezing: "freezing",
+    rain: "cloudRain",
+    snow: "cloudSnow",
+    hail: "cloudHail",
+    icePellets: "cloudIcePellets",
+    fog: "cloudFog",
+    mist: "cloudMist",
+};
+
+/** @param {{ phenomena: MetarPhenomenon[], focusable?: boolean }} props */
+export function CompactMetarWeather({ phenomena, focusable = true }) {
+    return html`
+        ${phenomena.map((phenomenon) => h(CompactMetarPhenomenon, { phenomenon, focusable }))}
+    `;
+}
+
+/** @param {{ phenomenon: MetarPhenomenon, focusable: boolean }} props */
+function CompactMetarPhenomenon({ phenomenon, focusable }) {
+    const scope = useScope(compactLayerStyles);
+    const label = t(`weather.${phenomenon}`);
+    return html`
+        <div
+            class=${`cloud-${phenomenon} map-cloud-layer`}
+            tabindex=${focusable ? 0 : undefined}
+            data-tooltip=${phenomenon === "fog" ? t("weather.fogTooltip") : label}
+        >
+            ${scope.style}
+            ${h(Icon, { name: metarPhenomenonIcons[phenomenon], size: 24, label })}
+        </div>
     `;
 }
 

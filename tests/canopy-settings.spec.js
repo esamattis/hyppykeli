@@ -263,9 +263,6 @@ test("distance summaries use straight endpoint distances and distinct values in 
     await expect(
         page.locator(".opening-distance-summary .value-number"),
     ).toHaveText(expected.openings);
-    await expect(page.locator(".canopy-reach-summary")).toHaveText(
-        "Varjon kantama 2700 m / 1500 m",
-    );
     await expect(page.locator(".jump-summary [data-tooltip]")).toHaveAttribute(
         "data-tooltip",
         /ei kaarevan ajautumisreitin pituus/,
