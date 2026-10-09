@@ -34,10 +34,11 @@ export const completeDropzones = [
     },
     {
         name: "EFPO",
-        mapCoordinates: [61.4617, 21.8],
         qs: {
             fmisid: 101044,
             icaocode: "EFPO",
+            lat: 61.463483,
+            lon: 21.802473,
             default_jump_run_direction: 123.86831214563642,
             elevation: 13.5636,
         },
