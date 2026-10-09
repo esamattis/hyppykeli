@@ -157,11 +157,11 @@ export function FreefallToolbar({
         }
         .toolbar-summary-values {
             display: flex;
+            flex-wrap: wrap;
             align-items: center;
             flex: 1;
             gap: var(--spacing-1) var(--spacing-3-5);
             min-width: 0;
-            overflow-x: auto;
             color: var(--color-muted);
             line-height: 1.4;
         }
