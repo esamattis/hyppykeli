@@ -60,6 +60,7 @@ export function MapWindOverlay({ wind, satellite }) {
         let start = motion;
         let transitionTime = 0.3;
         const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+        const desktop = matchMedia("(min-width: 900px)");
         let width = 0;
         let height = 0;
         const theme = getTheme(canvas);
@@ -100,7 +101,7 @@ export function MapWindOverlay({ wind, satellite }) {
             gradient.addColorStop(0, `rgb(from ${color} r g b / 0)`);
             gradient.addColorStop(1, color);
             spriteContext.strokeStyle = gradient;
-            spriteContext.lineWidth = 1.5;
+            spriteContext.lineWidth = desktop.matches ? 2.5 : 1.5;
             spriteContext.lineCap = "round";
             spriteContext.beginPath();
             spriteContext.moveTo(tailX, tailY);
@@ -189,6 +190,10 @@ export function MapWindOverlay({ wind, satellite }) {
             draw(0);
             if (!reducedMotion.matches) frame = requestAnimationFrame(animate);
         };
+        const updateParticleWidth = () => {
+            renderSprite();
+            updateAnimation();
+        };
         const resize = new ResizeObserver(() => {
             const rect = canvas.getBoundingClientRect();
             width = rect.width;
@@ -209,6 +214,7 @@ export function MapWindOverlay({ wind, satellite }) {
         resize.observe(canvas);
         visibility.observe(canvas);
         reducedMotion.addEventListener("change", updateAnimation);
+        desktop.addEventListener("change", updateParticleWidth);
         document.addEventListener("visibilitychange", updateAnimation);
         const unsubscribe = ANIMATIONS_RUNNING.subscribe(updateAnimation);
         return () => {
@@ -218,6 +224,7 @@ export function MapWindOverlay({ wind, satellite }) {
             resize.disconnect();
             visibility.disconnect();
             reducedMotion.removeEventListener("change", updateAnimation);
+            desktop.removeEventListener("change", updateParticleWidth);
             document.removeEventListener("visibilitychange", updateAnimation);
         };
     }, [satellite]);
