@@ -130,6 +130,9 @@ export function getTheme(element = document.documentElement) {
             .trim(),
         mapOutline: styles.getPropertyValue("--color-map-outline").trim(),
         mapDrift: styles.getPropertyValue("--color-map-drift").trim(),
+        mapWingsuitReach: styles
+            .getPropertyValue("--color-map-wingsuit-reach")
+            .trim(),
         mapCanopyReach: styles
             .getPropertyValue("--color-map-canopy-reach")
             .trim(),

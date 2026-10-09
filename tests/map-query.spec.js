@@ -32,21 +32,27 @@ test("jumper URLs reject unlabeled and malformed values", () => {
     }
 });
 
-test("canopy settings round-trip in shared URLs and old URLs use supplied defaults", () => {
+test("reach settings round-trip in shared URLs and old URLs use supplied defaults", () => {
     const defaults = {
         direction: 0,
         speedKmh: 157,
         separationSeconds: 5,
         exitHeight: 4000,
+        wingsuitGlideRatio: 1.6,
+        wingsuitDescentRateMps: 80 / 3.6,
         canopyGlideRatio: 3,
         canopyDescentRateMps: 5,
     };
     const configured = {
         ...defaults,
+        wingsuitGlideRatio: 2.2,
+        wingsuitDescentRateMps: 12,
         canopyGlideRatio: 2.7,
         canopyDescentRateMps: 4.2,
     };
     const params = writeMapQuery("map_run_settings", configured);
+    expect(params.map_wingsuit_glide_ratio).toBe("2.2");
+    expect(params.map_wingsuit_descent_rate).toBe("12");
     expect(params.map_canopy_glide_ratio).toBe("2.7");
     expect(params.map_canopy_descent_rate).toBe("4.2");
     expect(readMapQuery(params, "map_run_settings", defaults)).toEqual(

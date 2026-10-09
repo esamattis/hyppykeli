@@ -158,6 +158,8 @@ interface JumpRunSettings {
     direction: number;
     speedKmh: number;
     separationSeconds: number;
+    wingsuitGlideRatio: number;
+    wingsuitDescentRateMps: number;
     canopyGlideRatio: number;
     canopyDescentRateMps: number;
 }
@@ -166,7 +168,8 @@ interface CanopyReachArea extends WindVector {
     radius: number;
 }
 
-interface CanopyReachProps {
+interface ReachAreasProps {
+    kind?: "canopy" | "wingsuit";
     map: import("leaflet").Map | null;
     target: import("leaflet").LatLngLiteral | null;
     winds: FreefallWindLevel[];
@@ -227,6 +230,7 @@ interface FreefallToolbarProps {
     jumpRun: JumpRunControlsProps;
     jumpRunLengthMeters: number | null;
     canopyReach: import("preact").ComponentChildren;
+    wingsuitReach: import("preact").ComponentChildren;
     arrowCount: number;
     onClear: () => void;
     onUndo: () => void;
@@ -441,6 +445,10 @@ interface QueryParams {
     map_run_exit_height?: string;
     /** Still-air canopy glide ratio (horizontal distance / height lost). */
     map_canopy_glide_ratio?: string;
+    /** Still-air wingsuit glide ratio. */
+    map_wingsuit_glide_ratio?: string;
+    /** Wingsuit vertical descent speed in metres per second. */
+    map_wingsuit_descent_rate?: string;
     /** Canopy vertical descent speed in metres per second. */
     map_canopy_descent_rate?: string;
     MANUAL_ground_obs?: string;

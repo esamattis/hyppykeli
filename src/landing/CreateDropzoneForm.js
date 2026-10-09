@@ -1,5 +1,9 @@
 // @ts-check
 import { Button } from "#app/shared/Button.js";
+import {
+    DEFAULT_WINGSUIT_GLIDE_RATIO,
+    DEFAULT_WINGSUIT_DESCENT_RATE_MPS,
+} from "#app/map/wingsuit.js";
 import { writeMapQuery } from "#app/map/mapQuery.js";
 import {
     DEFAULT_CANOPY_DESCENT_RATE_MPS,
@@ -631,6 +635,9 @@ export function CreateDropzoneForm({ coordinates }) {
                         speedKmh: 157,
                         separationSeconds: 5,
                         exitHeight: Number(fields.exitHeight),
+                        wingsuitGlideRatio: DEFAULT_WINGSUIT_GLIDE_RATIO,
+                        wingsuitDescentRateMps:
+                            DEFAULT_WINGSUIT_DESCENT_RATE_MPS,
                         canopyGlideRatio: DEFAULT_CANOPY_GLIDE_RATIO,
                         canopyDescentRateMps: DEFAULT_CANOPY_DESCENT_RATE_MPS,
                     }),

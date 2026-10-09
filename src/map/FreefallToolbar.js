@@ -28,6 +28,7 @@ export function FreefallToolbar({
     jumpRun,
     jumpRunLengthMeters,
     canopyReach,
+    wingsuitReach,
     windLevels,
 }) {
     /** @type {import("preact").RefObject<HTMLDialogElement>} */
@@ -138,14 +139,16 @@ export function FreefallToolbar({
         .toolbar-summary-values {
             display: flex;
             align-items: baseline;
-            flex-wrap: wrap;
+            flex: 1;
             gap: var(--spacing-1) var(--spacing-3-5);
             min-width: 0;
+            overflow-x: auto;
             color: var(--color-muted);
             line-height: 1.4;
         }
         .toolbar-summary-values > span {
-            white-space: normal;
+            flex-shrink: 0;
+            white-space: nowrap;
         }
         .drift-summaries {
             display: inline-flex;
@@ -434,7 +437,7 @@ export function FreefallToolbar({
                             </strong>
                         </span>
                     </span>
-                    ${canopyReach}
+                    ${canopyReach} ${wingsuitReach}
                 </div>
                 <div class="toolbar-window-actions ml-auto">
                     ${

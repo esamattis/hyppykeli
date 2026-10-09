@@ -14,7 +14,11 @@ import {
     getCanopyDrift,
     getCanopyReach,
 } from "#app/map/canopy.js";
-import { CanopyReach } from "#app/map/CanopyReach.js";
+import {
+    DEFAULT_WINGSUIT_GLIDE_RATIO,
+    DEFAULT_WINGSUIT_DESCENT_RATE_MPS,
+} from "#app/map/wingsuit.js";
+import { ReachAreas } from "#app/map/ReachAreas.js";
 import {
     DROPZONE_ELEVATION,
     QUERY_PARAMS,
@@ -269,6 +273,7 @@ export function DropzoneMap() {
             --color-map-last-jumper: var(--color-map-satellite-last-jumper);
             --color-map-drift: var(--color-map-satellite-drift);
             --color-map-canopy-reach: var(--color-map-satellite-first-jumper);
+            --color-map-wingsuit-reach: var(--color-map-satellite-drift);
         }
         .map-viewport {
             position: relative;
@@ -483,6 +488,8 @@ export function DropzoneMap() {
             speedKmh: 157,
             separationSeconds: 5,
             exitHeight: 4000,
+            wingsuitGlideRatio: DEFAULT_WINGSUIT_GLIDE_RATIO,
+            wingsuitDescentRateMps: DEFAULT_WINGSUIT_DESCENT_RATE_MPS,
             canopyGlideRatio: DEFAULT_CANOPY_GLIDE_RATIO,
             canopyDescentRateMps: DEFAULT_CANOPY_DESCENT_RATE_MPS,
         }),
@@ -2105,7 +2112,19 @@ export function DropzoneMap() {
                     data-map-layer=${satellite ? "satellite" : "street"}
                 >
                     ${h(FreefallToolbar, {
-                        canopyReach: h(CanopyReach, {
+                        wingsuitReach: h(ReachAreas, {
+                            kind: "wingsuit",
+                            map: leafletInstance,
+                            target: runLandingTarget,
+                            winds: canopyWinds,
+                            openingHeights: (jumpers.length
+                                ? jumpers
+                                : [nextJumper]
+                            ).map((jumper) => jumper.openingHeight),
+                            settings: jumpRunSettings,
+                            satellite,
+                        }),
+                        canopyReach: h(ReachAreas, {
                             map: leafletInstance,
                             target: runLandingTarget,
                             winds: canopyWinds,

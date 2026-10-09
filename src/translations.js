@@ -359,7 +359,16 @@ export const english = {
     "map.symbolsDriftHelp":
         "Thick paths show estimated freefall drift to opening. Thin paths show wind drift under canopy to landing pattern entry at 300 m.",
     "map.symbolsCanopyReachHelp":
-        "Shaded circles show where a jumper can open and reach the jump run’s predicted landing position at 300 m, one circle per opening altitude. They move with the run; their size and wind offset use the configured canopy glide ratio and descent rate.",
+        "Shaded circles show where a jumper can open and reach the jump run’s predicted landing position at 300 m, one circle per opening altitude. They move with the run; their size and wind offset use the configured canopy glide ratio and descent rate. Wingsuit circles show exit positions that can reach any opening position inside the canopy reach circle, using the wingsuit glide ratio and descent rate.",
+    "map.wingsuitReachLabel": (
+        /** @type {string} */ heights,
+        /** @type {number} */ ratio,
+        /** @type {number} */ rate,
+        /** @type {number} */ exit,
+    ) => `Wingsuit reach · ${exit} → ${heights} m · ${ratio}:1 · ${rate} km/h`,
+    "map.wingsuitReachUnavailable": "Wingsuit reach · unavailable",
+    "map.wingsuitReachHelp":
+        "Estimated exit positions that can reach any opening position inside the canopy reach circle. One circle per opening altitude. Radius is the canopy reach radius plus (exit altitude − opening altitude) × wingsuit glide ratio; the centre is shifted from the canopy circle against wingsuit wind drift to opening. Assumes constant glide and descent rates, unrestricted steering, and horizontally uniform winds.",
     "map.canopyReachLabel": (
         /** @type {string} */ heights,
         /** @type {number} */ ratio,
@@ -472,6 +481,14 @@ export const english = {
     "settings.jumpRunSpeed": "True airspeed (km/h)",
     "settings.jumpRunSpeedTooltip":
         "Affects exit spacing and forward movement in freefall.",
+    "settings.wingsuitGlideRatio": "Wingsuit glide ratio (:1)",
+    "settings.wingsuitGlideRatioTooltip": "Sets wingsuit reach circle size.",
+    "settings.wingsuitGlideRatioHelp":
+        "Still-air horizontal distance per metre descended: 1.6 means 1.6:1. Shared by all wingsuit reach circles. Wingsuit range is (exit height − opening height) × glide ratio, added to the canopy reach radius. Glide ratio and descent rate should describe the same wingsuit flight mode.",
+    "settings.wingsuitDescentRate": "Wingsuit descent rate (km/h)",
+    "settings.wingsuitDescentRateTooltip": "Sets wingsuit circle wind offset.",
+    "settings.wingsuitDescentRateHelp":
+        "Constant vertical descent speed in km/h for wingsuit reach circles, shared by all jumpers. The default is 80 km/h. A lower rate gives more time in flight and more wind drift before opening. Forward airspeed is glide ratio multiplied by descent rate. These settings affect reach circles; freefall drift paths and automatic placement still use each jumper’s freefall speed.",
     "settings.canopyGlideRatio": "Canopy glide ratio (:1)",
     "settings.canopyGlideRatioTooltip": "Sets reach circle size.",
     "settings.canopyGlideRatioHelp":
@@ -968,7 +985,12 @@ const finnish = {
     "map.symbolsDriftHelp":
         "Paksut viivat näyttävät arvioidun vapaapudotusajautumisen avaukseen asti. Ohuet viivat näyttävät tuuliajautumisen varjon varassa laskukierroksen alkuun 300 metrissä.",
     "map.symbolsCanopyReachHelp":
-        "Varjostetut ympyrät näyttävät avauspaikat, joista hyppääjä voi päästä hyppylinjan arvioituun laskeutumispisteeseen 300 metrissä, yhden ympyrän kullekin avauskorkeudelle. Ne liikkuvat hyppylinjan mukana; koko ja tuulisiirtymä perustuvat asetettuun varjon liitolukuun ja vajoamisnopeuteen.",
+        "Varjostetut ympyrät näyttävät avauspaikat, joista hyppääjä voi päästä hyppylinjan arvioituun laskeutumispisteeseen 300 metrissä, yhden ympyrän kullekin avauskorkeudelle. Ne liikkuvat hyppylinjan mukana; koko ja tuulisiirtymä perustuvat asetettuun varjon liitolukuun ja vajoamisnopeuteen. Liitopuvun ympyrät näyttävät uloshyppypaikat, joista voi päästä mihin tahansa varjon kantamaympyrän sisällä olevaan avauspaikkaan liitopuvun liitoluvun ja vajoamisnopeuden perusteella.",
+    "map.wingsuitReachLabel": (heights, ratio, rate, exit) =>
+        `Liitopuvun kantama · ${exit} → ${heights} m · ${ratio}:1 · ${rate} km/h`,
+    "map.wingsuitReachUnavailable": "Liitopuvun kantama · ei saatavilla",
+    "map.wingsuitReachHelp":
+        "Arvioidut uloshyppypaikat, joista voi päästä mihin tahansa varjon kantamaympyrän sisällä olevaan avauspaikkaan. Yksi ympyrä kullekin avauskorkeudelle. Säde on varjon kantamaympyrän säde plus (uloshyppykorkeus − avauskorkeus) × liitopuvun liitoluku; keskipiste siirtyy varjon ympyrästä liitopuvun avaukseen asti kertyneen tuuliajautumisen vastakkaiseen suuntaan. Oletuksina ovat vakio liitoluvut ja vajoamisnopeudet, vapaa ohjaaminen ja vaakasuunnassa tasainen tuuli.",
     "map.canopyReachLabel": (heights, ratio, rate) =>
         `Varjon kantama · ${heights} → 300 m · ${ratio}:1 · ${rate} m/s`,
     "map.canopyReachUnavailable": "Varjon kantama · tuulitiedot puuttuvat",
@@ -1077,6 +1099,16 @@ const finnish = {
     "settings.jumpRunSpeed": "Todellinen ilmanopeus (km/h)",
     "settings.jumpRunSpeedTooltip":
         "Vaikuttaa uloshyppykohtien väleihin ja etenemiseen vapaapudotuksessa.",
+    "settings.wingsuitGlideRatio": "Liitopuvun liitoluku (:1)",
+    "settings.wingsuitGlideRatioTooltip":
+        "Määrittää liitopuvun kantamaympyrän koon.",
+    "settings.wingsuitGlideRatioHelp":
+        "Vaakasuora matka tyynessä ilmassa jokaista vajottua metriä kohti: 1,6 tarkoittaa liitolukua 1,6:1. Yhteinen kaikille liitopuvun kantamaympyröille. Liitopuvun kantama on (uloshyppykorkeus − avauskorkeus) × liitoluku, ja se lisätään varjon kantamaympyrän säteeseen. Liitoluvun ja vajoamisnopeuden tulee kuvata samaa liitopuvun lentotilaa.",
+    "settings.wingsuitDescentRate": "Liitopuvun vajoamisnopeus (km/h)",
+    "settings.wingsuitDescentRateTooltip":
+        "Määrittää liitopuvun ympyrän tuulisiirtymän.",
+    "settings.wingsuitDescentRateHelp":
+        "Liitopuvun kantamaympyröiden vakio pystysuora vajoamisnopeus kilometreinä tunnissa, yhteinen kaikille hyppääjille. Oletus on 80 km/h. Pienempi nopeus pidentää lentoaikaa ja lisää tuuliajautumista ennen avausta. Vaakasuora ilmanopeus on liitoluku kertaa vajoamisnopeus. Asetukset vaikuttavat kantamaympyröihin; vapaapudotusajautuman reitit ja automaattinen sijoittelu käyttävät edelleen kunkin hyppääjän vapaapudotusnopeutta.",
     "settings.canopyGlideRatio": "Varjon liitoluku (:1)",
     "settings.canopyGlideRatioTooltip": "Määrittää kantamaympyrän koon.",
     "settings.canopyGlideRatioHelp":

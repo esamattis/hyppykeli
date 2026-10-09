@@ -192,6 +192,8 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
                 speedKmh: 180,
                 direction: 0,
                 separationSeconds: 5,
+                wingsuitGlideRatio: 1.6,
+                wingsuitDescentRateMps: 80 / 3.6,
                 canopyGlideRatio: 3,
                 canopyDescentRateMps: 5,
             }),

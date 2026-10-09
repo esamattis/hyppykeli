@@ -68,7 +68,8 @@ export function JumpRunSettingsButton({
         .direction-field {
             grid-template-columns: minmax(0, 1fr);
         }
-        .canopy-glide-field {
+        .canopy-glide-field,
+        .wingsuit-glide-field {
             grid-column: 1;
         }
         .direction-row {
@@ -148,6 +149,12 @@ export function JumpRunSettingsButton({
         String(DROPZONE_ELEVATION.value),
     );
     const [exitDraft, setExitDraft] = useState(String(settings.exitHeight));
+    const [wingsuitGlideDraft, setWingsuitGlideDraft] = useState(
+        String(settings.wingsuitGlideRatio),
+    );
+    const [wingsuitDescentDraft, setWingsuitDescentDraft] = useState(
+        String(Number((settings.wingsuitDescentRateMps * 3.6).toFixed(6))),
+    );
     const [glideDraft, setGlideDraft] = useState(
         String(settings.canopyGlideRatio),
     );
@@ -192,6 +199,10 @@ export function JumpRunSettingsButton({
         });
         setElevationDraft(String(DROPZONE_ELEVATION.value));
         setExitDraft(String(settings.exitHeight));
+        setWingsuitGlideDraft(String(settings.wingsuitGlideRatio));
+        setWingsuitDescentDraft(
+            String(Number((settings.wingsuitDescentRateMps * 3.6).toFixed(6))),
+        );
         setGlideDraft(String(settings.canopyGlideRatio));
         setDescentDraft(String(settings.canopyDescentRateMps));
         setJumperDrafts(
@@ -442,6 +453,80 @@ export function JumpRunSettingsButton({
                             step: 1,
                             value: defaultJumperCount,
                             onValueChange: onDefaultJumperCountChange,
+                        }),
+                    )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-wingsuit-glide`,
+                            label: t("settings.wingsuitGlideRatio"),
+                            className: "setting-with-help wingsuit-glide-field",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                {
+                                    title: t("settings.wingsuitGlideRatio"),
+                                    tooltip: t(
+                                        "settings.wingsuitGlideRatioTooltip",
+                                    ),
+                                    wide: true,
+                                },
+                                html`
+                                    <p>
+                                        ${t("settings.wingsuitGlideRatioHelp")}
+                                    </p>
+                                `,
+                            ),
+                        },
+                        h(NumberInput, {
+                            id: `${titleId}-wingsuit-glide`,
+                            required: true,
+                            min: 0.1,
+                            step: "any",
+                            value: wingsuitGlideDraft,
+                            onDraftChange: setWingsuitGlideDraft,
+                            onValueChange: (value) =>
+                                onChange({
+                                    ...settings,
+                                    wingsuitGlideRatio: value,
+                                }),
+                        }),
+                    )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-wingsuit-descent`,
+                            label: t("settings.wingsuitDescentRate"),
+                            className: "setting-with-help",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                {
+                                    title: t("settings.wingsuitDescentRate"),
+                                    tooltip: t(
+                                        "settings.wingsuitDescentRateTooltip",
+                                    ),
+                                    wide: true,
+                                },
+                                html`
+                                    <p>
+                                        ${t("settings.wingsuitDescentRateHelp")}
+                                    </p>
+                                `,
+                            ),
+                        },
+                        h(NumberInput, {
+                            id: `${titleId}-wingsuit-descent`,
+                            required: true,
+                            min: 0.1,
+                            step: "any",
+                            value: wingsuitDescentDraft,
+                            onDraftChange: setWingsuitDescentDraft,
+                            onValueChange: (value) =>
+                                onChange({
+                                    ...settings,
+                                    wingsuitDescentRateMps: value / 3.6,
+                                }),
                         }),
                     )}
                     ${h(

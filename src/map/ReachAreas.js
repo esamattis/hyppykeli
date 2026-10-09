@@ -1,4 +1,5 @@
 // @ts-check
+import { getWingsuitCanopyReach } from "#app/map/wingsuit.js";
 import { getCanopyReach } from "#app/map/canopy.js";
 import { driftCoordinates } from "#app/map/freefall.js";
 import { getTheme } from "#app/styles.js";
@@ -8,8 +9,9 @@ import { html } from "htm/preact";
 import { circle, layerGroup } from "leaflet";
 import { useEffect, useMemo } from "preact/hooks";
 
-/** @param {CanopyReachProps} props */
-export function CanopyReach({
+/** @param {ReachAreasProps} props */
+export function ReachAreas({
+    kind = "canopy",
     map,
     target,
     winds,
@@ -17,11 +19,22 @@ export function CanopyReach({
     settings,
     satellite,
 }) {
+    const wingsuit = kind === "wingsuit";
+    const ratio = wingsuit
+        ? settings.wingsuitGlideRatio
+        : settings.canopyGlideRatio;
+    const rate = wingsuit
+        ? settings.wingsuitDescentRateMps
+        : settings.canopyDescentRateMps;
     const scope = useScope(css`
         :scope {
+            --reach-color: var(--color-map-canopy-reach);
             display: inline-flex;
             align-items: baseline;
             gap: var(--spacing-1);
+        }
+        :scope.wingsuit-reach-summary {
+            --reach-color: var(--color-map-wingsuit-reach);
         }
         :scope::before {
             content: "";
@@ -29,18 +42,18 @@ export function CanopyReach({
             flex-shrink: 0;
             width: 0.75em;
             height: 0.75em;
-            border: 1px dashed var(--color-map-canopy-reach);
+            border: 1px dashed var(--reach-color);
             border-radius: 50%;
-            background: color-mix(
-                in srgb,
-                var(--color-map-canopy-reach) 15%,
-                transparent
-            );
+            background: color-mix(in srgb, var(--reach-color) 15%, transparent);
         }
     `);
     const key = JSON.stringify([
         winds,
         openingHeights,
+        kind,
+        settings.exitHeight,
+        ratio,
+        rate,
         settings.canopyGlideRatio,
         settings.canopyDescentRateMps,
     ]);
@@ -50,12 +63,9 @@ export function CanopyReach({
                 .sort((a, b) => a - b)
                 .map((height) => ({
                     height,
-                    reach: getCanopyReach(
-                        winds,
-                        height,
-                        settings.canopyGlideRatio,
-                        settings.canopyDescentRateMps,
-                    ),
+                    reach: wingsuit
+                        ? getWingsuitCanopyReach(winds, height, settings)
+                        : getCanopyReach(winds, height, ratio, rate),
                 })),
         [key],
     );
@@ -91,14 +101,18 @@ export function CanopyReach({
                     dashArray: "6 4",
                     fillOpacity: 0.07,
                     interactive: false,
-                    className: "canopy-reach-area",
+                    className: `${kind}-reach-area`,
                 });
             layers.circles.set(height, area);
             area.setLatLng(center)
                 .setRadius(reach.radius)
                 .setStyle({
-                    color: theme.mapCanopyReach,
-                    fillColor: theme.mapCanopyReach,
+                    color: wingsuit
+                        ? theme.mapWingsuitReach
+                        : theme.mapCanopyReach,
+                    fillColor: wingsuit
+                        ? theme.mapWingsuitReach
+                        : theme.mapCanopyReach,
                 })
                 .addTo(layers.group)
                 .bringToBack();
@@ -113,20 +127,27 @@ export function CanopyReach({
     const available = areas.filter(({ reach }) => reach);
     return html`
         <span
-            class="canopy-reach-summary"
+            class=${`${kind}-reach-summary`}
             tabindex="0"
-            data-tooltip=${t("map.canopyReachHelp")}
+            data-tooltip=${t(wingsuit ? "map.wingsuitReachHelp" : "map.canopyReachHelp")}
         >
             ${scope.style}
             ${
                 available.length
                     ? t(
-                          "map.canopyReachLabel",
+                          wingsuit
+                              ? "map.wingsuitReachLabel"
+                              : "map.canopyReachLabel",
                           available.map(({ height }) => height).join(" / "),
-                          settings.canopyGlideRatio,
-                          settings.canopyDescentRateMps,
+                          ratio,
+                          wingsuit ? Number((rate * 3.6).toFixed(6)) : rate,
+                          settings.exitHeight,
                       )
-                    : t("map.canopyReachUnavailable")
+                    : t(
+                          wingsuit
+                              ? "map.wingsuitReachUnavailable"
+                              : "map.canopyReachUnavailable",
+                      )
             }
         </span>
     `;

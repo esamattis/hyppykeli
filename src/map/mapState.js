@@ -78,6 +78,10 @@ export const isValidJumpRunSettings = (value) =>
     value.separationSeconds >= 0 &&
     isFiniteNumber(value.exitHeight) &&
     value.exitHeight > 0 &&
+    isFiniteNumber(value.wingsuitGlideRatio) &&
+    value.wingsuitGlideRatio > 0 &&
+    isFiniteNumber(value.wingsuitDescentRateMps) &&
+    value.wingsuitDescentRateMps > 0 &&
     isFiniteNumber(value.canopyGlideRatio) &&
     value.canopyGlideRatio > 0 &&
     isFiniteNumber(value.canopyDescentRateMps) &&

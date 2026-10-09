@@ -130,6 +130,8 @@
         --color-map-drift: #ed3d8b;
         /* Estimated canopy reach uses the first-jumper color on both map layers. */
         --color-map-canopy-reach: var(--color-map-first-jumper);
+        /* Wingsuit reach uses the drift overlay palette. */
+        --color-map-wingsuit-reach: var(--color-map-drift);
         /* Brighter satellite overlays remain legible over dark imagery. */
         --color-map-satellite-direction: #3478f6;
         --color-map-satellite-first-jumper: #20d5b0;

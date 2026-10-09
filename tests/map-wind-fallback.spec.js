@@ -46,6 +46,8 @@ test("ground wind fallbacks preserve freshness, source priority, and automatic p
                 speedKmh: 157,
                 exitHeight: 4000,
                 separationSeconds: 5,
+                wingsuitGlideRatio: 1.6,
+                wingsuitDescentRateMps: 80 / 3.6,
                 canopyGlideRatio: 3,
                 canopyDescentRateMps: 5,
             };
