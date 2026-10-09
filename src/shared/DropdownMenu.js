@@ -187,6 +187,15 @@ export function DropdownMenu({
     );
 
     /** @param {Event} event */
+    const onBeforeToggle = (event) => {
+        if (!(event instanceof ToggleEvent) || event.newState !== "open")
+            return;
+        // The menu is measurable after opening. Position it before the first
+        // paint rather than waiting for the asynchronously dispatched toggle.
+        requestAnimationFrame(position);
+    };
+
+    /** @param {Event} event */
     const onToggle = (event) => {
         if (!(event instanceof ToggleEvent)) return;
         const next = event.newState === "open";
@@ -302,6 +311,7 @@ export function DropdownMenu({
                 role=${items.length > 0 && !children ? "menu" : "group"}
                 aria-label=${label}
                 ref=${menuRef}
+                onBeforeToggle=${onBeforeToggle}
                 onToggle=${onToggle}
                 onClick=${
                     /** @param {MouseEvent} event */ (event) => {
