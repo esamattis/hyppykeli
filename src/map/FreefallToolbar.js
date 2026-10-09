@@ -147,6 +147,39 @@ export function FreefallToolbar({
         .toolbar-summary-values > span {
             white-space: normal;
         }
+        .drift-summaries {
+            display: inline-flex;
+            align-items: baseline;
+            gap: var(--spacing-2);
+        }
+        .line-legend {
+            display: inline-block;
+            position: relative;
+            padding-inline-start: calc(12px + var(--spacing-1));
+            white-space: nowrap;
+        }
+        .line-legend::before {
+            content: "";
+            position: absolute;
+            inset-inline-start: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 3px;
+            border-radius: 3px;
+            background: var(--color-map-drift);
+        }
+        .canopy-drift-legend::before {
+            height: 1px;
+        }
+        .jump-run-legend::before {
+            border-radius: 0;
+            background: repeating-linear-gradient(
+                to right,
+                var(--map-direction-color, var(--color-map-direction)) 0 4px,
+                transparent 4px 7px
+            );
+        }
         .value-number {
             color: var(--color-text);
             font-variant-numeric: tabular-nums;
@@ -319,35 +352,10 @@ export function FreefallToolbar({
             <div class="toolbar-summary py-1 px-3">
                 ${h(JumpRunSettingsButton, jumpRun)}
                 <div class="toolbar-summary-values text-rem-0-65">
-                    <span class="jump-summary">
-                        <span class="value-label">
-                            ${t("toolbar.freefall")}
-                        </span>
-                        <strong class="value-number font-semibold ml-1">
-                            <span
-                                tabindex="0"
-                                data-tooltip=${t("toolbar.exitTooltip")}
-                            >
-                                ${jumpRun.settings.exitHeight}
-                            </span>
-                            ${"-"}
-                            <span
-                                tabindex="0"
-                                data-tooltip=${t("toolbar.openingTooltip")}
-                            >
-                                ${`${jumpRun.nextJumper.openingHeight}m`}
-                            </span>
-                            ${" · "}
-                            <span
-                                tabindex="0"
-                                data-tooltip=${t("toolbar.speedTooltip")}
-                            >
-                                ${`${jumpRun.nextJumper.speedKmh} km/h`}
-                            </span>
-                        </strong>
-                    </span>
                     <span class="jump-run-summary">
-                        <span class="value-label">${t("toolbar.jumpRun")}</span>
+                        <span class="value-label line-legend jump-run-legend">
+                            ${t("toolbar.jumpRun")}
+                        </span>
                         <strong class="value-number font-semibold ml-1">
                             <span
                                 tabindex="0"
@@ -381,6 +389,50 @@ export function FreefallToolbar({
                                 }
                             </span>
                         </strong>
+                    </span>
+                    <span class="drift-summaries">
+                        <span class="jump-summary">
+                            <span class="value-label line-legend">
+                                ${t("toolbar.freefall")}
+                            </span>
+                            <strong class="value-number font-semibold ml-1">
+                                <span
+                                    tabindex="0"
+                                    data-tooltip=${t("toolbar.exitTooltip")}
+                                >
+                                    ${jumpRun.settings.exitHeight}
+                                </span>
+                                ${"-"}
+                                <span
+                                    tabindex="0"
+                                    data-tooltip=${t("toolbar.openingTooltip")}
+                                >
+                                    ${`${jumpRun.nextJumper.openingHeight}m`}
+                                </span>
+                                ${" · "}
+                                <span
+                                    tabindex="0"
+                                    data-tooltip=${t("toolbar.speedTooltip")}
+                                >
+                                    ${`${jumpRun.nextJumper.speedKmh} km/h`}
+                                </span>
+                            </strong>
+                        </span>
+                        <span class="canopy-drift-summary">
+                            <span
+                                class="value-label line-legend canopy-drift-legend"
+                            >
+                                ${t("toolbar.canopyDrift")}
+                            </span>
+                            <strong class="value-number font-semibold ml-1">
+                                <span
+                                    tabindex="0"
+                                    data-tooltip=${t("settings.canopyDescentRate")}
+                                >
+                                    ${`${jumpRun.settings.canopyDescentRateMps} m/s`}
+                                </span>
+                            </strong>
+                        </span>
                     </span>
                     ${canopyReach}
                 </div>
