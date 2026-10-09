@@ -18,17 +18,31 @@ test("wingsuit reach targets opening altitude and compensates wind drift", () =>
         DEFAULT_WINGSUIT_GLIDE_RATIO,
         DEFAULT_WINGSUIT_DESCENT_RATE_MPS,
     );
-    expect(reach.radius).toBe(5120);
+    expect(reach.radius).toBeCloseTo(4586.666666667, 8);
     expect(DEFAULT_WINGSUIT_DESCENT_RATE_MPS * 3.6).toBe(80);
     expect(reach.east).toBeCloseTo((-10 * 3200) / (80 / 3.6), 8);
     expect(reach.north).toBeCloseTo(0, 8);
     const higherOpening = getWingsuitReach(winds, 4000, 1200, 1.6, 15);
-    expect(higherOpening.radius).toBe(4480);
+    expect(higherOpening.radius).toBe(4120);
     expect(higherOpening.east).toBeCloseTo((-10 * 2800) / 15, 8);
     const slower = getWingsuitReach(winds, 4000, 800, 1.6, 10);
-    expect(slower.radius).toBe(reach.radius);
+    expect(slower.radius).toBe(4880);
+    expect(slower.radius).toBeGreaterThan(reach.radius);
     expect(slower.east).toBeCloseTo(-3200, 8);
-    expect(getWingsuitReach(winds, 4000, 800, 2, 15).radius).toBe(6400);
+    expect(getWingsuitReach(winds, 4000, 800, 2, 15).radius).toBe(5950);
+});
+
+test("flights of 15 seconds or less have no useful glide but retain wind drift", () => {
+    for (const [exitHeight, radius, east] of [
+        [900, 0, -100],
+        [950, 0, -150],
+        [960, 16, -160],
+    ]) {
+        const reach = getWingsuitReach(winds, exitHeight, 800, 1.6, 10);
+        expect(reach.radius).toBe(radius);
+        expect(reach.east).toBeCloseTo(east, 8);
+        expect(reach.north).toBeCloseTo(0, 8);
+    }
 });
 
 test("wingsuit reach uses only winds above opening and rejects invalid flight settings", () => {
@@ -37,7 +51,7 @@ test("wingsuit reach uses only winds above opening and rejects invalid flight se
         { height: 800, speed: 0, direction: null },
         { height: 0, speed: null, direction: null },
     ];
-    expect(getWingsuitReach(calm, 4000, 800, 1.6, 15).radius).toBe(5120);
+    expect(getWingsuitReach(calm, 4000, 800, 1.6, 15).radius).toBe(4760);
     expect(getWingsuitReach(calm, 4000, 800, 1.6, 15).east).toBeCloseTo(0);
     for (const opening of [4000, 4500, -1, NaN])
         expect(getWingsuitReach(winds, 4000, opening, 1.6, 15)).toBeNull();
@@ -69,7 +83,7 @@ test("wingsuit exits can reach the entire canopy reach circle", async () => {
         canopyDescentRateMps: 5,
     };
     const reach = getWingsuitCanopyReach(winds, 800, settings);
-    expect(reach.radius).toBe(5120 + 1500);
+    expect(reach.radius).toBeCloseTo(6086.666666667, 8);
     expect(reach.east).toBeCloseTo(-10 * (3200 / (80 / 3.6) + 500 / 5), 8);
     expect(reach.north).toBeCloseTo(0, 8);
     const moreCanopyGlide = getWingsuitCanopyReach(winds, 800, {
@@ -106,7 +120,7 @@ test("wingsuit exits can reach the entire canopy reach circle", async () => {
     ).toBeNull();
 });
 
-test("canopy reach stays inside wingsuit reach while wingsuit airspeed exceeds wind", async () => {
+test("canopy reach stays inside wingsuit reach below the reduced mean wingsuit airspeed", async () => {
     const { getWingsuitCanopyReach } = await import("../src/map/wingsuit.js");
     const { getCanopyReach } = await import("../src/map/canopy.js");
     const settings = {
@@ -133,9 +147,14 @@ test("canopy reach stays inside wingsuit reach while wingsuit airspeed exceeds w
             );
         }
     }
-    // At 128 km/h of wind, the upwind limits meet; faster wind can separate them.
+    // The initial turn lowers mean useful airspeed across the whole flight.
+    // At this mean speed of wind, the upwind limits meet.
+    const flightSeconds =
+        (settings.exitHeight - 800) / settings.wingsuitDescentRateMps;
     const forwardAirspeed =
-        settings.wingsuitGlideRatio * settings.wingsuitDescentRateMps;
+        settings.wingsuitGlideRatio *
+        settings.wingsuitDescentRateMps *
+        ((flightSeconds - 15) / flightSeconds);
     const profile = winds.map((wind) => ({ ...wind, speed: forwardAirspeed }));
     const canopy = getCanopyReach(profile, 800, 3, 5);
     const wingsuit = getWingsuitCanopyReach(profile, 800, settings);

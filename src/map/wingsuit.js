@@ -3,10 +3,13 @@ import { getCanopyDrift, getCanopyReach } from "#app/map/canopy.js";
 
 export const DEFAULT_WINGSUIT_GLIDE_RATIO = 1.6;
 export const DEFAULT_WINGSUIT_DESCENT_RATE_MPS = 80 / 3.6;
+const WINGSUIT_EXIT_TURN_SECONDS = 15;
 
 /**
- * Exit positions that can reach an opening target at constant glide and sink
- * rates, with unrestricted steering and horizontally uniform winds.
+ * Estimated exit positions that can reach an opening target at constant sink
+ * rate, reserving the first 15 seconds for exit and turning with no useful glide.
+ * Wind drift applies throughout; subsequent glide assumes unrestricted steering
+ * and horizontally uniform winds.
  * @param {FreefallWindLevel[]} winds Descending altitude order, including ground.
  * @param {number} exitHeight
  * @param {number} openingHeight
@@ -21,7 +24,13 @@ export function getWingsuitReach(
     glideRatio,
     descentRateMps,
 ) {
-    const radius = (exitHeight - openingHeight) * glideRatio;
+    const glideHeight = Math.max(
+        0,
+        exitHeight -
+            openingHeight -
+            descentRateMps * WINGSUIT_EXIT_TURN_SECONDS,
+    );
+    const radius = glideHeight * glideRatio;
     if (
         !Number.isFinite(glideRatio) ||
         glideRatio <= 0 ||

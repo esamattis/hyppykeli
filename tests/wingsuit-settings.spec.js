@@ -70,7 +70,9 @@ test("wingsuit settings update reach, validate drafts, and survive reload", asyn
     await expect.poll(async () => (await geometry(page)).reach.length).toBe(2);
     await expect.poll(async () => (await geometry(page)).drift.length).toBe(3);
     const original = await geometry(page);
-    expect(original.reach.map((area) => area.radius)).toEqual([6620, 7180]);
+    expect(original.reach.map((area) => Math.round(area.radius))).toEqual([
+        6087, 6647,
+    ]);
     // Reach includes both phases, ending at the middle jumper's pattern entry.
     const expectedCenters = await page.evaluate(async (landing) => {
         const { driftCoordinates } = await import("#app/map/freefall.js");
@@ -101,9 +103,9 @@ test("wingsuit settings update reach, validate drafts, and survive reload", asyn
     await page.getByLabel(glideLabel, { exact: true }).fill("4");
     await expect
         .poll(async () =>
-            (await geometry(page)).reach.map((area) => area.radius),
+            (await geometry(page)).reach.map((area) => Math.round(area.radius)),
         )
-        .toEqual([13900, 14300]);
+        .toEqual([12567, 12967]);
     expect((await geometry(page)).drift).toEqual(original.drift);
     expect((await geometry(page)).reach[1].center).toEqual(
         original.reach[0].center,
@@ -114,7 +116,9 @@ test("wingsuit settings update reach, validate drafts, and survive reload", asyn
         .poll(async () => (await geometry(page)).reach[1].center.lng)
         .toBeLessThan(original.reach[1].center.lng);
     const slower = await geometry(page);
-    expect(slower.reach.map((area) => area.radius)).toEqual([13900, 14300]);
+    expect(slower.reach.map((area) => Math.round(area.radius))).toEqual([
+        13300, 13700,
+    ]);
     expect(slower.drift).toEqual(original.drift);
     for (const [label, parameter, configured, stored] of [
         [glideLabel, "map_wingsuit_glide_ratio", "4", "4"],
@@ -130,14 +134,14 @@ test("wingsuit settings update reach, validate drafts, and survive reload", asyn
     }
     await page.keyboard.press("Escape");
     await expect(page.locator(".wingsuit-reach-summary")).toContainText(
-        "14300 m / 13900 m",
+        "13700 m / 13300 m",
     );
     await page.reload();
     await expect
         .poll(async () =>
-            (await geometry(page)).reach.map((area) => area.radius),
+            (await geometry(page)).reach.map((area) => Math.round(area.radius)),
         )
-        .toEqual([13900, 14300]);
+        .toEqual([13300, 13700]);
     await page
         .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
         .click();
@@ -179,18 +183,18 @@ test("wingsuit reach responds to canopy reach settings", async ({ page }) => {
     await page.goto(dz);
     await expect
         .poll(async () =>
-            (await geometry(page)).reach.map((area) => area.radius),
+            (await geometry(page)).reach.map((area) => Math.round(area.radius)),
         )
-        .toEqual([6620, 7180]);
+        .toEqual([6087, 6647]);
     await page
         .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
         .click();
     await page.getByLabel("Varjon liitoluku (:1)", { exact: true }).fill("4");
     await expect
         .poll(async () =>
-            (await geometry(page)).reach.map((area) => area.radius),
+            (await geometry(page)).reach.map((area) => Math.round(area.radius)),
         )
-        .toEqual([7120, 8080]);
+        .toEqual([6587, 7547]);
     const before = await geometry(page);
     await page
         .getByLabel("Varjon vajoamisnopeus (m/s)", { exact: true })
@@ -198,9 +202,9 @@ test("wingsuit reach responds to canopy reach settings", async ({ page }) => {
     await expect
         .poll(async () => (await geometry(page)).reach[1].center.lng)
         .toBeLessThan(before.reach[1].center.lng);
-    expect((await geometry(page)).reach.map((area) => area.radius)).toEqual([
-        7120, 8080,
-    ]);
+    expect(
+        (await geometry(page)).reach.map((area) => Math.round(area.radius)),
+    ).toEqual([6587, 7547]);
 });
 
 test("map fitting excludes wingsuit reach", async ({ page }) => {
