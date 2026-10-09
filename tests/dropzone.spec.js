@@ -4451,6 +4451,16 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
     await map.click({ position: { x: 100, y: 160 } });
     await page.getByRole("button", { name: "Avaus" }).click();
     const directionButton = directionControl(page, directionControls.drag);
+    const leafletClasses = await map.evaluate((element) =>
+        [...element.classList].filter((name) => name.startsWith("leaflet-")),
+    );
+    expect(leafletClasses).toContain("leaflet-container");
+    const expectLeafletClasses = async () => {
+        // Leaving direction mode must restore Leaflet's container classes,
+        // including the ones temporarily removed while dragging is disabled.
+        for (const name of leafletClasses)
+            await expect(map).toHaveClass(new RegExp(`\\b${name}\\b`));
+    };
     const zoom = () => new URL(page.url()).searchParams.get("map_zoom");
     const wheel = () => map.dispatchEvent("wheel", { deltaY: -500 });
     const initialZoom = zoom();
@@ -4459,8 +4469,12 @@ test("wheel zoom follows full-window mode and Escape exits direction mode first"
     expect(zoom()).toBe(initialZoom);
 
     await clickDirection(page, directionControls.drag);
+    await expect(map).toHaveClass(/\bdirection-setting\b/);
+    await expect(map).toHaveClass(/\bleaflet-container\b/);
     await page.keyboard.press("Escape");
     await expect(directionButton).toHaveAttribute("aria-checked", "false");
+    await expect(map).not.toHaveClass(/\bdirection-setting\b/);
+    await expectLeafletClasses();
     await card
         .getByRole("button", {
             name: "Laajenna Hyppylinja koko ikkunaan",

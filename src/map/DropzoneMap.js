@@ -764,6 +764,12 @@ export function DropzoneMap() {
         if (!leafletInstance || activeLeafletRef.current !== leafletInstance)
             return;
         const container = leafletInstance.getContainer();
+        // Leaflet owns the container's other classes. Toggle only our mode
+        // class so Preact does not overwrite them when direction mode changes.
+        container.classList.toggle(
+            "direction-setting",
+            placingJumpRunDirection,
+        );
         if (placingJumpRunDirection) leafletInstance.dragging.disable();
         else leafletInstance.dragging.enable();
         // Choose dragging before Leaflet captures the pointer. In the embedded
@@ -2187,7 +2193,7 @@ export function DropzoneMap() {
                                 : null
                         }
                         <div
-                            class=${`dz-map ${scope.end}${placingJumpRunDirection ? " direction-setting" : ""}`}
+                            class=${`dz-map ${scope.end}`}
                             ref=${mapRef}
                             style=${{ touchAction: fullWindow || placingJumpRunDirection ? "none" : "pan-y" }}
                             role="region"
