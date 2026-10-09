@@ -34,8 +34,8 @@ const compactLayerStyles = css`
     }
     .cloud-storm-icon > .cloud-lightning {
         position: absolute;
-        right: 0;
-        bottom: 0;
+        right: -2px;
+        bottom: -2px;
         z-index: 0;
     }
 `;
@@ -44,8 +44,30 @@ const compactLayerStyles = css`
 export function CompactCloudLayers({ clouds, focusable = true }) {
     return html`
         ${clouds
-            .toSorted((a, b) => a.base - b.base)
+            .toSorted(
+                (a, b) =>
+                    (Number.isFinite(a.base) ? a.base : Infinity) -
+                    (Number.isFinite(b.base) ? b.base : Infinity),
+            )
             .map((cloud) => h(CompactCloudLayer, { cloud, focusable }))}
+    `;
+}
+
+/** @param {{ focusable?: boolean }} props */
+export function CompactUnknownCumulonimbus({ focusable = true }) {
+    const scope = useScope(compactLayerStyles);
+    const label = t("cloud.cumulonimbus");
+    return html`
+        <div
+            class="cloud-layer map-cloud-layer"
+            tabindex=${focusable ? 0 : undefined}
+            role="img"
+            aria-label=${label}
+            data-tooltip=${`${label} · ${t("cloud.cumulonimbusDescription")} ${t("cloud.cumulonimbusUnknown")}`}
+        >
+            ${scope.style} ${h(Icon, { name: "lightning", size: 20 })}
+            ${h(Icon, { name: "lightning", size: 20 })}
+        </div>
     `;
 }
 
@@ -81,7 +103,9 @@ export function CompactCavok({ focusable = true }) {
 export function CompactCloudLayer({ cloud, focusable = true }) {
     const scope = useScope(compactLayerStyles);
     const type = cloudTypes()[cloud.amount];
-    const label = type?.label ?? cloud.amount;
+    const label =
+        type?.label ??
+        (cloud.cumulonimbus ? t("cloud.cumulonimbus") : cloud.amount);
     const hasBase =
         Number.isFinite(cloud.base) && !["NCD", "NSC"].includes(cloud.amount);
     const tooltip = `${label}${hasBase ? ` · ${t(cloud.amount === "VV" ? "cloud.verticalVisibility" : "cloud.base")}: ${cloud.base} ${cloud.unit}` : ""}`;

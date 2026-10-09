@@ -236,7 +236,6 @@ export function DropzoneMap() {
             gap: var(--spacing-4);
         }
         .map-frame {
-            --color-map-wind: var(--color-map-direction);
             container: dropzone-map / inline-size;
             position: relative;
             width: calc(100% + 2 * var(--panel-padding));

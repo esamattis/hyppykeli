@@ -243,6 +243,9 @@ interface MapWindMotion {
 interface MapWindParticle {
     x: number;
     y: number;
+    anchorX: number;
+    anchorY: number;
+    slot: number;
     age: number;
     lifetime: number;
 }

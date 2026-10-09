@@ -1332,27 +1332,21 @@ test("CAVOK exposes its clear-weather explanation in a tooltip", async ({
     );
 });
 
-test("unlocated thunderclouds show a separate warning with wind-change help", async ({
+test("unlocated thunderclouds expose wind-change and unknown-height help in a tooltip", async ({
     page,
 }) => {
-    const card = page.locator("#clouds");
-    await expect(card.locator(".cloud-layer")).toHaveCount(1);
-    await expect(card.locator(".cloud-layer .cloud-lightning")).toHaveCount(0);
-    const warning = card.locator(".cloud-warning");
-    await expect(warning).toBeVisible();
-    await expect(warning.locator("span")).toHaveText("Ukkospilviä");
-    await warning.getByRole("button", { name: "Ukkospilvien ohje" }).click();
-    const help = warning.getByRole("dialog");
-    await expect(help).toBeVisible();
-    await expect(help).toContainText(
+    const cb = page
+        .locator("#clouds")
+        .getByRole("img", { name: "Ukkospilviä" });
+    await cb.focus();
+    const tooltip = page.getByRole("tooltip");
+    await expect(tooltip).toBeVisible();
+    await expect(tooltip).toContainText(
         "äkillisiä muutoksia tuulen nopeudessa ja suunnassa",
-        { useInnerText: true },
     );
-    await expect(help).toContainText(
+    await expect(tooltip).toContainText(
         "Havainto ei kerro ukkospilvien peittävyyttä tai korkeutta.",
-        { useInnerText: true },
     );
-    await expect(help.locator(".metar")).toHaveText("//////CB");
 });
 
 test("obscured sky METAR exposes original vertical visibility in its tooltip", async ({
@@ -4279,9 +4273,11 @@ test("full-window cloud summary prefers METAR and falls back to current Open-Met
     await expect(summary.locator(".map-cloud-layer").first()).toHaveText(
         /200 m/,
     );
-    await expect(summary.locator(".map-cloud-warning")).toHaveText(
-        "Ukkospilviä",
-        { useInnerText: true },
+    await expect(
+        summary.getByRole("img", { name: "Ukkospilviä" }),
+    ).toHaveAttribute(
+        "data-tooltip",
+        /Havainto ei kerro ukkospilvien peittävyyttä tai korkeutta\./,
     );
     await expect(summary).toHaveAttribute("aria-expanded", "true");
     await summary.click();

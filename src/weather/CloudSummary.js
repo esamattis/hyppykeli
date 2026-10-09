@@ -3,6 +3,7 @@ import {
     CompactCavok,
     CompactCloudLayers,
     CompactOpenMeteoCloudLayers,
+    CompactUnknownCumulonimbus,
 } from "#app/weather/CompactCloudLayer.js";
 import { DROPZONE_ELEVATION } from "#app/app/settings.js";
 import { FromNow } from "#app/shared/FromNow.js";
@@ -303,46 +304,14 @@ export function CloudSummary() {
                                                   clouds: metarLayers,
                                               })
                                   }
+                                  ${
+                                      metar.cbWithoutLayer
+                                          ? h(CompactUnknownCumulonimbus, {
+                                                focusable: true,
+                                            })
+                                          : null
+                                  }
                               </div>
-                              ${
-                                  metar.cbWithoutLayer
-                                      ? html`
-                                            <div
-                                                class="cloud-warning text-rem-0-9 font-semibold mt-2 py-3 px-3.5"
-                                            >
-                                                ${h(Icon, { name: "storm", size: 24 })}
-                                                <span>
-                                                    ${t("cloud.cumulonimbus")}
-                                                </span>
-                                                ${h(
-                                                    Help,
-                                                    {
-                                                        label: t(
-                                                            "cloud.cumulonimbusHelp",
-                                                        ),
-                                                    },
-                                                    html`
-                                                        <h3>
-                                                            ${t("cloud.cumulonimbus")}
-                                                        </h3>
-                                                        <p>
-                                                            ${t("cloud.cumulonimbusDescription")}
-                                                        </p>
-                                                        <p>
-                                                            ${t("cloud.cumulonimbusUnknown")}
-                                                        </p>
-                                                        <h3>METAR</h3>
-                                                        <p
-                                                            class="metar font-mono text-rem-0-8 mt-2 pb-1"
-                                                        >
-                                                            //////CB
-                                                        </p>
-                                                    `,
-                                                )}
-                                            </div>
-                                        `
-                                      : null
-                              }
                               <div
                                   class="cloud-observation-footer text-rem-0-75 mt-3"
                               >

@@ -1,4 +1,5 @@
 // @ts-check
+import { WindParticleField } from "#app/map/windParticles.js";
 import { getTheme } from "#app/styles.js";
 import { css, useScope } from "#app/useScope.js";
 import { ANIMATIONS_RUNNING } from "#app/app/animationState.js";
@@ -23,7 +24,7 @@ export function getMapWindMotion({ speed, direction }) {
         x: -Math.sin(radians),
         y: Math.cos(radians),
         pixelsPerSecond: speed * 3,
-        length: 6 + speed * 2,
+        length: 10 + speed * 3,
     };
 }
 
@@ -96,20 +97,17 @@ export function MapWindOverlay({ wind, satellite }) {
                 headX,
                 headY,
             );
-            gradient.addColorStop(0, "transparent");
+            gradient.addColorStop(0, `rgb(from ${color} r g b / 0)`);
             gradient.addColorStop(1, color);
             spriteContext.strokeStyle = gradient;
-            spriteContext.lineWidth = 3;
+            spriteContext.lineWidth = 1.5;
             spriteContext.lineCap = "round";
-            spriteContext.shadowColor = theme.mapWindHalo;
-            spriteContext.shadowBlur = 3;
             spriteContext.beginPath();
             spriteContext.moveTo(tailX, tailY);
             spriteContext.lineTo(headX, headY);
             spriteContext.stroke();
         };
-        /** @type {MapWindParticle[]} */
-        let particles = [];
+        const field = new WindParticleField();
 
         /** @param {number} elapsed */
         const draw = (elapsed) => {
@@ -153,33 +151,16 @@ export function MapWindOverlay({ wind, satellite }) {
                                   (target.length - start.length) * eased,
                           };
             }
-            if (!motion) return;
+            if (!motion || width <= 0 || height <= 0) return;
             if (spriteMotion !== motion) renderSprite();
-            const padding = motion.length;
-            const spanX = width + 2 * padding;
-            const spanY = height + 2 * padding;
             const travel = motion.pixelsPerSecond * elapsed;
-            for (const particle of particles) {
-                particle.age += elapsed;
-                if (particle.age >= particle.lifetime) {
-                    particle.age = 0;
-                    particle.x = Math.random() * spanX - padding;
-                    particle.y = Math.random() * spanY - padding;
-                }
+            field.update(elapsed, motion.x * travel, motion.y * travel);
+            for (const particle of field.particles) {
+                if (particle.age < 0) continue;
                 const opacity = Math.sin(
                     (Math.PI * particle.age) / particle.lifetime,
                 );
-                particle.x =
-                    ((((particle.x + motion.x * travel + padding) % spanX) +
-                        spanX) %
-                        spanX) -
-                    padding;
-                particle.y =
-                    ((((particle.y + motion.y * travel + padding) % spanY) +
-                        spanY) %
-                        spanY) -
-                    padding;
-                context.globalAlpha = 0.85 * opacity;
+                context.globalAlpha = opacity;
                 context.drawImage(
                     sprite,
                     particle.x - headX,
@@ -210,7 +191,6 @@ export function MapWindOverlay({ wind, satellite }) {
         };
         const resize = new ResizeObserver(() => {
             const rect = canvas.getBoundingClientRect();
-            const initialized = width > 0 && height > 0;
             width = rect.width;
             height = rect.height;
             ratio = Math.min(window.devicePixelRatio || 1, 2);
@@ -218,34 +198,7 @@ export function MapWindOverlay({ wind, satellite }) {
             canvas.height = Math.round(height * ratio);
             context.setTransform(ratio, 0, 0, ratio, 0, 0);
             renderSprite();
-            const padding = motion?.length ?? 0;
-            const count = Math.floor(
-                Math.min(160, Math.ceil((width * height) / 5000)) * 0.75,
-            );
-            // Keep visible particles in place with their current fade progress.
-            // Discard clipped particles before changing density so shrinking
-            // does not wrap them back into the visible area.
-            particles = particles
-                .filter(
-                    ({ x, y }) =>
-                        x >= -padding &&
-                        x <= width + padding &&
-                        y >= -padding &&
-                        y <= height + padding,
-                )
-                .slice(0, count);
-            while (particles.length < count) {
-                const lifetime = 1 + Math.random() * 1.5;
-                particles.push({
-                    x: Math.random() * (width + 2 * padding) - padding,
-                    y: Math.random() * (height + 2 * padding) - padding,
-                    age:
-                        initialized && !reducedMotion.matches
-                            ? 0
-                            : Math.random() * lifetime,
-                    lifetime,
-                });
-            }
+            field.resize(width, height);
             updateAnimation();
         });
         const visibility = new IntersectionObserver(([entry]) => {

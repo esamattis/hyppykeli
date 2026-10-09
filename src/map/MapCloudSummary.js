@@ -10,6 +10,7 @@ import {
     CompactCavok,
     CompactCloudLayers,
     CompactOpenMeteoCloudLayers,
+    CompactUnknownCumulonimbus,
 } from "#app/weather/CompactCloudLayer.js";
 import { getOpenMeteoCloudProfile } from "#app/weather/providers/openMeteo.js";
 import { METARS, OM_DATA } from "#app/weather/state.js";
@@ -148,16 +149,12 @@ export function MapCloudSummary() {
                                                 }
                                                 ${
                                                     metar?.cbWithoutLayer
-                                                        ? html`
-                                                              <div
-                                                                  class="map-cloud-layer map-cloud-warning"
-                                                              >
-                                                                  ${h(Icon, { name: "lightning", size: 20 })}
-                                                                  <span>
-                                                                      ${t("cloud.cumulonimbus")}
-                                                                  </span>
-                                                              </div>
-                                                          `
+                                                        ? h(
+                                                              CompactUnknownCumulonimbus,
+                                                              {
+                                                                  focusable: false,
+                                                              },
+                                                          )
                                                         : null
                                                 }
                                             `

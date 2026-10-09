@@ -133,8 +133,8 @@
         --color-map-satellite-first-jumper: #20d5b0;
         --color-map-satellite-last-jumper: #ff657a;
         --color-map-satellite-drift: #ffb627;
-        /* Animated wind particles and their contrasting halo over map tiles. */
-        --color-map-wind: var(--color-map-direction);
+        /* Light blue wind particles with fading tails over map tiles. */
+        --color-map-wind: #6297f8;
         --color-map-wind-halo: var(--color-map-outline);
         /* Previous compass needles remain faint behind the current reading. */
         --color-compass-history: color-mix(
