@@ -18,6 +18,7 @@ import {
     DEFAULT_WINGSUIT_GLIDE_RATIO,
     DEFAULT_WINGSUIT_DESCENT_RATE_MPS,
 } from "#app/map/wingsuit.js";
+import { MapHelp } from "#app/map/MapHelp.js";
 import { ReachAreas } from "#app/map/ReachAreas.js";
 import {
     DROPZONE_ELEVATION,
@@ -2065,20 +2066,8 @@ export function DropzoneMap() {
                     ${t("map.title")}
                     ${h(
                         Help,
-                        { id: "map-wind-help" },
-                        html`
-                            <h3>${t("map.symbolsHelpTitle")}</h3>
-                            <ul class="ps-5">
-                                <li>${t("map.symbolsRunHelp")}</li>
-                                <li>${t("map.symbolsDriftHelp")}</li>
-                                <li>${t("map.symbolsCanopyReachHelp")}</li>
-                                <li>${t("map.symbolsWindHelp")}</li>
-                            </ul>
-                            <h3>${t("map.featuresHelpTitle")}</h3>
-                            <p>${t("map.featuresHelp")}</p>
-                            <h3>${t("map.accuracyHelpTitle")}</h3>
-                            <p>${t("map.accuracyHelp")}</p>
-                        `,
+                        { id: "map-wind-help", wide: true },
+                        h(MapHelp, {}),
                     )}
                 </h2>
                 ${h(CheckboxField, {
