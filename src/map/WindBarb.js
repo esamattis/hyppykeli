@@ -32,33 +32,36 @@ export function WindBarb({ speed, direction }) {
     const flags = Math.floor((knots ?? 0) / 50);
     const fullBarbs = Math.floor(((knots ?? 0) % 50) / 10);
     const halfBarb = (knots ?? 0) % 10 >= 5;
+    // Lean the marks beyond the shortened shaft tip.
+    const shaftTip = 18;
     const spacing = Math.min(
         5,
-        28 / Math.max(1, flags * 2 + fullBarbs + Number(halfBarb)),
+        (38 - shaftTip) / Math.max(1, flags * 2 + fullBarbs + Number(halfBarb)),
     );
     let offset = 0;
     const marks = [];
     for (let index = 0; index < flags; index++) {
-        const y = 10 + offset;
+        const y = shaftTip + offset;
         marks.push(html`
             <path
-                d=${`M 32 ${y} L 47 ${y + spacing} L 32 ${y + spacing * 2} Z`}
+                d=${`M 32 ${y} L 47 ${y - 5} L 32 ${y + spacing * 2} Z`}
                 fill="currentColor"
             />
         `);
         offset += spacing * 2;
     }
     for (let index = 0; index < fullBarbs; index++) {
-        const y = 10 + offset;
+        const y = shaftTip + offset;
         marks.push(html`
-            <path d=${`M 32 ${y} L 47 ${y + 8}`} />
+            <path d=${`M 32 ${y} L 47 ${y - 5}`} />
         `);
         offset += spacing;
     }
     if (halfBarb) {
-        const y = 10 + offset + (fullBarbs === 0 && flags === 0 ? spacing : 0);
+        const y =
+            shaftTip + offset + (fullBarbs === 0 && flags === 0 ? spacing : 0);
         marks.push(html`
-            <path d=${`M 32 ${y} L 40 ${y + 4}`} />
+            <path d=${`M 32 ${y} L 40 ${y - 2.5}`} />
         `);
     }
     return html`
@@ -79,7 +82,7 @@ export function WindBarb({ speed, direction }) {
                     speed === 0
                         ? null
                         : html`
-                              <path d="M 32 45 L 32 10" />
+                              <path d=${`M 32 45 L 32 ${shaftTip}`} />
                               ${marks}
                           `
                 }
