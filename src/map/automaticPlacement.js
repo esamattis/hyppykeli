@@ -1,5 +1,5 @@
 // @ts-check
-import { getCanopyDrift } from "#app/map/canopy.js";
+import { CANOPY_PATTERN_HEIGHT, getCanopyDrift } from "#app/map/canopy.js";
 import {
     EARTH_RADIUS_METRES,
     driftCoordinates,
@@ -121,7 +121,12 @@ export function startForAutomaticRun(
             east: opening.east + velocity.ground.east * seconds,
             north: opening.north + velocity.ground.north * seconds,
         };
-        const drift = getCanopyDrift(profile, jumper.openingHeight)?.at(-1);
+        const drift = getCanopyDrift(
+            profile,
+            jumper.openingHeight,
+            settings.canopyDescentRateMps,
+            CANOPY_PATTERN_HEIGHT,
+        )?.at(-1);
         if (!drift) return null;
         /** @type {WindVector[]} */
         const directions = [];

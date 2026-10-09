@@ -77,7 +77,11 @@ export const isValidJumpRunSettings = (value) =>
     isFiniteNumber(value.separationSeconds) &&
     value.separationSeconds >= 0 &&
     isFiniteNumber(value.exitHeight) &&
-    value.exitHeight > 0;
+    value.exitHeight > 0 &&
+    isFiniteNumber(value.canopyGlideRatio) &&
+    value.canopyGlideRatio > 0 &&
+    isFiniteNumber(value.canopyDescentRateMps) &&
+    value.canopyDescentRateMps > 0;
 
 /** Read the selected jump-run exit height above the dropzone, in metres. */
 export function getJumpRunExitHeight() {

@@ -12,6 +12,8 @@ const MAP_FIELDS = {
         speedKmh: "map_run_speed",
         separationSeconds: "map_run_separation",
         exitHeight: "map_run_exit_height",
+        canopyGlideRatio: "map_canopy_glide_ratio",
+        canopyDescentRateMps: "map_canopy_descent_rate",
     },
 };
 

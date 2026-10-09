@@ -13,6 +13,8 @@ const settings = {
     speedKmh: 157,
     exitHeight: 4000,
     separationSeconds: 5,
+    canopyGlideRatio: 3,
+    canopyDescentRateMps: 5,
 };
 const jumper = { speedKmh: 180, openingHeight: 800 };
 const profile = (direction = 0, speed = 10) =>
@@ -21,6 +23,47 @@ const profile = (direction = 0, speed = 10) =>
         direction,
         speed,
     }));
+
+test("automatic placement and landing predictions use the configured canopy descent rate", () => {
+    const winds = profile();
+    const calculation = createJumpRunCalculator()(winds, settings);
+    const normalStart = startForAutomaticRun(
+        target,
+        settings,
+        [jumper],
+        calculation,
+        winds,
+    );
+    const slower = { ...settings, canopyDescentRateMps: 2.5 };
+    const slowerStart = startForAutomaticRun(
+        target,
+        slower,
+        [jumper],
+        calculation,
+        winds,
+    );
+    const normalLanding = landingTargetForRun(
+        normalStart,
+        settings,
+        [jumper],
+        calculation,
+        winds,
+    );
+    const slowerLanding = landingTargetForRun(
+        slowerStart,
+        slower,
+        [jumper],
+        calculation,
+        winds,
+    );
+    expect(slowerStart.lat).toBeGreaterThan(normalStart.lat);
+    expect(normalLanding.lat).toBeCloseTo(target.lat, 5);
+    expect(slowerLanding.lat).toBeCloseTo(target.lat, 5);
+    expect(
+        landingTargetForRun(normalStart, slower, [jumper], calculation, winds)
+            .lat,
+    ).toBeLessThan(normalLanding.lat);
+});
 
 function place(winds, group = [jumper], options = settings) {
     const calculation = createJumpRunCalculator()(winds.slice(0, 4), options);
@@ -91,8 +134,8 @@ test("canopy drift integrates interpolated winds by descent time, including high
     winds.find((wind) => wind.height === 110).speed = 4;
     winds.find((wind) => wind.height === 0).speed = 6;
     const low = place(winds).openings[0];
-    // Linear sections average 3 and 5 m/s; descend at 5 m/s.
-    expect(low.north).toBeCloseTo((690 * 3 + 110 * 5) / 5, 1);
+    // Descend from 800 to 300 m at 5 m/s, interpolating the 800/110 m winds.
+    expect(low.north).toBeCloseTo((500 * (2 + 500 / 690)) / 5, 1);
     const high = place(winds, [{ ...jumper, openingHeight: 1500 }]).openings[0];
     expect(high.north - low.north).toBeCloseTo((700 * 1) / 5, 1);
 });
@@ -101,7 +144,7 @@ test("changing lower winds constrain openings by accumulated canopy drift", () =
     const winds = profile();
     winds.find((wind) => wind.height === 110).direction = 90;
     winds.find((wind) => wind.height === 0).direction = 90;
-    const drift = getCanopyDrift(winds, 800).at(-1);
+    const drift = getCanopyDrift(winds, 800, 5, 300).at(-1);
     const length = Math.hypot(drift.east, drift.north);
     const { openings } = place(
         winds,
@@ -117,7 +160,7 @@ test("changing lower winds constrain openings by accumulated canopy drift", () =
 test("opposing lower winds are integrated instead of rejecting placement", () => {
     const winds = profile();
     winds.at(-1).direction = 180;
-    const drift = getCanopyDrift(winds, 800).at(-1);
+    const drift = getCanopyDrift(winds, 800, 5, 300).at(-1);
     const { start, openings } = place(winds);
     expect(start).not.toBeNull();
     expect(openings[0].north).toBeCloseTo(-drift.north, 1);
@@ -170,10 +213,12 @@ test("Utti wind reversal keeps automatic placement near the landing target", () 
                 6371000 *
                 Math.cos((target.lat * Math.PI) / 180),
         );
-    expect(distance(landing, target)).toBeLessThan(1);
+    // Reserving 300 m shortens drift; the 50 m upwind buffer then constrains
+    // the last opening and shifts the preferred midpoint slightly.
+    expect(distance(landing, target)).toBeLessThan(11);
     expect(
         distance(start, { lat: 60.8901676724241, lng: 26.91353551188604 }),
-    ).toBeLessThan(150);
+    ).toBeLessThan(200);
 });
 
 test("calm lower winds do not require a bearing or force an upwind offset", () => {
@@ -192,7 +237,10 @@ for (const height of [800, 110, 0]) {
             { speed: -1 },
             { speed: NaN },
         ]) {
-            const winds = profile();
+            // Ground data matters when it brackets 300 m with the 800 m level.
+            const winds = profile().filter(
+                (wind) => height !== 0 || wind.height !== 110,
+            );
             Object.assign(
                 winds.find((wind) => wind.height === height),
                 change,

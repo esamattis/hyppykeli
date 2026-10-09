@@ -1,0 +1,153 @@
+import { expect, test } from "@playwright/test";
+
+const upperWinds = [7000, 5500, 4200, 3000, 1500, 800, 110]
+    .map((height) => `5,270,${height}`)
+    .join(";");
+const dz = `/dz/?lat=62.4&lon=25.6&elevation=0&MANUAL_ground_obs=5,5,270,1&MANUAL_upper_winds=${upperWinds}&map_run_automatic=false&map_run_start_lat=62.4&map_run_start_lon=25.6&map_jumpers=s180h800_s180h800_s180h1200`;
+const glideLabel = "Varjon liitoluku (:1)";
+const descentLabel = "Varjon vajoamisnopeus (m/s)";
+
+test.beforeEach(async ({ page, baseURL }) => {
+    await page.route("**/*", (route) =>
+        new URL(route.request().url()).origin === new URL(baseURL).origin
+            ? route.continue()
+            : route.abort(),
+    );
+    // Capture the real Leaflet layers so tests can check calculated positions
+    // and radii without asserting the map artwork or styling.
+    await page.addInitScript(() => {
+        window.canopyLayers = new Map();
+        window.driftLayers = new Set();
+        window.canopyProbe = import("/vendor/build/leaflet.js").then(
+            ({ Circle, Polyline }) => {
+                const setRadius = Circle.prototype.setRadius;
+                Circle.prototype.setRadius = function (radius) {
+                    if (this.options.className === "canopy-reach-area")
+                        window.canopyLayers.set(this, true);
+                    return setRadius.call(this, radius);
+                };
+                const setLatLngs = Polyline.prototype.setLatLngs;
+                Polyline.prototype.setLatLngs = function (points) {
+                    if (this.options.className === "parachute-drift-line")
+                        window.driftLayers.add(this);
+                    return setLatLngs.call(this, points);
+                };
+            },
+        );
+    });
+});
+
+async function geometry(page) {
+    return page.evaluate(async () => {
+        await window.canopyProbe;
+        return {
+            reach: [...window.canopyLayers.keys()]
+                .filter((layer) => layer._map)
+                .map((layer) => ({
+                    center: layer.getLatLng(),
+                    radius: layer.getRadius(),
+                }))
+                .sort((a, b) => a.radius - b.radius),
+            drift: [...window.driftLayers]
+                .filter((layer) => layer._map)
+                .map((layer) => layer.getLatLngs()),
+        };
+    });
+}
+
+test("canopy settings update reach and drift, validate drafts, and survive reload", async ({
+    page,
+}) => {
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto(dz);
+    await expect.poll(async () => (await geometry(page)).reach.length).toBe(2);
+    await expect.poll(async () => (await geometry(page)).drift.length).toBe(3);
+    const original = await geometry(page);
+    expect(original.reach.map((area) => area.radius)).toEqual([1500, 2700]);
+
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    await expect(page.getByLabel(glideLabel, { exact: true })).toHaveValue("3");
+    await expect(page.getByLabel(descentLabel, { exact: true })).toHaveValue(
+        "5",
+    );
+    await page.getByLabel(glideLabel, { exact: true }).fill("4");
+    await expect
+        .poll(async () =>
+            (await geometry(page)).reach.map((area) => area.radius),
+        )
+        .toEqual([2000, 3600]);
+    expect((await geometry(page)).drift).toEqual(original.drift);
+    expect((await geometry(page)).reach[0].center).toEqual(
+        original.reach[0].center,
+    );
+
+    await page.getByLabel(descentLabel, { exact: true }).fill("2.5");
+    await expect
+        .poll(async () => (await geometry(page)).reach[1].center.lng)
+        .toBeLessThan(original.reach[1].center.lng);
+    const slower = await geometry(page);
+    expect(slower.reach.map((area) => area.radius)).toEqual([2000, 3600]);
+    expect(slower.drift[0].at(-1).lng).toBeGreaterThan(
+        original.drift[0].at(-1).lng,
+    );
+    for (const [label, parameter, configured] of [
+        [glideLabel, "map_canopy_glide_ratio", "4"],
+        [descentLabel, "map_canopy_descent_rate", "2.5"],
+    ]) {
+        for (const invalid of ["", "0", "-1"]) {
+            await page.getByLabel(label, { exact: true }).fill(invalid);
+            expect(new URL(page.url()).searchParams.get(parameter)).toBe(
+                configured,
+            );
+        }
+        await page.getByLabel(label, { exact: true }).fill(configured);
+    }
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".canopy-reach-summary")).toContainText(
+        "800 / 1200 → 300 m · 4:1 · 2.5 m/s",
+    );
+    await page.reload();
+    await expect
+        .poll(async () =>
+            (await geometry(page)).reach.map((area) => area.radius),
+        )
+        .toEqual([2000, 3600]);
+    await page
+        .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+        .click();
+    await expect(page.getByLabel(glideLabel, { exact: true })).toHaveValue("4");
+    await expect(page.getByLabel(descentLabel, { exact: true })).toHaveValue(
+        "2.5",
+    );
+    expect(errors).toEqual([]);
+});
+
+test("reach follows the jump run and disappears when its wind data is missing", async ({
+    page,
+}) => {
+    await page.goto(dz);
+    await expect.poll(async () => (await geometry(page)).reach.length).toBe(2);
+    const before = await geometry(page);
+    await page.evaluate(async () => {
+        const { navigateQs } = await import("#app/app/settings.js");
+        navigateQs({ map_run_start_lat: "62.41", map_run_start_lon: "25.62" });
+    });
+    await expect
+        .poll(async () => (await geometry(page)).reach[0]?.center.lat ?? NaN)
+        .toBeCloseTo(before.reach[0].center.lat + 0.01, 4);
+    await expect
+        .poll(async () => (await geometry(page)).reach[0]?.center.lng ?? NaN)
+        .toBeCloseTo(before.reach[0].center.lng + 0.02, 4);
+    await page.evaluate(
+        async (missingWinds) => {
+            const { navigateQs } = await import("#app/app/settings.js");
+            navigateQs({ MANUAL_upper_winds: missingWinds });
+        },
+        upperWinds.replace("5,270,800", ",270,800"),
+    );
+    await expect.poll(async () => (await geometry(page)).reach.length).toBe(0);
+    await expect(page.locator(".canopy-reach-summary")).toHaveCount(0);
+});

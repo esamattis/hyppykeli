@@ -27,6 +27,7 @@ export function FreefallToolbar({
     onUndo,
     jumpRun,
     jumpRunLengthMeters,
+    canopyReach,
     windLevels,
 }) {
     /** @type {import("preact").RefObject<HTMLDialogElement>} */
@@ -381,6 +382,7 @@ export function FreefallToolbar({
                             </span>
                         </strong>
                     </span>
+                    ${canopyReach}
                 </div>
                 <div class="toolbar-window-actions ml-auto">
                     ${

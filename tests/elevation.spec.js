@@ -192,6 +192,8 @@ test("forecast heights drive map labels, wind calculations and unrestricted exit
                 speedKmh: 180,
                 direction: 0,
                 separationSeconds: 5,
+                canopyGlideRatio: 3,
+                canopyDescentRateMps: 5,
             }),
         };
     });
@@ -416,7 +418,7 @@ test("drawn canopy paths join the opening and integrate elevation-adjusted wind 
     const canopy = initial["parachute-drift-line"];
     expect(canopy[0].lat).toBeCloseTo(opening.lat, 10);
     expect(canopy[0].lng).toBeCloseTo(opening.lng, 10);
-    // Interpolate the 900/50/0 m levels, starting partway down at 800 m.
+    // Interpolate the 900/50 m levels, from 800 m to pattern entry at 300 m.
     const endpointError = (end, east, north) =>
         page.evaluate(
             async ({ opening, end, east, north }) => {
@@ -432,8 +434,8 @@ test("drawn canopy paths join the opening and integrate elevation-adjusted wind 
     expect(
         await endpointError(
             canopy.at(-1),
-            -(750 * ((4 + (4 * 100) / 850) / 2) + 50 * 2) / 5,
-            -(750 * ((8 * 750) / 850 / 2) + 50 * 1) / 5,
+            -(500 * (((4 * 100) / 850 + (4 * 600) / 850) / 2)) / 5,
+            -(500 * (((8 * 750) / 850 + (8 * 250) / 850) / 2)) / 5,
         ),
     ).toBeLessThan(1e-6);
 
@@ -459,7 +461,7 @@ test("drawn canopy paths join the opening and integrate elevation-adjusted wind 
         await endpointError(
             adjusted["parachute-drift-line"].at(-1),
             0,
-            -(400 * 8 + 400 * 2) / 5,
+            -(500 * ((8 + 2 + (6 * 300) / 800) / 2)) / 5,
         ),
     ).toBeLessThan(1e-6);
 

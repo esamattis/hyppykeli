@@ -2,6 +2,10 @@
 import { Button } from "#app/shared/Button.js";
 import { writeMapQuery } from "#app/map/mapQuery.js";
 import {
+    DEFAULT_CANOPY_DESCENT_RATE_MPS,
+    DEFAULT_CANOPY_GLIDE_RATIO,
+} from "#app/map/canopy.js";
+import {
     fetchElevation,
     fetchLocationName,
     findNearbyStations,
@@ -627,6 +631,8 @@ export function CreateDropzoneForm({ coordinates }) {
                         speedKmh: 157,
                         separationSeconds: 5,
                         exitHeight: Number(fields.exitHeight),
+                        canopyGlideRatio: DEFAULT_CANOPY_GLIDE_RATIO,
+                        canopyDescentRateMps: DEFAULT_CANOPY_DESCENT_RATE_MPS,
                     }),
                 ).map(([name, value]) =>
                     h("input", { type: "hidden", name, value }),

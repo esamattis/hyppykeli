@@ -106,7 +106,12 @@ async function middleOpening(page, landing = false) {
                     driftCoordinates(exit, path[path.length - 1]),
                 );
                 const canopy = landing
-                    ? getCanopyDrift(canopyWinds, jumper.openingHeight)?.at(-1)
+                    ? getCanopyDrift(
+                          canopyWinds,
+                          jumper.openingHeight,
+                          settings.canopyDescentRateMps,
+                          300,
+                      )?.at(-1)
                     : null;
                 return canopy
                     ? latLng(driftCoordinates(opening, canopy))
@@ -837,6 +842,8 @@ test("Open-Meteo m/s winds keep their strength in the table and jump-run calcula
             direction: 0,
             speedKmh: 120,
             separationSeconds: 5,
+            canopyGlideRatio: 3,
+            canopyDescentRateMps: 5,
         });
         return {
             speeds: winds.map((wind) => wind.speed),
@@ -1699,6 +1706,8 @@ test("higher forecast levels supply exit winds and drift at 6000 metres", async 
             direction: 0,
             speedKmh: 180,
             separationSeconds: 5,
+            canopyGlideRatio: 3,
+            canopyDescentRateMps: 5,
         };
         navigateQs({ ...writeMapQuery("map_run_settings", settings) });
         OM_DATA.value.hourly.windspeed_400hPa = [30];
@@ -2345,6 +2354,8 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
                       direction: 0,
                       speedKmh: 157,
                       separationSeconds: 5,
+                      canopyGlideRatio: 3,
+                      canopyDescentRateMps: 5,
                       exitHeight: 4000,
                   };
         navigateQs({
@@ -2366,6 +2377,8 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
                       direction: 0,
                       speedKmh: 157,
                       separationSeconds: 5,
+                      canopyGlideRatio: 3,
+                      canopyDescentRateMps: 5,
                       exitHeight: 4000,
                   };
         navigateQs({
@@ -2386,6 +2399,8 @@ test("wind level selection supports clicks, keyboard and forecast refreshes", as
                       direction: 0,
                       speedKmh: 157,
                       separationSeconds: 5,
+                      canopyGlideRatio: 3,
+                      canopyDescentRateMps: 5,
                       exitHeight: 4000,
                   };
         navigateQs({
@@ -2494,6 +2509,8 @@ test("jump run converts true airspeed using nearest-level exit wind and ground t
             direction: 0,
             speedKmh: 120,
             separationSeconds: 5,
+            canopyGlideRatio: 3,
+            canopyDescentRateMps: 5,
         };
         const start = latLng(62.4, 25.6);
         const cases = [0, 180, 90].map((direction) => {
@@ -2577,6 +2594,8 @@ test("jump-run forward throw decays with drag without counting exit wind twice",
             direction: 90,
             speedKmh: 120,
             separationSeconds: 5,
+            canopyGlideRatio: 3,
+            canopyDescentRateMps: 5,
         };
         const velocity = getJumpRunVelocity(winds, settings);
         const path = getFreefallDrift(winds, 4000, 180, 800, velocity.air);
@@ -2726,6 +2745,8 @@ test("jump-run header explains why an initial automatic run cannot be drawn and 
             direction: 0,
             speedKmh: 157,
             separationSeconds: 5,
+            canopyGlideRatio: 3,
+            canopyDescentRateMps: 5,
             exitHeight: 4444,
         }),
     );
@@ -3152,6 +3173,8 @@ test("jump run redraws all jumpers and applies individual settings immediately",
                 direction,
                 speedKmh: 180,
                 separationSeconds: 10,
+                canopyGlideRatio: 3,
+                canopyDescentRateMps: 5,
                 exitHeight: 4000,
             };
             const end = latLng(
@@ -3190,6 +3213,8 @@ for (const jumperCount of [1, 4]) {
             direction: 0,
             speedKmh: 120,
             separationSeconds: 5,
+            canopyGlideRatio: 3,
+            canopyDescentRateMps: 5,
             exitHeight: 4000,
         };
         const group = Array.from({ length: jumperCount }, (_, index) => ({
@@ -3261,6 +3286,8 @@ test("free rotation preserves the exit center across headings and reload", async
         direction: 0,
         speedKmh: 120,
         separationSeconds: 20,
+        canopyGlideRatio: 3,
+        canopyDescentRateMps: 5,
         exitHeight: 4000,
     };
     const group = Array.from({ length: jumperCount }, (_, index) => ({
@@ -3789,6 +3816,8 @@ test("parachute landing at a tapped point reuses automatic positioning for the c
         speedKmh: 157,
         exitHeight: 4000,
         separationSeconds: 5,
+        canopyGlideRatio: 3,
+        canopyDescentRateMps: 5,
     };
     const group = [
         { speedKmh: 180, openingHeight: 800 },
@@ -3854,10 +3883,14 @@ for (const [description, ground] of [
     ["stale", "10,10,0,61"],
     ["missing", ""],
 ]) {
-    test(`parachute landing rejects ${description} lower winds and keeps the existing run`, async ({
+    test(`parachute landing rejects ${description} winds needed to interpolate pattern entry and keeps the existing run`, async ({
         page,
     }) => {
-        await page.goto(`${manualPath}&MANUAL_ground_obs=${ground}`);
+        // Exclude the 110 m level below the DZ, so ground wind brackets
+        // pattern entry at 300 m with the next valid level above it.
+        await page.goto(
+            `${manualPath}&elevation=200&MANUAL_ground_obs=${ground}`,
+        );
         await setUniformFreefallWind(page);
         const map = page.locator(".dz-map");
         await map.scrollIntoViewIfNeeded();
@@ -4120,9 +4153,10 @@ test("double-tap zoom preserves the positioned jump run", async ({
 test("dragging sets jump run direction and clicking exits without moving the run", async ({
     page,
 }) => {
-    // Stale ground winds prevent automatic placement, but allow free rotation.
+    // Ground wind is needed at 300 m when elevation excludes the 110 m level.
+    // Stale ground winds then prevent automatic placement but allow rotation.
     await page.goto(
-        `${manualPath}&MANUAL_ground_obs=10,10,180,61&lat=62.4&lon=25.6`,
+        `${manualPath}&elevation=200&MANUAL_ground_obs=10,10,180,61&lat=62.4&lon=25.6`,
     );
     await setUniformFreefallWind(page);
     await expect(
@@ -5111,6 +5145,8 @@ test("compact cloud forecast opens detailed FMI and Open-Meteo table", async ({
                     direction: 0,
                     speedKmh: 157,
                     separationSeconds: 5,
+                    canopyGlideRatio: 3,
+                    canopyDescentRateMps: 5,
                     exitHeight,
                 }),
             });
@@ -5234,7 +5270,11 @@ for (const [axis, wind, speed, expected] of [
             readMapQuery(Object.fromEntries(params), "map_run_settings")
                 .direction,
         ).toBe(expected);
-        await expectAutomaticOpeningsUpwind(page);
+        if (speed > 0) await expectAutomaticOpeningsUpwind(page);
+        else
+            expect(
+                await openingDistance(page, { lat: 62.4, lng: 25.6 }),
+            ).toBeLessThan(1);
         // A saved placement survives reload, even before fresh winds arrive.
         const start = mapQuerySnapshot(params, "map_run_start");
         await page.reload();
@@ -5271,6 +5311,8 @@ for (const [axis, wind, speed, expected] of [
                           direction: 0,
                           speedKmh: 157,
                           separationSeconds: 5,
+                          canopyGlideRatio: 3,
+                          canopyDescentRateMps: 5,
                           exitHeight: 4000,
                       };
             navigateQs(
@@ -5294,7 +5336,11 @@ for (const [axis, wind, speed, expected] of [
                 "map_run_settings",
             ).direction,
         ).toBe(expected);
-        await expectAutomaticOpeningsUpwind(page);
+        if (speed > 0) await expectAutomaticOpeningsUpwind(page);
+        else
+            expect(
+                await openingDistance(page, { lat: 62.4, lng: 25.6 }),
+            ).toBeLessThan(1);
     });
 }
 
@@ -5408,6 +5454,8 @@ test("viewport positioning keeps the flight path visible in a wide, short map", 
             speedKmh: 120,
             direction: 180,
             separationSeconds: 5,
+            canopyGlideRatio: 3,
+            canopyDescentRateMps: 5,
         }),
         ...writeMapQuery("map_jumpers", [
             { speedKmh: 180, openingHeight: 800 },
@@ -5455,6 +5503,8 @@ test("automatic positioning reverses the current axis into wind and reset restor
                       direction: 0,
                       speedKmh: 157,
                       separationSeconds: 5,
+                      canopyGlideRatio: 3,
+                      canopyDescentRateMps: 5,
                       exitHeight: 4000,
                   };
         navigateQs(
@@ -5617,7 +5667,7 @@ for (const [description, ground] of [
         page,
     }) => {
         await page.goto(
-            `${manualPath}&MANUAL_ground_obs=${ground}&lat=62.4&lon=25.6&default_jump_run_direction=0`,
+            `${manualPath}&elevation=200&MANUAL_ground_obs=${ground}&lat=62.4&lon=25.6&default_jump_run_direction=0`,
         );
         await setUniformFreefallWind(page);
         const position = page.getByRole("button", {

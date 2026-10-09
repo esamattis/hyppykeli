@@ -128,6 +128,8 @@
         --color-map-outline: #263b48;
         /* Freefall and canopy drift paths share a color, with different widths. */
         --color-map-drift: #ed3d8b;
+        /* Estimated canopy reach uses the first-jumper color on both map layers. */
+        --color-map-canopy-reach: var(--color-map-first-jumper);
         /* Brighter satellite overlays remain legible over dark imagery. */
         --color-map-satellite-direction: #3478f6;
         --color-map-satellite-first-jumper: #20d5b0;

@@ -153,6 +153,8 @@ test("creating a DZ includes the default jump run settings", async ({
         direction: 180,
         speedKmh: 157,
         separationSeconds: 5,
+        canopyGlideRatio: 3,
+        canopyDescentRateMps: 5,
         exitHeight: 3500,
     });
     expect(params.has("exitHeight")).toBe(false);

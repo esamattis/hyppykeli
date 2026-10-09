@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
-import { getCanopyDrift, getCanopyWindAtHeight } from "../src/map/canopy.js";
+import {
+    getCanopyDrift,
+    getCanopyReach,
+    getCanopyWindAtHeight,
+} from "../src/map/canopy.js";
 
 test("canopy descent integrates changing wind through opening and ground", () => {
     const winds = [
@@ -81,4 +85,80 @@ test("missing bracketing data cannot be hidden by a closer valid reading", () =>
     expect(getCanopyDrift(winds, 850)).toBeNull();
     expect(getCanopyDrift(winds, 800)).not.toBeNull();
     expect(getCanopyDrift([...winds].reverse(), 800)).toBeNull();
+});
+
+test("configured canopy descent rate scales the whole wind drift path", () => {
+    const winds = [
+        { height: 800, speed: 10, direction: 270 },
+        { height: 110, speed: 4, direction: 180 },
+        { height: 0, speed: 2, direction: 90 },
+    ];
+    const original = getCanopyDrift(winds, 800);
+    const slower = getCanopyDrift(winds, 800, 2.5);
+    slower.forEach((point, index) => {
+        expect(point.height).toBe(original[index].height);
+        expect(point.east).toBeCloseTo(original[index].east * 2, 8);
+        expect(point.north).toBeCloseTo(original[index].north * 2, 8);
+    });
+    for (const rate of [0, -1, NaN, Infinity])
+        expect(getCanopyDrift(winds, 800, rate)).toBeNull();
+});
+
+test("canopy reach separates still-air glide range from wind drift", () => {
+    const calm = [800, 0].map((height) => ({
+        height,
+        speed: 0,
+        direction: null,
+    }));
+    const still = getCanopyReach(calm, 800, 3, 5);
+    expect(still.radius).toBe(1500);
+    expect(Math.hypot(still.east, still.north)).toBe(0);
+    const winds = calm.map((wind) => ({ ...wind, speed: 5, direction: 270 }));
+    const reach = getCanopyReach(winds, 800, 3, 5);
+    expect(reach.radius).toBe(1500);
+    expect(reach.east).toBeCloseTo(-500, 8);
+    expect(reach.north).toBeCloseTo(0, 8);
+    expect(getCanopyReach(winds, 800, 4, 5).radius).toBe(2000);
+    const slower = getCanopyReach(winds, 800, 3, 4);
+    expect(slower.radius).toBe(1500);
+    expect(slower.east).toBeCloseTo(-625, 8);
+    expect(getCanopyReach(winds, 1200, 3, 5).radius).toBe(2700);
+    expect(getCanopyReach(winds, 1200, 3, 5).east).toBeCloseTo(-900, 8);
+    for (const ratio of [0, -1, NaN, Infinity])
+        expect(getCanopyReach(winds, 800, ratio, 5)).toBeNull();
+    expect(getCanopyReach(winds, 0, 3, 5)).toBeNull();
+    expect(getCanopyReach(winds, 800, 3, 0)).toBeNull();
+    expect(getCanopyReach(winds.slice(0, -1), 800, 3, 5)).toBeNull();
+    expect(
+        getCanopyReach([{ ...winds[0], speed: null }, winds[1]], 800, 3, 5),
+    ).toBeNull();
+});
+
+test("canopy reach uses integrated vectors when wind changes direction with altitude", () => {
+    const winds = [
+        { height: 800, speed: 10, direction: 270 },
+        { height: 400, speed: 10, direction: 0 },
+        { height: 0, speed: 10, direction: 90 },
+    ];
+    const reach = getCanopyReach(winds, 800, 3, 4);
+    expect(reach.east).toBeCloseTo(-468.75, 8);
+    expect(reach.north).toBeCloseTo(718.75, 8);
+    expect(reach.radius).toBe(1500);
+});
+
+test("pattern entry reserves 300 m and ignores wind below its interpolation levels", () => {
+    const winds = [
+        { height: 800, speed: 5, direction: 270 },
+        { height: 110, speed: 5, direction: 270 },
+        { height: 0, speed: null, direction: null },
+    ];
+    const path = getCanopyDrift(winds, 800, 5, 300);
+    expect(path.at(-1).height).toBe(300);
+    expect(path.at(-1).east).toBeCloseTo(500, 8);
+    expect(path.every((point) => point.height >= 300)).toBe(true);
+    expect(getCanopyReach(winds, 800, 3, 5).radius).toBe(1500);
+    for (const height of [300, 299, 0])
+        expect(getCanopyReach(winds, height, 3, 5)).toBeNull();
+    for (const target of [800, 900, -1, NaN, Infinity])
+        expect(getCanopyDrift(winds, 800, 5, target)).toBeNull();
 });

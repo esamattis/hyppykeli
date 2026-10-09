@@ -16,6 +16,8 @@ const settings = {
     speedKmh: 157,
     exitHeight: 4000,
     separationSeconds: 5,
+    canopyGlideRatio: 3,
+    canopyDescentRateMps: 5,
 };
 const jumper = { speedKmh: 180, openingHeight: 800 };
 
@@ -28,6 +30,8 @@ test("shared jumper paths stay correct when the profile, aircraft, or winds chan
         calculate(structuredClone(winds), {
             ...settings,
             separationSeconds: 10,
+            canopyGlideRatio: 3,
+            canopyDescentRateMps: 5,
         }).drift(jumper),
     ).toBe(path);
     const fastJumper = { ...jumper, speedKmh: 240 };

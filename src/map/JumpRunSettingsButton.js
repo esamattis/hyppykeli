@@ -68,6 +68,9 @@ export function JumpRunSettingsButton({
         .direction-field {
             grid-template-columns: minmax(0, 1fr);
         }
+        .canopy-glide-field {
+            grid-column: 1;
+        }
         .direction-row {
             display: flex;
             align-items: center;
@@ -145,6 +148,12 @@ export function JumpRunSettingsButton({
         String(DROPZONE_ELEVATION.value),
     );
     const [exitDraft, setExitDraft] = useState(String(settings.exitHeight));
+    const [glideDraft, setGlideDraft] = useState(
+        String(settings.canopyGlideRatio),
+    );
+    const [descentDraft, setDescentDraft] = useState(
+        String(settings.canopyDescentRateMps),
+    );
     const [nextDraft, setNextDraft] = useState({
         openingHeight: String(nextJumper.openingHeight),
         speedKmh: String(nextJumper.speedKmh),
@@ -183,6 +192,8 @@ export function JumpRunSettingsButton({
         });
         setElevationDraft(String(DROPZONE_ELEVATION.value));
         setExitDraft(String(settings.exitHeight));
+        setGlideDraft(String(settings.canopyGlideRatio));
+        setDescentDraft(String(settings.canopyDescentRateMps));
         setJumperDrafts(
             jumpers.map((jumper) => ({
                 speedKmh: String(jumper.speedKmh),
@@ -414,6 +425,72 @@ export function JumpRunSettingsButton({
                             step: 1,
                             value: defaultJumperCount,
                             onValueChange: onDefaultJumperCountChange,
+                        }),
+                    )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-canopy-glide`,
+                            label: t("settings.canopyGlideRatio"),
+                            className: "setting-with-help canopy-glide-field",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                {
+                                    title: t("settings.canopyGlideRatio"),
+                                    wide: true,
+                                },
+                                html`
+                                    <p>${t("settings.canopyGlideRatioHelp")}</p>
+                                `,
+                            ),
+                        },
+                        h(NumberInput, {
+                            id: `${titleId}-canopy-glide`,
+                            required: true,
+                            min: 0.1,
+                            step: "any",
+                            value: glideDraft,
+                            onDraftChange: setGlideDraft,
+                            onValueChange: (value) =>
+                                onChange({
+                                    ...settings,
+                                    canopyGlideRatio: value,
+                                }),
+                        }),
+                    )}
+                    ${h(
+                        FormField,
+                        {
+                            id: `${titleId}-canopy-descent`,
+                            label: t("settings.canopyDescentRate"),
+                            className: "setting-with-help",
+                            labelClassName: "setting-label",
+                            help: h(
+                                FieldHelp,
+                                {
+                                    title: t("settings.canopyDescentRate"),
+                                    wide: true,
+                                },
+                                html`
+                                    <p>
+                                        ${t("settings.canopyDescentRateHelp")}
+                                    </p>
+                                `,
+                            ),
+                        },
+                        h(NumberInput, {
+                            id: `${titleId}-canopy-descent`,
+                            required: true,
+                            min: 0.1,
+                            step: "any",
+                            value: descentDraft,
+                            onDraftChange: setDescentDraft,
+                            onValueChange: (value) =>
+                                onChange({
+                                    ...settings,
+                                    canopyDescentRateMps: value,
+                                }),
                         }),
                     )}
                     <fieldset class="next-jumper px-2.5 pt-2 pb-2.5">

@@ -46,6 +46,8 @@ test("ground wind fallbacks preserve freshness, source priority, and automatic p
                 speedKmh: 157,
                 exitHeight: 4000,
                 separationSeconds: 5,
+                canopyGlideRatio: 3,
+                canopyDescentRateMps: 5,
             };
             const calculation = createJumpRunCalculator()(
                 data.freefallWinds,
@@ -96,6 +98,16 @@ test("ground wind fallbacks preserve freshness, source priority, and automatic p
             time: new Date(now + 2 * 3600_000),
         };
         results.push(read());
+        // If the lowest valid wind is above 300 m, pattern entry also needs
+        // the missing ground reading to interpolate that final layer.
+        QUERY_PARAMS.value = {
+            ...QUERY_PARAMS.value,
+            MANUAL_upper_winds: QUERY_PARAMS.value.MANUAL_upper_winds.replace(
+                "10,0,110",
+                "10,0,0",
+            ),
+        };
+        results.push(read());
         return results;
     });
     expect(results.map(({ source }) => source)).toEqual([
@@ -107,6 +119,7 @@ test("ground wind fallbacks preserve freshness, source priority, and automatic p
         "fmi",
         null,
         null,
+        null,
     ]);
     expect(results[1].speed).toBeCloseTo(10 * 0.514444, 4);
     for (const result of results.slice(0, 6)) {
@@ -114,8 +127,11 @@ test("ground wind fallbacks preserve freshness, source priority, and automatic p
         expect(result.endpoint).toBe(result.speed);
     }
     expect(results[5].speed).toBe(0);
-    for (const result of results.slice(6)) {
-        expect(result.placed).toBe(false);
+    for (const result of results.slice(6, 8)) {
+        // A valid 110 m level brackets 300 m, so ground wind is unused.
+        expect(result.placed).toBe(true);
         expect(result.endpoint).toBeNull();
     }
+    expect(results[8].placed).toBe(false);
+    expect(results[8].endpoint).toBeNull();
 });

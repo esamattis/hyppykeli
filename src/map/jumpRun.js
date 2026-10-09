@@ -1,5 +1,5 @@
 // @ts-check
-import { getCanopyDrift } from "#app/map/canopy.js";
+import { CANOPY_PATTERN_HEIGHT, getCanopyDrift } from "#app/map/canopy.js";
 import {
     driftCoordinates,
     getFreefallDrift,
@@ -154,7 +154,8 @@ export function openingTargetForRun(start, settings, group, calculation) {
 }
 
 /**
- * Middle predicted landing, using the same freefall and canopy paths as the map.
+ * Middle predicted position at landing pattern entry (300 m), using the same
+ * freefall and canopy paths as the map.
  * For an even group, use the midpoint of the two middle landings.
  * @param {import('leaflet').LatLngLiteral} start
  * @param {JumpRunSettings} settings
@@ -180,9 +181,12 @@ export function landingTargetForRun(
         const jumper = group[index];
         if (!jumper) return null;
         const freefall = calculation.drift(jumper)?.at(-1);
-        const canopy = getCanopyDrift(canopyWinds, jumper.openingHeight)?.at(
-            -1,
-        );
+        const canopy = getCanopyDrift(
+            canopyWinds,
+            jumper.openingHeight,
+            settings.canopyDescentRateMps,
+            CANOPY_PATTERN_HEIGHT,
+        )?.at(-1);
         if (!freefall || !canopy) return null;
         const exit = position(
             jumpRunCoordinates(

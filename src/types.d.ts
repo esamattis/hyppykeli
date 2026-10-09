@@ -158,6 +158,21 @@ interface JumpRunSettings {
     direction: number;
     speedKmh: number;
     separationSeconds: number;
+    canopyGlideRatio: number;
+    canopyDescentRateMps: number;
+}
+
+interface CanopyReachArea extends WindVector {
+    radius: number;
+}
+
+interface CanopyReachProps {
+    map: import("leaflet").Map | null;
+    target: import("leaflet").LatLngLiteral | null;
+    winds: FreefallWindLevel[];
+    openingHeights: number[];
+    settings: JumpRunSettings;
+    satellite: boolean;
 }
 
 interface JumpRunControlsProps {
@@ -211,6 +226,7 @@ interface FreefallToolbarProps {
     onShare: () => void;
     jumpRun: JumpRunControlsProps;
     jumpRunLengthMeters: number | null;
+    canopyReach: import("preact").ComponentChildren;
     arrowCount: number;
     onClear: () => void;
     onUndo: () => void;
@@ -423,6 +439,10 @@ interface QueryParams {
     map_run_separation?: string;
     /** Exit height in metres above the dropzone. */
     map_run_exit_height?: string;
+    /** Still-air canopy glide ratio (horizontal distance / height lost). */
+    map_canopy_glide_ratio?: string;
+    /** Canopy vertical descent speed in metres per second. */
+    map_canopy_descent_rate?: string;
     MANUAL_ground_obs?: string;
     MANUAL_metar?: string;
     MANUAL_upper_winds?: string;

@@ -357,7 +357,17 @@ export const english = {
     "map.symbolsRunHelp":
         "The straight line shows the jump run. Circles mark exits for each jumper or group; green is first and red is last.",
     "map.symbolsDriftHelp":
-        "Thick paths show estimated freefall drift to opening. Thin paths show wind drift under canopy.",
+        "Thick paths show estimated freefall drift to opening. Thin paths show wind drift under canopy to landing pattern entry at 300 m.",
+    "map.symbolsCanopyReachHelp":
+        "Shaded circles show where a jumper can open and reach the jump run’s predicted landing position at 300 m, one circle per opening altitude. They move with the run; their size and wind offset use the configured canopy glide ratio and descent rate.",
+    "map.canopyReachLabel": (
+        /** @type {string} */ heights,
+        /** @type {number} */ ratio,
+        /** @type {number} */ rate,
+    ) => `Canopy reach · ${heights} → 300 m · ${ratio}:1 · ${rate} m/s`,
+    "map.canopyReachUnavailable": "Canopy reach · no wind data",
+    "map.canopyReachHelp":
+        "Estimated opening positions that can reach the jump run’s predicted landing position at 300 m, where the landing pattern starts. Radius is (opening altitude − 300 m) × glide ratio; the centre is shifted against wind drift down to 300 m. Assumes constant canopy performance and horizontally uniform winds.",
     "map.symbolsWindHelp":
         "Wind arrows and moving lines show where the wind flows. Longer lines mean stronger wind.",
     "map.featuresHelpTitle": "Features",
@@ -365,7 +375,7 @@ export const english = {
         "Explore winds at different heights, add jumpers, and adjust flight and freefall settings. Position and rotate the run manually, or place it automatically relative to a landing target and keep it updated as winds change.",
     "map.accuracyHelpTitle": "Accuracy",
     "map.accuracyHelp":
-        "These are rough planning estimates based on forecasts or entered winds. Actual winds and drift may differ. Canopy glide is not modelled, and automatic placement does not guarantee reaching the landing area. Check current conditions with the pilot and dropzone; do not base jump decisions on this map alone.",
+        "These are rough planning estimates based on forecasts or entered winds. Actual winds, drift, and canopy performance may differ. Reach circles use a simplified glide model; thin paths and automatic placement use wind drift only. Automatic placement does not guarantee reaching the landing area. Check current conditions with the pilot and dropzone; do not base jump decisions on this map alone.",
     "map.automaticUpdate": "Update automatically",
     "map.confirmJumpRunPosition": "Opening",
     "map.centerJumpRunPosition": "Jump run",
@@ -454,6 +464,12 @@ export const english = {
     "settings.openingHeight": "Opening altitude (m)",
     "settings.freefallSpeed": "Freefall speed (km/h)",
     "settings.jumpRunSpeed": "True airspeed (km/h)",
+    "settings.canopyGlideRatio": "Canopy glide ratio (:1)",
+    "settings.canopyGlideRatioHelp":
+        "Still-air horizontal distance per metre descended: 3 means 3:1. Shared by all jumpers and used for canopy reach circles, reserving 300 m for the landing pattern. Glide ratio and descent rate should describe the same canopy flight mode.",
+    "settings.canopyDescentRate": "Canopy descent rate (m/s)",
+    "settings.canopyDescentRateHelp":
+        "Constant vertical descent speed under canopy, shared by all jumpers. Used for canopy drift paths, automatic jump run placement, and the wind shift of reach circles. A lower rate gives more time under canopy and more wind drift. Forward airspeed is glide ratio multiplied by descent rate.",
     "settings.jumperInterval": "Jumper separation (s)",
     "settings.jumperIntervalHelp":
         "Time in seconds between consecutive jump group exits. The same interval applies to every group on the jump run. The aircraft’s ground speed, including wind at exit altitude, determines the distance between exit points. Different freefall speeds and opening altitudes can produce different spacing between opening points.",
@@ -938,7 +954,14 @@ const finnish = {
     "map.symbolsRunHelp":
         "Suora viiva näyttää hyppylinjan. Ympyrät merkitsevät hyppääjien tai ryhmien uloshyppypaikat; vihreä on ensimmäinen ja punainen viimeinen.",
     "map.symbolsDriftHelp":
-        "Paksut viivat näyttävät arvioidun vapaapudotusajautumisen avaukseen asti. Ohuet viivat näyttävät tuuliajautumisen varjon varassa.",
+        "Paksut viivat näyttävät arvioidun vapaapudotusajautumisen avaukseen asti. Ohuet viivat näyttävät tuuliajautumisen varjon varassa laskukierroksen alkuun 300 metrissä.",
+    "map.symbolsCanopyReachHelp":
+        "Varjostetut ympyrät näyttävät avauspaikat, joista hyppääjä voi päästä hyppylinjan arvioituun laskeutumispisteeseen 300 metrissä, yhden ympyrän kullekin avauskorkeudelle. Ne liikkuvat hyppylinjan mukana; koko ja tuulisiirtymä perustuvat asetettuun varjon liitolukuun ja vajoamisnopeuteen.",
+    "map.canopyReachLabel": (heights, ratio, rate) =>
+        `Varjon kantama · ${heights} → 300 m · ${ratio}:1 · ${rate} m/s`,
+    "map.canopyReachUnavailable": "Varjon kantama · tuulitiedot puuttuvat",
+    "map.canopyReachHelp":
+        "Arvioidut avauspaikat, joista voi päästä hyppylinjan arvioituun laskeutumispisteeseen laskukierroksen alussa 300 metrissä. Säde on (avauskorkeus − 300 m) × liitoluku; keskipiste siirtyy 300 metriin asti kertyneen tuuliajautumisen vastakkaiseen suuntaan. Oletuksina ovat varjon vakio suorituskyky ja vaakasuunnassa tasainen tuuli.",
     "map.symbolsWindHelp":
         "Tuulinuolet ja liikkuvat viivat näyttävät, mihin tuuli puhaltaa. Pidemmät viivat tarkoittavat voimakkaampaa tuulta.",
     "map.featuresHelpTitle": "Toiminnot",
@@ -946,7 +969,7 @@ const finnish = {
         "Tarkastele tuulia eri korkeuksilla, lisää hyppääjiä ja säädä lennon sekä vapaapudotuksen asetuksia. Siirrä ja kierrä hyppylinjaa käsin tai sijoita se automaattisesti laskeutumiskohteen suhteen ja pidä se ajan tasalla tuulten muuttuessa.",
     "map.accuracyHelpTitle": "Tarkkuus",
     "map.accuracyHelp":
-        "Arviot ovat suuntaa antavia ja perustuvat ennusteisiin tai syötettyihin tuuliin. Todellinen tuuli ja ajautuminen voivat poiketa niistä. Varjon liitoa ei mallinneta, eikä automaattinen sijoitus takaa laskeutumisalueelle pääsyä. Varmista vallitsevat olosuhteet lentäjältä ja hyppypaikalta; älä tee hyppypäätöksiä pelkän kartan perusteella.",
+        "Arviot ovat suuntaa antavia ja perustuvat ennusteisiin tai syötettyihin tuuliin. Todellinen tuuli, ajautuminen ja varjon suorituskyky voivat poiketa niistä. Kantamaympyrät käyttävät yksinkertaistettua liitomallia; ohuet viivat ja automaattinen sijoitus huomioivat vain tuuliajautumisen. Automaattinen sijoitus ei takaa laskeutumisalueelle pääsyä. Varmista vallitsevat olosuhteet lentäjältä ja hyppypaikalta; älä tee hyppypäätöksiä pelkän kartan perusteella.",
     "map.automaticUpdate": "Päivitä automaattisesti",
     "map.confirmJumpRunPosition": "Avaus",
     "map.centerJumpRunPosition": "Hyppylinja",
@@ -1034,6 +1057,12 @@ const finnish = {
     "settings.openingHeight": "Avauskorkeus (m)",
     "settings.freefallSpeed": "Vapaapudotusnopeus (km/h)",
     "settings.jumpRunSpeed": "Todellinen ilmanopeus (km/h)",
+    "settings.canopyGlideRatio": "Varjon liitoluku (:1)",
+    "settings.canopyGlideRatioHelp":
+        "Vaakasuuntainen matka tyynessä jokaista vajottua metriä kohti: 3 tarkoittaa liitolukua 3:1. Arvo on yhteinen kaikille hyppääjille ja sitä käytetään varjon kantamaympyröissä, joissa laskukierrokseen varataan 300 m. Liitoluvun ja vajoamisnopeuden tulee kuvata samaa varjon lentotilaa.",
+    "settings.canopyDescentRate": "Varjon vajoamisnopeus (m/s)",
+    "settings.canopyDescentRateHelp":
+        "Varjon vakio pystysuuntainen vajoamisnopeus, joka on yhteinen kaikille hyppääjille. Sitä käytetään varjon tuuliajautumisviivoissa, hyppylinjan automaattisessa sijoituksessa ja kantamaympyröiden tuulisiirtymässä. Pienempi nopeus pidentää aikaa varjon varassa ja lisää tuuliajautumista. Vaakasuuntainen ilmanopeus on liitoluku kerrottuna vajoamisnopeudella.",
     "settings.jumperInterval": "Hyppääjien porrastus (s)",
     "settings.jumperIntervalHelp":
         "Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina. Sama aikaväli koskee jokaista hyppylinjan ryhmää. Lentokoneen maanopeus, jossa huomioidaan tuuli uloshyppykorkeudella, määrää uloshyppykohtien välimatkan. Erilaiset vapaapudotusnopeudet ja avauskorkeudet voivat tuottaa erilaiset avautumiskohtien välit.",

@@ -7,7 +7,14 @@ import { Button } from "#app/shared/Button.js";
 import { render } from "preact";
 import { startForAutomaticRun } from "#app/map/automaticPlacement.js";
 import { holdAnimations } from "#app/app/animationState.js";
-import { getCanopyDrift } from "#app/map/canopy.js";
+import {
+    DEFAULT_CANOPY_DESCENT_RATE_MPS,
+    CANOPY_PATTERN_HEIGHT,
+    DEFAULT_CANOPY_GLIDE_RATIO,
+    getCanopyDrift,
+    getCanopyReach,
+} from "#app/map/canopy.js";
+import { CanopyReach } from "#app/map/CanopyReach.js";
 import {
     DROPZONE_ELEVATION,
     QUERY_PARAMS,
@@ -57,6 +64,7 @@ import {
     startForOpeningTarget,
     startForRunCenter,
     openingTargetForRun,
+    landingTargetForRun,
 } from "#app/map/jumpRun.js";
 import { getMapWindData } from "#app/map/windData.js";
 import { h, html } from "htm/preact";
@@ -250,6 +258,7 @@ export function DropzoneMap() {
             --color-map-first-jumper: var(--color-map-satellite-first-jumper);
             --color-map-last-jumper: var(--color-map-satellite-last-jumper);
             --color-map-drift: var(--color-map-satellite-drift);
+            --color-map-canopy-reach: var(--color-map-satellite-first-jumper);
         }
         .map-viewport {
             position: relative;
@@ -464,6 +473,8 @@ export function DropzoneMap() {
             speedKmh: 157,
             separationSeconds: 5,
             exitHeight: 4000,
+            canopyGlideRatio: DEFAULT_CANOPY_GLIDE_RATIO,
+            canopyDescentRateMps: DEFAULT_CANOPY_DESCENT_RATE_MPS,
         }),
         isValidJumpRunSettings,
     );
@@ -939,6 +950,15 @@ export function DropzoneMap() {
     const upperWindOverride = QUERY_PARAMS.value.MANUAL_upper_winds;
     const calculation = calculateJumpRun(freefallWinds, jumpRunSettings);
     const jumpRunVelocity = calculation.velocity;
+    const runLandingTarget = jumpRunStart
+        ? landingTargetForRun(
+              jumpRunStart,
+              jumpRunSettings,
+              jumpers,
+              calculation,
+              canopyWinds,
+          )
+        : null;
     /** @param {import('leaflet').LatLngLiteral | null} start @param {JumpRunSettings} settings @param {JumpRunJumper[]} group */
     const openingKey = (start, settings, group) =>
         JSON.stringify([start, settings, group, freefallWinds]);
@@ -1117,6 +1137,14 @@ export function DropzoneMap() {
         if (!leafletMap || !calculation.velocity) return;
         const bounds = latLngBounds([start]);
         if (landingCoordinates) bounds.extend(landingCoordinates);
+        const landing = landingTargetForRun(
+            start,
+            settings,
+            group,
+            calculation,
+            canopyWinds,
+        );
+        if (landing) bounds.extend(landing);
         for (const [index, jumper] of group.entries()) {
             const exit = latLng(
                 jumpRunCoordinates(
@@ -1133,9 +1161,40 @@ export function DropzoneMap() {
             for (const position of freefall ?? []) bounds.extend(position);
             const opening = freefall?.at(-1);
             if (!opening) continue;
-            const canopy = getCanopyDrift(canopyWinds, jumper.openingHeight);
+            const canopy = getCanopyDrift(
+                canopyWinds,
+                jumper.openingHeight,
+                settings.canopyDescentRateMps,
+                CANOPY_PATTERN_HEIGHT,
+            );
             for (const offset of canopy ?? [])
                 bounds.extend(driftCoordinates(latLng(opening), offset));
+            const reach = getCanopyReach(
+                canopyWinds,
+                jumper.openingHeight,
+                settings.canopyGlideRatio,
+                settings.canopyDescentRateMps,
+            );
+            if (landing && reach) {
+                const center = latLng(
+                    driftCoordinates(landing, {
+                        height: 0,
+                        ...reach,
+                    }),
+                );
+                for (const offset of [
+                    { east: reach.radius, north: 0 },
+                    { east: -reach.radius, north: 0 },
+                    { east: 0, north: reach.radius },
+                    { east: 0, north: -reach.radius },
+                ])
+                    bounds.extend(
+                        driftCoordinates(center, {
+                            height: 0,
+                            ...offset,
+                        }),
+                    );
+            }
         }
         const size = leafletMap.getSize();
         // Keep at least half of each dimension available for the flight paths.
@@ -1772,7 +1831,13 @@ export function DropzoneMap() {
                 path?.map((offset) => driftCoordinates(start, offset)) ?? [];
             const opening = positions.at(-1);
             const canopyPath =
-                opening && getCanopyDrift(canopyWinds, jumper.openingHeight);
+                opening &&
+                getCanopyDrift(
+                    canopyWinds,
+                    jumper.openingHeight,
+                    jumpRunSettings.canopyDescentRateMps,
+                    CANOPY_PATTERN_HEIGHT,
+                );
             const canopyPositions =
                 opening && canopyPath
                     ? canopyPath.map((offset) =>
@@ -1965,6 +2030,7 @@ export function DropzoneMap() {
                             <ul class="ps-5">
                                 <li>${t("map.symbolsRunHelp")}</li>
                                 <li>${t("map.symbolsDriftHelp")}</li>
+                                <li>${t("map.symbolsCanopyReachHelp")}</li>
                                 <li>${t("map.symbolsWindHelp")}</li>
                             </ul>
                             <h3>${t("map.featuresHelpTitle")}</h3>
@@ -2005,6 +2071,17 @@ export function DropzoneMap() {
                     data-map-layer=${satellite ? "satellite" : "street"}
                 >
                     ${h(FreefallToolbar, {
+                        canopyReach: h(CanopyReach, {
+                            map: leafletInstance,
+                            target: runLandingTarget,
+                            winds: canopyWinds,
+                            openingHeights: (jumpers.length
+                                ? jumpers
+                                : [nextJumper]
+                            ).map((jumper) => jumper.openingHeight),
+                            settings: jumpRunSettings,
+                            satellite,
+                        }),
                         fullWindow,
                         errors: fullWindowErrors,
                         automaticJumpRun,
