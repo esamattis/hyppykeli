@@ -241,10 +241,10 @@ export function CheckboxField({
 }
 
 /** @param {FieldHelpProps} props */
-export function FieldHelp({ title, wide, children }) {
+export function FieldHelp({ title, tooltip, wide, children }) {
     return h(
         Help,
-        { label: `${title}: ${t("common.help")}`, wide },
+        { label: `${title}: ${t("common.help")}`, tooltip, wide },
         html`
             <h3>${title}</h3>
             ${children}

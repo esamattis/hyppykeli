@@ -284,7 +284,10 @@ export function JumpRunSettingsButton({
                             labelClassName: "setting-label",
                             help: h(
                                 FieldHelp,
-                                { title: t("settings.elevation") },
+                                {
+                                    title: t("settings.elevation"),
+                                    tooltip: t("settings.elevationTooltip"),
+                                },
                                 html`
                                     <p>${t("settings.elevationHelp")}</p>
                                 `,
@@ -313,7 +316,10 @@ export function JumpRunSettingsButton({
                             labelClassName: "setting-label",
                             help: h(
                                 FieldHelp,
-                                { title: t("settings.exitHeight") },
+                                {
+                                    title: t("settings.exitHeight"),
+                                    tooltip: t("settings.exitHeightTooltip"),
+                                },
                                 html`
                                     <p>${t("settings.exitExplanation")}</p>
                                     <p>${t("settings.profileRange")}</p>
@@ -352,6 +358,7 @@ export function JumpRunSettingsButton({
                                 FieldHelp,
                                 {
                                     title: t("settings.jumpRunSpeed"),
+                                    tooltip: t("settings.jumpRunSpeedTooltip"),
                                     wide: true,
                                 },
                                 html`
@@ -380,7 +387,12 @@ export function JumpRunSettingsButton({
                             labelClassName: "setting-label",
                             help: h(
                                 FieldHelp,
-                                { title: t("settings.jumperInterval") },
+                                {
+                                    title: t("settings.jumperInterval"),
+                                    tooltip: t(
+                                        "settings.jumperIntervalTooltip",
+                                    ),
+                                },
                                 html`
                                     <p>${t("settings.jumperIntervalHelp")}</p>
                                 `,
@@ -410,7 +422,12 @@ export function JumpRunSettingsButton({
                             labelClassName: "setting-label",
                             help: h(
                                 FieldHelp,
-                                { title: t("settings.defaultJumperCount") },
+                                {
+                                    title: t("settings.defaultJumperCount"),
+                                    tooltip: t(
+                                        "settings.defaultJumperCountTooltip",
+                                    ),
+                                },
                                 html`
                                     <p>
                                         ${t("settings.defaultJumperCountHelp")}
@@ -438,6 +455,9 @@ export function JumpRunSettingsButton({
                                 FieldHelp,
                                 {
                                     title: t("settings.canopyGlideRatio"),
+                                    tooltip: t(
+                                        "settings.canopyGlideRatioTooltip",
+                                    ),
                                     wide: true,
                                 },
                                 html`
@@ -470,6 +490,9 @@ export function JumpRunSettingsButton({
                                 FieldHelp,
                                 {
                                     title: t("settings.canopyDescentRate"),
+                                    tooltip: t(
+                                        "settings.canopyDescentRateTooltip",
+                                    ),
                                     wide: true,
                                 },
                                 html`

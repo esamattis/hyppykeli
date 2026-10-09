@@ -151,3 +151,48 @@ test("reach follows the jump run and disappears when its wind data is missing", 
     await expect.poll(async () => (await geometry(page)).reach.length).toBe(0);
     await expect(page.locator(".canopy-reach-summary")).toHaveCount(0);
 });
+
+test("descent rates of 1 and 10 update canopy calculations and survive reopening with automatic placement enabled", async ({
+    page,
+}) => {
+    await page.goto(
+        dz.replace("map_run_automatic=false", "map_run_automatic=true"),
+    );
+    await expect.poll(async () => (await geometry(page)).drift.length).toBe(3);
+    const original = await geometry(page);
+    const originalDrift =
+        original.drift[0].at(-1).lng - original.drift[0][0].lng;
+    for (const rate of [1, 10]) {
+        await page
+            .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+            .click();
+        const input = page.getByLabel(descentLabel, { exact: true });
+        await input.fill("");
+        await input.pressSequentially(String(rate));
+        await expect
+            .poll(() =>
+                new URL(page.url()).searchParams.get("map_canopy_descent_rate"),
+            )
+            .toBe(String(rate));
+        await expect
+            .poll(async () => {
+                const { drift } = await geometry(page);
+                return (drift[0].at(-1).lng - drift[0][0].lng) / originalDrift;
+            })
+            .toBeCloseTo(5 / rate, 4);
+        await expect
+            .poll(async () => (await geometry(page)).reach[1].center.lng)
+            .not.toBe(original.reach[1].center.lng);
+        await page.keyboard.press("Escape");
+        await page
+            .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+            .click();
+        await expect(input).toHaveValue(String(rate));
+        await page.reload();
+        await page
+            .getByRole("button", { name: "Hyppylinjan asetukset", exact: true })
+            .click();
+        await expect(input).toHaveValue(String(rate));
+        await page.keyboard.press("Escape");
+    }
+});

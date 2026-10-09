@@ -792,6 +792,7 @@ interface FormFieldProps {
 
 interface FieldHelpProps {
     title: string;
+    tooltip?: string;
     wide?: boolean;
     children?: import("preact").ComponentChildren;
 }

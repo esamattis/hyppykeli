@@ -11,6 +11,7 @@ import { useRef } from "preact/hooks";
  * @param {Object} props
  * @param {import('preact').ComponentChildren} [props.children]
  * @param {string} [props.label]
+ * @param {string} [props.tooltip]
  * @param {string} [props.id]
  * @param {boolean} [props.wide]
  */
@@ -68,7 +69,8 @@ export function Help(props) {
                 onClick: open,
                 id: props.id,
                 "aria-label": props.label ?? t("common.help"),
-                "data-tooltip": props.label ?? t("common.help"),
+                "data-tooltip":
+                    props.tooltip ?? props.label ?? t("common.help"),
                 "aria-haspopup": "dialog",
             },
             html`

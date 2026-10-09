@@ -448,8 +448,9 @@ export const english = {
     "settings.jumpRunDirectionHelp":
         "Direction of travel over the ground: 0°/360° north, 90° east, 180° south, and 270° west. Wind correction determines the aircraft heading needed to follow this track. Changing direction here keeps the central predicted opening point fixed (the midpoint of the two middle openings for an even number of groups). Free rotation by dragging keeps the middle of the exit sequence fixed. Missing wind data or a track that cannot be flown at the selected airspeed can prevent the calculation.",
     "settings.elevation": "Dropzone elevation (m)",
+    "settings.elevationTooltip": "Adjusts wind and cloud heights.",
     "settings.elevationHelp":
-        "Dropzone height above sea level. Used to adjust wind calculations and Open-Meteo cloud heights.",
+        "Dropzone height above sea level. Used to adjust wind calculations and Open-Meteo cloud heights. Forecast wind heights are measured above sea level; subtracting this elevation gives heights above the dropzone for freefall, aircraft wind correction, and canopy drift.",
     "settings.altitudeReferenceHelp":
         "Exit and opening altitudes are heights above the dropzone. Freefall, aircraft wind correction, and canopy drift use forecast geopotential heights minus the configured dropzone elevation. Manual winds use their fixed sea-level heights minus the same elevation. Heights are rounded only for display; surrounding terrain is not modelled.",
     "settings.freefallSpeedHelp":
@@ -459,19 +460,29 @@ export const english = {
     "settings.jumpRun": "Jump run settings",
     "settings.jumpRunDirection": "Jump run direction",
     "settings.defaultJumperCount": "Default jump group count",
+    "settings.defaultJumperCountTooltip":
+        "Sets group count when creating a jump run.",
     "settings.defaultJumperCountHelp":
         "Number of jump groups created when first positioning a jump run, if its jumper list has not been customized. Each group uses the next-jumper settings. Changing this value does not resize an existing run; add or remove jumpers in the list instead.",
     "settings.exitHeight": "Exit altitude (m)",
+    "settings.exitHeightTooltip":
+        "Sets freefall height and aircraft wind correction.",
     "settings.openingHeight": "Opening altitude (m)",
     "settings.freefallSpeed": "Freefall speed (km/h)",
     "settings.jumpRunSpeed": "True airspeed (km/h)",
+    "settings.jumpRunSpeedTooltip":
+        "Affects exit spacing and forward movement in freefall.",
     "settings.canopyGlideRatio": "Canopy glide ratio (:1)",
+    "settings.canopyGlideRatioTooltip": "Sets reach circle size.",
     "settings.canopyGlideRatioHelp":
-        "Still-air horizontal distance per metre descended: 3 means 3:1. Shared by all jumpers and used for canopy reach circles, reserving 300 m for the landing pattern. Glide ratio and descent rate should describe the same canopy flight mode.",
+        "Still-air horizontal distance per metre descended: 3 means 3:1. Shared by all jumpers and used for canopy reach circles, reserving 300 m for the landing pattern. Circle radius is (opening height − 300 m) × glide ratio. A higher ratio makes the circles larger. Glide ratio and descent rate should describe the same canopy flight mode.",
     "settings.canopyDescentRate": "Canopy descent rate (m/s)",
+    "settings.canopyDescentRateTooltip":
+        "Sets canopy drift and circle offset, not size.",
     "settings.canopyDescentRateHelp":
-        "Constant vertical descent speed under canopy, shared by all jumpers. Used for canopy drift paths, automatic jump run placement, and the wind shift of reach circles. A lower rate gives more time under canopy and more wind drift. Forward airspeed is glide ratio multiplied by descent rate.",
+        "Constant vertical descent speed under canopy, shared by all jumpers. Used for canopy drift paths, automatic jump run placement, and the wind shift of reach circles. A lower rate gives more time under canopy and more wind drift. It changes the circles’ wind offset, while their size is determined by glide ratio and opening altitude. Forward airspeed is glide ratio multiplied by descent rate.",
     "settings.jumperInterval": "Jumper separation (s)",
+    "settings.jumperIntervalTooltip": "Sets the spacing between group exits.",
     "settings.jumperIntervalHelp":
         "Time in seconds between consecutive jump group exits. The same interval applies to every group on the jump run. The aircraft’s ground speed, including wind at exit altitude, determines the distance between exit points. Different freefall speeds and opening altitudes can produce different spacing between opening points.",
     "settings.nextJumper": "Add jumper",
@@ -489,7 +500,7 @@ export const english = {
     "settings.speedExplanation":
         "Enter true airspeed (TAS), not indicated airspeed (IAS). Wind at exit altitude is used to calculate ground speed along the selected ground track. Ground speed and the exit interval determine the distance between exit points. The freefall estimate also includes forward movement inherited from the aircraft.",
     "settings.exitExplanation":
-        "The exit altitude is shared by all jumpers. It must be above every existing jumper’s opening altitude and the opening altitude set for the next jumper.",
+        "The exit altitude is shared by all jumpers. It must be above every existing jumper’s opening altitude and the opening altitude set for the next jumper. Higher exits generally give more time for freefall drift. Wind at exit altitude affects aircraft wind correction and ground speed along the jump run.",
     "settings.profileRange":
         "Opening must be at least 800 m above the dropzone and below exit. Calculations use the nearest wind level by altitude, including above or below the available wind profile.",
     "settings.openingRange":
@@ -1042,8 +1053,9 @@ const finnish = {
     "settings.jumpRunDirectionHelp":
         "Lentoradan suunta maan suhteen: 0°/360° pohjoinen, 90° itä, 180° etelä ja 270° länsi. Tuulikorjaus määrittää lentokoneen nokan suunnan, jolla tätä lentorataa seurataan. Suunnan muuttaminen tässä pitää keskimmäisen ennustetun avautumiskohdan paikallaan (parillisella ryhmämäärällä kahden keskimmäisen avautumiskohdan puoliväli). Vapaa kierto vetämällä pitää uloshyppyjonon keskikohdan paikallaan. Puuttuvat tuulitiedot tai lentorata, jota ei voi lentää valitulla ilmanopeudella, voivat estää laskennan.",
     "settings.elevation": "Hyppypaikan korkeus merenpinnasta (m)",
+    "settings.elevationTooltip": "Korjaa tuuli- ja pilvikorkeudet.",
     "settings.elevationHelp":
-        "Hyppypaikan korkeus merenpinnasta. Käytetään tuulilaskelmien ja Open-Meteon pilvikorkeuksien korjaamiseen.",
+        "Hyppypaikan korkeus merenpinnasta. Käytetään tuulilaskelmien ja Open-Meteon pilvikorkeuksien korjaamiseen. Ennusteen tuulikorkeudet mitataan merenpinnasta; vähentämällä niistä tämä korkeus saadaan korkeudet hyppypaikan maanpinnasta vapaapudotuksen, lentokoneen tuulikorjauksen ja varjon tuuliajautumisen laskentaan.",
     "settings.altitudeReferenceHelp":
         "Uloshyppy- ja avauskorkeudet mitataan hyppypaikan maanpinnasta. Vapaapudotus, lentokoneen tuulikorjaus ja varjon varassa tapahtuva ajautuminen lasketaan ennusteen geopotentiaalikorkeuksista, joista vähennetään asetettu hyppypaikan korkeus merenpinnasta. Käsin syötetyillä tuulilla käytetään kiinteitä korkeuksia merenpinnasta samalla korjauksella. Korkeudet pyöristetään vain näytettäessä; ympäröivää maastoa ei mallinneta.",
     "settings.freefallSpeedHelp":
@@ -1053,19 +1065,30 @@ const finnish = {
     "settings.jumpRun": "Hyppylinjan asetukset",
     "settings.jumpRunDirection": "Hyppylinjan suunta",
     "settings.defaultJumperCount": "Hyppyryhmien oletusmäärä",
+    "settings.defaultJumperCountTooltip":
+        "Määrittää ryhmämäärän uutta hyppylinjaa luotaessa.",
     "settings.defaultJumperCountHelp":
         "Hyppyryhmien määrä, kun hyppylinja sijoitetaan ensimmäisen kerran eikä sen hyppääjälistaa ole muokattu. Jokainen ryhmä käyttää lisättävän hyppääjän asetuksia. Arvon muuttaminen ei muuta olemassa olevan hyppylinjan kokoa; lisää tai poista hyppääjiä listassa.",
     "settings.exitHeight": "Uloshyppykorkeus (m)",
+    "settings.exitHeightTooltip":
+        "Määrittää vapaapudotuskorkeuden ja lentokoneen tuulikorjauksen.",
     "settings.openingHeight": "Avauskorkeus (m)",
     "settings.freefallSpeed": "Vapaapudotusnopeus (km/h)",
     "settings.jumpRunSpeed": "Todellinen ilmanopeus (km/h)",
+    "settings.jumpRunSpeedTooltip":
+        "Vaikuttaa uloshyppykohtien väleihin ja etenemiseen vapaapudotuksessa.",
     "settings.canopyGlideRatio": "Varjon liitoluku (:1)",
+    "settings.canopyGlideRatioTooltip": "Määrittää kantamaympyrän koon.",
     "settings.canopyGlideRatioHelp":
-        "Vaakasuuntainen matka tyynessä jokaista vajottua metriä kohti: 3 tarkoittaa liitolukua 3:1. Arvo on yhteinen kaikille hyppääjille ja sitä käytetään varjon kantamaympyröissä, joissa laskukierrokseen varataan 300 m. Liitoluvun ja vajoamisnopeuden tulee kuvata samaa varjon lentotilaa.",
+        "Vaakasuuntainen matka tyynessä jokaista vajottua metriä kohti: 3 tarkoittaa liitolukua 3:1. Arvo on yhteinen kaikille hyppääjille ja sitä käytetään varjon kantamaympyröissä, joissa laskukierrokseen varataan 300 m. Ympyrän säde on liitoluku kerrottuna avauskorkeuden ja 300 metrin erotuksella. Suurempi liitoluku kasvattaa ympyröitä. Liitoluvun ja vajoamisnopeuden tulee kuvata samaa varjon lentotilaa.",
     "settings.canopyDescentRate": "Varjon vajoamisnopeus (m/s)",
+    "settings.canopyDescentRateTooltip":
+        "Määrittää varjon ajautumisen ja ympyrän siirtymän, ei kokoa.",
     "settings.canopyDescentRateHelp":
-        "Varjon vakio pystysuuntainen vajoamisnopeus, joka on yhteinen kaikille hyppääjille. Sitä käytetään varjon tuuliajautumisviivoissa, hyppylinjan automaattisessa sijoituksessa ja kantamaympyröiden tuulisiirtymässä. Pienempi nopeus pidentää aikaa varjon varassa ja lisää tuuliajautumista. Vaakasuuntainen ilmanopeus on liitoluku kerrottuna vajoamisnopeudella.",
+        "Varjon vakio pystysuuntainen vajoamisnopeus, joka on yhteinen kaikille hyppääjille. Sitä käytetään varjon tuuliajautumisviivoissa, hyppylinjan automaattisessa sijoituksessa ja kantamaympyröiden tuulisiirtymässä. Pienempi nopeus pidentää aikaa varjon varassa ja lisää tuuliajautumista. Se muuttaa ympyröiden tuulisiirtymää, mutta niiden koon määräävät liitoluku ja avauskorkeus. Vaakasuuntainen ilmanopeus on liitoluku kerrottuna vajoamisnopeudella.",
     "settings.jumperInterval": "Hyppääjien porrastus (s)",
+    "settings.jumperIntervalTooltip":
+        "Määrittää hyppyryhmien uloshyppykohtien välimatkan.",
     "settings.jumperIntervalHelp":
         "Peräkkäisten hyppyryhmien uloshyppyjen välinen aika sekunteina. Sama aikaväli koskee jokaista hyppylinjan ryhmää. Lentokoneen maanopeus, jossa huomioidaan tuuli uloshyppykorkeudella, määrää uloshyppykohtien välimatkan. Erilaiset vapaapudotusnopeudet ja avauskorkeudet voivat tuottaa erilaiset avautumiskohtien välit.",
     "settings.nextJumper": "Lisää hyppääjä",
@@ -1082,7 +1105,7 @@ const finnish = {
     "settings.speedExplanation":
         "Syötä todellinen ilmanopeus (TAS), ei mittarinopeutta (IAS). Uloshyppykorkeuden tuulen avulla lasketaan maanopeus valitulla lentoradalla. Maanopeus ja uloshyppyjen aikaväli määräävät uloshyppykohtien välimatkan. Vapaapudotusarvio huomioi myös lentokoneelta perityn etenemisnopeuden.",
     "settings.exitExplanation":
-        "Uloshyppykorkeus on yhteinen kaikille hyppääjille. Sen on oltava jokaisen olemassa olevan hyppääjän avauskorkeutta sekä lisättävälle hyppääjälle asetettua avauskorkeutta ylempänä.",
+        "Uloshyppykorkeus on yhteinen kaikille hyppääjille. Sen on oltava jokaisen olemassa olevan hyppääjän avauskorkeutta sekä lisättävälle hyppääjälle asetettua avauskorkeutta ylempänä. Korkeampi uloshyppy antaa yleensä enemmän aikaa vapaapudotusajautumiselle. Uloshyppykorkeuden tuuli vaikuttaa lentokoneen tuulikorjaukseen ja maanopeuteen hyppylinjalla.",
     "settings.profileRange":
         "Avauskorkeuden on oltava vähintään 800 m hyppypaikan maanpinnasta ja uloshyppykorkeuden alapuolella. Laskenta käyttää korkeudeltaan lähintä tuulitasoa myös saatavilla olevan tuuliprofiilin ylä- ja alapuolella.",
     "settings.openingRange":
